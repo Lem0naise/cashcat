@@ -3,14 +3,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --green: #84D684;
+  --green-dark: #246644;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-green: var(--green);
+  --color-green-dark: var(--green-dark);
   --font-sans: var(--font-SUSE);
   --font-mono: var(--font-SUSE);
 }
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -23,4 +28,37 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to{
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to{
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+}
+
+.fade-out {
+  transition: all;
+  animation: slideUp 0.8s cubic-bezier(.6,-0.37,.4,.93) forwards;
+}
+
+.fade-in {
+  transition: all;
+  animation: slideDown 0.8s cubic-bezier(.6,-0.37,.4,.93) backwards;
+  animation-direction: reverse;
 }
