@@ -18,7 +18,7 @@ export default function Home() {
         setIsAnimatingAway(true);
         setTimeout(() => {
             router.push("/budget/");
-        }, 500);
+        }, 400); // Match the animation duration
     };
 
 
@@ -37,7 +37,7 @@ export default function Home() {
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           {OpenButton('Open budget', '/budget/', true, handleClick)}
-          {Button('Learn more', '', false)}
+          {OpenButton('Learn more', '/learn/', false, () => router.push('/learn/'))}
         </div>
       </main>
       <Footer/>
