@@ -1,15 +1,57 @@
 'use client';
 
 import Image from "next/image";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import TransactionModal from "./transaction-modal";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '../../types/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function MobileNav() {
+    const [showModal, setShowModal] = useState(false);
     const pathname = usePathname();
     const isActive = (path: string) => pathname === path;
+    const router = useRouter();
+    const supabase = createClientComponentClient<Database>();
+
+    const handleSubmit = async (transaction: {
+        amount: number;
+        date: string;
+        vendor: string;
+        description?: string;
+    }) => {
+        try {
+            const {
+                data: { user },
+                error: userError
+            } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Not authenticated');
+            }
+
+            const { error } = await supabase.from('transactions').insert({
+                user_id: user.id,
+                amount: transaction.amount,
+                date: transaction.date,
+                vendor: transaction.vendor,
+                description: transaction.description || null
+            });
+
+            if (error) throw error;
+            
+            setShowModal(false);
+            router.refresh();
+        } catch (error) {
+            console.error('Error saving transaction:', error);
+            // TODO: Show error toast
+        }
+    };
 
     return (
-        <nav className="z-50 fixed bottom-0 left-0 right-0 h-16 border-t border-white/[.15] md:hidden">
+        <nav className="z-50 fixed bottom-0 left-0 right-0 h-16 border-t border-white/[.15] md:hidden font-[family-name:var(--font-suse)]">
             <div className="relative flex w-full h-full bg-black">
                 <div className="w-full grid grid-cols-5 px-2">
                     <Link
@@ -130,8 +172,8 @@ export default function MobileNav() {
 
                 {/* Floating add button */}
                 <div className="absolute left-1/2 -translate-x-1/2 -top-6">
-                    <Link
-                        href="/budget/transactions/new"
+                    <button
+                        onClick={() => setShowModal(true)}
                         className="flex flex-col items-center"
                     >
                         <div className="p-4 rounded-full bg-green text-background shadow-lg">
@@ -143,9 +185,15 @@ export default function MobileNav() {
                                 className="opacity-100"
                             />
                         </div>
-                    </Link>
+                    </button>
                 </div>
             </div>
+
+            <TransactionModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSubmit={handleSubmit}
+            />
         </nav>
     );
 }

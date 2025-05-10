@@ -64,7 +64,7 @@ export default function Stats() {
                                                 style={{width: `${(totalAssigned / totalGoal) * 100}%`}}
                                             />
                                             <div 
-                                                className="rounded h-full transition-all duration-500 ease-out absolute top-0 left-0 bg-gray-500/50"
+                                                className="rounded h-full transition-all duration-500 ease-out absolute top-0 left-0 bg-gray-500/100"
                                                 style={{
                                                     width: `${(totalSpent / totalGoal) * 100}%`,
                                                     backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'

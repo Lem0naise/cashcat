@@ -61,6 +61,38 @@ export interface Database {
           user_id?: string
         }
       }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          date: string
+          description: string | null
+          vendor: string
+          category_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          date: string
+          description?: string | null
+          vendor: string
+          category_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          date?: string
+          description?: string | null
+          vendor?: string
+          category_id?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
