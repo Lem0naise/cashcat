@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SUSE } from "next/font/google";
 import "./globals.css";
+import SupabaseProvider from './contexts/supabase-provider'
 
 const SUSEFont = SUSE({
   variable: "--font-suse",
@@ -10,7 +11,7 @@ const SUSEFont = SUSE({
 
 export const metadata: Metadata = {
   title: "CashCat",
-  description: "The next-gen money manager",
+  description: "Manage your budget with envelope budgeting",
 };
 
 export default function RootLayout({
@@ -23,7 +24,9 @@ export default function RootLayout({
       <body
         className={`${SUSEFont.variable} ${SUSEFont.variable} antialiased`}
       >
-        {children}
+        <SupabaseProvider>
+          {children}
+        </SupabaseProvider>
       </body>
     </html>
   );

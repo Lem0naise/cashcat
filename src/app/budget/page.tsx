@@ -4,6 +4,7 @@ import Navbar from "../components/navbar";
 import Sidebar from "../components/sidebar";
 import MobileNav from "../components/mobileNav";
 import Category from "@/app/features/Category";
+import ProtectedRoute from "../components/protected-route";
 import {useEffect, useState} from "react";
 
 type Cat = {
@@ -54,66 +55,68 @@ export default function Money(){
         : categories.filter(cat => cat.group === activeGroup);
 
     return(
-        <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
-            <Navbar />
-            <Sidebar />
-            <MobileNav />
-            
-            <main className="pt-20 md:pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
-                <div className="max-w-7xl mx-auto">
-                    <div className="md:flex hidden items-center justify-between mb-8">
-                        <h1 className="text-2xl font-bold tracking-[-.01em]">Money</h1>
-                        <button className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] text-sm opacity-90 hover:opacity-100 md:block hidden">
-                            <Image
-                                src="/window.svg"
-                                alt="Add category"
-                                width={16}
-                                height={16}
-                                className="opacity-70"
-                            />
-                            Add Category
-                        </button>
-                    </div>
+        <ProtectedRoute>
+            <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
+                <Navbar />
+                <Sidebar />
+                <MobileNav />
+                
+                <main className="pt-20 md:pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="md:flex hidden items-center justify-between mb-8">
+                            <h1 className="text-2xl font-bold tracking-[-.01em]">Money</h1>
+                            <button className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] text-sm opacity-90 hover:opacity-100 md:block hidden">
+                                <Image
+                                    src="/window.svg"
+                                    alt="Add category"
+                                    width={16}
+                                    height={16}
+                                    className="opacity-70"
+                                />
+                                Add Category
+                            </button>
+                        </div>
 
-                    <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
-                        <div className="flex gap-2 min-w-max">
-                            {groups.map((group) => (
-                                <button
-                                    key={group}
-                                    onClick={() => setActiveGroup(group)}
-                                    className={`px-4 py-2 rounded-full text-sm transition-all ${
-                                        activeGroup === group
-                                            ? 'bg-green text-background'
-                                            : 'bg-white/15 hover:bg-white/[.05]'
-                                    }`}
+                        <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
+                            <div className="flex gap-2 min-w-max">
+                                {groups.map((group) => (
+                                    <button
+                                        key={group}
+                                        onClick={() => setActiveGroup(group)}
+                                        className={`px-4 py-2 rounded-full text-sm transition-all ${
+                                            activeGroup === group
+                                                ? 'bg-green text-background'
+                                                : 'bg-white/15 hover:bg-white/[.05]'
+                                        }`}
+                                    >
+                                        {group}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                            {filteredCategories.map((category, index) => (
+                                <div key={category.id} 
+                                    className="transform transition-all hover:scale-[1.01] hover:shadow-md"
+                                    style={{ 
+                                        animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
+                                    }}
                                 >
-                                    {group}
-                                </button>
+                                    <Category
+                                        name={category.name}
+                                        assigned={category.assigned}
+                                        spent={category.spent}
+                                        goalAmount={category.goalAmount}
+                                        group={category.group}
+                                        showGroup={activeGroup === 'All'}
+                                    />
+                                </div>
                             ))}
                         </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                        {filteredCategories.map((category, index) => (
-                            <div key={category.id} 
-                                className="transform transition-all hover:scale-[1.01] hover:shadow-md"
-                                style={{ 
-                                    animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
-                                }}
-                            >
-                                <Category
-                                    name={category.name}
-                                    assigned={category.assigned}
-                                    spent={category.spent}
-                                    goalAmount={category.goalAmount}
-                                    group={category.group}
-                                    showGroup={activeGroup === 'All'}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </main>
-        </div>
+                </main>
+            </div>
+        </ProtectedRoute>
     );
 }

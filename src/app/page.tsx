@@ -1,53 +1,47 @@
 'use client';
-import Image from "next/image";
-import {useState, useEffect} from "react";
-import {useRouter} from "next/navigation";
 
-import Button from "./components/button";
-import OpenButton from "./components/openButton";
-import Logo from "./components/logo";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useSupabase } from './contexts/supabase-provider';
+import Logo from './components/logo'
 
-
-export default function Home() {
-
+export default function Landing() {
     const router = useRouter();
-    const [isAnimatingAway, setIsAnimatingAway] = useState(false);
+    const { user, loading } = useSupabase();
 
-    const handleBudget = () => {
-        setIsAnimatingAway(true);
-        setTimeout(() => {
-            router.push("/budget/");
-        }, 500);
-    };
+    useEffect(() => {
+        if (!loading && user) {
+            router.push('/budget');
+        }
+    }, [user, loading, router]);
 
-     const handleLearn = () => {
-        setIsAnimatingAway(true);
-        setTimeout(() => {
-            router.push("/learn/");
-        }, 500);
-    };
-
-
-
-
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen max-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-suse)]">
-      <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center max-h-screen `}>
-          {Logo()}
-        <ol className={`list-inside text-base/6 sm:text-base/6 text-center font-[family-name:var(--font-suse)]`}>
-          <li className="mb-2 tracking-[-.01em]">
-            Your money should be <b>yours</b>.
-          </li>
-          <li className="tracking-[-.01em]">
-              Get peace of mind that it's going where <b>you want</b>.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          {OpenButton('Open budget', '/budget/', true, handleBudget)}
-          {OpenButton('Learn more', '/learn/', false, handleLearn)}
+    return (
+        <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
+            <main className="container mx-auto px-6 py-16">
+                <div className="flex flex-col items-center justify-center min-h-[80vh] text-center">
+                    <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                        <Logo></Logo>
+                    </h1>
+                    <p className="text-lg md:text-xl text-white/70 mb-8 max-w-2xl">
+                        Your money, in your hands.
+                    </p>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="px-8 py-3 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-all"
+                        >
+                            Get Started
+                        </button>
+                        <button
+                            onClick={() => router.push('/learn')}
+                            className="px-8 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
+                        >
+                            Learn More
+                        </button>
+                    </div>
+                </div>
+            </main>
         </div>
-      </main>
-    </div>
-  );
+    );
 }
