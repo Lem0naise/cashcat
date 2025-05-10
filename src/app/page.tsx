@@ -3,7 +3,6 @@ import Image from "next/image";
 import {useState, useEffect} from "react";
 import {useRouter} from "next/navigation";
 
-import Footer from "./components/footer";
 import Button from "./components/button";
 import OpenButton from "./components/openButton";
 import Logo from "./components/logo";
@@ -18,7 +17,7 @@ export default function Home() {
         setIsAnimatingAway(true);
         setTimeout(() => {
             router.push("/budget/");
-        }, 400); // Match the animation duration
+        }, 500);
     };
 
 
@@ -37,10 +36,9 @@ export default function Home() {
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           {OpenButton('Open budget', '/budget/', true, handleClick)}
-          {OpenButton('Learn more', '/learn/', false, () => router.push('/learn/'))}
+          {Button('Learn more', '', false)}
         </div>
       </main>
-      <Footer/>
     </div>
   );
 }

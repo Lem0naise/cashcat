@@ -1,7 +1,6 @@
 'use client';
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Footer from "../components/footer";
 import Logo from "../components/logo";
 import OpenButton from "../components/openButton";
 import Image from "next/image";
@@ -24,13 +23,13 @@ export default function LearnMore() {
                 {Logo()}
                 
                 {/* Tabs */}
-                <div className="flex gap-4 border-b border-black/[.09] dark:border-white/[.15] w-full">
+                <div className="flex gap-4 border-b border-white/[.15] w-full">
                     <button 
                         onClick={() => setActiveTab('envelope')}
                         className={`px-4 py-2 transition-all duration-200 ${
                             activeTab === 'envelope' 
                             ? 'text-green border-b-2 border-green' 
-                            : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                            : 'dark:text-white/60 hover:text-white'
                         }`}
                     >
                         Envelope Budgeting
@@ -40,7 +39,7 @@ export default function LearnMore() {
                         className={`px-4 py-2 transition-all duration-200 ${
                             activeTab === 'team' 
                             ? 'text-green border-b-2 border-green' 
-                            : 'text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white'
+                            : 'text-white/60 hover:text-white'
                         }`}
                     >
                         About the Team
@@ -89,7 +88,7 @@ export default function LearnMore() {
                     <h1 className="text-2xl font-bold mb-6">Meet the CashCat Team</h1>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg-black/[.03] dark:bg-white/[.03]">
+                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg-white/[.03]">
                             <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
                                 <Image
                                     src="/window.svg"
@@ -101,7 +100,7 @@ export default function LearnMore() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-semibold mb-2">Indigo Nolan</h3>
-                                <p className="text-base text-black/70 dark:text-white/70">
+                                <p className="text-base text-white/70">
                                     Lead Engineer & Designer
                                 </p>
                                 <p className="mt-4 text-sm">
@@ -131,7 +130,7 @@ export default function LearnMore() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg-black/[.03] dark:bg.white/[.03]">
+                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg.white/[.03]">
                             <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
                                 <Image
                                     src="/globe.svg"
@@ -165,7 +164,6 @@ export default function LearnMore() {
                     </div>
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }

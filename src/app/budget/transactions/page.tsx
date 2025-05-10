@@ -15,7 +15,7 @@ export default function Transactions() {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between mb-8">
                         <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
-                        <button className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-[#f2f2f2] dark:hover:bg-[#2a2a2a] text-sm opacity-90 hover:opacity-100 md:block hidden">
+                        <button className="flex flex-row items-center gap-2 p-2 rounded-lg transition-all hover:bg-[#2a2a2a] text-sm opacity-90 hover:opacity-100 md:block hidden">
                             <Image
                                 src="/file.svg"
                                 alt="Add transaction"

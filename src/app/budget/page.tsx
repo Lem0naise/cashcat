@@ -25,10 +25,10 @@ export default function Home(){
             {id:1, name:'Rent', assigned: 460.34, spent: 0, goalAmount: 800, group: 'Essentials'},
             {id:2, name:'Utilities', assigned: 150, spent: 120.50, goalAmount: 150, group: 'Essentials'},
             {id:3, name:'Groceries', assigned: 400, spent: 292.40, goalAmount: 400, group: 'Essentials'},
-            {id:4, name:'Transport', assigned: 80, spent: 45.60, goalAmount: 80, group: 'Essentials'},
+            {id:4, name:'Transport', assigned: 80, spent: 95.60, goalAmount: 80, group: 'Essentials'},
             
             // Food & Dining
-            {id:5, name:'Takeouts', assigned: 90, spent: 92.63, goalAmount: 90, group: 'Food & Dining'},
+            {id:5, name:'Takeouts', assigned: 90, spent: 122.63, goalAmount: 90, group: 'Food & Dining'},
             {id:6, name:'Restaurants', assigned: 120, spent: 85.20, goalAmount: 150, group: 'Food & Dining'},
             {id:7, name:'Coffee Shops', assigned: 45, spent: 38.40, goalAmount: 50, group: 'Food & Dining'},
             
@@ -64,10 +64,10 @@ export default function Home(){
             <Sidebar />
             <MobileNav />
             
-            <main className="pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
+            <main className="pt- md:pt-18 upb-28 md:pb-6 md:pl-64 p-6 fade-in">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between mb-8">
-                        <h1 className="text-2xl font-bold tracking-[-.01em]">Dashboard</h1>
+                        <h1 className="hidden md:inline text-2xl font-bold tracking-[-.01eddm]">Dashboard</h1>
                         <button className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-[#f2f2f2] dark:hover:bg-[#2a2a2a] text-sm opacity-90 hover:opacity-100 md:block hidden">
                             <Image
                                 src="/window.svg"
@@ -111,7 +111,7 @@ export default function Home(){
                                         style={{width: `${(totalAssigned / totalGoal) * 100}%`}}
                                     />
                                     <div 
-                                        className="rounded h-full transition-all duration-500 ease-out absolute top-0 left-0 bg-gray-500/50"
+                                        className="rounded h-full transition-all duration-500 ease-out absolute top-0 left-0 bg-gray-500/100"
                                         style={{
                                             width: `${(totalSpent / totalGoal) * 100}%`,
                                             backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
@@ -126,7 +126,7 @@ export default function Home(){
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto -mx-6 px-6 mb-6">
+                    <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
                         <div className="flex gap-2 min-w-max">
                             {groups.map((group) => (
                                 <button
@@ -135,7 +135,7 @@ export default function Home(){
                                     className={`px-4 py-2 rounded-full text-sm transition-all ${
                                         activeGroup === group
                                             ? 'bg-green text-background'
-                                            : 'bg-black/[.03] dark:bg-white/[.03] hover:bg-black/[.05] dark:hover:bg-white/[.05]'
+                                            : 'bg-white/15 hover:bg-white/[.05]'
                                     }`}
                                 >
                                     {group}
@@ -149,8 +149,6 @@ export default function Home(){
                             <div key={category.id} 
                                 className="transform transition-all hover:scale-[1.01] hover:shadow-md"
                                 style={{ 
-                                    // animationDelay TODO this leads to issues when remaking
-                                    animationDelay: `${index * 0.1}s`,
                                     animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
                                 }}
                             >

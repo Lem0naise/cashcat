@@ -2,8 +2,8 @@
 
 :root {
   /* Base colors */
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #0a0a0a;
+    --foreground: #ededed;
   --green: #84D684;
   --blue: #bac2ff;
   --blue-dark: #197BBD;
@@ -37,12 +37,7 @@
   --font-mono: var(--font-SUSE);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+ 
 
 body {
   background: var(--background);
@@ -84,4 +79,13 @@ body {
 .transition-all {
   transition-duration: 0.3s !important;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+
+.hide-scrollbar::-webkit-scrollbar {
+  display:none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
