@@ -13,12 +13,21 @@ export default function Home() {
     const router = useRouter();
     const [isAnimatingAway, setIsAnimatingAway] = useState(false);
 
-    const handleClick = () => {
+    const handleBudget = () => {
         setIsAnimatingAway(true);
         setTimeout(() => {
             router.push("/budget/");
         }, 500);
     };
+
+     const handleLearn = () => {
+        setIsAnimatingAway(true);
+        setTimeout(() => {
+            router.push("/learn/");
+        }, 500);
+    };
+
+
 
 
   return (
@@ -35,8 +44,8 @@ export default function Home() {
         </ol>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
-          {OpenButton('Open budget', '/budget/', true, handleClick)}
-          {Button('Learn more', '', false)}
+          {OpenButton('Open budget', '/budget/', true, handleBudget)}
+          {OpenButton('Learn more', '/learn/', false, handleLearn)}
         </div>
       </main>
     </div>

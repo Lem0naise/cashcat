@@ -25,11 +25,6 @@ export default function Category({name, assigned, spent, goalAmount, group, show
                 <div className="flex-1">
                     <div className="flex justify-between md:block">
                         <h3 className="text-sm md:text-base"><strong>{name}</strong></h3>
-                        {showGroup && group && (
-                            <span className="text-xs text-black/50 dark:text-white/50 md:hidden">
-                                {group}
-                            </span>
-                        )}
                     </div>
                     <div className="flex items-baseline gap-2 mt-1">
                         <span className="text-xs text-black/50 dark:text-white/50">Goal:</span>
@@ -75,7 +70,7 @@ export default function Category({name, assigned, spent, goalAmount, group, show
             </div>
 
             {showGroup && group && (
-                <span className="text-xs text-black/50 dark:text-white/50 hidden md:block mt-2">
+                <span className="text-xs text-white/50 hidden md:block mt-2">
                     {group}
                 </span>
             )}

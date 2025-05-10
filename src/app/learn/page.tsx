@@ -19,7 +19,7 @@ export default function LearnMore() {
 
     return (
         <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-suse)]">
-            <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center max-w-2xl`}>
+            <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center max-w-2xl fade-in`}>
                 {Logo()}
                 
                 {/* Tabs */}
@@ -51,8 +51,8 @@ export default function LearnMore() {
                     <h1 className="text-2xl font-bold mb-6">Envelope Budgeting: A Simple Way to Master Your Money</h1>
                     
                     <section>
-                        <h2 className="text-xl font-semibold mb-3">What is Envelope Budgeting?</h2>
-                        <p>Envelope budgeting is a simple yet powerful method where you divide your income into different categories (envelopes) at the beginning of each month. Each envelope represents a specific expense category like groceries, rent, or entertainment.</p>
+                        <h2 className="text-xl font-semibold mb-3">What is it?</h2>
+                        <p>Envelope budgeting is a simple method where you divide your income into different categories (envelopes) at the beginning of each month. Each envelope represents a specific expense category like groceries, rent, or entertainment.</p>
                     </section>
 
                     <section>
@@ -69,17 +69,17 @@ export default function LearnMore() {
                     <section>
                         <h2 className="text-xl font-semibold mb-3">Benefits</h2>
                         <ul className="list-disc list-inside space-y-2">
-                            <li>Better spending awareness</li>
-                            <li>Prevents overspending</li>
+                            <li>Spending money becomes a conscious decision</li>
+                            <li>Warns about overspending</li> 
                             <li>Helps achieve savings goals</li>
                             <li>Makes budgeting tangible and practical</li>
                         </ul>
                     </section>
 
-                    Envelope budgeting is essential for CashCat to allow you to manage your money with ease!
+                    Envelope budgeting is central to CashCat allowing you to manage your money with ease!
 
                     <div className="mt-8 flex justify-center">
-                        {OpenButton('Start Budgeting Now', '/budget/', true, handleClick)}
+                        {OpenButton('Start Now', '/budget/', true, handleClick)}
                     </div>
                 </div>
 
@@ -130,34 +130,18 @@ export default function LearnMore() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg.white/[.03]">
-                            <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
-                                <Image
-                                    src="/globe.svg"
-                                    alt="CashCat"
-                                    width={32}
-                                    height={32}
-                                    className="opacity-70"
-                                />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-semibold mb-2">CashCat</h3>
-                                <p className="text-base text-black/70 dark:text.white/70">
-                                    Financial Companion
-                                </p>
-                                <p className="mt-4 text-sm">
-                                    Your friendly guide to better financial habits and smarter money management.
-                                </p>
-                            </div>
-                        </div>
                     </div>
 
-                    <div className="mt-8 text-center">
+                    <div className="mt-8">
                         <h3 className="text-xl font-semibold mb-4">Our Mission</h3>
-                        <p className="text-base text-black/70 dark:text.white/70">
-                            We believe everyone deserves access to simple, effective tools for managing their finances. 
-                            CashCat is built with love and attention to detail, focusing on making budgeting accessible and even enjoyable.
-                        </p>
+
+                        <ol className="text-base text.white/70 text-left list-decimal list-inside space-y-2">
+                            <li>We know that envelope budgeting works well</li>
+                            <li>We believe everybody deserves access to a simple, effective tool to manage their finances</li>
+                            <li>We also believe it shouldn't cost an arm and a leg</li>
+                            <li>What's the point of a budgeting app that loses you money!</li>
+                            <li>CashCat is built with love and attention to detail. All of our team use it daily for our own budgeting!</li>
+                        </ol>
                         <div className="mt-8 flex justify-center">
                             {OpenButton('Join Us Now', '/budget/', true, handleClick)}
                         </div>
