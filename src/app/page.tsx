@@ -31,8 +31,8 @@ export default function Home() {
 
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-suse)]">
-      <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center `}>
+    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen max-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-suse)]">
+      <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center max-h-screen `}>
           {Logo()}
         <ol className={`list-inside text-base/6 sm:text-base/6 text-center font-[family-name:var(--font-suse)]`}>
           <li className="mb-2 tracking-[-.01em]">
