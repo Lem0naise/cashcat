@@ -9,6 +9,7 @@ import Sidebar from "../../components/sidebar";
 import MobileNav from "../../components/mobileNav";
 import TransactionModal from "../../components/transaction-modal";
 import { isDevelopment, mockSupabase } from "../../utils/mocks";
+import ProtectedRoute from "../../components/protected-route";
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -172,6 +173,7 @@ export default function Transactions() {
     };
 
     return (
+        <ProtectedRoute>
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
             <Navbar />
             <Sidebar />
@@ -289,5 +291,6 @@ export default function Transactions() {
                 onDelete={handleDelete}
             />
         </div>
+        </ProtectedRoute>
     );
 }

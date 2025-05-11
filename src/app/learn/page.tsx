@@ -13,7 +13,7 @@ export default function LearnMore() {
     const handleClick = () => {
         setIsAnimatingAway(true);
         setTimeout(() => {
-            router.push("/budget/");
+            router.push("/login");
         }, 500);
     };
 
@@ -46,7 +46,6 @@ export default function LearnMore() {
                     </button>
                 </div>
 
-                {/* Envelope Budgeting Content */}
                 <div className={`space-y-6 text-lg transition-all duration-200 ${activeTab === 'envelope' ? 'opacity-100' : 'hidden opacity-0'}`}>
                     <h1 className="text-2xl font-bold mb-6">Envelope Budgeting: A Simple Way to Master Your Money</h1>
                     
@@ -79,7 +78,7 @@ export default function LearnMore() {
                     Envelope budgeting is central to CashCat allowing you to manage your money with ease!
 
                     <div className="mt-8 flex justify-center">
-                        {OpenButton('Start Now', '/budget/', true, handleClick)}
+                        {OpenButton('Start Now', true, handleClick)}
                     </div>
                 </div>
 
@@ -143,7 +142,7 @@ export default function LearnMore() {
                             <li>CashCat is built with love and attention to detail. All of our team use it daily for our own budgeting!</li>
                         </ol>
                         <div className="mt-8 flex justify-center">
-                            {OpenButton('Join Us Now', '/budget/', true, handleClick)}
+                            {OpenButton('Join Us Now', true, handleClick)}
                         </div>
                     </div>
                 </div>

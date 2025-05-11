@@ -16,7 +16,7 @@ type Cat = {
     group: string
 }
 
-export default function Money(){
+export default function Budget(){
     const [categories, setCategories] = useState<Cat[]>([]);
     const [activeGroup, setActiveGroup] = useState<string>('All');
 

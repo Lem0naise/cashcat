@@ -4,7 +4,7 @@ import {useRouter} from "next/navigation";
 import {useEffect} from "react";
 
 
-const OpenButton = (text: string, link:string, white:boolean, click:()=>void) => {
+const OpenButton = (text: string, white:boolean, click:()=>void) => {
     const router = useRouter();
     return (
         <a
