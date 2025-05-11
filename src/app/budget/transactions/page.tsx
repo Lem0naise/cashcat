@@ -26,13 +26,13 @@ export default function Transactions() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
-
+            
             const { data, error } = await supabase
                 .from('transactions')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('date', { ascending: false });
-
+            
             if (error) throw error;
             setTransactions(data || []);
         } catch (error) {
@@ -95,6 +95,25 @@ export default function Transactions() {
             currency: 'GBP',
             minimumFractionDigits: 2
         }).format(amount);
+    };
+
+    const groupTransactionsByDate = (transactions: Transaction[]) => {
+        const groups: { [key: string]: { date: string; transactions: Transaction[] } } = {};
+        
+        transactions.forEach(transaction => {
+            const date = transaction.date;
+            if (!groups[date]) {
+                groups[date] = {
+                    date,
+                    transactions: []
+                };
+            }
+            groups[date].transactions.push(transaction);
+        });
+
+        return Object.values(groups).sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
     };
 
     return (
@@ -172,29 +191,33 @@ export default function Transactions() {
                             <p className="text-sm">Start adding your transactions to track your spending</p>
                         </div>
                     ) : (
-                        <div className="space-y-4 divide-y divide-white/[.15]">
-                            {transactions.map((transaction) => (
-                                <div 
-                                    key={transaction.id}
-                                    className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
-                                >
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-baseline justify-between mb-1">
-                                            <h3 className="font-medium truncate pr-4">{transaction.vendor}</h3>
-                                            <span className={`font-medium whitespace-nowrap ${
-                                                transaction.amount < 0 ? 'text-reddy' : 'text-green'
-                                            }`}>
-                                                {formatAmount(transaction.amount)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-white/50">{formatDate(transaction.date)}</span>
-                                            {transaction.description && (
-                                                <span className="block md:block truncate ml-4 text-white/30 max-w-[50%]">
-                                                    {transaction.description}
+                        <div className="space-y-6">
+                            {groupTransactionsByDate(transactions).map(group => (
+                                <div key={group.date} className="space-y-2">
+                                    <h3 className="text-sm font-medium text-white/40 sticky top-16 bg-background py-2 z-10">
+                                        {formatDate(group.date)}
+                                    </h3>
+                                    <div className="space-y-1">
+                                        {group.transactions.map((transaction) => (
+                                            <div 
+                                                key={transaction.id}
+                                                className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white/[.05] hover:bg-white/[.1] transition-colors"
+                                            >
+                                                <div className="flex-1 min-w-0 flex items-center gap-3">
+                                                    <h4 className="font-medium truncate">{transaction.vendor}</h4>
+                                                    {transaction.description && (
+                                                        <span className="hidden md:block truncate text-white/30 text-sm">
+                                                            {transaction.description}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className={`font-medium whitespace-nowrap tabular-nums ${
+                                                    transaction.amount < 0 ? 'text-reddy' : 'text-green'
+                                                }`}>
+                                                    {formatAmount(transaction.amount)}
                                                 </span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
