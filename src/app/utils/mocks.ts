@@ -67,6 +67,27 @@ export const mockSupabase = {
             };
             mockTransactions.push(newTransaction);
             return Promise.resolve({ data: newTransaction, error: null });
-        }
+        },
+        update: (data: any) => ({
+            eq: (column: string, value: string) => {
+                const index = mockTransactions.findIndex(t => t.id === value);
+                if (index !== -1) {
+                    mockTransactions[index] = {
+                        ...mockTransactions[index],
+                        ...data,
+                    };
+                }
+                return Promise.resolve({ data: mockTransactions[index], error: null });
+            }
+        }),
+        delete : () => ({
+            eq: (column: string, value: string) => {
+                const index = mockTransactions.findIndex(t => t.id === value);
+                if (index !== -1) {
+                    mockTransactions.splice(index, 1);
+                }
+                return Promise.resolve({ data: mockTransactions, error: null });
+            }
+        })
     })
 };

@@ -190,9 +190,11 @@ export default function MobileNav() {
             </div>
 
             <TransactionModal
+                transaction={null}
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
                 onSubmit={handleSubmit}
+                onDelete={() => {}}
             />
         </nav>
     );

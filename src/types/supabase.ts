@@ -28,6 +28,9 @@ export interface Database {
           name?: string | null
           email?: string
         }
+        Delete: {
+          id: string
+        }
       }
       categories: {
         Row: {
@@ -60,6 +63,16 @@ export interface Database {
           group?: string
           user_id?: string
         }
+        Delete: {
+          id?: string
+          created_at?: string
+          name?: string
+          assigned?: number
+          spent?: number
+          goal_amount?: number
+          group?: string
+          user_id?: string
+        }
       }
       transactions: {
         Row: {
@@ -83,14 +96,17 @@ export interface Database {
           created_at?: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          amount?: number
-          date?: string
+          id: string
+          user_id: string
+          amount: number
+          date: string
           description?: string | null
           vendor?: string
           category_id?: string | null
           created_at?: string
+        }
+        Delete: {
+          id: string
         }
       }
     }

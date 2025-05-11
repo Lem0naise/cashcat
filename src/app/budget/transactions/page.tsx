@@ -16,6 +16,7 @@ export default function Transactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
     const router = useRouter();
     const supabase = isDevelopment ? mockSupabase : createClientComponentClient<Database>();
 
@@ -43,6 +44,38 @@ export default function Transactions() {
         }
     };
 
+    const handleUpdateSubmit = async (transaction: {
+        amount: number;
+        date: string;
+        vendor: string;
+        description?: string;
+    }) => {
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+            if (!modalTransaction) throw new Error('No transaction to update');
+
+            const { error } = await supabase
+                .from('transactions')
+                .update({
+                    amount: transaction.amount,
+                    date: transaction.date,
+                    vendor: transaction.vendor,
+                    description: transaction.description || null
+                })
+                .eq('id', modalTransaction.id);
+            
+            if (error) throw error;
+            
+            fetchTransactions();
+            setShowModal(false);
+            setModalTransaction(null);
+        } catch (error) {
+            console.error('Error updating transaction:', error);
+            // TODO: Show error toast
+        }
+    };
+
     const handleSubmit = async (transaction: {
         amount: number;
         date: string;
@@ -67,6 +100,27 @@ export default function Transactions() {
             setShowModal(false);
         } catch (error) {
             console.error('Error saving transaction:', error);
+            // TODO: Show error toast
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+            if (!modalTransaction) throw new Error('No transaction to delete');
+
+            const { error } = await supabase
+                .from('transactions')
+                .delete()
+                .eq('id', modalTransaction.id);
+
+            if (error) throw error;
+            
+            fetchTransactions();
+            setShowModal(false);
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
             // TODO: Show error toast
         }
     };
@@ -158,7 +212,7 @@ export default function Transactions() {
                             </button>
                              
                             <button 
-                                title="Add Transaction" onClick={() => setShowModal(true)}
+                                title="Add Transaction" onClick={() => {setModalTransaction(null); setShowModal(true)}}
                                 className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                             >
                             <svg width="24" height="24" viewBox= "-2 -2 50 50 " fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -200,7 +254,7 @@ export default function Transactions() {
                                     </h3>
                                     <div className="space-y-1">
                                         {group.transactions.map((transaction) => (
-                                            <div 
+                                            <div onClick={() => {setModalTransaction(transaction); setShowModal(true)}}
                                                 key={transaction.id}
                                                 className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white/[.05] hover:bg-white/[.1] transition-colors"
                                             >
@@ -228,9 +282,11 @@ export default function Transactions() {
             </main>
 
             <TransactionModal
+                transaction={modalTransaction}
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                onSubmit={handleSubmit}
+                onSubmit={modalTransaction ? handleUpdateSubmit : handleSubmit}
+                onDelete={handleDelete}
             />
         </div>
     );

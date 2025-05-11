@@ -9,7 +9,7 @@
   --blue-dark: #197BBD;
   --green-dark: #246644;
   --reddy: #f2602f;
-  --old-reddy: #eb7627;
+  --old-reddy: rgba(224, 72, 12, 0.689);
 
   /* Budget specific colors */
   --budget-assigned: var(--green);
@@ -33,6 +33,7 @@
   --color-green: var(--blue); 
   --color-green-dark: var(--blue-dark);
   --color-reddy: var(--reddy);
+  --color-old-reddy: var(--old-reddy);
   --font-sans: var(--font-SUSE);
   --font-mono: var(--font-SUSE);
 }

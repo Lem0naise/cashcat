@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
+import { Database } from '../../types/supabase';
+type Transaction = Database['public']['Tables']['transactions']['Row'];
+
+
 type TransactionModalProps = {
+    transaction: Transaction|null;
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (transaction: {
@@ -12,16 +17,38 @@ type TransactionModalProps = {
         vendor: string;
         description?: string;
     }) => void;
+    onDelete : () => void;
 };
 
-export default function TransactionModal({ isOpen, onClose, onSubmit }: TransactionModalProps) {
+export default function TransactionModal({transaction, isOpen, onClose, onSubmit, onDelete }: TransactionModalProps) {
     const [type, setType] = useState<'payment' | 'income'>('payment');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [vendor, setVendor] = useState('');
     const [description, setDescription] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [isClosing, setIsClosing] = useState(false);
+
+
+    
+    useEffect(() => {
+        if (transaction){
+            setType(transaction.amount>0 ? 'income' : 'payment');
+            setAmount((Math.abs(transaction.amount).toString()));
+            setDate(transaction.date);
+            setDescription(transaction.description ? transaction.description : '')
+            setVendor(transaction.vendor);
+            // console.log(transaction)
+        }
+        else {
+            setType('payment');
+            setAmount('');
+            setDate(new Date().toISOString().split('T')[0]);
+            setDescription('')
+            setVendor('');
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -32,6 +59,7 @@ export default function TransactionModal({ isOpen, onClose, onSubmit }: Transact
             onClose();
         }, 200); // Match animation duration
     };
+    
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,7 +97,7 @@ export default function TransactionModal({ isOpen, onClose, onSubmit }: Transact
                 }`}
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">New Transaction</h2>
+                    <h2 className="text-xl font-bold">{transaction ? "Edit Transaction" : "New Transaction"}</h2>
                     <button 
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
@@ -162,12 +190,22 @@ export default function TransactionModal({ isOpen, onClose, onSubmit }: Transact
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full py-3 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors mt-6"
-                    >
-                        Add Transaction
-                    </button>
+                    <div className="flex gap-8">
+                            <button
+                            type="button"
+                            onClick={() => isDeleting ? (setIsDeleting(false), onDelete()) :setIsDeleting(true)}
+                            className={`${transaction ? 'block': 'hidden'} w-full py-3 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors mt-6`}
+                        >
+                            {isDeleting ? "Are you sure?" : "Delete Transaction"}
+                        </button>
+                        <button
+                            type="submit"
+                            className="w-full py-3 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors mt-6"
+                        >
+                            {transaction ? "Update Transaction" : "Add Transaction"}
+                        </button>
+                    </div>
+                    
                 </form>
             </div>
         </div>
