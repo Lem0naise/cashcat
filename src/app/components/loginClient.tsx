@@ -72,10 +72,11 @@ export default function Login() {
             },
           }}
           theme="dark"
-          providers={['google']}
+          providers={[]}
           redirectTo={`${window.location.origin}${redirectTo}`}
         />
       </div>
     </div>
   );
+  // providers={['google']}
 }
