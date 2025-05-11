@@ -4,9 +4,9 @@ import Sidebar from "../components/sidebar";
 import MobileNav from "../components/mobileNav";
 import ProtectedRoute from "../components/protected-route";
 import { createClient } from '../utils/supabase';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '../contexts/supabase-provider';
+import { isDevelopment, mockUser } from '../utils/mocks';
 
 export default function Account() {
     const router = useRouter();
@@ -14,9 +14,13 @@ export default function Account() {
     const { user } = useSupabase();
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        if (!isDevelopment) {
+            await supabase.auth.signOut();
+        }
         router.push('/login');
     };
+
+    const displayUser = isDevelopment ? mockUser : user;
 
     return (
         <ProtectedRoute>
@@ -31,16 +35,20 @@ export default function Account() {
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Account</h1>
                         </div>
                         
-                        
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <p className={`${user ? 'inline' : 'hidden'}`}>
+                            {isDevelopment ? (
+                                <div className="mb-4 p-3 bg-green/10 text-green rounded-lg">
+                                    Development Mode Active - All data is mocked
+                                </div>
+                            ) : null}
+                            <p className={`${displayUser ? 'inline' : 'hidden'}`}>
                                 You're signed into CashCat! Your budget is saved to the cloud, you can rest safely.
                             </p>
                             <div className="mt-4 flex flex-col gap-4">
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="text-sm text-white/50">Email</p>
-                                        <p className="font-medium">{user?.email}</p>
+                                        <p className="font-medium">{displayUser?.email}</p>
                                     </div>
                                 </div>
                                 

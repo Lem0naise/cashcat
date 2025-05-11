@@ -8,6 +8,7 @@ import Navbar from "../../components/navbar";
 import Sidebar from "../../components/sidebar";
 import MobileNav from "../../components/mobileNav";
 import TransactionModal from "../../components/transaction-modal";
+import { isDevelopment, mockSupabase } from "../../utils/mocks";
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -16,7 +17,7 @@ export default function Transactions() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const router = useRouter();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = isDevelopment ? mockSupabase : createClientComponentClient<Database>();
 
     useEffect(() => {
         fetchTransactions();
