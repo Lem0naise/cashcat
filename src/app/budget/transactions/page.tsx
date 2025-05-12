@@ -166,8 +166,10 @@ export default function Transactions() {
             }
             groups[date].transactions.push(transaction);
         });
-
-        return Object.values(groups).sort((a, b) => 
+        Object.values(groups).forEach(group => { // sort by time descending
+            group.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        });
+        return Object.values(groups).sort((a, b) =>  // sort by date descending
             new Date(b.date).getTime() - new Date(a.date).getTime()
         );
     };
