@@ -5,6 +5,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { createClient } from '@/app/utils/supabase';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { isDevelopment } from '../utils/mocks';
 
 export default function Login() {
   const router = useRouter();
@@ -28,6 +29,10 @@ export default function Login() {
       subscription.unsubscribe();
     };
   }, [router, redirectTo, supabase]);
+
+  useEffect(() => {
+    if (isDevelopment){router.push("/budget")}
+  }, [router]);
 
   if (!isClient) return null;
 
