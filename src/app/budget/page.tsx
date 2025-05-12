@@ -6,6 +6,7 @@ import MobileNav from "../components/mobileNav";
 import Category from "@/app/features/Category";
 import ProtectedRoute from "../components/protected-route";
 import {useEffect, useState} from "react";
+import ManageBudgetModal from "../components/manage-budget-modal";
 
 type Cat = {
     id: number,
@@ -19,6 +20,23 @@ type Cat = {
 export default function Budget(){
     const [categories, setCategories] = useState<Cat[]>([]);
     const [activeGroup, setActiveGroup] = useState<string>('All');
+    const [showManageModal, setShowManageModal] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+    const formatMonth = (date: Date) => {
+        return date.toLocaleDateString('en-GB', {
+            month: 'long',
+            year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+        });
+    };
+
+    const goToPreviousMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+    };
+
+    const goToNextMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+    };
 
     useEffect(()=>{
         setCategories([
@@ -63,18 +81,108 @@ export default function Budget(){
                 
                 <main className="pt-20 md:pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
-                        <div className="md:flex hidden items-center justify-between mb-8">
-                            <h1 className="text-2xl font-bold tracking-[-.01em]">Money</h1>
-                            <button className="flex items-center gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] text-sm opacity-90 hover:opacity-100 md:block hidden">
-                                <Image
-                                    src="/window.svg"
-                                    alt="Add category"
-                                    width={16}
-                                    height={16}
-                                    className="opacity-70"
-                                />
-                                Add Category
-                            </button>
+                        <div className="md:flex hidden items-center mb-8 md:mt-5">
+                            <div className="flex-1">
+                                <h1 className="text-2xl font-bold tracking-[-.01em]">Money</h1>
+                            </div>
+                            <div className="flex-1 flex justify-center">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={goToPreviousMonth}
+                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                    >
+                                        <Image
+                                            src="/chevron-left.svg"
+                                            alt="Previous month"
+                                            width={24}
+                                            height={24}
+                                            className="opacity-70"
+                                        />
+                                    </button>
+                                    <h2 className="text-lg font-medium min-w-[140px] text-center">
+                                        {formatMonth(currentMonth)}
+                                    </h2>
+                                    <button 
+                                        onClick={goToNextMonth}
+                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                    >
+                                        <Image
+                                            src="/chevron-right.svg"
+                                            alt="Next month"
+                                            width={24}
+                                            height={24}
+                                            className="opacity-70"
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex justify-end">
+                                <button
+                                    onClick={() => setShowManageModal(true)}
+                                    className="bg-primary hover:bg-white/[.05] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all"
+                                >
+                                    <Image
+                                        src="/settings.svg"
+                                        alt="Manage budget"
+                                        width={16}
+                                        height={16}
+                                        className="opacity-90"
+                                    />
+                                    Manage Budget
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Mobile month switcher and manage button */}
+                        <div className="flex md:hidden items-center mb-6">
+                            <div className="w-16">
+                                {/* Space for future button */}
+                            </div>
+                            <div className="flex-1 flex justify-center">
+                                <div className="flex items-center">
+                                    <button 
+                                        onClick={goToPreviousMonth}
+                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                    >
+                                        <Image
+                                            src="/chevron-left.svg"
+                                            alt="Previous month"
+                                            width={36}
+                                            height={36}
+                                            className="opacity-90"
+                                        />
+                                    </button>
+                                    <h2 className="text-base font-medium min-w-[120px] text-center">
+                                        {formatMonth(currentMonth)}
+                                    </h2>
+                                    <button 
+                                        onClick={goToNextMonth}
+                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                    >
+                                        <Image
+                                            src="/chevron-right.svg"
+                                            alt="Next month"
+                                            width={36}
+                                            height={36}
+                                            className="opacity-90"
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="w-16 flex justify-end">
+                                <button 
+                                    onClick={() => setShowManageModal(true)}
+                                    className="flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                >
+                                    <Image
+                                        src="/settings.svg"
+                                        alt="Manage budget"
+                                        width={20}
+                                        height={20}
+                                        className="opacity-70"
+                                    />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
@@ -116,6 +224,11 @@ export default function Budget(){
                         </div>
                     </div>
                 </main>
+
+                <ManageBudgetModal
+                  isOpen={showManageModal}
+                  onClose={() => setShowManageModal(false)}
+                />
             </div>
         </ProtectedRoute>
     );

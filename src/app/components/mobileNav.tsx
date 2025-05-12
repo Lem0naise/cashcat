@@ -9,6 +9,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../types/supabase';
 import { useRouter } from 'next/navigation';
 
+
 export default function MobileNav() {
     const [showModal, setShowModal] = useState(false);
     const pathname = usePathname();
@@ -187,6 +188,8 @@ export default function MobileNav() {
                         </div>
                     </button>
                 </div>
+
+            
             </div>
 
             <TransactionModal

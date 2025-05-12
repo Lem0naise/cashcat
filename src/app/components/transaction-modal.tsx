@@ -86,13 +86,13 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
     return (
         <div 
-            className={`z-50 fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-50 flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
+            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
                 isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
             }`}
             onClick={handleBackdropClick}
         >
             <div 
-                className={`bg-white/[.03] rounded-lg border-b-4 w-full md:max-w-md p-6 md:p-6 min-h-screen md:min-h-0 ${
+                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md p-6 md:p-6 min-h-[100dvh] md:min-h-0 ${
                     isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                 }`}
             >
