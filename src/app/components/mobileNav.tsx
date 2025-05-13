@@ -5,43 +5,24 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import TransactionModal from "./transaction-modal";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../types/supabase';
 import { useRouter } from 'next/navigation';
+import { submitTransaction } from '../utils/transactions';
 
 export default function MobileNav() {
     const [showModal, setShowModal] = useState(false);
     const pathname = usePathname();
     const isActive = (path: string) => pathname === path;
     const router = useRouter();
-    const supabase = createClientComponentClient<Database>();
-
+    
     const handleSubmit = async (transaction: {
         amount: number;
         date: string;
         vendor: string;
         description?: string;
+        category_id: string;
     }) => {
         try {
-            const {
-                data: { user },
-                error: userError
-            } = await supabase.auth.getUser();
-            
-            if (userError || !user) {
-                throw new Error('Not authenticated');
-            }
-
-            const { error } = await supabase.from('transactions').insert({
-                user_id: user.id,
-                amount: transaction.amount,
-                date: transaction.date,
-                vendor: transaction.vendor,
-                description: transaction.description || null
-            });
-
-            if (error) throw error;
-            
+            await submitTransaction(transaction);
             setShowModal(false);
             router.refresh();
         } catch (error) {
@@ -187,6 +168,8 @@ export default function MobileNav() {
                         </div>
                     </button>
                 </div>
+
+            
             </div>
 
             <TransactionModal

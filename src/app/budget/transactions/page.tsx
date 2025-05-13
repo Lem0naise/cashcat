@@ -10,8 +10,19 @@ import MobileNav from "../../components/mobileNav";
 import TransactionModal from "../../components/transaction-modal";
 import { isDevelopment, mockSupabase } from "../../utils/mocks";
 import ProtectedRoute from "../../components/protected-route";
+import { submitTransaction, updateTransaction, deleteTransaction } from '../../utils/transactions';
 
-type Transaction = Database['public']['Tables']['transactions']['Row'];
+type Transaction = Database['public']['Tables']['transactions']['Row'] & {
+    vendors?: {
+        id: string;
+        name: string;
+    } | null;
+    categories?: {
+        id: string;
+        name: string;
+        group: string;
+    } | null;
+};
 
 export default function Transactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -19,7 +30,7 @@ export default function Transactions() {
     const [showModal, setShowModal] = useState(false);
     const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
     const router = useRouter();
-    const supabase = isDevelopment ? mockSupabase : createClientComponentClient<Database>();
+    const supabase = createClientComponentClient<Database>();
 
     useEffect(() => {
         fetchTransactions();
@@ -27,17 +38,55 @@ export default function Transactions() {
 
     const fetchTransactions = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
+            let response: {
+                data: Transaction[] | null;
+                error: any;
+            };
+
+            if (isDevelopment) {
+                // In development mode, use mock data
+                const { data: { user } } = await mockSupabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+
+                response = await mockSupabase
+                    .from('transactions')
+                    .select(`
+                        *,
+                        categories (
+                            id,
+                            name,
+                            group
+                        ),
+                        vendors (
+                            id,
+                            name
+                        )
+                    `)
+                    .eq('user_id', user.id) as { data: Transaction[] | null; error: any };
+            } else {
+                // In production mode, use real Supabase
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+                
+                response = await supabase
+                    .from('transactions')
+                    .select(`
+                        *,
+                        categories (
+                            id,
+                            name,
+                            group
+                        ),
+                        vendors (
+                            id,
+                            name
+                        )
+                    `)
+                    .eq('user_id', user.id);
+            }
             
-            const { data, error } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('date', { ascending: false });
-            
-            if (error) throw error;
-            setTransactions(data || []);
+            if (response.error) throw response.error;
+            setTransactions(response.data || []);
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
@@ -50,24 +99,19 @@ export default function Transactions() {
         date: string;
         vendor: string;
         description?: string;
+        category_id: string;
     }) => {
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
             if (!modalTransaction) throw new Error('No transaction to update');
-
-            const { error } = await supabase
-                .from('transactions')
-                .update({
-                    amount: transaction.amount,
-                    date: transaction.date,
-                    vendor: transaction.vendor,
-                    description: transaction.description || null
-                })
-                .eq('id', modalTransaction.id);
-            
-            if (error) throw error;
-            
+            if (isDevelopment) {
+                // In development mode, use mock data
+                await mockSupabase
+                    .from('transactions')
+                    .update(transaction)
+                    .eq('id', modalTransaction.id);
+            } else {
+                await updateTransaction(modalTransaction.id, transaction);
+            }
             fetchTransactions();
             setShowModal(false);
             setModalTransaction(null);
@@ -82,21 +126,23 @@ export default function Transactions() {
         date: string;
         vendor: string;
         description?: string;
+        category_id: string;
     }) => {
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
+            if (isDevelopment) {
+                // In development mode, use mock data
+                const { data: { user } } = await mockSupabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
 
-            const { error } = await supabase.from('transactions').insert({
-                user_id: user.id,
-                amount: transaction.amount,
-                date: transaction.date,
-                vendor: transaction.vendor,
-                description: transaction.description || null
-            });
-
-            if (error) throw error;
-            
+                await mockSupabase
+                    .from('transactions')
+                    .insert({
+                        ...transaction,
+                        user_id: user.id
+                    });
+            } else {
+                await submitTransaction(transaction);
+            }
             fetchTransactions();
             setShowModal(false);
         } catch (error) {
@@ -107,17 +153,16 @@ export default function Transactions() {
 
     const handleDelete = async () => {
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
             if (!modalTransaction) throw new Error('No transaction to delete');
-
-            const { error } = await supabase
-                .from('transactions')
-                .delete()
-                .eq('id', modalTransaction.id);
-
-            if (error) throw error;
-            
+            if (isDevelopment) {
+                // In development mode, use mock data
+                await mockSupabase
+                    .from('transactions')
+                    .delete()
+                    .eq('id', modalTransaction.id);
+            } else {
+                await deleteTransaction(modalTransaction.id);
+            }
             fetchTransactions();
             setShowModal(false);
         } catch (error) {
@@ -177,13 +222,42 @@ export default function Transactions() {
     return (
         <ProtectedRoute>
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
-            <Navbar />
+                <div className="hidden md:block"><Navbar /></div>
             <Sidebar />
             <MobileNav />
-            
-            <main className="pt-16 pb-24 md:pb-6 md:pl-64 fade-in">
+
+            {/*Mobile add transactions*/}
+            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-30 px-8  border-b border-white/[.2] min-w-screen">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
+                    
+                </div>
+                <div className="flex gap-5">
+                    <button
+                        onClick={() => {setLoading(true); fetchTransactions()}}
+                        className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                        disabled={loading}
+                        title="Refresh transactions"
+                    >
+                    <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(-1, 1) translate(-48, 0)">
+                        <path
+                            d="M24 6a18 18 0 1 1-12.73 5.27"
+                            stroke="currentColor"
+                            strokeWidth="4"/><path
+                            d="M12 4v8h8"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        /></g></svg>
+                        Sync
+                    </button>
+                </div>
+            </div>
+
+            {/*Main*/}
+            <main className="pt-4 md:pt-16 pb-24 md:pb-6 md:pl-64 fade-in">
                 <div className="max-w-7xl mx-auto p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
+                    <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
                             
@@ -262,12 +336,19 @@ export default function Transactions() {
                                                 key={transaction.id}
                                                 className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white/[.05] hover:bg-white/[.1] transition-colors"
                                             >
-                                                <div className="flex-1 min-w-0 flex items-center gap-3">
-                                                    <h4 className="font-medium truncate">{transaction.vendor}</h4>
-                                                    {transaction.description && (
-                                                        <span className="hidden md:block truncate text-white/30 text-sm">
-                                                            {transaction.description}
-                                                        </span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <h4 className="font-medium truncate">{transaction.vendors?.name || transaction.vendor}</h4>
+                                                        {transaction.description && (
+                                                            <span className="hidden md:block truncate text-white/30 text-sm">
+                                                                {transaction.description}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {transaction.categories && (
+                                                        <div className="text-sm text-white/40 truncate mt-0.5">
+                                                            {transaction.categories.name}
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <span className={`font-medium whitespace-nowrap tabular-nums ${

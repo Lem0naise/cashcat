@@ -7,6 +7,7 @@ import { createClient } from '../utils/supabase';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '../contexts/supabase-provider';
 import { isDevelopment, mockUser } from '../utils/mocks';
+import Logo from "../components/logo";
 
 export default function Account() {
     const router = useRouter();
@@ -32,7 +33,7 @@ export default function Account() {
                 <main className="pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between mb-8">
-                            <h1 className="text-2xl font-bold tracking-[-.01em]">Account</h1>
+                           <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
                         </div>
                         
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
