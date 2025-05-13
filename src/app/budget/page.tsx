@@ -250,7 +250,7 @@ export default function Budget() {
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
                             <div className="flex gap-2 min-w-max">
                                 {groups.map((group) => (
@@ -303,7 +303,7 @@ export default function Budget() {
 
                 <ManageBudgetModal
                   isOpen={showManageModal}
-                  onClose={() => setShowManageModal(false)}
+                  onClose={() => (fetchBudgetData(), setShowManageModal(false))}
                 />
             </div>
         </ProtectedRoute>
