@@ -190,6 +190,18 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     // Initial data fetch
     useEffect(() => {
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    // Existing useEffect for data fetching
+    useEffect(() => {
+        if (isOpen) {
             setLoading(true);
             Promise.all([fetchGroups(), fetchCategories()])
                 .finally(() => setLoading(false));
@@ -228,343 +240,349 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     return (
         <div 
-            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
+            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${
                 isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
             }`}
             onClick={handleBackdropClick}
         >
             <div 
-                className={`bg-white/[.09] md:rounded-lg border-b-4 w-full md:max-w-xl p-6 md:p-6 min-h-[100dvh] md:min-h-0 ${
+                className={`relative bg-white/[.09] md:rounded-lg border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${
                     isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                 }`}
             >
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">Manage Budget</h2>
-                    <button 
-                        onClick={handleClose}
-                        className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
-                    >
-                        <Image
-                            src="/minus.svg"
-                            alt="Close"
-                            width={16}
-                            height={16}
-                            className="opacity-100 invert"
-                        />
-                    </button>
-                </div>
-
-                <div className="flex gap-4 border-b border-white/[.15] mb-6">
-                    <button 
-                        onClick={() => setActiveTab('groups')}
-                        className={`px-4 py-2 transition-all duration-200 ${
-                            activeTab === 'groups' 
-                            ? 'text-green border-b-2 border-green' 
-                            : 'text-white/60 hover:text-white'
-                        }`}
-                    >
-                        Groups
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('categories')}
-                        className={`px-4 py-2 transition-all duration-200 ${
-                            activeTab === 'categories'
-                            ? 'text-green border-b-2 border-green' 
-                            : 'text-white/60 hover:text-white'
-                        }`}
-                    >
-                        Categories
-                    </button>
-                </div>
-
-                {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green"></div>
+                {/* Header Section */}
+                <div className="flex-none p-6 border-b border-white/[.1]">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold">Manage Budget</h2>
+                        <button 
+                            onClick={handleClose}
+                            className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
+                        >
+                            <Image
+                                src="/minus.svg"
+                                alt="Close"
+                                width={16}
+                                height={16}
+                                className="opacity-100 invert"
+                            />
+                        </button>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        {error && (
-                            <div className="bg-reddy/20 text-reddy p-3 rounded-lg text-sm mb-4">
-                                {error}
-                            </div>
-                        )}
-                        
-                        {activeTab === 'groups' ? (
-                            <div className="space-y-4">
-                                {/* Add new group form */}
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    createGroup(newGroupName);
-                                }} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm text-white/50 mb-1">New Group Name</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={newGroupName}
-                                                onChange={(e) => setNewGroupName(e.target.value)}
-                                                placeholder="Enter group name"
-                                                className="flex-1 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={!newGroupName.trim()}
-                                                className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                                            >
-                                                Add Group
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
 
-                                {/* List of existing groups */}
-                                <div className="space-y-2">
-                                    {groups.map((group) => (
-                                        <div key={group.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[.03] group">
-                                            {editingGroup?.id === group.id ? (
+                    <div className="flex gap-4 mt-6">
+                        <button 
+                            onClick={() => setActiveTab('groups')}
+                            className={`px-4 py-2 transition-all duration-200 ${
+                                activeTab === 'groups' 
+                                ? 'text-green border-b-2 border-green' 
+                                : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            Groups
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('categories')}
+                            className={`px-4 py-2 transition-all duration-200 ${
+                                activeTab === 'categories'
+                                ? 'text-green border-b-2 border-green' 
+                                : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            Categories
+                        </button>
+                    </div>
+                </div>
+
+                {/* Scrollable Content Section */}
+                <div className="flex-1 overflow-y-auto p-6 pb-30">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green"></div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {error && (
+                                <div className="bg-reddy/20 text-reddy p-3 rounded-lg text-sm mb-4">
+                                    {error}
+                                </div>
+                            )}
+                            
+                            {activeTab === 'groups' ? (
+                                <div className="space-y-4">
+                                    {/* Add new group form */}
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        createGroup(newGroupName);
+                                    }} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm text-white/50 mb-1">New Group Name</label>
+                                            <div className="flex gap-2">
                                                 <input
                                                     type="text"
-                                                    value={editingGroup.name}
-                                                    onChange={(e) => setEditingGroup({...editingGroup, name: e.target.value})}
-                                                    className="flex-1 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm mr-2"
-                                                    autoFocus
+                                                    value={newGroupName}
+                                                    onChange={(e) => setNewGroupName(e.target.value)}
+                                                    placeholder="Enter group name"
+                                                    className="flex-1 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                 />
-                                            ) : (
-                                                <span>{group.name}</span>
-                                            )}
-                                            
-                                            <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    type="submit"
+                                                    disabled={!newGroupName.trim()}
+                                                    className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                                >
+                                                    Add Group
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                    {/* List of existing groups */}
+                                    <div className="space-y-2">
+                                        {groups.map((group) => (
+                                            <div key={group.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[.03] group">
                                                 {editingGroup?.id === group.id ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => updateGroup(group.id, editingGroup.name)}
-                                                            className="p-2 rounded-lg hover:bg-green/20 transition-colors"
-                                                        >
-                                                            Save
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setEditingGroup(null)}
-                                                            className="p-2 rounded-lg hover:bg-white/[.05] transition-colors"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </>
+                                                    <input
+                                                        type="text"
+                                                        value={editingGroup.name}
+                                                        onChange={(e) => setEditingGroup({...editingGroup, name: e.target.value})}
+                                                        className="flex-1 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm mr-2"
+                                                        autoFocus
+                                                    />
                                                 ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => setEditingGroup(group)}
-                                                            className="p-2 rounded-lg hover:bg-white/[.05] active:bg-white/[.05] transition-colors"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteGroup(group.id)}
-                                                            className="p-2 rounded-lg hover:bg-reddy/20 active:bg-reddy/20 transition-colors text-reddy"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </>
+                                                    <span>{group.name}</span>
                                                 )}
+                                                
+                                                <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                    {editingGroup?.id === group.id ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => updateGroup(group.id, editingGroup.name)}
+                                                                className="p-2 rounded-lg hover:bg-green/20 transition-colors"
+                                                            >
+                                                                Save
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setEditingGroup(null)}
+                                                                className="p-2 rounded-lg hover:bg-white/[.05] transition-colors"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => setEditingGroup(group)}
+                                                                className="p-2 rounded-lg hover:bg-white/[.05] active:bg-white/[.05] transition-colors"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteGroup(group.id)}
+                                                                className="p-2 rounded-lg hover:bg-reddy/20 active:bg-reddy/20 transition-colors text-reddy"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {/* Add new category form */}
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    createCategory(newCategoryData);
-                                }} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm text-white/50 mb-1">Category Name</label>
-                                        <input
-                                            type="text"
-                                            value={newCategoryData.name}
-                                            onChange={(e) => setNewCategoryData({...newCategoryData, name: e.target.value})}
-                                            placeholder="Enter category name"
-                                            className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm text-white/50 mb-1">Group</label>
-                                        <select
-                                            value={newCategoryData.group}
-                                            onChange={(e) => setNewCategoryData({...newCategoryData, group: e.target.value})}
-                                            className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                            required
-                                        >
-                                            <option value="" disabled>Select a Group</option>
-                                            {groups.map((group) => (
-                                                <option key={group.id} value={group.id}>{group.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Add new category form */}
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        createCategory(newCategoryData);
+                                    }} className="space-y-4">
                                         <div>
-                                            <label className="block text-sm text-white/50 mb-1">Monthly Goal (Optional)</label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                <input
-                                                    type="number"
-                                                    value={newCategoryData.goal}
-                                                    onChange={(e) => setNewCategoryData({...newCategoryData, goal: e.target.value})}
-                                                    placeholder="0.00"
-                                                    step="0.01"
-                                                    className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                />
-                                            </div>
+                                            <label className="block text-sm text-white/50 mb-1">Category Name</label>
+                                            <input
+                                                type="text"
+                                                value={newCategoryData.name}
+                                                onChange={(e) => setNewCategoryData({...newCategoryData, name: e.target.value})}
+                                                placeholder="Enter category name"
+                                                className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                            />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-white/50 mb-1">Assigned Amount</label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                <input
-                                                    type="number"
-                                                    value={newCategoryData.assigned}
-                                                    onChange={(e) => setNewCategoryData({...newCategoryData, assigned: e.target.value})}
-                                                    placeholder="0.00"
-                                                    step="0.01"
-                                                    className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={!newCategoryData.name.trim() || !newCategoryData.group}
-                                        className="w-full bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                                    >
-                                        Add Category
-                                    </button>
-                                </form>
-
-                                {/* List of existing categories */}
-                                <div className="space-y-6 mt-6">
-                                    {groups.map(group => {
-                                        const groupCategories = categories.filter(cat => cat.group === group.id);
-                                        if (groupCategories.length === 0) return null;
-                                        
-                                        return (
-                                            <div key={group.id} className="space-y-2">
-                                                <h3 className="text-sm font-medium text-white/70 px-3">{group.name}</h3>
-                                                {groupCategories.map((category) => (
-                                                    <div key={category.id} className="p-3 rounded-lg bg-white/[.03] group">
-                                                        {editingCategory?.id === category.id ? (
-                                                            <form onSubmit={(e) => {
-                                                                e.preventDefault();
-                                                                if (!editingCategory.group) return;
-                                                                updateCategory(category.id, {
-                                                                    name: editingCategory.name,
-                                                                    group: editingCategory.group,
-                                                                    assigned: editingCategory.assigned,
-                                                                    goal: editingCategory.goal
-                                                                });
-                                                            }} className="space-y-3">
-                                                                <div className="flex gap-4">
-                                                                    <div className="flex-1">
-                                                                        <input
-                                                                            type="text"
-                                                                            value={editingCategory.name}
-                                                                            onChange={(e) => setEditingCategory({...editingCategory, name: e.target.value})}
-                                                                            className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                            autoFocus
-                                                                        />
-                                                                    </div>
-                                                                    <select
-                                                                        value={editingCategory.group || ''}
-                                                                        onChange={(e) => setEditingCategory({...editingCategory, group: e.target.value})}
-                                                                        className="w-48 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                        required
-                                                                    >
-                                                                        {groups.map((g) => (
-                                                                            <option key={g.id} value={g.id}>{g.name}</option>
-                                                                        ))}
-                                                                    </select>
-                                                                </div>
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="relative">
-                                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={editingCategory.goal || ''}
-                                                                            onChange={(e) => setEditingCategory({...editingCategory, goal: parseFloat(e.target.value) || null})}
-                                                                            placeholder="Goal Amount"
-                                                                            step="0.01"
-                                                                            className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="relative">
-                                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={editingCategory.assigned || ''}
-                                                                            onChange={(e) => setEditingCategory({...editingCategory, assigned: parseFloat(e.target.value) || 0})}
-                                                                            placeholder="Assigned Amount"
-                                                                            step="0.01"
-                                                                            className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex justify-end gap-2 mt-3">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setEditingCategory(null)}
-                                                                        className="px-3 py-1 rounded-lg hover:bg-white/[.05] transition-colors text-sm"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                    <button
-                                                                        type="submit"
-                                                                        disabled={!editingCategory.name.trim() || !editingCategory.group}
-                                                                        className="px-3 py-1 rounded-lg bg-green/20 hover:bg-green/30 text-green transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                    >
-                                                                        Save Changes
-                                                                    </button>
-                                                                </div>
-                                                            </form>
-                                                        ) : (
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <span className="block">{category.name}</span>
-                                                                    <div className="flex items-center gap-2 text-sm text-white/50">
-                                                                        <span>Goal: £{category.goal || 0}</span>
-                                                                        <span>•</span>
-                                                                        <span>Assigned: £{category.assigned || 0}</span>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                                    <button
-                                                                        onClick={() => setEditingCategory(category)}
-                                                                        className="p-2 rounded-lg hover:bg-white/[.05] active:bg-white/[.05] transition-colors"
-                                                                    >
-                                                                        Edit
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => deleteCategory(category.id)}
-                                                                        className="p-2 rounded-lg hover:bg-reddy/20 active:bg-reddy/20 transition-colors text-reddy"
-                                                                    >
-                                                                        Delete
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                            <label className="block text-sm text-white/50 mb-1">Group</label>
+                                            <select
+                                                value={newCategoryData.group}
+                                                onChange={(e) => setNewCategoryData({...newCategoryData, group: e.target.value})}
+                                                className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                required
+                                            >
+                                                <option value="" disabled>Select a Group</option>
+                                                {groups.map((group) => (
+                                                    <option key={group.id} value={group.id}>{group.name}</option>
                                                 ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm text-white/50 mb-1">Monthly Goal (Optional)</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                                    <input
+                                                        type="number"
+                                                        value={newCategoryData.goal}
+                                                        onChange={(e) => setNewCategoryData({...newCategoryData, goal: e.target.value})}
+                                                        placeholder="0.00"
+                                                        step="0.01"
+                                                        className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                    />
+                                                </div>
                                             </div>
-                                        );
-                                    })}
+
+                                            <div>
+                                                <label className="block text-sm text-white/50 mb-1">Assigned Amount</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                                    <input
+                                                        type="number"
+                                                        value={newCategoryData.assigned}
+                                                        onChange={(e) => setNewCategoryData({...newCategoryData, assigned: e.target.value})}
+                                                        placeholder="0.00"
+                                                        step="0.01"
+                                                        className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={!newCategoryData.name.trim() || !newCategoryData.group}
+                                            className="w-full bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                        >
+                                            Add Category
+                                        </button>
+                                    </form>
+
+                                    {/* List of existing categories */}
+                                    <div className="space-y-6 mt-6">
+                                        {groups.map(group => {
+                                            const groupCategories = categories.filter(cat => cat.group === group.id);
+                                            if (groupCategories.length === 0) return null;
+                                            
+                                            return (
+                                                <div key={group.id} className="space-y-2">
+                                                    <h3 className="text-sm font-medium text-white/70 px-3">{group.name}</h3>
+                                                    {groupCategories.map((category) => (
+                                                        <div key={category.id} className="p-3 rounded-lg bg-white/[.03] group">
+                                                            {editingCategory?.id === category.id ? (
+                                                                <form onSubmit={(e) => {
+                                                                    e.preventDefault();
+                                                                    if (!editingCategory.group) return;
+                                                                    updateCategory(category.id, {
+                                                                        name: editingCategory.name,
+                                                                        group: editingCategory.group,
+                                                                        assigned: editingCategory.assigned,
+                                                                        goal: editingCategory.goal
+                                                                    });
+                                                                }} className="space-y-3">
+                                                                    <div className="flex gap-4">
+                                                                        <div className="flex-1">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={editingCategory.name}
+                                                                                onChange={(e) => setEditingCategory({...editingCategory, name: e.target.value})}
+                                                                                className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                autoFocus
+                                                                            />
+                                                                        </div>
+                                                                        <select
+                                                                            value={editingCategory.group || ''}
+                                                                            onChange={(e) => setEditingCategory({...editingCategory, group: e.target.value})}
+                                                                            className="w-48 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                            required
+                                                                        >
+                                                                            {groups.map((g) => (
+                                                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div className="relative">
+                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                value={editingCategory.goal || ''}
+                                                                                onChange={(e) => setEditingCategory({...editingCategory, goal: parseFloat(e.target.value) || null})}
+                                                                                placeholder="Goal Amount"
+                                                                                step="0.01"
+                                                                                className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="relative">
+                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                value={editingCategory.assigned || ''}
+                                                                                onChange={(e) => setEditingCategory({...editingCategory, assigned: parseFloat(e.target.value) || 0})}
+                                                                                placeholder="Assigned Amount"
+                                                                                step="0.01"
+                                                                                className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex justify-end gap-2 mt-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setEditingCategory(null)}
+                                                                            className="px-3 py-1 rounded-lg hover:bg-white/[.05] transition-colors text-sm"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                        <button
+                                                                            type="submit"
+                                                                            disabled={!editingCategory.name.trim() || !editingCategory.group}
+                                                                            className="px-3 py-1 rounded-lg bg-green/20 hover:bg-green/30 text-green transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            Save Changes
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                            ) : (
+                                                                <div className="flex items-center justify-between">
+                                                                    <div>
+                                                                        <span className="block">{category.name}</span>
+                                                                        <div className="flex items-center gap-2 text-sm text-white/50">
+                                                                            <span>Goal: £{category.goal || 0}</span>
+                                                                            <span>•</span>
+                                                                            <span>Assigned: £{category.assigned || 0}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                                        <button
+                                                                            onClick={() => setEditingCategory(category)}
+                                                                            className="p-2 rounded-lg hover:bg-white/[.05] active:bg-white/[.05] transition-colors"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => deleteCategory(category.id)}
+                                                                            className="p-2 rounded-lg hover:bg-reddy/20 active:bg-reddy/20 transition-colors text-reddy"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
