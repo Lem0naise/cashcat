@@ -271,17 +271,17 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 setShowSuggestions(true);
                                 if (vendor) searchVendors(vendor);
                             }}
-                            placeholder="Tesco"
+                            placeholder="Shop"
                             className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                         />
                         {showSuggestions && vendorSuggestions.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-gray/[.9] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
+                            <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
                                 {vendorSuggestions.map((suggestion) => (
                                     <button
                                         key={suggestion.id}
                                         type="button"
                                         onClick={() => selectVendor(suggestion.name)}
-                                        className="w-full px-4 py-2 text-left hover:bg-white/[.05] transition-colors"
+                                        className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
                                     >
                                         {suggestion.name}
                                     </button>
