@@ -177,13 +177,42 @@ export default function Transactions() {
     return (
         <ProtectedRoute>
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
-            <Navbar />
+                <div className="hidden md:block"><Navbar /></div>
             <Sidebar />
             <MobileNav />
-            
-            <main className="pt-16 pb-24 md:pb-6 md:pl-64 fade-in">
+
+            {/*Mobile add transactions*/}
+            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-30 px-8  border-b border-white/[.2] min-w-screen">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
+                    
+                </div>
+                <div className="flex gap-5">
+                    <button
+                        onClick={() => {setLoading(true); fetchTransactions()}}
+                        className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                        disabled={loading}
+                        title="Refresh transactions"
+                    >
+                    <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(-1, 1) translate(-48, 0)">
+                        <path
+                            d="M24 6a18 18 0 1 1-12.73 5.27"
+                            stroke="currentColor"
+                            strokeWidth="4"/><path
+                            d="M12 4v8h8"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        /></g></svg>
+                        Sync
+                    </button>
+                </div>
+            </div>
+
+            {/*Main*/}
+            <main className="pt-4 md:pt-16 pb-24 md:pb-6 md:pl-64 fade-in">
                 <div className="max-w-7xl mx-auto p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
+                    <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
                             
