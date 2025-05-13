@@ -1,17 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Category as CategoryType } from '@/app/types/budget';
+import type { Database } from '../../types/supabase';
 import Navbar from "../components/navbar";
 import Sidebar from "../components/sidebar";
 import MobileNav from "../components/mobileNav";
-import CategoryCard from "@/app/features/Category";
-import ProtectedRoute from "../components/protected-route";
 import ManageBudgetModal from "../components/manage-budget-modal";
+import CategoryCard from '../features/Category';
+import ProtectedRoute from '../components/protected-route';
 
-// Local type to match the component's needs
-type Cat = {
+type Category = {
     id: string;
     name: string;
     assigned: number;
@@ -20,16 +20,9 @@ type Cat = {
     group: string;
 };
 
-type SupabaseCategoryWithGroup = CategoryType & {
-    groups: {
-        id: string;
-        name: string;
-    } | null;
-};
-
 export default function Budget() {
-    const supabase = createClientComponentClient();
-    const [categories, setCategories] = useState<Cat[]>([]);
+    const supabase = createClientComponentClient<Database>();
+    const [categories, setCategories] = useState<Category[]>([]);
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -51,18 +44,23 @@ export default function Budget() {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     };
 
-    // Real data fetching
-    const fetchBudgetData = async () => {
+    // Memoize fetchBudgetData to prevent unnecessary recreations
+    const fetchBudgetData = useCallback(async () => {
         try {
             setLoading(true);
-            setError(null);
-            
-            // Fetch both groups and categories in parallel
-            const [groupsResponse, categoriesResponse] = await Promise.all([
-                supabase
-                    .from('groups')
-                    .select('*')
-                    .order('created_at', { ascending: true }),
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+
+            // Get first and last day of the selected month
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+            // Format dates for database query
+            const startDate = firstDay.toISOString().split('T')[0];
+            const endDate = lastDay.toISOString().split('T')[0];
+
+            // Fetch categories and transactions in parallel
+            const [categoriesResponse, transactionsResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -72,27 +70,52 @@ export default function Budget() {
                             name
                         )
                     `)
-                    .order('created_at', { ascending: true })
+                    .eq('user_id', user.id)
+                    .order('created_at'),
+                supabase
+                    .from('transactions')
+                    .select('amount, category_id')
+                    .eq('user_id', user.id)
+                    .gte('date', startDate)
+                    .lte('date', endDate)
             ]);
 
-            if (groupsResponse.error) throw groupsResponse.error;
             if (categoriesResponse.error) throw categoriesResponse.error;
+            if (transactionsResponse.error) throw transactionsResponse.error;
 
-            // Transform Supabase data to match our Cat type
-            const transformedCategories = (categoriesResponse.data as SupabaseCategoryWithGroup[]).map(cat => ({
-                id: cat.id,
-                name: cat.name,
-                assigned: cat.assigned || 0,
-                spent: 0, // We need to implement this later with transactions
-                goalAmount: cat.goal || 0,
-                group: cat.groups?.name || 'Uncategorized'
+            const categoriesData = categoriesResponse.data;
+            const transactionsData = transactionsResponse.data;
+
+            // Calculate spent amounts for each category
+            const spentByCategory: { [key: string]: number } = {};
+            transactionsData?.forEach(transaction => {
+                if (!spentByCategory[transaction.category_id]) {
+                    spentByCategory[transaction.category_id] = 0;
+                }
+                // Only include negative amounts (expenses) in spent calculation
+                if (transaction.amount < 0) {
+                    spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
+                }
+            });
+
+            // Update categories with spent amounts and group names
+            const categoriesWithSpent = categoriesData.map(category => ({
+                id: category.id,
+                name: category.name,
+                assigned: category.assigned || 0,
+                spent: spentByCategory[category.id] || 0,
+                goalAmount: category.goal || 0,
+                group: category.groups?.name || 'Uncategorized' // Use the group name from the joined data
             }));
 
-            setCategories(transformedCategories);
+            console.log(categoriesWithSpent);
+
+            setCategories(categoriesWithSpent);
+            setError(null);
         } catch (error) {
             console.error('Error fetching budget data:', error);
             setError('Failed to load budget data');
-            // Fall back to mock data in development
+            
             if (process.env.NODE_ENV === 'development') {
                 setCategories([
                     // Essentials
@@ -124,11 +147,11 @@ export default function Budget() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentMonth, supabase]); // Include all dependencies
 
     useEffect(() => {
         fetchBudgetData();
-    }, []);
+    }, [fetchBudgetData]); // Only depend on the memoized function
 
     const groups = ['All', ...new Set(categories.map(cat => cat.group))];
     const filteredCategories = activeGroup === 'All' 
