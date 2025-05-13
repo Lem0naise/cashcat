@@ -183,7 +183,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             await fetchCategories();
         } catch (error) {
             console.error('Error deleting category:', error);
-            setError('Failed to delete category');
+            setError('Failed to delete category - make sure all transactions in this category are reassigned!');
         }
     };
 

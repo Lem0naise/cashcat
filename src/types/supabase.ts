@@ -82,7 +82,8 @@ export interface Database {
           date: string
           description: string | null
           vendor: string
-          category_id: string | null
+          vendor_id: string 
+          category_id: string 
           created_at: string
         }
         Insert: {
@@ -92,7 +93,8 @@ export interface Database {
           date: string
           description?: string | null
           vendor: string
-          category_id?: string | null
+          vendor_id: string
+          category_id: string
           created_at?: string
         }
         Update: {
@@ -101,8 +103,32 @@ export interface Database {
           amount: number
           date: string
           description?: string | null
-          vendor?: string
-          category_id?: string | null
+          vendor: string
+          vendor_id: string
+          category_id: string
+          created_at?: string
+        }
+        Delete: {
+          id: string
+        }
+      }
+      vendors: {
+        Row: {
+          id: string
+          name: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          user_id?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          user_id?: string
           created_at?: string
         }
         Delete: {
