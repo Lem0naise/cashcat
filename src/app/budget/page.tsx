@@ -158,6 +158,7 @@ export default function Budget() {
         ? categories 
         : categories.filter(cat => cat.group === activeGroup);
 
+        console.log(categories);
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -298,6 +299,24 @@ export default function Budget() {
                         ) : error ? (
                             <div className="bg-reddy/20 text-reddy p-4 rounded-lg">
                                 {error}
+                            </div>
+                        ) : categories.length === 0 ? (
+                            <div className="text-center text-white/60 mt-20">
+                                <Image
+                                    src="/file.svg"
+                                    alt="No budget categories"
+                                    width={48}
+                                    height={48}
+                                    className="opacity-40 mx-auto mb-4"
+                                />
+                                <h2 className="text-xl font-semibold mb-2">Your budget is empty</h2>
+                                <p className="text-sm mb-4">Click manage to start setting up your budget categories</p>
+                                <button
+                                    onClick={() => setShowManageModal(true)}
+                                    className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"
+                                >
+                                    Manage Budget
+                                </button>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">

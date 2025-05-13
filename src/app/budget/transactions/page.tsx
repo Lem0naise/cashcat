@@ -312,7 +312,7 @@ export default function Transactions() {
                             <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin" />
                         </div>
                     ) : transactions.length === 0 ? (
-                        <div className="text-center text-black/60 dark:text-white/60 mt-20">
+                        <div className="text-center text-white/60 mt-20">
                             <Image
                                 src="/file.svg"
                                 alt="No transactions"
