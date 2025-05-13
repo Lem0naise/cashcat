@@ -312,7 +312,7 @@ export default function Transactions() {
                             <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin" />
                         </div>
                     ) : transactions.length === 0 ? (
-                        <div className="text-center text-black/60 dark:text-white/60 mt-20">
+                        <div className="text-center text-white/60 mt-20">
                             <Image
                                 src="/file.svg"
                                 alt="No transactions"
@@ -339,17 +339,17 @@ export default function Transactions() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-3">
                                                         <h4 className="font-medium truncate">{transaction.vendors?.name || transaction.vendor}</h4>
+                                                        
+                                                    </div>
+                                                    {transaction.categories && (<div className="text-sm text-white/40 truncate mt-0.5">
+                                                        {transaction.categories.name}
                                                         {transaction.description && (
-                                                            <span className="hidden md:block truncate text-white/30 text-sm">
-                                                                {transaction.description}
+                                                            <span className="inline truncate text-white/30 text-sm">
+                                                              &nbsp; - {transaction.description}
                                                             </span>
                                                         )}
-                                                    </div>
-                                                    {transaction.categories && (
-                                                        <div className="text-sm text-white/40 truncate mt-0.5">
-                                                            {transaction.categories.name}
-                                                        </div>
-                                                    )}
+                                                    </div>)}
+                                                   
                                                 </div>
                                                 <span className={`font-medium whitespace-nowrap tabular-nums ${
                                                     transaction.amount < 0 ? 'text-reddy' : 'text-green'

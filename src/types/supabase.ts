@@ -39,7 +39,7 @@ export interface Database {
           name: string
           assigned: number
           spent: number
-          goal_amount: number
+          goal: number
           group: string
           user_id: string
         }
@@ -49,7 +49,7 @@ export interface Database {
           name: string
           assigned: number
           spent: number
-          goal_amount: number
+          goal: number
           group: string
           user_id: string
         }
@@ -59,7 +59,7 @@ export interface Database {
           name?: string
           assigned?: number
           spent?: number
-          goal_amount?: number
+          goal?: number
           group?: string
           user_id?: string
         }
@@ -69,7 +69,7 @@ export interface Database {
           name?: string
           assigned?: number
           spent?: number
-          goal_amount?: number
+          goal?: number
           group?: string
           user_id?: string
         }
