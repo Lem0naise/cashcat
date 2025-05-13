@@ -54,7 +54,6 @@ export default function Budget() {
     // Real data fetching
     const fetchBudgetData = async () => {
         try {
-            if (process.env.NODE_ENV === "development"){throw new Error};
             setLoading(true);
             setError(null);
             
