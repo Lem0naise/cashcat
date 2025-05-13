@@ -131,9 +131,28 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         searchVendors(value);
     };
 
-    const selectVendor = (vendorName: string) => {
+    const selectVendor = async (vendorName: string) => {
         setVendor(vendorName);
         setShowSuggestions(false);
+
+        // Find the most recent transaction for this vendor
+        try {
+            const { data: transactions, error } = await supabase
+                .from('transactions')
+                .select('category_id')
+                .eq('vendor', vendorName)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            // If we found a transaction, set its category
+            if (transactions && transactions.length > 0) {
+                setCategoryId(transactions[0].category_id);
+            }
+        } catch (error) {
+            console.error('Error fetching vendor category:', error);
+        }
     };
 
     if (!isOpen) return null;
