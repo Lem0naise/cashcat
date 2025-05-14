@@ -51,14 +51,13 @@ export default function LearnMore() {
                     <h1 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-6">Take Control of Your Money with CashCat</h1>
                     
                     <section>
-                        <h2 className="text-base sm:text-xl font-semibold mb-1 sm:mb-3">How CashCat Works</h2>
                         <p className="text-sm sm:text-base">CashCat uses digital envelopes to help you budget. We call these Categories - like "Groceries" or "Rent". Categories are organized into Groups like "Essentials" or "Entertainment", making it easy to track similar expenses together.</p>
                     </section>
 
                     <section>
                         <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Getting Started is Easy</h2>
                         <ol className="list-decimal list-inside space-y-1 sm:space-y-2 text-sm sm:text-base leading-tight sm:leading-normal">
-                            <li>Create Groups to organize your spending (like "Essentials", "Entertainment")</li>
+                            <li>Create Groups to organize your spending (like "Bills", "Essentialls")</li>
                             <li>Add Categories within each Group (like "Groceries" in "Essentials")</li>
                             <li>Set a monthly budget for each Category</li>
                             <li>Record your Transactions in the right Categories</li>
@@ -70,13 +69,13 @@ export default function LearnMore() {
                         <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Why It Works</h2>
                         <ul className="list-disc list-inside space-y-1 sm:space-y-2 text-sm sm:text-base">
                             <li>See exactly where your money is going</li>
-                            <li>Get warned before overspending</li>
+                            <li>Make spending money a conscious decision</li>
                             <li>Track progress towards savings goals</li>
-                            <li>Keep your budget organized by Groups</li>
+                            <li>Keep your budget organised</li>
                         </ul>
                     </section>
 
-                    <p className="text-sm sm:text-base text-white/80">CashCat makes it simple to manage your money by showing you exactly how much you can spend in each Category.</p>
+                    <p className="text-sm sm:text-base text-white/80">CashCat makes it simple to manage your money by showing you exactly how much you can spend this month in each Category. Try not to go over!</p>
 
                     <div className="mt-8 flex justify-center">
                         {OpenButton('Start Budgeting', true, handleClick)}

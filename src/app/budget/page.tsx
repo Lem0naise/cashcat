@@ -317,8 +317,8 @@ export default function Budget() {
                                     onClick={() => router.push('/learn')}
                                     className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium mr-2"
                                 >
-                                    How does my budget work?
-                                </button><br/>
+                                    Learn How To CashCat
+                                </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
                                     className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"
