@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '../../types/supabase';
 import Navbar from "../components/navbar";
@@ -21,6 +22,7 @@ type Category = {
 };
 
 export default function Budget() {
+    const router = useRouter();
     const supabase = createClientComponentClient<Database>();
     const [categories, setCategories] = useState<Category[]>([]);
     const [activeGroup, setActiveGroup] = useState<string>('All');
@@ -310,7 +312,13 @@ export default function Budget() {
                                     className="opacity-40 mx-auto mb-4"
                                 />
                                 <h2 className="text-xl font-semibold mb-2">Your budget is empty</h2>
-                                <p className="text-sm mb-4">Click manage to start setting up your budget categories</p>
+                                <p className="text-sm mb-4">Learn about CashCat below, and then click manage to start setting up your budget categories</p>
+                                <button
+                                    onClick={() => router.push('/learn')}
+                                    className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium mr-2"
+                                >
+                                    How does my budget work?
+                                </button><br/>
                                 <button
                                     onClick={() => setShowManageModal(true)}
                                     className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"

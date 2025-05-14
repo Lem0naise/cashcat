@@ -13,17 +13,18 @@ export default function LearnMore() {
     const handleClick = () => {
         setIsAnimatingAway(true);
         setTimeout(() => {
-            router.push("/login");
+            router.push("/budget");
         }, 500);
     };
 
     return (
-        <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-suse)]">
-            <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-[32px] row-start-2 items-center max-w-2xl fade-in`}>
-                {Logo()}
+        <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen px-8 pb-8 gap-4 sm:p-20 sm:gap-16 font-[family-name:var(--font-suse)]">
+            <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-2 sm:gap-[32px] row-start-2 items-center max-w-2xl w-full fade-in`}>
+                <div className="scale-75 sm:scale-100">
+                    {Logo()}</div>
                 
                 {/* Tabs */}
-                <div className="flex gap-4 border-b border-white/[.15] w-full">
+                <div className="flex gap-2 sm:gap-4 border-b border-white/[.15] w-full text-sm sm:text-base">
                     <button 
                         onClick={() => setActiveTab('envelope')}
                         className={`px-4 py-2 transition-all duration-200 ${
@@ -46,48 +47,48 @@ export default function LearnMore() {
                     </button>
                 </div>
 
-                <div className={`space-y-6 text-lg transition-all duration-200 ${activeTab === 'envelope' ? 'opacity-100' : 'hidden opacity-0'}`}>
-                    <h1 className="text-2xl font-bold mb-6">Envelope Budgeting: A Simple Way to Master Your Money</h1>
+                <div className={`space-y-3 sm:space-y-6 text-sm sm:text-lg transition-all duration-200 ${activeTab === 'envelope' ? 'opacity-100' : 'hidden opacity-0'}`}>
+                    <h1 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-6">Take Control of Your Money with CashCat</h1>
                     
                     <section>
-                        <h2 className="text-xl font-semibold mb-3">What is it?</h2>
-                        <p>Envelope budgeting is a simple method where you divide your income into different categories (envelopes) at the beginning of each month. Each envelope represents a specific expense category like groceries, rent, or entertainment.</p>
+                        <h2 className="text-base sm:text-xl font-semibold mb-1 sm:mb-3">How CashCat Works</h2>
+                        <p className="text-sm sm:text-base">CashCat uses digital envelopes to help you budget. We call these Categories - like "Groceries" or "Rent". Categories are organized into Groups like "Essentials" or "Entertainment", making it easy to track similar expenses together.</p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-semibold mb-3">How It Works</h2>
-                        <ol className="list-decimal list-inside space-y-2">
-                            <li>Determine your monthly income</li>
-                            <li>Create categories for all your expenses</li>
-                            <li>Allocate your income across these categories</li>
-                            <li>Only spend what's in each envelope</li>
-                            <li>When an envelope is empty, stop spending in that category</li>
+                        <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Getting Started is Easy</h2>
+                        <ol className="list-decimal list-inside space-y-1 sm:space-y-2 text-sm sm:text-base leading-tight sm:leading-normal">
+                            <li>Create Groups to organize your spending (like "Essentials", "Entertainment")</li>
+                            <li>Add Categories within each Group (like "Groceries" in "Essentials")</li>
+                            <li>Set a monthly budget for each Category</li>
+                            <li>Record your Transactions in the right Categories</li>
+                            <li>Watch your spending and stay within budget</li>
                         </ol>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-semibold mb-3">Benefits</h2>
-                        <ul className="list-disc list-inside space-y-2">
-                            <li>Spending money becomes a conscious decision</li>
-                            <li>Warns about overspending</li> 
-                            <li>Helps achieve savings goals</li>
-                            <li>Makes budgeting tangible and practical</li>
+                        <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Why It Works</h2>
+                        <ul className="list-disc list-inside space-y-1 sm:space-y-2 text-sm sm:text-base">
+                            <li>See exactly where your money is going</li>
+                            <li>Get warned before overspending</li>
+                            <li>Track progress towards savings goals</li>
+                            <li>Keep your budget organized by Groups</li>
                         </ul>
                     </section>
 
-                    Envelope budgeting is central to CashCat allowing you to manage your money with ease!
+                    <p className="text-sm sm:text-base text-white/80">CashCat makes it simple to manage your money by showing you exactly how much you can spend in each Category.</p>
 
                     <div className="mt-8 flex justify-center">
-                        {OpenButton('Start Now', true, handleClick)}
+                        {OpenButton('Start Budgeting', true, handleClick)}
                     </div>
                 </div>
 
                 {/* Team Content */}
-                <div className={`space-y-6 text-lg transition-all duration-200 ${activeTab === 'team' ? 'opacity-100' : 'hidden opacity-0'}`}>
-                    <h1 className="text-2xl font-bold mb-6">Meet the CashCat Team</h1>
+                <div className={`space-y-4 sm:space-y-6 text-base sm:text-lg transition-all duration-200 ${activeTab === 'team' ? 'opacity-100' : 'hidden opacity-0'}`}>
+                    <h1 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6">Meet the CashCat Team</h1>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg-white/[.03]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                        <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-xl bg-white/[.03]">
                             <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
                                 <Image
                                     src="/window.svg"
@@ -131,10 +132,10 @@ export default function LearnMore() {
 
                     </div>
 
-                    <div className="mt-8">
-                        <h3 className="text-xl font-semibold mb-4">Our Mission</h3>
+                    <div className="mt-6 sm:mt-8">
+                        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Our Mission</h3>
 
-                        <ol className="text-base text.white/70 text-left list-decimal list-inside space-y-2">
+                        <ol className="text-sm sm:text-base text.white/70 text-left list-decimal list-inside space-y-1.5 sm:space-y-2 leading-tight sm:leading-normal">
                             <li>We know that envelope budgeting works well</li>
                             <li>We believe everybody deserves access to a simple, effective tool to manage their finances</li>
                             <li>We also believe it shouldn't cost an arm and a leg</li>
