@@ -38,7 +38,7 @@ export default function Category({name, assigned, spent, goalAmount, group, show
                 <div className="rounded h-3 md:h-5 bg-green-dark/20 w-full">
                     <div 
                         className="rounded h-full bg-green transition-all duration-500 ease-out absolute top-0 left-0"
-                        style={{width: `${(assigned / goalAmount) * 100}%`}}
+                        style={{width: `${Math.min((assigned / goalAmount), 1) * 100}%`}}
                     />
                     {spent > 0 && (
                         <div 
