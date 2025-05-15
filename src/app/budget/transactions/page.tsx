@@ -43,7 +43,7 @@ export default function Transactions() {
                 error: any;
             };
 
-            if (isDevelopment) {
+            if (isDevelopment && false) { // TODO remove - this IGNORES development mode (for TESTING)
                 // In development mode, use mock data
                 const { data: { user } } = await mockSupabase.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
@@ -327,9 +327,16 @@ export default function Transactions() {
                         <div className="space-y-6">
                             {groupTransactionsByDate(transactions).map(group => (
                                 <div key={group.date} className="space-y-2 mb-2 md:mb-5">
-                                    <h3 className="text-sm font-medium text-white/40 sticky top-16 md:top-[8.5rem] bg-background py-0 z-20">
-                                        {formatDate(group.date)}
-                                    </h3>
+                                    <div className="flex justify-between items-center sticky top-15 pt-0 px-3 md:top-[8.5rem] bg-background z-20">
+                                        <h3 className="text-sm font-medium text-white/40">
+                                            {formatDate(group.date)}
+                                        </h3>
+                                        <span className="text-sm font-medium text-white/40 tabular-nums">
+                                            {formatAmount(group.transactions.reduce((total, t) => 
+                                                total + (t.amount < 0 ? t.amount : 0), 0
+                                            ))}
+                                        </span>
+                                    </div>
                                     <div className="space-y-1">
                                         {group.transactions.map((transaction) => (
                                             <div onClick={() => {setModalTransaction(transaction); setShowModal(true)}}
