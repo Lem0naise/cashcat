@@ -31,7 +31,7 @@ export default function Category({name, assigned, spent, goalAmount, group, show
             </div>
             
             <p className="text-sm text-white/50 mt-1 mb-2 md:mb-3">
-                Spent <span className="text-white/70 font-medium">£{spent.toFixed(2)}</span> of <span className="text-white/70 font-medium">£{assigned.toFixed(2)}</span> {assigned < goalAmount && <>(goal <span className="text-white/70 font-medium">£{goalAmount.toFixed(2)}</span>)</>}
+                Spent <span className="text-white/70 font-medium">£{spent.toFixed(2)}</span> of <span className="text-white/70 font-medium">£{assigned.toFixed(2)}</span> {assigned < goalAmount && <>(goal <span className="text-white/70 font-medium">£{goalAmount.toFixed(2)}</span>)</>} {assigned > goalAmount && <>(spare <span className="text-white/70 font-medium">£{(assigned-goalAmount).toFixed(2)}</span>)</>}
             </p>
 
             <div className="relative">
