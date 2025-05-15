@@ -49,11 +49,11 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/window.svg"
+                                src="/money.svg"
                                 alt="Money"
                                 width={20}
                                 height={20}
-                                className={`transition-opacity ${
+                                className={`image-black-to-grey transition-opacity ${
                                     isActive('/budget') 
                                     ? 'opacity-100' 
                                     : 'opacity-70'
@@ -77,11 +77,11 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/home.svg"
+                                src="/stats.svg"
                                 alt="Home"
                                 width={20}
                                 height={20}
-                                className={`transition-opacity ${
+                                className={`image-black-to-grey transition-opacity ${
                                     isActive('/stats') 
                                     ? 'opacity-100' 
                                     : 'opacity-70'
@@ -107,11 +107,11 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/file.svg"
+                                src="/transactions.svg"
                                 alt="Transactions"
                                 width={20}
                                 height={20}
-                                className={`transition-opacity ${
+                                className={`image-black-to-grey transition-opacity ${
                                     isActive('/budget/transactions') 
                                     ? 'opacity-100' 
                                     : 'opacity-70'
@@ -140,7 +140,7 @@ export default function MobileNav() {
                                 alt="Account"
                                 width={20}
                                 height={20}
-                                className={`transition-opacity ${
+                                className={`image-black-to-grey transition-opacity ${
                                     isActive('/account') 
                                     ? 'opacity-100' 
                                     : 'opacity-70'

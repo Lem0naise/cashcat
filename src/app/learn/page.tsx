@@ -90,7 +90,7 @@ export default function LearnMore() {
                         <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-xl bg-white/[.03]">
                             <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
                                 <Image
-                                    src="/window.svg"
+                                    src="/money.svg"
                                     alt="Team member"
                                     width={32}
                                     height={32}
@@ -111,7 +111,7 @@ export default function LearnMore() {
                         <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl bg-black/[.03] dark:bg.white/[.03]">
                             <div className="w-24 h-24 rounded-full bg-green/20 flex items-center justify-center">
                                 <Image
-                                    src="/window.svg"
+                                    src="/money.svg"
                                     alt="Team Member"
                                     width={32}
                                     height={32}
