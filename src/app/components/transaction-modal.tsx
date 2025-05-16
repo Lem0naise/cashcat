@@ -45,6 +45,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
+    const amountInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch categories
     useEffect(() => {
@@ -155,6 +156,25 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         }
     };
 
+    // Prevent scrolling when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    // Auto focus amount input on mobile
+    useEffect(() => {
+        if (isOpen && amountInputRef.current) {
+            amountInputRef.current.focus();
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleClose = () => {
@@ -200,11 +220,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             onClick={handleBackdropClick}
         >
             <div 
-                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md p-6 md:p-6 min-h-[100dvh] md:min-h-0 ${
+                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${
                     isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                 }`}
             >
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <h2 className="text-xl font-bold">{transaction ? "Edit Transaction" : "New Transaction"}</h2>
                     <button 
                         onClick={handleClose}
@@ -220,10 +240,9 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-white/50 mb-1">Type</label>
-                        <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="flex flex-col h-[calc(100dvh-4rem)] md:h-auto">
+                    <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-0">
+                        <div className="grid grid-cols-2 gap-4 mb-6">
                             <button
                                 type="button"
                                 onClick={() => setType('payment')}
@@ -247,119 +266,122 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 Income
                             </button>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm text-white/50 mb-1">Amount</label>
+                        <div className="mb-6">
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-3xl text-white/50">£</span>
                                 <input
-                                    type="number"
-                                    step="0.01"
+                                    ref={amountInputRef}
+                                    type="tel"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
                                     required
                                     value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
+                                    onChange={(e) => {
+                                        // Only allow numbers and one decimal point
+                                        const value = e.target.value.replace(/[^\d.]/g, '');
+                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                            setAmount(value);
+                                        }
+                                    }}
                                     placeholder="0.00"
-                                    className="w-full p-3 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                    className="w-full p-4 pl-8 text-3xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm text-white/50 mb-1">Date</label>
-                            <input
-                                type="date"
-                                required
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                            />
+                        <div className="space-y-3">
+                            <div ref={vendorRef} className="relative">
+                                <label className="block text-sm text-white/50 mb-0.5">Vendor</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={vendor}
+                                    onChange={handleVendorChange}
+                                    onFocus={() => {
+                                        setVendorInputFocused(true);
+                                        setShowSuggestions(true);
+                                        if (vendor) searchVendors(vendor);
+                                    }}
+                                    placeholder="Shop"
+                                    className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                />
+                                {showSuggestions && vendorSuggestions.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
+                                        {vendorSuggestions.map((suggestion) => (
+                                            <button
+                                                key={suggestion.id}
+                                                type="button"
+                                                onClick={() => selectVendor(suggestion.name)}
+                                                className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
+                                            >
+                                                {suggestion.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-white/50 mb-0.5">Category</label>
+                                <select
+                                    required
+                                    value={categoryId}
+                                    onChange={(e) => setCategoryId(e.target.value)}
+                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                    disabled={loadingCategories}
+                                >
+                                    <option value="" disabled>
+                                        {loadingCategories ? 'Loading categories...' : 'Select a category'}
+                                    </option>
+                                    {categories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-white/50 mb-0.5">Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-ms text-white/50 mb-0.5">Description (Optional)</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Weekly groceries..."
+                                    className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors resize-none h-16"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div ref={vendorRef} className="relative">
-                        <label className="block text-sm text-white/50 mb-1">Vendor</label>
-                        <input
-                            type="text"
-                            required
-                            value={vendor}
-                            onChange={handleVendorChange}
-                            onFocus={() => {
-                                setVendorInputFocused(true);
-                                setShowSuggestions(true);
-                                if (vendor) searchVendors(vendor);
-                            }}
-                            placeholder="Shop"
-                            className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                        />
-                        {showSuggestions && vendorSuggestions.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
-                                {vendorSuggestions.map((suggestion) => (
-                                    <button
-                                        key={suggestion.id}
-                                        type="button"
-                                        onClick={() => selectVendor(suggestion.name)}
-                                        className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
-                                    >
-                                        {suggestion.name}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm text-white/50 mb-1">Category</label>
-                        <select
-                            required
-                            value={categoryId}
-                            onChange={(e) => setCategoryId(e.target.value)}
-                            className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                            disabled={loadingCategories}
-                        >
-                            <option value="" disabled>
-                                {loadingCategories ? 'Loading categories...' : 'Select a category'}
-                            </option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    
-
-
-
-                    
-                    <div>
-                        <label className="block text-sm text-white/50 mb-1">Description (Optional)</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Weekly groceries..."
-                            className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors resize-none h-24"
-                        />
-                    </div>
-
-                    <div className="flex gap-8">
+                    <div className="p-4 md:p-0 border-t border-white/[.15] md:border-0">
+                        <div className="flex gap-4">
                             <button
-                            type="button"
-                            onClick={() => isDeleting ? (setIsDeleting(false), onDelete()) :setIsDeleting(true)}
-                            className={`${transaction ? 'block': 'hidden'} w-full py-3 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors mt-6`}
-                        >
-                            {isDeleting ? "Are you sure?" : "Delete Transaction"}
-                        </button>
-                        <button
-                            type="submit"
-                            className="w-full py-3 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors mt-6"
-                        >
-                            {transaction ? "Update Transaction" : "Add Transaction"}
-                        </button>
+                                type="button"
+                                onClick={() => isDeleting ? (setIsDeleting(false), onDelete()) : setIsDeleting(true)}
+                                className={`${transaction ? 'block': 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
+                            >
+                                {isDeleting ? "Are you sure?" : "Delete"}
+                            </button>
+                            <button
+                                type="submit"
+                                className="flex-1 py-4 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors"
+                            >
+                                {transaction ? "Update" : "Add"}
+                            </button>
+                        </div>
                     </div>
-                    
                 </form>
             </div>
         </div>
