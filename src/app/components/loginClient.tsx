@@ -30,11 +30,12 @@ export default function Login() {
     };
   }, [router, redirectTo, supabase]);
 
-  useEffect(() => {
-    if (isDevelopment){router.push("/budget")}
-  }, [router]);
+  if (isDevelopment) {
+    router.push('/budget');
+    return;
+  }
+  if (isDevelopment || !isClient) return null;
 
-  if (!isClient) return null;
 
   return (
     <div className="min-h-screen bg-background font-[family-name:var(--font-suse)] flex items-center justify-center">
