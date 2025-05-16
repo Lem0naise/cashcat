@@ -1,6 +1,6 @@
 'use client';
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
@@ -29,8 +29,39 @@ export default function Transactions() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showMobileSearch, setShowMobileSearch] = useState(false);
+    const mobileSearchRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const supabase = createClientComponentClient<Database>();
+
+    // Filter transactions based on search query
+    const filteredTransactions = transactions.filter(transaction => {
+        if (!searchQuery.trim()) return true;
+        
+        const query = searchQuery.toLowerCase();
+        const amount = Math.abs(transaction.amount).toString();
+        const date = new Date(transaction.date).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        return (
+            transaction.vendor.toLowerCase().includes(query) ||
+            transaction.description?.toLowerCase().includes(query) ||
+            transaction.categories?.name.toLowerCase().includes(query) ||
+            amount.includes(query) ||
+            date.toLowerCase().includes(query)
+        );
+    });
+
+    // Focus mobile search input when shown
+    useEffect(() => {
+        if (showMobileSearch && mobileSearchRef.current) {
+            mobileSearchRef.current.focus();
+        }
+    }, [showMobileSearch]);
 
     useEffect(() => {
         fetchTransactions();
@@ -227,28 +258,77 @@ export default function Transactions() {
             <MobileNav />
 
             {/*Mobile add transactions*/}
-            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-30 px-8  border-b border-white/[.2] min-w-screen">
+            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-30 px-8 border-b border-white/[.2] min-w-screen">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
-                    
+                    {showMobileSearch ? (
+                        <div className="absolute inset-x-0 top-0 bg-background pt-3 pb-2 px-8 border-b border-white/[.2] z-40 animate-[slideIn_0.2s_ease-out]">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {setSearchQuery(''), setShowMobileSearch(false)}}
+                                    className="p-2 hover:bg-white/[.05] rounded-lg"
+                                >
+                                    <Image
+                                        src="/chevron-left.svg"
+                                        alt="Back"
+                                        width={24}
+                                        height={24}
+                                        className="opacity-60"
+                                    />
+                                </button>
+                                <input
+                                    ref={mobileSearchRef}
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search transactions..."
+                                    className="w-full bg-transparent border-none outline-none text-lg placeholder:text-white/30"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="p-2 hover:bg-white/[.05] rounded-lg"
+                                    >
+                                        <Image
+                                            src="/minus.svg"
+                                            alt="Clear"
+                                            width={16}
+                                            height={16}
+                                            className="opacity-60 invert"
+                                        />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
+                    )}
                 </div>
                 <div className="flex gap-5">
+                    {!showMobileSearch && (
+                        <button
+                            onClick={() => setShowMobileSearch(true)}
+                            className="p-2 hover:bg-white/[.05] rounded-lg transition-all opacity-70 hover:opacity-100"
+                        >
+                            <Image
+                                src="/magnify.svg"
+                                alt="Search"
+                                width={24}
+                                height={24}
+                                className="opacity-100 invert"
+                            />
+                        </button>
+                    )}
                     <button
                         onClick={() => {setLoading(true); fetchTransactions()}}
-                        className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                        className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                         disabled={loading}
                         title="Refresh transactions"
                     >
-                    <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="scale(-1, 1) translate(-48, 0)">
-                        <path
-                            d="M24 6a18 18 0 1 1-12.73 5.27"
-                            stroke="currentColor"
-                            strokeWidth="4"/><path
-                            d="M12 4v8h8"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        /></g></svg>
+                        <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g transform="scale(-1, 1) translate(-48, 0)">
+                            <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4"/>
+                            <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4"/>
+                        </g></svg>
                         Sync
                     </button>
                 </div>
@@ -260,8 +340,41 @@ export default function Transactions() {
                     <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
-                            
                         </div>
+                        
+                        <div className="flex-1 max-w-md mx-8">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search transactions..."
+                                    className="w-full p-2 pl-9 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                />
+                                <Image
+                                    src="/magnify.svg"
+                                    alt="Search"
+                                    width={16}
+                                    height={16}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 invert"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/[.1] rounded-full transition-colors"
+                                    >
+                                        <Image
+                                            src="/minus.svg"
+                                            alt="Clear"
+                                            width={12}
+                                            height={12}
+                                            className="opacity-60 invert"
+                                        />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="flex gap-5">
                             <button
                                 onClick={() => {setLoading(true); fetchTransactions()}}
@@ -311,6 +424,18 @@ export default function Transactions() {
                         <div className="flex justify-center items-center min-h-[200px]">
                             <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin" />
                         </div>
+                    ) : filteredTransactions.length === 0 && searchQuery ? (
+                        <div className="text-center text-white/60 mt-20">
+                            <Image
+                                src="/magnify.svg"
+                                alt="No results"
+                                width={48}
+                                height={48}
+                                className="opacity-40 invert mx-auto mb-4"
+                            />
+                            <h2 className="text-xl font-semibold mb-2">No matching transactions</h2>
+                            <p className="text-sm">Try adjusting your search terms</p>
+                        </div>
                     ) : transactions.length === 0 ? (
                         <div className="text-center text-white/60 mt-20">
                             <Image
@@ -325,7 +450,7 @@ export default function Transactions() {
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {groupTransactionsByDate(transactions).map(group => (
+                            {groupTransactionsByDate(filteredTransactions).map(group => (
                                 <div key={group.date} className="space-y-2 mb-2 md:mb-5">
                                     <div className="flex justify-between items-center sticky top-15 pt-0 px-3 md:top-[8.5rem] bg-background z-20">
                                         <h3 className="text-sm font-medium text-white/40">
