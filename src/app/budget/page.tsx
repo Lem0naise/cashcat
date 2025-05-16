@@ -303,7 +303,7 @@ export default function Budget() {
                                 {error}
                             </div>
                         ) : categories.length === 0 ? (
-                            <div className="text-center text-white/60 mt-20">
+                            <div className="text-center text-white/60 mt-20 max-w-md mx-auto">
                                 <Image
                                     src="/transactions.svg"
                                     alt="No budget categories"
@@ -311,20 +311,30 @@ export default function Budget() {
                                     height={48}
                                     className="image-black opacity-40 mx-auto mb-4"
                                 />
-                                <h2 className="text-xl font-semibold mb-2">Your budget is empty</h2>
-                                <p className="text-sm mb-4">Learn about CashCat below, and then click manage to start setting up your budget categories</p>
-                                <button
-                                    onClick={() => router.push('/learn')}
-                                    className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium mr-2"
-                                >
-                                    Learn How To CashCat
-                                </button>
-                                <button
-                                    onClick={() => setShowManageModal(true)}
-                                    className="bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"
-                                >
-                                    Manage Budget
-                                </button>
+                                <h2 className="text-2xl font-semibold mb-6">Welcome to CashCat!</h2>
+                                <div className="bg-white/[.03] rounded-lg p-6 mb-8 backdrop-blur-sm">
+                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 3 Steps:</h3>
+                                    <ul className="inline-block text-left list-disc list-inside space-y-3 text-base">
+                                        <li className="opacity-90">Create your budget</li>
+                                        <li className="opacity-90">Log your first transaction</li>
+                                        <li className="opacity-90">View your stats</li>
+                                    </ul>
+                                </div>
+                                <p className="text-sm mb-6 opacity-75">New to CashCat? Learn the basics first, or jump right in!</p>
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button
+                                        onClick={() => setShowManageModal(true)}
+                                        className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium order-1 sm:order-none"
+                                    >
+                                        Create Your Budget
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/learn')}
+                                        className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
+                                    >
+                                        Learn the Basics
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
