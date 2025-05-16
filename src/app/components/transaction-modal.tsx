@@ -73,7 +73,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     useEffect(() => {
         if (transaction){
             setType(transaction.amount > 0 ? 'income' : 'payment');
-            setAmount((Math.abs(transaction.amount).toString()));
+            setAmount((Math.abs(transaction.amount).toFixed(2)));
             setDate(transaction.date);
             setDescription(transaction.description ? transaction.description : '');
             setVendor(transaction.vendor);
@@ -277,6 +277,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                     pattern="[0-9]*\.?[0-9]*"
                                     required
                                     value={amount}
+                                    onBlur={() => {
+                                        if (amount != ''){
+                                            setAmount(parseFloat(amount).toFixed(2));
+                                        }
+                                    }}
                                     onChange={(e) => {
                                         // Only allow numbers and one decimal point
                                         const value = e.target.value.replace(/[^\d.]/g, '');
@@ -365,7 +370,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         </div>
                     </div>
 
-                    <div className="p-4 md:p-0 border-t border-white/[.15] md:border-0">
+                    <div className="p-4 md:p-0 md:pt-4 border-t border-white/[.15] md:border-0">
                         <div className="flex gap-4">
                             <button
                                 type="button"
