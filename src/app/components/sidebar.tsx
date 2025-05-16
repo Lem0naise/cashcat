@@ -28,7 +28,7 @@ export default function Sidebar() {
                         alt="Money icon"
                         width={16}
                         height={16}
-                        className={`image-black-to-grey transition-opacity ${
+                        className={` image-black transition-opacity ${
                             isActive('/budget') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
@@ -50,7 +50,7 @@ export default function Sidebar() {
                         alt="Home icon"
                         width={16}
                         height={16}
-                        className={`image-black-to-grey transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/stats') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
@@ -72,7 +72,7 @@ export default function Sidebar() {
                         alt="Transactions icon"
                         width={16}
                         height={16}
-                        className={`image-black-to-grey transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/budget/transactions') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
@@ -94,7 +94,7 @@ export default function Sidebar() {
                         alt="Account icon"
                         width={16}
                         height={16}
-                        className={`image-black-to-grey transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/account') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'

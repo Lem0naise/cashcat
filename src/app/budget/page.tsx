@@ -309,7 +309,7 @@ export default function Budget() {
                                     alt="No budget categories"
                                     width={48}
                                     height={48}
-                                    className="image-black-to-grey opacity-40 mx-auto mb-4"
+                                    className="image-black opacity-40 mx-auto mb-4"
                                 />
                                 <h2 className="text-xl font-semibold mb-2">Your budget is empty</h2>
                                 <p className="text-sm mb-4">Learn about CashCat below, and then click manage to start setting up your budget categories</p>

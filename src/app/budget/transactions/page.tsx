@@ -318,7 +318,7 @@ export default function Transactions() {
                                 alt="No transactions"
                                 width={48}
                                 height={48}
-                                className="image-black-to-grey opacity-40 mx-auto mb-4"
+                                className="image-black opacity-40 mx-auto mb-4"
                             />
                             <h2 className="text-xl font-semibold mb-2">No transactions yet</h2>
                             <p className="text-sm">Start adding your transactions to track your spending</p>

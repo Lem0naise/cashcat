@@ -139,6 +139,7 @@ body {
   scrollbar-width: none;
 }
 
-.image-black-to-grey {
-  filter: invert(62%) sepia(0%) saturate(263%) hue-rotate(259deg) brightness(86%) contrast(96%);
+
+.image-black {
+filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-rotate(135deg) brightness(86%) contrast(89%);
 }

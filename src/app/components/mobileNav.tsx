@@ -53,10 +53,10 @@ export default function MobileNav() {
                                 alt="Money"
                                 width={20}
                                 height={20}
-                                className={`image-black-to-grey transition-opacity ${
+                                className={`transition-opacity ${
                                     isActive('/budget') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>
@@ -81,10 +81,10 @@ export default function MobileNav() {
                                 alt="Home"
                                 width={20}
                                 height={20}
-                                className={`image-black-to-grey transition-opacity ${
+                                className={`transition-opacity ${
                                     isActive('/stats') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>
@@ -111,10 +111,10 @@ export default function MobileNav() {
                                 alt="Transactions"
                                 width={20}
                                 height={20}
-                                className={`image-black-to-grey transition-opacity ${
+                                className={`transition-opacity ${
                                     isActive('/budget/transactions') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'opacity-70 image-black'
                                 }`}
                             />
                         </div>
@@ -140,10 +140,10 @@ export default function MobileNav() {
                                 alt="Account"
                                 width={20}
                                 height={20}
-                                className={`image-black-to-grey transition-opacity ${
+                                className={`transition-opacity ${
                                     isActive('/account') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>
