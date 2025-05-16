@@ -21,7 +21,7 @@ export default function Account() {
         router.push('/login');
     };
 
-    const displayUser = isDevelopment ? mockUser : user;
+    const displayUser = user;
 
     return (
         <ProtectedRoute>

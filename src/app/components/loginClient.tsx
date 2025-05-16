@@ -11,6 +11,7 @@ export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/budget';
+   
   const supabase = createClient();
   const [isClient, setIsClient] = useState(false);
 
@@ -19,6 +20,9 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
+    if (isDevelopment){
+      router.push('/budget');
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         router.push(redirectTo);
@@ -30,12 +34,7 @@ export default function Login() {
     };
   }, [router, redirectTo, supabase]);
 
-  if (isDevelopment) {
-    router.push('/budget');
-    return;
-  }
   if (isDevelopment || !isClient) return null;
-
 
   return (
     <div className="min-h-screen bg-background font-[family-name:var(--font-suse)] flex items-center justify-center">

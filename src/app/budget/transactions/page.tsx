@@ -74,47 +74,25 @@ export default function Transactions() {
                 error: any;
             };
 
-            if (isDevelopment && false) { // TODO remove - this IGNORES development mode (for TESTING)
-                // In development mode, use mock data
-                const { data: { user } } = await mockSupabase.auth.getUser();
-                if (!user) throw new Error('Not authenticated');
-
-                response = await mockSupabase
-                    .from('transactions')
-                    .select(`
-                        *,
-                        categories (
-                            id,
-                            name,
-                            group
-                        ),
-                        vendors (
-                            id,
-                            name
-                        )
-                    `)
-                    .eq('user_id', user.id) as { data: Transaction[] | null; error: any };
-            } else {
-                // In production mode, use real Supabase
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) throw new Error('Not authenticated');
-                
-                response = await supabase
-                    .from('transactions')
-                    .select(`
-                        *,
-                        categories (
-                            id,
-                            name,
-                            group
-                        ),
-                        vendors (
-                            id,
-                            name
-                        )
-                    `)
-                    .eq('user_id', user.id);
-            }
+            // In production mode, use real Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+            
+            response = await supabase
+                .from('transactions')
+                .select(`
+                    *,
+                    categories (
+                        id,
+                        name,
+                        group
+                    ),
+                    vendors (
+                        id,
+                        name
+                    )
+                `)
+                .eq('user_id', user.id);
             
             if (response.error) throw response.error;
             setTransactions(response.data || []);
@@ -134,15 +112,7 @@ export default function Transactions() {
     }) => {
         try {
             if (!modalTransaction) throw new Error('No transaction to update');
-            if (isDevelopment) {
-                // In development mode, use mock data
-                await mockSupabase
-                    .from('transactions')
-                    .update(transaction)
-                    .eq('id', modalTransaction.id);
-            } else {
-                await updateTransaction(modalTransaction.id, transaction);
-            }
+            await updateTransaction(modalTransaction.id, transaction);
             fetchTransactions();
             setShowModal(false);
             setModalTransaction(null);
