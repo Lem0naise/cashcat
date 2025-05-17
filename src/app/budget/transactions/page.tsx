@@ -200,9 +200,13 @@ export default function Transactions() {
     };
 
     const groupTransactionsByDate = (transactions: Transaction[]) => {
+        // Filter out starting balance transactions
+        const regularTransactions = transactions.filter(t => t.type !== 'starting');
+        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
+        
         const groups: { [key: string]: { date: string; transactions: Transaction[] } } = {};
         
-        transactions.forEach(transaction => {
+        regularTransactions.forEach(transaction => {
             const date = transaction.date;
             if (!groups[date]) {
                 groups[date] = {
@@ -215,9 +219,21 @@ export default function Transactions() {
         Object.values(groups).forEach(group => { // sort by time descending
             group.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         });
-        return Object.values(groups).sort((a, b) =>  // sort by date descending
+
+        // Convert to array and sort by date
+        const sortedGroups = Object.values(groups).sort((a, b) =>  
             new Date(b.date).getTime() - new Date(a.date).getTime()
         );
+
+        // If there is a starting balance, add it as a special group at the bottom
+        if (startingBalanceTransaction) {
+            sortedGroups.push({
+                date: 'starting-balance',
+                transactions: [startingBalanceTransaction]
+            });
+        }
+
+        return sortedGroups;
     };
 
     return (
@@ -442,40 +458,46 @@ export default function Transactions() {
                     ) : (
                         <div className="space-y-6">
                             {groupTransactionsByDate(filteredTransactions).map(group => (
-                                <div key={group.date} className="space-y-2 mb-2 md:mb-5">
+                                <div key={group.date} className={`space-y-2 mb-2 md:mb-5 ${group.date === 'starting-balance' ? 'mt-8 pt-8 border-t border-white/[.15]' : ''}`}>
                                     <div className="flex justify-between items-center sticky top-15 pt-0 px-3 md:top-[8.5rem] bg-background z-20">
                                         <h3 className="text-sm font-medium text-white/40">
-                                            {formatDate(group.date)}
+                                            {group.date === 'starting-balance' ? 'Starting Balance' : formatDate(group.date)}
                                         </h3>
-                                        <span className="text-sm font-medium text-white/40 tabular-nums">
-                                            {formatAmount(group.transactions.reduce((total, t) => 
-                                                total + (t.amount), 0
-                                            ))}
-                                        </span>
+                                        {group.date !== 'starting-balance' && (
+                                            <span className="text-sm font-medium text-white/40 tabular-nums">
+                                                {formatAmount(group.transactions.reduce((total, t) => total + (t.amount), 0))}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="space-y-1">
                                         {group.transactions.map((transaction) => (
-                                            <div onClick={() => {setModalTransaction(transaction); setShowModal(true)}}
-                                                key={transaction.id}
-                                                className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white/[.05] hover:bg-white/[.1] transition-colors"
+                                            <div key={transaction.id} 
+                                                onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setShowModal(true)) : null}
+                                                className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
+                                                    transaction.type === 'starting' 
+                                                    ? 'bg-white/[.02] cursor-default' 
+                                                    : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
+                                                } transition-colors`}
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-3">
-                                                        <h4 className="font-medium truncate">{transaction.vendors?.name || transaction.vendor}</h4>
-                                                        
+                                                        <h4 className="font-medium truncate">
+                                                            {transaction.type === 'starting' ? 'Initial Net Worth' : transaction.vendors?.name || transaction.vendor}
+                                                        </h4>
                                                     </div>
-                                                    {(<div className="text-sm text-white/40 truncate mt-0.5">
-                                                        {transaction.categories ? transaction.categories.name : "Income"}
-                                                        {transaction.description && (
-                                                            <span className="inline truncate text-white/30 text-sm">
-                                                              &nbsp; - {transaction.description}
-                                                            </span>
-                                                        )}
-                                                    </div>)}
-                                                   
+                                                    {transaction.type !== 'starting' && (
+                                                        <div className="text-sm text-white/40 truncate mt-0.5">
+                                                            {transaction.categories ? transaction.categories.name : "Income"}
+                                                            {transaction.description && (
+                                                                <span className="inline truncate text-white/30 text-sm">
+                                                                    &nbsp; - {transaction.description}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <span className={`font-medium whitespace-nowrap tabular-nums ${
-                                                    transaction.amount < 0 ? 'text-reddy' : 'text-green'
+                                                    transaction.type === 'starting' ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
                                                 }`}>
                                                     {formatAmount(transaction.amount)}
                                                 </span>
