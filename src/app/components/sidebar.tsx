@@ -34,7 +34,7 @@ export default function Sidebar() {
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Money</span>
+                    <span className="text-sm">Budget</span>
                 </a>
                  <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${

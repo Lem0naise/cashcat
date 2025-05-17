@@ -226,7 +226,7 @@ export default function Budget() {
                     <div className="max-w-7xl mx-auto">
                         <div className="md:flex hidden items-center mb-8 md:mt-5">
                             <div className="flex-1">
-                                <h1 className="text-2xl font-bold tracking-[-.01em]">Money</h1>
+                                <h1 className="text-2xl font-bold tracking-[-.01em]">Budget</h1>
                             </div>
                             <div className="flex-1 flex justify-center">
                                 <div className="flex items-center gap-2">

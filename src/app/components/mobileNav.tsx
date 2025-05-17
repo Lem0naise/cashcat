@@ -50,7 +50,7 @@ export default function MobileNav() {
                         }`}>
                             <Image
                                 src="/money.svg"
-                                alt="Money"
+                                alt="Budget"
                                 width={20}
                                 height={20}
                                 className={`transition-opacity ${
@@ -60,7 +60,7 @@ export default function MobileNav() {
                                 }`}
                             />
                         </div>
-                        <span className="text-xs">Money</span>
+                        <span className="text-xs">Budget</span>
                     </Link>
 
                       <Link
