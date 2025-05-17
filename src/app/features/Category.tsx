@@ -20,7 +20,7 @@ export default function Category({name, assigned, spent, goalAmount, group, show
     }, [assigned, goalAmount])
 
     return (
-        <div className="category p-3 md:p-4 border-b-4 flex flex-col bg-white/[.05] rounded-lg">
+        <div className="category p-3 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg">
             <div className="flex justify-between items-start">
                 <h3 className="text-base md:text-lg font-bold">{name}</h3>
                 <div className="text-right">
