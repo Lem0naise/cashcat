@@ -10,7 +10,6 @@ import { isDevelopment, mockUser } from "../utils/mocks";
 export default function Navbar() {
     const router = useRouter();
     const { user } = useSupabase();
-    const displayUser = isDevelopment ? mockUser : user;
 
      const learn = async () => {
         router.push('/learn');

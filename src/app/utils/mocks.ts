@@ -201,6 +201,7 @@ export const mockTransactions: Transaction[] = [
     user_id: 'mock-user-id',
     vendor: 'Salary',
     vendor_id: getVendorId('Salary'),
+        type: 'payment',
     created_at: '2024-01-01T00:00:00Z'
   },
   {
@@ -212,6 +213,7 @@ export const mockTransactions: Transaction[] = [
     user_id: 'mock-user-id',
     vendor: 'Deliveroo',
     vendor_id: getVendorId('Deliveroo'),
+        type: 'payment',
     created_at: '2024-01-02T00:00:00Z'
   },
   {
@@ -222,6 +224,7 @@ export const mockTransactions: Transaction[] = [
     category_id: '3',
     user_id: 'mock-user-id',
     vendor: 'Shell',
+        type: 'payment',
     vendor_id: getVendorId('Shell'),
     created_at: '2024-01-03T00:00:00Z'
   },
@@ -233,11 +236,13 @@ export const mockTransactions: Transaction[] = [
     category_id: '4',
     user_id: 'mock-user-id',
     vendor: 'Spotify',
+    type: 'payment',
     vendor_id: getVendorId('Spotify'),
     created_at: '2024-01-04T00:00:00Z'
   },
   {
     id: '5',
+        type: 'payment',
     amount: -30,
     date: '2024-01-05',
     description: 'Monthly plan',

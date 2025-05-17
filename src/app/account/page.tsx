@@ -39,7 +39,7 @@ export default function Account() {
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
                             {isDevelopment ? (
                                 <div className="mb-4 p-3 bg-green/10 text-green rounded-lg">
-                                    Development Mode Active - All data is mocked
+                                    Development Mode Active
                                 </div>
                             ) : null}
                             <p className={`${displayUser ? 'inline' : 'hidden'}`}>

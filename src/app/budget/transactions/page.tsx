@@ -107,8 +107,9 @@ export default function Transactions() {
         amount: number;
         date: string;
         vendor: string;
+        type: string;
         description?: string;
-        category_id: string;
+        category_id?: string | null;
     }) => {
         try {
             if (!modalTransaction) throw new Error('No transaction to update');
@@ -124,26 +125,14 @@ export default function Transactions() {
 
     const handleSubmit = async (transaction: {
         amount: number;
+        type: string;
         date: string;
         vendor: string;
         description?: string;
-        category_id: string;
+        category_id?: string | null;
     }) => {
         try {
-            if (isDevelopment) {
-                // In development mode, use mock data
-                const { data: { user } } = await mockSupabase.auth.getUser();
-                if (!user) throw new Error('Not authenticated');
-
-                await mockSupabase
-                    .from('transactions')
-                    .insert({
-                        ...transaction,
-                        user_id: user.id
-                    });
-            } else {
-                await submitTransaction(transaction);
-            }
+            await submitTransaction(transaction);
             fetchTransactions();
             setShowModal(false);
         } catch (error) {
@@ -155,15 +144,7 @@ export default function Transactions() {
     const handleDelete = async () => {
         try {
             if (!modalTransaction) throw new Error('No transaction to delete');
-            if (isDevelopment) {
-                // In development mode, use mock data
-                await mockSupabase
-                    .from('transactions')
-                    .delete()
-                    .eq('id', modalTransaction.id);
-            } else {
-                await deleteTransaction(modalTransaction.id);
-            }
+            await deleteTransaction(modalTransaction.id);
             fetchTransactions();
             setShowModal(false);
         } catch (error) {
@@ -428,7 +409,7 @@ export default function Transactions() {
                                         </h3>
                                         <span className="text-sm font-medium text-white/40 tabular-nums">
                                             {formatAmount(group.transactions.reduce((total, t) => 
-                                                total + (t.amount < 0 ? t.amount : 0), 0
+                                                total + (t.amount), 0
                                             ))}
                                         </span>
                                     </div>
@@ -443,8 +424,8 @@ export default function Transactions() {
                                                         <h4 className="font-medium truncate">{transaction.vendors?.name || transaction.vendor}</h4>
                                                         
                                                     </div>
-                                                    {transaction.categories && (<div className="text-sm text-white/40 truncate mt-0.5">
-                                                        {transaction.categories.name}
+                                                    {(<div className="text-sm text-white/40 truncate mt-0.5">
+                                                        {transaction.categories ? transaction.categories.name : "Income"}
                                                         {transaction.description && (
                                                             <span className="inline truncate text-white/30 text-sm">
                                                               &nbsp; - {transaction.description}

@@ -24,14 +24,15 @@ type TransactionModalProps = {
         date: string;
         vendor: string;
         description?: string;
-        category_id: string;
+        type: string;
+        category_id?: string | null;
     }) => void;
     onDelete : () => void;
 };
 
 export default function TransactionModal({transaction, isOpen, onClose, onSubmit, onDelete }: TransactionModalProps) {
     const supabase = createClientComponentClient();
-    const [type, setType] = useState<'payment' | 'income'>('payment');
+    const [type, setType] = useState<string>('payment');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [vendor, setVendor] = useState('');
@@ -72,7 +73,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
     useEffect(() => {
         if (transaction){
-            setType(transaction.amount > 0 ? 'income' : 'payment');
+            setType(transaction.type || 'payment');
             setAmount((Math.abs(transaction.amount).toFixed(2)));
             setDate(transaction.date);
             setDescription(transaction.description ? transaction.description : '');
@@ -188,14 +189,15 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const parsedAmount = parseFloat(amount);
-        if (!categoryId) return; // Prevent submission if no category selected
+        if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
         
         onSubmit({
             amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
+            type: type || 'payment', // Ensure type is never undefined
             date,
             vendor,
             description: description || undefined,
-            category_id: categoryId
+            category_id: type === 'payment' ? categoryId : null // Only include category for payments
         });
         // Reset form
         setAmount('');
@@ -327,25 +329,27 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-sm text-white/50 mb-0.5">Category</label>
-                                <select
-                                    required
-                                    value={categoryId}
-                                    onChange={(e) => setCategoryId(e.target.value)}
-                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                    disabled={loadingCategories}
-                                >
-                                    <option value="" disabled>
-                                        {loadingCategories ? 'Loading categories...' : 'Select a category'}
-                                    </option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
+                            {type === 'payment' && (
+                                <div>
+                                    <label className="block text-sm text-white/50 mb-0.5">Category</label>
+                                    <select
+                                        required={type === 'payment'}
+                                        value={categoryId}
+                                        onChange={(e) => setCategoryId(e.target.value)}
+                                        className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                        disabled={loadingCategories}
+                                    >
+                                        <option value="" disabled>
+                                            {loadingCategories ? 'Loading categories...' : 'Select a category'}
                                         </option>
-                                    ))}
-                                </select>
-                            </div>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-sm text-white/50 mb-0.5">Date</label>

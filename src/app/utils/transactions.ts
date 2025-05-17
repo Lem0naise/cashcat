@@ -3,16 +3,18 @@ import { Database } from '../../types/supabase';
 
 export type NewTransaction = {
     amount: number;
+    type: string;  // 'payment' | 'income' | 'starting'
     date: string;
     vendor: string;
     description?: string;
-    category_id: string;
+    category_id?: string | null;  // Required if type === 'payment'
 };
 
-export type Transaction = NewTransaction & {
+export type Transaction = Omit<NewTransaction, 'category_id'> & {
     id: string;
     user_id: string;
     created_at: string;
+    category_id: string | null;
 };
 
 export async function submitTransaction(
@@ -25,10 +27,11 @@ export async function submitTransaction(
     const {error} = await supabase.from('transactions').insert({
         user_id: user.id,
         amount: transaction.amount,
+        type: transaction.type,
         date: transaction.date,
         vendor: transaction.vendor,
-        description: transaction.description,
-        category_id: transaction.category_id,
+        description: transaction.description || null,
+        category_id: transaction.category_id || null,
         created_at: new Date().toISOString(),
     });
 
@@ -50,10 +53,11 @@ export async function updateTransaction(
         .from('transactions')
         .update({
             amount: transaction.amount,
+            type: transaction.type,
             date: transaction.date,
             vendor: transaction.vendor,
             description: transaction.description || null,
-            category_id: transaction.category_id
+            category_id: transaction.category_id || null
         })
         .eq('id', id);
 

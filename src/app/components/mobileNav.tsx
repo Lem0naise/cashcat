@@ -18,8 +18,9 @@ export default function MobileNav() {
         amount: number;
         date: string;
         vendor: string;
+        type: string;
         description?: string;
-        category_id: string;
+        category_id? : string | null;
     }) => {
         try {
             await submitTransaction(transaction);
