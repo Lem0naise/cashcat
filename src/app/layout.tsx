@@ -26,6 +26,7 @@ export default function RootLayout({
       >
         <SupabaseProvider>
           {children}
+          <div id="toast-container" />
         </SupabaseProvider>
       </body>
     </html>

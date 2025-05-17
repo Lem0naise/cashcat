@@ -11,6 +11,7 @@ import TransactionModal from "../../components/transaction-modal";
 import { isDevelopment, mockSupabase } from "../../utils/mocks";
 import ProtectedRoute from "../../components/protected-route";
 import { submitTransaction, updateTransaction, deleteTransaction } from '../../utils/transactions';
+import toast, { Toaster } from 'react-hot-toast';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -113,13 +114,19 @@ export default function Transactions() {
     }) => {
         try {
             if (!modalTransaction) throw new Error('No transaction to update');
-            await updateTransaction(modalTransaction.id, transaction);
-            fetchTransactions();
+            const promise = updateTransaction(modalTransaction.id, transaction);
+            
+            await toast.promise(promise, {
+                loading: 'Updating transaction...',
+                success: 'Transaction updated successfully',
+                error: 'Failed to update transaction'
+            });
+            
+            await fetchTransactions();
             setShowModal(false);
             setModalTransaction(null);
         } catch (error) {
             console.error('Error updating transaction:', error);
-            // TODO: Show error toast
         }
     };
 
@@ -132,24 +139,36 @@ export default function Transactions() {
         category_id?: string | null;
     }) => {
         try {
-            await submitTransaction(transaction);
-            fetchTransactions();
+            const promise = submitTransaction(transaction);
+            
+            await toast.promise(promise, {
+                loading: 'Creating transaction...',
+                success: 'Transaction created successfully',
+                error: 'Failed to create transaction'
+            });
+            
+            await fetchTransactions();
             setShowModal(false);
         } catch (error) {
             console.error('Error saving transaction:', error);
-            // TODO: Show error toast
         }
     };
 
     const handleDelete = async () => {
         try {
             if (!modalTransaction) throw new Error('No transaction to delete');
-            await deleteTransaction(modalTransaction.id);
-            fetchTransactions();
+            const promise = deleteTransaction(modalTransaction.id);
+            
+            await toast.promise(promise, {
+                loading: 'Deleting transaction...',
+                success: 'Transaction deleted successfully',
+                error: 'Failed to delete transaction'
+            });
+            
+            await fetchTransactions();
             setShowModal(false);
         } catch (error) {
             console.error('Error deleting transaction:', error);
-            // TODO: Show error toast
         }
     };
 
@@ -203,6 +222,27 @@ export default function Transactions() {
 
     return (
         <ProtectedRoute>
+        <Toaster 
+            position="bottom-center"
+            toastOptions={{
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                },
+                success: {
+                    iconTheme: {
+                        primary: '#bac2ff',
+                        secondary: '#fff',
+                    },
+                },
+                error: {
+                    iconTheme: {
+                        primary: '#EF4444',
+                        secondary: '#fff',
+                    },
+                }
+            }}
+        />
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <div className="hidden md:block"><Navbar /></div>
             <Sidebar />
