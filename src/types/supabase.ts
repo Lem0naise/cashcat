@@ -1,3 +1,5 @@
+import { StringToNumber } from "lodash"
+
 export type Json =
   | string
   | number
@@ -83,7 +85,8 @@ export interface Database {
           description: string | null
           vendor: string
           vendor_id: string 
-          category_id: string 
+          category_id: string | null
+          type: string
           created_at: string
         }
         Insert: {
@@ -94,7 +97,8 @@ export interface Database {
           description?: string | null
           vendor: string
           vendor_id: string
-          category_id: string
+          category_id?: string | null
+          type: string;
           created_at?: string
         }
         Update: {
@@ -106,6 +110,7 @@ export interface Database {
           vendor: string
           vendor_id: string
           category_id: string
+          type: string
           created_at?: string
         }
         Delete: {

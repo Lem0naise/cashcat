@@ -18,8 +18,9 @@ export default function MobileNav() {
         amount: number;
         date: string;
         vendor: string;
+        type: string;
         description?: string;
-        category_id: string;
+        category_id? : string | null;
     }) => {
         try {
             await submitTransaction(transaction);
@@ -49,18 +50,18 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/window.svg"
-                                alt="Money"
+                                src="/money.svg"
+                                alt="Budget"
                                 width={20}
                                 height={20}
                                 className={`transition-opacity ${
                                     isActive('/budget') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>
-                        <span className="text-xs">Money</span>
+                        <span className="text-xs">Budget</span>
                     </Link>
 
                       <Link
@@ -77,14 +78,14 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/home.svg"
+                                src="/stats.svg"
                                 alt="Home"
                                 width={20}
                                 height={20}
                                 className={`transition-opacity ${
                                     isActive('/stats') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>
@@ -107,14 +108,14 @@ export default function MobileNav() {
                             : 'bg-white/20'
                         }`}>
                             <Image
-                                src="/file.svg"
+                                src="/transactions.svg"
                                 alt="Transactions"
                                 width={20}
                                 height={20}
                                 className={`transition-opacity ${
                                     isActive('/budget/transactions') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'opacity-70 image-black'
                                 }`}
                             />
                         </div>
@@ -143,7 +144,7 @@ export default function MobileNav() {
                                 className={`transition-opacity ${
                                     isActive('/account') 
                                     ? 'opacity-100' 
-                                    : 'opacity-70'
+                                    : 'image-black opacity-70'
                                 }`}
                             />
                         </div>

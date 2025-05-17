@@ -20,7 +20,7 @@ export default function Category({name, assigned, spent, goalAmount, group, show
     }, [assigned, goalAmount])
 
     return (
-        <div className="category p-3 md:p-4 border-b-4 flex flex-col bg-white/[.05] rounded-lg">
+        <div className="category p-3 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg">
             <div className="flex justify-between items-start">
                 <h3 className="text-base md:text-lg font-bold">{name}</h3>
                 <div className="text-right">
@@ -31,14 +31,14 @@ export default function Category({name, assigned, spent, goalAmount, group, show
             </div>
             
             <p className="text-sm text-white/50 mt-1 mb-2 md:mb-3">
-                Spent <span className="text-white/70 font-medium">£{spent.toFixed(2)}</span> of <span className="text-white/70 font-medium">£{assigned.toFixed(2)}</span> {assigned < goalAmount && <>(goal <span className="text-white/70 font-medium">£{goalAmount.toFixed(2)}</span>)</>}
+                Spent <span className="text-white/70 font-medium">£{spent.toFixed(2)}</span> of <span className="text-white/70 font-medium">£{assigned.toFixed(2)}</span> {assigned < goalAmount && <>(goal <span className="text-white/70 font-medium">£{goalAmount.toFixed(2)}</span>)</>} {assigned > goalAmount && <>(spare <span className="text-white/70 font-medium">£{(assigned-goalAmount).toFixed(2)}</span>)</>}
             </p>
 
             <div className="relative">
                 <div className="rounded h-3 md:h-5 bg-green-dark/20 w-full">
                     <div 
                         className="rounded h-full bg-green transition-all duration-500 ease-out absolute top-0 left-0"
-                        style={{width: `${(assigned / goalAmount) * 100}%`}}
+                        style={{width: `${Math.min((assigned / goalAmount), 1) * 100}%`}}
                     />
                     {spent > 0 && (
                         <div 

@@ -22,10 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${SUSEFont.variable} ${SUSEFont.variable} antialiased`}
+        className={`${SUSEFont.variable} antialiased`}
       >
         <SupabaseProvider>
           {children}
+          <div id="toast-container" />
         </SupabaseProvider>
       </body>
     </html>

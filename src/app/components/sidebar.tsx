@@ -24,17 +24,17 @@ export default function Sidebar() {
                 >
                     <Image
                         aria-hidden
-                        src="/window.svg"
+                        src="/money.svg"
                         alt="Money icon"
                         width={16}
                         height={16}
-                        className={`transition-opacity ${
+                        className={` image-black transition-opacity ${
                             isActive('/budget') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Money</span>
+                    <span className="text-sm">Budget</span>
                 </a>
                  <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
@@ -46,11 +46,11 @@ export default function Sidebar() {
                 >
                     <Image
                         aria-hidden
-                        src="/home.svg"
+                        src="/stats.svg"
                         alt="Home icon"
                         width={16}
                         height={16}
-                        className={`transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/stats') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
@@ -68,11 +68,11 @@ export default function Sidebar() {
                 >
                     <Image
                         aria-hidden
-                        src="/file.svg"
+                        src="/transactions.svg"
                         alt="Transactions icon"
                         width={16}
                         height={16}
-                        className={`transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/budget/transactions') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
@@ -94,7 +94,7 @@ export default function Sidebar() {
                         alt="Account icon"
                         width={16}
                         height={16}
-                        className={`transition-opacity ${
+                        className={`image-black transition-opacity ${
                             isActive('/account') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
