@@ -9,9 +9,9 @@ import {useEffect, useState, useRef} from "react";
 export default function Stats() {
     const overviewRef = useRef<HTMLDivElement>(null);
 
-    const totalGoal = 9625; // Example data
-    const totalAssigned = 5885.34;
-    const totalSpent = 871.72;
+    const totalGoal = 0; // Example data
+    const totalAssigned = 0;
+    const totalSpent = 0;
     const totalRemaining = totalAssigned - totalSpent;
 
     return (
@@ -25,6 +25,27 @@ export default function Stats() {
                     <div className="max-w-7xl mx-auto">
                         <div className="hidden md:flex items-center justify-between mb-8 md:mt-8">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Statistics</h1>
+                        </div>
+
+                        {/* Early Access Notice */}
+                        <div className="mb-8 p-6 bg-white/[.03] rounded-lg border-l-4 border-l-green">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 rounded-full bg-green/10">
+                                    <Image
+                                        src="/stats.svg"
+                                        alt="Statistics"
+                                        width={24}
+                                        height={24}
+                                        className="opacity-70"
+                                    />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-medium mb-1">Statistics Coming Soon</h2>
+                                    <p className="text-white/70">
+                                        We're working hard to bring you detailed insights about your spending habits. Check back soon for charts, trends, and analytics!
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Summary Category */}

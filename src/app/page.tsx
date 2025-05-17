@@ -12,7 +12,7 @@ export default function Landing() {
     const { user, loading } = useSupabase();
 
     useEffect(() => {
-        if (isDevelopment || (!loading && user)) {
+        if ((!loading && user)) {
             router.push('/budget');
         }
     }, [user, loading, router]);
@@ -24,9 +24,10 @@ export default function Landing() {
                     <h1 className="text-4xl md:text-6xl font-bold mb-6">
                         <Logo></Logo>
                     </h1>
-                    <p className="text-lg md:text-xl text-white/70 mb-8 max-w-2xl">
+                    <p className="text-lg md:text-xl text-white/70 mb-4 max-w-2xl">
                         Your money, in your hands.
                     </p>
+                   
                     <div className="flex gap-4">
                         <button
                             onClick={() => router.push('/login')}
@@ -40,6 +41,17 @@ export default function Landing() {
                         >
                             Learn More
                         </button>
+                    </div>
+                    {/* Early Access Notice */}
+                    <div className="mb-8 p-6 mt-15 bg-white/[.03] rounded-lg border-l-4 border-l-green">
+                        <div className="flex items-start gap-4">
+                            <div>
+                                <h2 className="text-lg font-medium mb-1">Early Access Notice</h2>
+                                <p className="text-white/70">
+                                    This application is in very early access. Many features are not implemented, and existing features are in various levels of functionality. Bugs may appear. Feel free to create an account and we will contact you when new features are added!
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>

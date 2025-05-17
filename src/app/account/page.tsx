@@ -15,9 +15,7 @@ export default function Account() {
     const { user } = useSupabase();
 
     const handleSignOut = async () => {
-        if (!isDevelopment) {
-            await supabase.auth.signOut();
-        }
+        await supabase.auth.signOut();
         router.push('/login');
     };
 

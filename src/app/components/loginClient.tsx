@@ -34,8 +34,6 @@ export default function Login() {
     };
   }, [router, redirectTo, supabase]);
 
-  if (isDevelopment || !isClient) return null;
-
   return (
     <div className="min-h-screen bg-background font-[family-name:var(--font-suse)] flex items-center justify-center">
       <div className="w-full max-w-md p-8 bg-white/[.02] rounded-lg border-b-4">

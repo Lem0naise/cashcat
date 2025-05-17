@@ -78,7 +78,7 @@ export default function LearnMore() {
                     <p className="text-sm sm:text-base text-white/80">CashCat makes it simple to manage your money by showing you exactly how much you can spend this month in each Category. Try not to go over!</p>
 
                     <div className="mt-8 flex justify-center">
-                        {OpenButton('Start Budgeting', true, handleClick)}
+                        {OpenButton('Done Reading', true, handleClick)}
                     </div>
                 </div>
 
@@ -142,7 +142,7 @@ export default function LearnMore() {
                             <li>CashCat is built with love and attention to detail. All of our team use it daily for our own budgeting!</li>
                         </ol>
                         <div className="mt-8 flex justify-center">
-                            {OpenButton('Join Us Now', true, handleClick)}
+                            {OpenButton('Done Reading', true, handleClick)}
                         </div>
                     </div>
                 </div>
