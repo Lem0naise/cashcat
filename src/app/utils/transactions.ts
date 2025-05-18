@@ -30,8 +30,8 @@ export async function submitTransaction(
         type: transaction.type,
         date: transaction.date,
         vendor: transaction.vendor,
-        description: transaction.description || null,
-        category_id: transaction.category_id || null,
+        description: transaction.description || undefined,
+        category_id: transaction.category_id || undefined,
         created_at: new Date().toISOString(),
     });
 

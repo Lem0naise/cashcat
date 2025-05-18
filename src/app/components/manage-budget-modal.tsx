@@ -96,7 +96,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
 
             if (data) {
-                setStartingBalance(Math.abs(data.amount).toString());
+                setStartingBalance(Math.abs(data.amount).toFixed(2));
                 setStartingBalanceId(data.id);
                 setIsInitialSetup(false);
             } else {
@@ -448,6 +448,8 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
                                                 <input
                                                     type="tel"
+                                                    inputMode="decimal"
+                                                    pattern="[0-9]*\.?[0-9]*"
                                                     value={startingBalance}
                                                     onChange={(e) => setStartingBalance(e.target.value)}
                                                     required
