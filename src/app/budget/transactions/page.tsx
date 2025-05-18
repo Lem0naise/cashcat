@@ -412,7 +412,7 @@ export default function Transactions() {
                                 />
                                 </g>
                                 </svg>
-                                Sync now
+                                <p className="hidden lg:inline">Sync now</p>
                              
                             </button>
                              
@@ -428,7 +428,7 @@ export default function Transactions() {
                                 c2.283,0,4.134-1.867,4.133-4.15C45.399,20.425,43.548,18.557,41.267,18.557z" stroke="currentColor" strokeWidth="4"/>
                             </g>
                             </svg>
-                            Add Transaction
+                            <p className="hidden lg:inline">Add Transaction</p>
                             </button>
                         </div>
                     </div>

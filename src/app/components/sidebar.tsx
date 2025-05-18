@@ -10,7 +10,7 @@ export default function Sidebar() {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <aside className="fixed left-0 top-16 bottom-0 w-64 bg-background/95 backdrop-blur-sm border-r border-white/[.15] p-4 hidden md:block font-[family-name:var(--font-suse)] fade-in">
+        <aside className="fixed left-0 top-16 bottom-0 w-1/6 min-w-40 bg-background/95 backdrop-blur-sm border-r border-white/[.15] p-4 hidden md:block font-[family-name:var(--font-suse)] fade-in">
             <div className="flex flex-col gap-4">
                 <div className="text-sm font-semibold mb-4 text-white/60 uppercase tracking-wider">Menu</div>
                

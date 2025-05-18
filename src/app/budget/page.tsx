@@ -232,13 +232,13 @@ export default function Budget() {
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={goToPreviousMonth}
-                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
-                                    >
+                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                    >   
                                         <Image
                                             src="/chevron-left.svg"
                                             alt="Previous month"
-                                            width={24}
-                                            height={24}
+                                            width={36}
+                                            height={36}
                                             className="opacity-70"
                                         />
                                     </button>
@@ -247,13 +247,13 @@ export default function Budget() {
                                     </h2>
                                     <button 
                                         onClick={goToNextMonth}
-                                        className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >
                                         <Image
                                             src="/chevron-right.svg"
                                             alt="Next month"
-                                            width={24}
-                                            height={24}
+                                            width={36}
+                                            height={36}
                                             className="opacity-70"
                                         />
                                     </button>
@@ -271,7 +271,7 @@ export default function Budget() {
                                         height={16}
                                         className="opacity-90"
                                     />
-                                    Manage Budget
+                                    <p className="hidden lg:inline">Manage Budget</p>
                                 </button>
                             </div>
                         </div>

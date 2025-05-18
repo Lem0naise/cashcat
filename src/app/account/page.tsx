@@ -28,9 +28,9 @@ export default function Account() {
                 <Sidebar />
                 <MobileNav />
                 
-                <main className="pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
+                <main className="pt-16 pb-28 md:pb-6 p-6 md:pl-64 fade-in md:ml-9">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center justify-between mb-8 mt-3 md:mt-6">
                            <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
                         </div>
                         

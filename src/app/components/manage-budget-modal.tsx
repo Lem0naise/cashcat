@@ -273,12 +273,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     // Initial data fetch
     useEffect(() => {
         if (isOpen) {
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'hidden';
         } else {
-            document.body.style.overflow = 'unset';
+            document.body.style.overflowY = 'unset';
         }
         return () => {
-            document.body.style.overflow = 'unset';
+            document.body.style.overflowY = 'unset';
         };
     }, [isOpen]);
 
