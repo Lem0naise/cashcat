@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { SUSE } from "next/font/google";
+import { Gabarito } from "next/font/google";
 import "./globals.css";
 import SupabaseProvider from './contexts/supabase-provider'
 
-const SUSEFont = SUSE({
+const USEFont = Gabarito({
   variable: "--font-suse",
+  weight: "variable",
   subsets: ["latin"],
 });
 
@@ -22,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${SUSEFont.variable} antialiased`}
+        className={`${USEFont.variable} antialiased`}
       >
         <SupabaseProvider>
           {children}

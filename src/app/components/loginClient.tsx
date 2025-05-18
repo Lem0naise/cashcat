@@ -59,18 +59,18 @@ export default function Login() {
                 borderRadius: '8px',
                 backgroundColor: '#bac2ff',
                 color: '#000000',
-                fontFamily: "SUSE",
+                fontFamily: "Gabarito",
               },
               anchor: {
                 color: '#bac2ff',
-                fontFamily: "SUSE",
+                fontFamily: "Gabarito",
               },
               label : {
-                fontFamily: "SUSE"
+                fontFamily: "Gabarito"
               },
               input: {
                 borderRadius: '8px',
-                fontFamily: "SUSE",
+                fontFamily: "Gabarito",
               },
             },
           }}
