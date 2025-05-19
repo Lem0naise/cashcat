@@ -24,6 +24,7 @@ export async function submitTransaction(
     const {data: {user}, error: userError} = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not authenticated");
 
+    
     const {error} = await supabase.from('transactions').insert({
         user_id: user.id,
         amount: transaction.amount,

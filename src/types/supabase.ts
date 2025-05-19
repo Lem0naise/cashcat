@@ -166,7 +166,7 @@ export type Database = {
           type: string
           user_id: string
           vendor: string
-          vendor_id: string | null
+          vendor_id?: string | null
         }
         Insert: {
           amount: number
