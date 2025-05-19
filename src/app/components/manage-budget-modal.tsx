@@ -28,7 +28,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const [newCategoryData, setNewCategoryData] = useState({
         name: '',
         group: '',
-        assigned: '',
         goal: '',
         timeframe: 'monthly' as const
     });
@@ -173,7 +172,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 .insert({
                     name: categoryData.name,
                     group: categoryData.group,
-                    assigned: categoryData.assigned ? parseFloat(categoryData.assigned) : 0,
                     goal: categoryData.goal ? parseFloat(categoryData.goal) : null,
                     timeframe: { type: categoryData.timeframe }
                 });
@@ -184,7 +182,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             setNewCategoryData({
                 name: '',
                 group: '',
-                assigned: '',
                 goal: '',
                 timeframe: 'monthly'
             });
@@ -307,7 +304,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             setNewCategoryData({
                 name: '',
                 group: '',
-                assigned: '',
                 goal: '',
                 timeframe: 'monthly'
             });
@@ -598,20 +594,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                 </div>
                                             </div>
 
-                                            <div>
-                                                <label className="block text-sm text-white/50 mb-1">Assigned Amount</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                    <input
-                                                        type="number"
-                                                        value={newCategoryData.assigned}
-                                                        onChange={(e) => setNewCategoryData({...newCategoryData, assigned: e.target.value})}
-                                                        placeholder="0.00"
-                                                        step="0.01"
-                                                        className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                    />
-                                                </div>
-                                            </div>
                                         </div>
 
                                         <button
@@ -641,7 +623,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                     updateCategory(category.id, {
                                                                         name: editingCategory.name,
                                                                         group: editingCategory.group,
-                                                                        assigned: editingCategory.assigned,
                                                                         goal: editingCategory.goal
                                                                     });
                                                                 }} className="space-y-3">
@@ -678,17 +659,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                 className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                                             />
                                                                         </div>
-                                                                        <div className="relative">
-                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                                            <input
-                                                                                type="number"
-                                                                                value={editingCategory.assigned || ''}
-                                                                                onChange={(e) => setEditingCategory({...editingCategory, assigned: parseFloat(e.target.value) || 0})}
-                                                                                placeholder="Assigned Amount"
-                                                                                step="0.01"
-                                                                                className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                            />
-                                                                        </div>
+                                                                        
                                                                     </div>
                                                                     <div className="flex justify-end gap-2 mt-3">
                                                                         <button
@@ -712,9 +683,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                     <div>
                                                                         <span className="block">{category.name}</span>
                                                                         <div className="flex items-center gap-2 text-sm text-white/50">
-                                                                            <span>Goal: £{category.goal || 0}</span>
-                                                                            <span>•</span>
-                                                                            <span>Assigned: £{category.assigned || 0}</span>
+                                                                            <span>Goal: £{category.goal || 0}</span>                                 
                                                                         </div>
                                                                     </div>
                                                                     

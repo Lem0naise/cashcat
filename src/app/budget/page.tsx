@@ -609,7 +609,7 @@ export default function Budget() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
                                 {filteredCategories.map((category) => (
                                     <div key={category.id}
                                     className="transform transition-all hover:scale-[1.01] hover:shadow-md"
