@@ -53,7 +53,7 @@ export default function Stats() {
                             ref={overviewRef}
                             className={`relative mb-8 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-md`}
                         >
-                            <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="p-4 bg-white/[.02] rounded-lg border-b-4 hidden">
                                 <div className="flex flex-col md:flex-row justify-between mb-4">
                                     <h3 className="text-lg font-bold mb-2 md:mb-0">Monthly Overview</h3>
                                     <div className={`flex-1 transition-all duration-300 h-auto opacity-100`}>
