@@ -57,7 +57,7 @@ export async function updateTransaction(
             date: transaction.date,
             vendor: transaction.vendor,
             description: transaction.description || null,
-            category_id: transaction.category_id || null
+            category_id: transaction.category_id || undefined
         })
         .eq('id', id);
 

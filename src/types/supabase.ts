@@ -166,7 +166,7 @@ export type Database = {
           type: string
           user_id: string
           vendor: string
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
           amount: number
@@ -178,7 +178,7 @@ export type Database = {
           type?: string
           user_id?: string
           vendor: string
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
           amount?: number
@@ -190,7 +190,7 @@ export type Database = {
           type?: string
           user_id?: string
           vendor?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
