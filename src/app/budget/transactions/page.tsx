@@ -243,11 +243,13 @@ export default function Transactions() {
     return (
         <ProtectedRoute>
         <Toaster 
+            containerClassName='mb-[15dvh]'
             position="bottom-center"
             toastOptions={{
                 style: {
                     background: '#333',
                     color: '#fff',
+
                 },
                 success: {
                     iconTheme: {

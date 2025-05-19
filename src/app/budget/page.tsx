@@ -409,11 +409,13 @@ export default function Budget() {
 
                 {/* Toast notifications */}
                 <Toaster 
+                    containerClassName='mb-[15dvh]'
                     position="bottom-center"
                     toastOptions={{
                         style: {
                             background: '#333',
                             color: '#fff',
+       
                         },
                         success: {
                             iconTheme: {
@@ -427,6 +429,7 @@ export default function Budget() {
                                 secondary: '#fff',
                             },
                         }
+        
                     }}
                 />
 
@@ -485,13 +488,14 @@ export default function Budget() {
                         </div>
 
                         {/* Balance Assignment Info */}
-                        {balanceInfo && balanceInfo.budgetPool !== balanceInfo.assigned && (
+                        {balanceInfo && (
                             <div 
-                                className={`rounded-lg md:pb-6 mb-6 overflow-hidden transition-all duration-200 ${
-                                    balanceInfo.budgetPool > balanceInfo.assigned 
-                                    ? 'bg-green/10 text-green border-b-4 border-b-green' 
-                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy'
-                                } ${isMassAssigning ? 'h-[108px]' : 'h-[64px]'}`}
+                                className={`rounded-lg overflow-hidden transition-all duration-200 ${
+                                    balanceInfo.budgetPool == balanceInfo.assigned ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
+                                    ? 'bg-green/10 text-green border-b-4 border-b-green h-[64px] md:pb-6 mb-6' 
+                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[64px] md:pb-6 mb-6') 
+                                } ${isMassAssigning ? 'h-[108px]' : ''}
+                                `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-4 flex justify-between items-center">
                                     <div>
@@ -507,9 +511,9 @@ export default function Budget() {
                                     </div>
                                     <button
                                         onClick={massAssign}
-                                        className="px-4 py-1 rounded-full bg-green text-background text-sm font-medium hover:bg-green/90 transition-colors"
+                                        className={`px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
                                     >
-                                        {isMassAssigning ? 'Done' : 'Assign'}
+                                        {isMassAssigning ? 'Done' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
                                 </div>
                                 
@@ -575,7 +579,7 @@ export default function Budget() {
                                 {error}
                             </div>
                         ) : categories.length === 0 ? (
-                            <div className="text-center text-white/60 mt-20 max-w-md mx-auto">
+                            <div className="text-center text-white/60 mt-5 max-w-md mx-auto">
                                 <Image
                                     src="/transactions.svg"
                                     alt="No budget categories"
@@ -583,8 +587,8 @@ export default function Budget() {
                                     height={48}
                                     className="image-black opacity-40 mx-auto mb-4"
                                 />
-                                <h2 className="text-2xl font-semibold mb-6">Welcome to CashCat!</h2>
-                                <div className="bg-white/[.03] rounded-lg p-6 mb-8 backdrop-blur-sm">
+                                <h2 className="text-2xl font-semibold mb-2">Welcome to CashCat!</h2>
+                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 backdrop-blur-sm">
                                     <h3 className="text-lg font-medium text-green mb-4">Get Started in 3 Steps:</h3>
                                     <ul className="inline-block text-left list-disc list-inside space-y-3 text-base">
                                         <li className="opacity-90">Create your budget</li>
@@ -592,20 +596,20 @@ export default function Budget() {
                                         <li className="opacity-90">View your stats</li>
                                     </ul>
                                 </div>
-                                <p className="text-sm mb-6 opacity-75">New to CashCat? Learn the basics first, or jump right in!</p>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                     <button
-                                        onClick={() => setShowManageModal(true)}
-                                        className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium order-1 sm:order-none"
-                                    >
-                                        Create Your Budget
-                                    </button>
-                                    <button
                                         onClick={() => router.push('/learn')}
-                                        className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
+                                        className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
                                     >
                                         Learn the Basics
                                     </button>
+                                    <button
+                                        onClick={() => setShowManageModal(true)}
+                                        className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
+                                    >
+                                        Create Your First Budget
+                                    </button>
+                                    
                                 </div>
                             </div>
                         ) : (
