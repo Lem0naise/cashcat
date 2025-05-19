@@ -35,9 +35,15 @@ export default function Budget() {
     const [showManageModal, setShowManageModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [balanceInfo, setBalanceInfo] = useState<{ balance: number; assigned: number } | null>(null);
+    const [balanceInfo, setBalanceInfo] = useState<{ budgetPool: number; assigned: number } | null>(null);
+    const [wasMassAssigningSoShouldClose, setwasMassAssigningSoShouldClose] = useState(false);
     const [isMassAssigning, setIsMassAssigning] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+    useEffect(() => {
+        setMonthString(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`);
+
+    }, [currentMonth])
 
     const formatMonth = (date: Date) => {
         return date.toLocaleDateString('en-GB', {
@@ -86,7 +92,7 @@ export default function Budget() {
                     .order('created_at'),
                 supabase
                     .from('transactions')
-                    .select('amount, category_id')
+                    .select('amount, category_id, type')
                     .eq('user_id', user.id)
                     .gte('date', startDate)
                     .lte('date', endDate),
@@ -104,17 +110,21 @@ export default function Budget() {
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
+            
 
             console.log(assignmentsData);
             console.log(monthString);
-            console.log(user.id);
 
+            let startingBalance = 0;
+            let totalIncome = 0;
             // Calculate spent amounts for each category
             const spentByCategory: { [key: string]: number } = {};
             transactionsData?.forEach(transaction => {
                 if (!spentByCategory[transaction.category_id]) {
                     spentByCategory[transaction.category_id] = 0;
                 }
+                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
+                if (transaction.type == 'income') {totalIncome += transaction.amount;}
                 // Only include negative amounts (expenses) in spent calculation
                 spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
             });
@@ -142,13 +152,16 @@ export default function Budget() {
                     rollover: assignment?.rollover ?? 0
                 };
             });
-
-            // Calculate total assigned amount
+            // Calculate total assigned amount 
             const totalAssigned = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
+
+
+            const totalBudgetPoolThisMonth = startingBalance + totalIncome; // to implement
+
 
             // Update balance info
             setBalanceInfo({
-                balance: totalBalance,
+                budgetPool: totalBudgetPoolThisMonth,
                 assigned: totalAssigned
             });
             
@@ -229,16 +242,21 @@ export default function Budget() {
             // Start by collecting all changes to make
             const changes = new Map();
             
+            // Get categories from the active group only
+            const targetCategories = activeGroup === 'All' 
+                ? categories 
+                : categories.filter(cat => cat.group === activeGroup);
+
             // Handle different mass actions
             if (pendingAction === 'fill-goals') {
-                categories.forEach(category => {
+                targetCategories.forEach(category => {
                     const goal = category.goalAmount || 0;
                     if (goal > category.assigned) {
                         changes.set(category.id, goal);
                     }
                 });
             } else if (pendingAction === 'clear') {
-                categories.forEach(category => {
+                targetCategories.forEach(category => {
                     changes.set(category.id, 0);
                 });
             } else {
@@ -318,6 +336,7 @@ export default function Budget() {
             }
         } else {
             setIsMassAssigning(true);
+            setwasMassAssigningSoShouldClose(true);
         }
     };
 
@@ -326,7 +345,6 @@ export default function Budget() {
         ? categories 
         : categories.filter(cat => cat.group === activeGroup);
 
-        console.log(categories);
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -466,23 +484,23 @@ export default function Budget() {
                         </div>
 
                         {/* Balance Assignment Info */}
-                        {balanceInfo && balanceInfo.balance !== balanceInfo.assigned && (
+                        {balanceInfo && balanceInfo.budgetPool !== balanceInfo.assigned && (
                             <div 
                                 className={`rounded-lg md:pb-6 mb-6 overflow-hidden transition-all duration-200 ${
-                                    balanceInfo.balance > balanceInfo.assigned 
+                                    balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy'
                                 } ${isMassAssigning ? 'h-[108px]' : 'h-[64px]'}`}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-4 flex justify-between items-center">
                                     <div>
-                                        {balanceInfo.balance > balanceInfo.assigned ? (
+                                        {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.balance - balanceInfo.assigned).toFixed(2)}</span> left this month
+                                                <span className="text-lg inline">£{(balanceInfo.budgetPool - balanceInfo.assigned).toFixed(2)}</span> left this month
                                             </p>
                                         ) : (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.assigned - balanceInfo.balance).toFixed(2)}</span> too much assigned
+                                                <span className="text-lg inline">£{(balanceInfo.assigned - balanceInfo.budgetPool).toFixed(2)}</span> too much assigned
                                             </p>
                                         )}
                                     </div>
@@ -511,7 +529,7 @@ export default function Budget() {
                                             pendingAction === 'fill-goals' ? null : 'fill-goals'
                                         )}
                                     >
-                                        Fill Every Goal
+                                        Fill This Group
                                     </button>
                                     <button
                                         className={`px-4 py-1 rounded-full text-sm transition-colors ${
@@ -523,7 +541,7 @@ export default function Budget() {
                                             pendingAction === 'clear' ? null : 'clear'
                                         )}
                                     >
-                                        Clear All
+                                        Empty This Group
                                     </button>
                                 </div>
                             </div>
@@ -601,11 +619,13 @@ export default function Budget() {
                                     <CategoryCard
                                         name={category.name}
                                         assigned={category.assigned}
+                                        rollover={category.rollover}
                                         spent={category.spent}
                                         goalAmount={category.goalAmount}
                                         group={category.group}
                                         showGroup={activeGroup === 'All'}
-                                        forceAssignMode={isMassAssigning}
+                                        forceFlipMassAssign={isMassAssigning}
+                                        wasMassAssigningSoShouldClose={wasMassAssigningSoShouldClose}
                                         onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
                                     />
                                     </div>

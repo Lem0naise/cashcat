@@ -5,33 +5,35 @@ import { useEffect, useState, useCallback } from 'react';
 interface CategoryProps {
     name: string;
     assigned: number;
+    rollover: number | 0;
     spent: number;
     goalAmount: number | null;
     group?: string;
     showGroup?: boolean;
-    forceAssignMode?: boolean;
+    forceFlipMassAssign?: boolean;
+    wasMassAssigningSoShouldClose? : boolean;
     onAssignmentUpdate?: (amount: number) => Promise<void>;
 }
 
-export default function Category({name, assigned, spent, goalAmount, group, showGroup = true, forceAssignMode = false, onAssignmentUpdate}: CategoryProps) {
+export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate}: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
     const [isUpdating, setIsUpdating] = useState(false);
-    const remaining = assigned - spent;
+    const remaining = assigned + rollover - spent;
     const goal = goalAmount || 0;
     
-    // Handle forceAssignMode changes with debounce
+    // Handle forceFlipMassAssign changes with debounce
     useEffect(() => {
-        setIsAssigning(forceAssignMode);
+        setIsAssigning(forceFlipMassAssign);
         // Don't reset edited amount immediately when force assign mode is toggled
-        if (!forceAssignMode) {
+        if (!forceFlipMassAssign) {
             const timeout = setTimeout(() => {
                 setEditedAmount(assigned.toFixed(2));
             }, 50);
             return () => clearTimeout(timeout);
         }
-    }, [forceAssignMode, assigned]);
+    }, [forceFlipMassAssign, assigned]);
 
     // Keep values in sync with props using debounce to prevent flashing
     useEffect(() => {
@@ -45,16 +47,16 @@ export default function Category({name, assigned, spent, goalAmount, group, show
     }, [assigned, goal, isAssigning, isUpdating]);
 
     const handleCardClick = useCallback(() => {
-        if (!onAssignmentUpdate || forceAssignMode) return;
+        if (!onAssignmentUpdate || forceFlipMassAssign) return;
         setIsAssigning(true);
-    }, [onAssignmentUpdate, forceAssignMode]);
+    }, [onAssignmentUpdate, forceFlipMassAssign]);
 
     const handleSave = useCallback(async () => {
         if (!onAssignmentUpdate) return;
         try {
             setIsUpdating(true);
             await onAssignmentUpdate(Number(editedAmount));
-            if (!forceAssignMode) {
+            if (!forceFlipMassAssign) {
                 setIsAssigning(false);
             }
         } catch (error) {
@@ -63,25 +65,25 @@ export default function Category({name, assigned, spent, goalAmount, group, show
         } finally {
             setIsUpdating(false);
         }
-    }, [onAssignmentUpdate, editedAmount, forceAssignMode, assigned]);
+    }, [onAssignmentUpdate, editedAmount, forceFlipMassAssign, assigned]);
 
     const handleCancel = useCallback(() => {
         setEditedAmount(assigned.toFixed(2));
-        if (!forceAssignMode) {
+        if (!forceFlipMassAssign) {
             setIsAssigning(false);
         }
-    }, [forceAssignMode, assigned]);
+    }, [forceFlipMassAssign, assigned]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/[^\d.]/g, '');
-        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-            setEditedAmount(value);
-        }
+        const value = e.target.value.replace(/[^0-9+\-*/.]/g, '');
+        setEditedAmount(value);
     }, []);
 
     const handleInputBlur = useCallback(() => {
         if (editedAmount !== '') {
-            setEditedAmount(parseFloat(editedAmount).toFixed(2));
+            const result = new Function(`return ${editedAmount}`)();
+            const sanitized = typeof result === 'number' && !isNaN(result) ? Math.max(0, result) : 0;
+            setEditedAmount(sanitized.toFixed(2));
         }
     }, [editedAmount]);
 
@@ -160,12 +162,12 @@ export default function Category({name, assigned, spent, goalAmount, group, show
                             onBlur={handleInputBlur}
                             inputMode="decimal"
                             pattern="[0-9]*\.?[0-9]*"
-                            autoFocus={!forceAssignMode}
+                            autoFocus={!forceFlipMassAssign}
                         />
                         <span className="text-white/50">/</span>
                         <span className="text-green text-lg font-medium">£{goal.toFixed(2)}</span>
                     </div>
-                    <div className={`flex gap-2 ${forceAssignMode ? "hidden" : ""}`}>
+                    <div className={`flex gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
                         <button
                             onClick={handleSave}
                             disabled={isUpdating}
