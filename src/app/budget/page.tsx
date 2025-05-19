@@ -4,32 +4,48 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '../../types/supabase';
+import toast, { Toaster } from 'react-hot-toast';
+import type { Database } from '@/types/supabase';
 import Navbar from "../components/navbar";
 import Sidebar from "../components/sidebar";
 import MobileNav from "../components/mobileNav";
 import ManageBudgetModal from "../components/manage-budget-modal";
 import CategoryCard from '../features/Category';
 import ProtectedRoute from '../components/protected-route';
+type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
+type Assignment = Database['public']['Tables']['assignments']['Row'];
 
 type Category = {
-    id: string;
-    name: string;
+    id: CategoryFromDB['id'];
+    name: CategoryFromDB['name'];
     assigned: number;
     spent: number;
-    goalAmount: number;
+    goalAmount: CategoryFromDB['goal'];
     group: string;
+    rollover: Assignment['rollover'];
 };
 
 export default function Budget() {
     const router = useRouter();
     const supabase = createClientComponentClient<Database>();
     const [categories, setCategories] = useState<Category[]>([]);
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+    const [monthString, setMonthString] = useState(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
-    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [balanceInfo, setBalanceInfo] = useState<{ budgetPool: number; assigned: number } | null>(null);
+    const [wasMassAssigningSoShouldClose, setwasMassAssigningSoShouldClose] = useState(false);
+    const [isMassAssigning, setIsMassAssigning] = useState(false);
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+    // Update month string when current month changes
+    useEffect(() => {
+        const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+        setMonthString(newMonthString);
+        fetchBudgetData(); // Fetch new data when month changes
+    }, [currentMonth]);
 
     const formatMonth = (date: Date) => {
         return date.toLocaleDateString('en-GB', {
@@ -61,8 +77,12 @@ export default function Budget() {
             const startDate = firstDay.toISOString().split('T')[0];
             const endDate = lastDay.toISOString().split('T')[0];
 
-            // Fetch categories and transactions in parallel
-            const [categoriesResponse, transactionsResponse] = await Promise.all([
+            // Format current month for assignments query
+            const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+            setMonthString(queryMonthString);
+
+            // Fetch categories, transactions, and assignments in parallel
+            const [categoriesResponse, transactionsResponse, assignmentsResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -76,91 +96,256 @@ export default function Budget() {
                     .order('created_at'),
                 supabase
                     .from('transactions')
-                    .select('amount, category_id')
+                    .select('amount, category_id, type')
                     .eq('user_id', user.id)
                     .gte('date', startDate)
-                    .lte('date', endDate)
+                    .lte('date', endDate),
+                supabase
+                    .from('assignments')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('month', queryMonthString)
             ]);
 
             if (categoriesResponse.error) throw categoriesResponse.error;
             if (transactionsResponse.error) throw transactionsResponse.error;
+            if (assignmentsResponse.error) throw assignmentsResponse.error;
 
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
+            const assignmentsData = assignmentsResponse.data;
+            
 
+            console.log(assignmentsData);
+            console.log(monthString);
+
+            let startingBalance = 0;
+            let totalIncome = 0;
             // Calculate spent amounts for each category
             const spentByCategory: { [key: string]: number } = {};
             transactionsData?.forEach(transaction => {
                 if (!spentByCategory[transaction.category_id]) {
                     spentByCategory[transaction.category_id] = 0;
                 }
+                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
+                if (transaction.type == 'income') {totalIncome += transaction.amount;}
                 // Only include negative amounts (expenses) in spent calculation
-                if (transaction.amount < 0) {
-                    spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
-                }
+                spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
             });
 
-            // Update categories with spent amounts and group names
-            const categoriesWithSpent = categoriesData.map(category => ({
-                id: category.id,
-                name: category.name,
-                assigned: category.assigned || 0,
-                spent: spentByCategory[category.id] || 0,
-                goalAmount: category.goal || 0,
-                group: category.groups?.name || 'Uncategorized' // Use the group name from the joined data
-            }));
+            // Create a map of assignments by category ID
+            const assignmentsByCategory = assignmentsData.reduce((acc, assignment) => {
+                acc[assignment.category_id] = assignment;
+                return acc;
+            }, {} as Record<string, typeof assignmentsData[0]>);
 
-            console.log(categoriesWithSpent);
+            // Update categories with spent amounts, assignments, and group names
+            // Calculate total balance for current month (copied from transactions page logic)
+            const totalBalance = transactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
 
+            // Calculate categories with assignments
+            const categoriesWithSpent = categoriesData.map(category => {
+                const assignment = assignmentsByCategory[category.id];
+                return {
+                    id: category.id,
+                    name: category.name,
+                    assigned: assignment?.assigned ?? 0,
+                    spent: spentByCategory[category.id] || 0,
+                    goalAmount: category.goal || 0,
+                    group: category.groups?.name || 'Uncategorized',
+                    rollover: assignment?.rollover ?? 0
+                };
+            });
+            // Calculate total assigned amount 
+            const totalAssigned = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
+
+
+            const totalBudgetPoolThisMonth = startingBalance + totalIncome; // to implement
+
+
+            // Update balance info
+            setBalanceInfo({
+                budgetPool: totalBudgetPoolThisMonth,
+                assigned: totalAssigned
+            });
+            
             setCategories(categoriesWithSpent);
             setError(null);
         } catch (error) {
             console.error('Error fetching budget data:', error);
             setError('Failed to load budget data');
             
-            if (process.env.NODE_ENV === 'development') {
-                setCategories([
-                    // Essentials
-                    {id:'1', name:'Rent', assigned: 460.34, spent: 0, goalAmount: 800, group: 'Essentials'},
-                    {id:'2', name:'Utilities', assigned: 150, spent: 120.50, goalAmount: 150, group: 'Essentials'},
-                    {id:'3', name:'Groceries', assigned: 400, spent: 292.40, goalAmount: 400, group: 'Essentials'},
-                    {id:'4', name:'Transport', assigned: 80, spent: 95.60, goalAmount: 80, group: 'Essentials'},
-                    
-                    // Food & Dining
-                    {id:'5', name:'Takeouts', assigned: 90, spent: 122.63, goalAmount: 90, group: 'Food & Dining'},
-                    {id:'6', name:'Restaurants', assigned: 120, spent: 85.20, goalAmount: 150, group: 'Food & Dining'},
-                    {id:'7', name:'Coffee Shops', assigned: 45, spent: 38.40, goalAmount: 50, group: 'Food & Dining'},
-                    
-                    // Savings & Goals
-                    {id:'8', name:'Emergency Fund', assigned: 3000, spent: 0, goalAmount: 5000, group: 'Savings & Goals'},
-                    {id:'9', name:'Holiday', assigned: 800, spent: 0, goalAmount: 1200, group: 'Savings & Goals'},
-                    {id:'10', name:'New Laptop', assigned: 600, spent: 0, goalAmount: 1500, group: 'Savings & Goals'},
-                    
-                    // Entertainment
-                    {id:'11', name:'Streaming', assigned: 30, spent: 30, goalAmount: 30, group: 'Entertainment'},
-                    {id:'12', name:'Gaming', assigned: 35, spent: 29.99, goalAmount: 40, group: 'Entertainment'},
-                    {id:'13', name:'Movies', assigned: 40, spent: 32.00, goalAmount: 50, group: 'Entertainment'},
-                    
-                    // Health & Wellness
-                    {id:'14', name:'Gym', assigned: 35, spent: 35.00, goalAmount: 35, group: 'Health & Wellness'},
-                    {id:'15', name:'Healthcare', assigned: 80, spent: 25.00, goalAmount: 100, group: 'Health & Wellness'},
-                ]);
-            }
+            
         } finally {
             setLoading(false);
         }
     }, [currentMonth, supabase]); // Include all dependencies
 
-    useEffect(() => {
-        fetchBudgetData();
-    }, [fetchBudgetData]); // Only depend on the memoized function
+
+    const handleAssignmentUpdate = async (categoryId: string, newAmount: number) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Calculate the new total assigned amount before making the API call
+            const updatedCategories = categories.map(cat => 
+                cat.id === categoryId ? { ...cat, assigned: newAmount } : cat
+            );
+            const newTotalAssigned = updatedCategories.reduce((total, cat) => total + cat.assigned, 0);
+
+            // Update local state immediately
+            setCategories(updatedCategories);
+            if (balanceInfo) {
+                setBalanceInfo({
+                    ...balanceInfo,
+                    assigned: newTotalAssigned
+                });
+            }
+
+            const promise = (async () => {
+                const { error } = await supabase
+                    .from('assignments')
+                    .upsert({
+                        category_id: categoryId,
+                        month: monthString,
+                        assigned: newAmount,
+                        user_id: user.id
+                    }, {onConflict: 'category_id,month'});
+                if (error) throw error;
+            })();
+
+            await toast.promise(promise, {
+                loading: 'Updating assignment...',
+                success: 'Updated category assignment successfully!',
+                error: 'Failed to update assignment'
+            });
+        } catch (error) {
+            console.error('Error updating assignment:', error);
+            // Revert the local state changes on error
+            setCategories(cats => cats.map(cat => 
+                cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
+            ));
+            if (balanceInfo) {
+                const currentTotalAssigned = categories.reduce((total, cat) => total + cat.assigned, 0);
+                setBalanceInfo({
+                    ...balanceInfo,
+                    assigned: currentTotalAssigned
+                });
+            }
+            throw error;
+        }
+    };
+
+    const updateCategoriesInMass = async () => {
+        let updatedCategories = [...categories];
+
+        try {
+            // Start by collecting all changes to make
+            const changes = new Map();
+            
+            // Get categories from the active group only
+            const targetCategories = activeGroup === 'All' 
+                ? categories 
+                : categories.filter(cat => cat.group === activeGroup);
+
+            // Handle different mass actions
+            if (pendingAction === 'fill-goals') {
+                targetCategories.forEach(category => {
+                    const goal = category.goalAmount || 0;
+                    if (goal > category.assigned) {
+                        changes.set(category.id, goal);
+                    }
+                });
+            } else if (pendingAction === 'clear') {
+                targetCategories.forEach(category => {
+                    changes.set(category.id, 0);
+                });
+            } else {
+                // Handle manual input changes
+                const categoryInputs = document.querySelectorAll('input[data-category-id]') as NodeListOf<HTMLInputElement>;
+                categoryInputs.forEach(input => {
+                    const name = input.dataset.categoryId;
+                    if (!name) return;
+                    
+                    const category = categories.find(c => c.name === name);
+                    if (!category) return;
+                    
+                    const newAmount = parseFloat(input.value);
+                    if (!isNaN(newAmount) && newAmount !== category.assigned) {
+                        changes.set(category.id, newAmount);
+                    }
+                });
+            }
+
+            // If there are no changes, exit early
+            if (changes.size === 0) {
+                return;
+            }
+
+            // Update local state first for immediate feedback
+            updatedCategories = categories.map(cat => {
+                const newAmount = changes.get(cat.id);
+                return newAmount !== undefined ? { ...cat, assigned: newAmount } : cat;
+            });
+
+            // Update UI state immediately
+            const newTotalAssigned = updatedCategories.reduce((total, cat) => total + cat.assigned, 0);
+            setCategories(updatedCategories);
+            if (balanceInfo) {
+                setBalanceInfo({
+                    ...balanceInfo,
+                    assigned: newTotalAssigned
+                });
+            }
+
+            // Prepare all database updates
+            const updates = Array.from(changes.entries()).map(([categoryId, amount]) => 
+                handleAssignmentUpdate(categoryId, amount)
+            );
+
+            // Execute all updates in parallel
+            if (updates.length > 0) {
+                const actionDesc = pendingAction === 'fill-goals' ? 'Filling goals' 
+                    : pendingAction === 'clear' ? 'Clearing assignments' 
+                    : 'Updating assignments';
+
+                await toast.promise(Promise.all(updates), {
+                    loading: `${actionDesc}...`,
+                    success: 'All updates completed successfully!',
+                    error: 'Failed to complete some updates'
+                });
+            }
+
+            // After successful update, refetch data to ensure consistency
+            await fetchBudgetData();
+
+        } catch (error) {
+            console.error('Error updating assignments:', error);
+            // On error, refresh data to ensure consistency
+            await fetchBudgetData();
+            throw error;
+        }
+    };
+
+    const massAssign = async () => {
+        if (isMassAssigning) {
+            try {
+                await updateCategoriesInMass();
+            } finally {
+                setIsMassAssigning(false);
+                setPendingAction(null);
+            }
+        } else {
+            setIsMassAssigning(true);
+            setwasMassAssigningSoShouldClose(true);
+        }
+    };
 
     const groups = ['All', ...new Set(categories.map(cat => cat.group))];
     const filteredCategories = activeGroup === 'All' 
         ? categories 
         : categories.filter(cat => cat.group === activeGroup);
 
-        console.log(categories);
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -222,6 +407,29 @@ export default function Budget() {
                 </div>
 
 
+                {/* Toast notifications */}
+                <Toaster 
+                    position="bottom-center"
+                    toastOptions={{
+                        style: {
+                            background: '#333',
+                            color: '#fff',
+                        },
+                        success: {
+                            iconTheme: {
+                                primary: '#bac2ff',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            iconTheme: {
+                                primary: '#EF4444',
+                                secondary: '#fff',
+                            },
+                        }
+                    }}
+                />
+
                 <main className="pt-4 md:pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="md:flex hidden items-center mb-8 md:mt-5">
@@ -275,6 +483,70 @@ export default function Budget() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Balance Assignment Info */}
+                        {balanceInfo && balanceInfo.budgetPool !== balanceInfo.assigned && (
+                            <div 
+                                className={`rounded-lg md:pb-6 mb-6 overflow-hidden transition-all duration-200 ${
+                                    balanceInfo.budgetPool > balanceInfo.assigned 
+                                    ? 'bg-green/10 text-green border-b-4 border-b-green' 
+                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy'
+                                } ${isMassAssigning ? 'h-[108px]' : 'h-[64px]'}`}
+                            onClick={isMassAssigning ? ()=>{} : massAssign}>
+                                <div className="p-4 flex justify-between items-center">
+                                    <div>
+                                        {balanceInfo.budgetPool > balanceInfo.assigned ? (
+                                            <p className="font-medium">
+                                                <span className="text-lg inline">£{(balanceInfo.budgetPool - balanceInfo.assigned).toFixed(2)}</span> left this month
+                                            </p>
+                                        ) : (
+                                            <p className="font-medium">
+                                                <span className="text-lg inline">£{(balanceInfo.assigned - balanceInfo.budgetPool).toFixed(2)}</span> too much assigned
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={massAssign}
+                                        className="px-4 py-1 rounded-full bg-green text-background text-sm font-medium hover:bg-green/90 transition-colors"
+                                    >
+                                        {isMassAssigning ? 'Done' : 'Assign'}
+                                    </button>
+                                </div>
+                                
+                                <div 
+                                    className={`px-4 pb-4 flex gap-2 transition-all duration-200 ${
+                                        isMassAssigning 
+                                        ? 'opacity-100 transform translate-y-0' 
+                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
+                                    }`}
+                                >
+                                    <button
+                                        className={`px-4 py-1 rounded-full text-sm transition-colors ${
+                                            pendingAction === 'fill-goals' 
+                                            ? 'bg-green text-background' 
+                                            : 'bg-white/10 hover:bg-white/20'
+                                        }`}
+                                        onClick={() => setPendingAction(
+                                            pendingAction === 'fill-goals' ? null : 'fill-goals'
+                                        )}
+                                    >
+                                        Fill This Group
+                                    </button>
+                                    <button
+                                        className={`px-4 py-1 rounded-full text-sm transition-colors ${
+                                            pendingAction === 'clear' 
+                                            ? 'bg-reddy text-background' 
+                                            : 'bg-white/10 hover:bg-white/20'
+                                        }`}
+                                        onClick={() => setPendingAction(
+                                            pendingAction === 'clear' ? null : 'clear'
+                                        )}
+                                    >
+                                        Empty This Group
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
                             <div className="flex gap-2 min-w-max">
@@ -337,7 +609,7 @@ export default function Budget() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
                                 {filteredCategories.map((category) => (
                                     <div key={category.id}
                                     className="transform transition-all hover:scale-[1.01] hover:shadow-md"
@@ -348,10 +620,14 @@ export default function Budget() {
                                     <CategoryCard
                                         name={category.name}
                                         assigned={category.assigned}
+                                        rollover={category.rollover}
                                         spent={category.spent}
                                         goalAmount={category.goalAmount}
                                         group={category.group}
                                         showGroup={activeGroup === 'All'}
+                                        forceFlipMassAssign={isMassAssigning}
+                                        wasMassAssigningSoShouldClose={wasMassAssigningSoShouldClose}
+                                        onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
                                     />
                                     </div>
                                 ))}

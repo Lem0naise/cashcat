@@ -24,14 +24,15 @@ export async function submitTransaction(
     const {data: {user}, error: userError} = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not authenticated");
 
+    
     const {error} = await supabase.from('transactions').insert({
         user_id: user.id,
         amount: transaction.amount,
         type: transaction.type,
         date: transaction.date,
         vendor: transaction.vendor,
-        description: transaction.description || null,
-        category_id: transaction.category_id || null,
+        description: transaction.description || undefined,
+        category_id: transaction.category_id || undefined,
         created_at: new Date().toISOString(),
     });
 
@@ -57,7 +58,7 @@ export async function updateTransaction(
             date: transaction.date,
             vendor: transaction.vendor,
             description: transaction.description || null,
-            category_id: transaction.category_id || null
+            category_id: transaction.category_id || undefined
         })
         .eq('id', id);
 

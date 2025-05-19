@@ -4,7 +4,6 @@
 import { useRouter } from 'next/navigation';
 import Logo from "./logo";
 import { useSupabase } from "../contexts/supabase-provider";
-import { isDevelopment, mockUser } from "../utils/mocks";
 
 
 export default function Navbar() {
@@ -21,9 +20,7 @@ export default function Navbar() {
                 <div onClick={learn} className="scale-35 md:scale-45 origin-left transition-transform hover:scale-[0.52] cursor-pointer">
                     <Logo />
                 </div>
-                {isDevelopment && (
-                    <span className="text-xs text-green px-2 py-1 rounded-full bg-green/10">Dev Mode</span>
-                )}
+              
             </div>
         </nav>
     );

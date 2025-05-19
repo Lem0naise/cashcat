@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSupabase } from './contexts/supabase-provider';
 import Logo from './components/logo';
-import { isDevelopment } from './utils/mocks';
 
 export default function Landing() {
     const router = useRouter();

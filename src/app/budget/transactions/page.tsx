@@ -8,7 +8,6 @@ import Navbar from "../../components/navbar";
 import Sidebar from "../../components/sidebar";
 import MobileNav from "../../components/mobileNav";
 import TransactionModal from "../../components/transaction-modal";
-import { isDevelopment, mockSupabase } from "../../utils/mocks";
 import ProtectedRoute from "../../components/protected-route";
 import { submitTransaction, updateTransaction, deleteTransaction } from '../../utils/transactions';
 import toast, { Toaster } from 'react-hot-toast';

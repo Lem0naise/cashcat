@@ -6,8 +6,6 @@ import ProtectedRoute from "../components/protected-route";
 import { createClient } from '../utils/supabase';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '../contexts/supabase-provider';
-import { isDevelopment, mockUser } from '../utils/mocks';
-import Logo from "../components/logo";
 
 export default function Account() {
     const router = useRouter();
@@ -35,11 +33,6 @@ export default function Account() {
                         </div>
                         
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
-                            {isDevelopment ? (
-                                <div className="mb-4 p-3 bg-green/10 text-green rounded-lg">
-                                    Development Mode Active
-                                </div>
-                            ) : null}
                             <p className={`${displayUser ? 'inline' : 'hidden'}`}>
                                 You're signed into CashCat! Your budget is saved to the cloud, you can rest safely.
                             </p>
