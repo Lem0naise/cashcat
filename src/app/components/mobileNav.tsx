@@ -2,33 +2,26 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TransactionModal from "./transaction-modal";
 import { useRouter } from 'next/navigation';
 import { submitTransaction } from '../utils/transactions';
 
 export default function MobileNav() {
-    const [showModal, setShowModal] = useState(false);
     const pathname = usePathname();
     const isActive = (path: string) => pathname === path;
     const router = useRouter();
+    const searchParams = useSearchParams();
     
-    const handleSubmit = async (transaction: {
-        amount: number;
-        date: string;
-        vendor: string;
-        type: string;
-        description?: string;
-        category_id? : string | null;
-    }) => {
-        try {
-            await submitTransaction(transaction);
-            setShowModal(false);
-            router.refresh();
-        } catch (error) {
-            console.error('Error saving transaction:', error);
-            // TODO: Show error toast
+    const handleAddClick = () => {
+        if (pathname !== '/budget/transactions') {
+            router.push('/budget/transactions?showModal=true');
+        } else {
+            router.push('/budget/transactions?showModal=true');
+            //const params = new URLSearchParams(searchParams.toString());
+            //params.set('showModal', 'true');
+            //router.replace(`budget/transactions?${params.toString()}`);
         }
     };
 
@@ -155,7 +148,7 @@ export default function MobileNav() {
                 {/* Floating add button */}
                 <div className="absolute left-1/2 -translate-x-1/2 -top-6">
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={handleAddClick}
                         className="flex flex-col items-center"
                     >
                         <div className="p-4 rounded-full bg-green text-background shadow-lg">
@@ -173,13 +166,6 @@ export default function MobileNav() {
             
             </div>
 
-            <TransactionModal
-                transaction={null}
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                onSubmit={handleSubmit}
-                onDelete={() => {}}
-            />
         </nav>
     );
 }

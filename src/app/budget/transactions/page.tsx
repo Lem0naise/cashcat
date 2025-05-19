@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
 import Navbar from "../../components/navbar";
@@ -25,15 +25,32 @@ type Transaction = Database['public']['Tables']['transactions']['Row'] & {
 };
 
 export default function Transactions() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
+    const [showModal, setShowModal] = useState(() => {
+        return searchParams.get('showModal') === 'true';
+    });
     const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
-    const router = useRouter();
     const supabase = createClientComponentClient<Database>();
+
+    useEffect(() => {
+        setModalTransaction(null);
+        setShowModal(searchParams.get('showModal') === 'true')
+    }, [searchParams]);
+
+
+    const closeModalFunc = () => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('showModal');
+        router.replace(`/budget/transactions?${params.toString()}`);
+        setShowModal(false);
+    }
 
     // Filter transactions based on search query
     const filteredTransactions = transactions.filter(transaction => {
@@ -529,7 +546,7 @@ export default function Transactions() {
             <TransactionModal
                 transaction={modalTransaction}
                 isOpen={showModal}
-                onClose={() => setShowModal(false)}
+                onClose={closeModalFunc}
                 onSubmit={modalTransaction ? handleUpdateSubmit : handleSubmit}
                 onDelete={handleDelete}
             />
