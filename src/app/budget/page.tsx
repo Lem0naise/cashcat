@@ -40,10 +40,12 @@ export default function Budget() {
     const [isMassAssigning, setIsMassAssigning] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+    // Update month string when current month changes
     useEffect(() => {
-        setMonthString(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`);
-
-    }, [currentMonth])
+        const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+        setMonthString(newMonthString);
+        fetchBudgetData(); // Fetch new data when month changes
+    }, [currentMonth]);
 
     const formatMonth = (date: Date) => {
         return date.toLocaleDateString('en-GB', {
@@ -76,6 +78,8 @@ export default function Budget() {
             const endDate = lastDay.toISOString().split('T')[0];
 
             // Format current month for assignments query
+            const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+            setMonthString(queryMonthString);
 
             // Fetch categories, transactions, and assignments in parallel
             const [categoriesResponse, transactionsResponse, assignmentsResponse] = await Promise.all([
@@ -100,7 +104,7 @@ export default function Budget() {
                     .from('assignments')
                     .select('*')
                     .eq('user_id', user.id)
-                    .eq('month', monthString)
+                    .eq('month', queryMonthString)
             ]);
 
             if (categoriesResponse.error) throw categoriesResponse.error;
@@ -177,9 +181,6 @@ export default function Budget() {
         }
     }, [currentMonth, supabase]); // Include all dependencies
 
-    useEffect(() => {
-        fetchBudgetData();
-    }, [fetchBudgetData]); // Only depend on the memoized function
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number) => {
         try {
