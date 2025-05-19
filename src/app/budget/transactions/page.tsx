@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
 import Navbar from "../../components/navbar";
@@ -11,6 +11,8 @@ import TransactionModal from "../../components/transaction-modal";
 import ProtectedRoute from "../../components/protected-route";
 import { submitTransaction, updateTransaction, deleteTransaction } from '../../utils/transactions';
 import toast, { Toaster } from 'react-hot-toast';
+
+import TransactionModalWrapper from "@/app/components/transactionSus";
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -25,31 +27,20 @@ type Transaction = Database['public']['Tables']['transactions']['Row'] & {
 };
 
 export default function Transactions() {
-    const searchParams = useSearchParams();
     const router = useRouter();
-
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(() => {
-        return searchParams.get('showModal') === 'true';
-    });
+    const [showModal, setShowModal] = useState(false);
     const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const supabase = createClientComponentClient<Database>();
 
-    useEffect(() => {
-        setModalTransaction(null);
-        setShowModal(searchParams.get('showModal') === 'true')
-    }, [searchParams]);
-
-
     const closeModalFunc = () => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('showModal');
-        router.replace(`/budget/transactions?${params.toString()}`);
+        router.replace('/budget/transactions');
         setShowModal(false);
+        setModalTransaction(null);
     }
 
     // Filter transactions based on search query
@@ -259,30 +250,30 @@ export default function Transactions() {
 
     return (
         <ProtectedRoute>
-        <Toaster 
-            containerClassName='mb-[15dvh]'
-            position="bottom-center"
-            toastOptions={{
-                style: {
-                    background: '#333',
-                    color: '#fff',
-
-                },
-                success: {
-                    iconTheme: {
-                        primary: '#bac2ff',
-                        secondary: '#fff',
+            <TransactionModalWrapper setShowModal={setShowModal} />
+            <Toaster 
+                containerClassName='mb-[15dvh]'
+                position="bottom-center"
+                toastOptions={{
+                    style: {
+                        background: '#333',
+                        color: '#fff',
                     },
-                },
-                error: {
-                    iconTheme: {
-                        primary: '#EF4444',
-                        secondary: '#fff',
+                    success: {
+                        iconTheme: {
+                            primary: '#bac2ff',
+                            secondary: '#fff',
                     },
-                }
-            }}
-        />
-        <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: '#EF4444',
+                            secondary: '#fff',
+                        },
+                    }
+                }}
+            />
+            <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <div className="hidden md:block"><Navbar /></div>
             <Sidebar />
             <MobileNav />

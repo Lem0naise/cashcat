@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import TransactionModal from "./transaction-modal";
 import { useRouter } from 'next/navigation';
@@ -12,17 +12,10 @@ export default function MobileNav() {
     const pathname = usePathname();
     const isActive = (path: string) => pathname === path;
     const router = useRouter();
-    const searchParams = useSearchParams();
     
     const handleAddClick = () => {
-        if (pathname !== '/budget/transactions') {
-            router.push('/budget/transactions?showModal=true');
-        } else {
-            router.push('/budget/transactions?showModal=true');
-            //const params = new URLSearchParams(searchParams.toString());
-            //params.set('showModal', 'true');
-            //router.replace(`budget/transactions?${params.toString()}`);
-        }
+        // Always navigate with the showModal parameter
+        router.push('/budget/transactions?showModal=true');
     };
 
     return (
