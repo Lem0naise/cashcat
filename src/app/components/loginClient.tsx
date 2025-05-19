@@ -5,7 +5,6 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { createClient } from '@/app/utils/supabase';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { isDevelopment } from '../utils/mocks';
 
 export default function Login() {
   const router = useRouter();
@@ -20,9 +19,6 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (isDevelopment){
-      router.push('/budget');
-    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         router.push(redirectTo);
