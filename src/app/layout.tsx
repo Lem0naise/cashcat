@@ -14,7 +14,7 @@ const USEFont = Gabarito({
 
 export const metadata: Metadata = {
   title: "CashCat",
-  description: "Manage your budget with envelope budgeting",
+  description: "Manage your budget with zero-based budgeting",
 };
 
 export default function RootLayout({

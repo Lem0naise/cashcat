@@ -114,8 +114,7 @@ export default function Budget() {
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
-            
-
+        
             console.log(assignmentsData);
             console.log(monthString);
 
@@ -158,10 +157,7 @@ export default function Budget() {
             });
             // Calculate total assigned amount 
             const totalAssigned = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
-
-
             const totalBudgetPoolThisMonth = startingBalance + totalIncome; // to implement
-
 
             // Update balance info
             setBalanceInfo({

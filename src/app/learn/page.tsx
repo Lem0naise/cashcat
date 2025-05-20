@@ -33,7 +33,7 @@ export default function LearnMore() {
                             : 'dark:text-white/60 hover:text-white'
                         }`}
                     >
-                        Envelope Budgeting
+                        Zero-Based Budgeting
                     </button>
                     <button 
                         onClick={() => setActiveTab('team')}
@@ -51,7 +51,19 @@ export default function LearnMore() {
                     <h1 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-6">Take Control of Your Money</h1>
                     
                     <section>
-                        <p className="text-sm sm:text-base text-white/70">CashCat uses digital envelopes to help you budget. Learn to think using <span className="text-green">Groups</span>, <span className="text-green">Categories</span> and <span className="text-green">Assignments</span>.</p>
+                        <p className="text-sm sm:text-base text-white/70">CashCat uses digital envelopes to help you budget - this is known as zero-based budgeting. Learn to think using <span className="text-green">Groups</span>, <span className="text-green">Categories</span> and <span className="text-green">Assignments</span>.</p>
+                    </section>
+
+
+                    <section>
+                        <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">The Rules</h2>
+                        <ul className="list-disc list-inside space-y-1 sm:space-y-2 text-sm sm:text-base">
+                            <li>Assign all your money to <span className="text-green">Categories</span> - don't have any money without a purpose!</li>
+                            <li>Make spending money a conscious decision using <span className="text-green">Transactions</span>.</li>
+                            <li>Build  <span className="text-green">Emergency Funds</span> over time - so you aren't overwhelmed with unexpected expenses.</li>
+                            <li>Track progress towards <span className="text-green">Savings Goals</span>.</li>
+                            <li>Use <span className="text-green">Stats</span> to see exactly where your money is going.</li>
+                        </ul>
                     </section>
 
                     <section>
@@ -61,19 +73,10 @@ export default function LearnMore() {
                             <li>Create <span className="text-green">Groups</span> to organize your spending (like "Bills", "Food").</li>
                             <li>Add <span className="text-green">Categories</span> within each <span className="text-green">Group</span> (like "Groceries" in "Food").</li>
                             <li>Set a monthly budget for each <span className="text-green">Category</span>.</li>
-                            <li><span className="text-green">Assign</span> money each month to every <span className="text-green">Category</span> by tapping on it.</li>
+                            <li><span className="text-green">Assign</span> any incoming money each month to each <span className="text-green">Category</span> by tapping on it.</li>
                         </ol>
                     </section>
 
-                    <section>
-                        <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Why It Works</h2>
-                        <ul className="list-disc list-inside space-y-1 sm:space-y-2 text-sm sm:text-base">
-                            <li>Each transaction is categorised.</li>
-                            <li>See exactly where your money is going.</li>
-                            <li>Make spending money a conscious decision.</li>
-                            <li>Track progress towards savings goals.</li>
-                        </ul>
-                    </section>
 
                     <div className="mt-8 flex justify-center">
                         {OpenButton('Done Reading', true, handleClick)}
@@ -129,7 +132,7 @@ export default function LearnMore() {
                         <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Our Mission</h3>
 
                         <ol className="text-sm sm:text-base text.white/70 text-left list-decimal list-inside space-y-1.5 sm:space-y-2 leading-tight sm:leading-normal">
-                            <li>We know envelope budgeting works.</li>
+                            <li>We know zero-based budgeting works.</li>
                             <li>We believe everybody deserves access to a simple tool to manage their money.</li>
                             <li>We also believe it shouldn't be expensive - otherwise what's the point!</li>
                             <li>CashCat is built with love and attention to detail. All of our team use it daily for our own budgeting!</li>
