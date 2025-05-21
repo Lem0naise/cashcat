@@ -12,12 +12,7 @@ import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
-import { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Budget | CashCat",
-  description: "Manage your monthly budget and category assignments"
-};
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -185,7 +180,7 @@ export default function Budget() {
     }, [currentMonth, supabase]); // Include all dependencies
 
 
-    const handleAssignmentUpdate = async (categoryId: string, newAmount: number) => {
+    const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
@@ -217,11 +212,13 @@ export default function Budget() {
                 if (error) throw error;
             })();
 
-            await toast.promise(promise, {
-                loading: 'Updating assignment...',
-                success: 'Updated category assignment successfully!',
-                error: 'Failed to update assignment'
-            });
+            if (toToast) {
+                    await toast.promise(promise, {
+                    loading: 'Updating assignment...',
+                    success: 'Updated assignment successfully!',
+                    error: 'Failed to update assignment'
+                });
+            }
         } catch (error) {
             console.error('Error updating assignment:', error);
             // Revert the local state changes on error
@@ -303,7 +300,7 @@ export default function Budget() {
 
             // Prepare all database updates
             const updates = Array.from(changes.entries()).map(([categoryId, amount]) => 
-                handleAssignmentUpdate(categoryId, amount)
+                handleAssignmentUpdate(categoryId, amount, false),
             );
 
             // Execute all updates in parallel
@@ -314,7 +311,7 @@ export default function Budget() {
 
                 await toast.promise(Promise.all(updates), {
                     loading: `${actionDesc}...`,
-                    success: 'All updates completed successfully!',
+                    success: `Updated ${updates.length.toString()} categories successfully!`,
                     error: 'Failed to complete some updates'
                 });
             }
