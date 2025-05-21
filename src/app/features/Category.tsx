@@ -28,6 +28,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     useEffect(() => {
         if (isAssigning && !forceFlipMassAssign && inputRef.current) {
             const focusTimer = setTimeout(() => {
+                inputRef.current?.setSelectionRange(100, 100);
                 inputRef.current?.focus();
             }, 200);
             return () => clearTimeout(focusTimer);
@@ -152,7 +153,6 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                 onBlur={handleInputBlur}
                                 inputMode="decimal"
                                 pattern="[0-9]*\.?[0-9]*"
-                                
                             />
                             <span className="text-white/50">/</span>
                             <span className="text-green xl:text-lg text-md font-medium">£{goal.toFixed(2)}</span>
