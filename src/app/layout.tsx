@@ -1,10 +1,9 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { SUSE } from "next/font/google";
 import { Gabarito } from "next/font/google";
+import SupabaseProvider from './contexts/supabase-provider';
 import "./globals.css";
-import SupabaseProvider from './contexts/supabase-provider'
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const USEFont = Gabarito({
   variable: "--font-suse",
@@ -32,7 +31,6 @@ export default function RootLayout({
         <Analytics/>
         <SupabaseProvider>
           {children}
-          <div id="toast-container" />
         </SupabaseProvider>
       </body>
     </html>

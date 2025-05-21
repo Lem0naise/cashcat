@@ -1,9 +1,9 @@
 'use client';
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "../components/logo";
 import OpenButton from "../components/openButton";
-import Image from "next/image";
 
 export default function LearnMore() {
     const router = useRouter();

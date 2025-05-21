@@ -1,11 +1,11 @@
 'use client';
-import Navbar from "../components/navbar";
-import Sidebar from "../components/sidebar";
-import MobileNav from "../components/mobileNav";
-import ProtectedRoute from "../components/protected-route";
-import { createClient } from '../utils/supabase';
 import { useRouter } from 'next/navigation';
+import MobileNav from "../components/mobileNav";
+import Navbar from "../components/navbar";
+import ProtectedRoute from "../components/protected-route";
+import Sidebar from "../components/sidebar";
 import { useSupabase } from '../contexts/supabase-provider';
+import { createClient } from '../utils/supabase';
 
 export default function Account() {
     const router = useRouter();

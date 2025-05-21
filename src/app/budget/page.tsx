@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import type { Database } from '@/types/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useCallback, useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import type { Database } from '@/types/supabase';
-import Navbar from "../components/navbar";
-import Sidebar from "../components/sidebar";
-import MobileNav from "../components/mobileNav";
 import ManageBudgetModal from "../components/manage-budget-modal";
-import CategoryCard from '../features/Category';
+import MobileNav from "../components/mobileNav";
+import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
+import Sidebar from "../components/sidebar";
+import CategoryCard from '../features/Category';
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 

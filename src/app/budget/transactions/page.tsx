@@ -1,16 +1,16 @@
 'use client';
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../../types/supabase';
-import Navbar from "../../components/navbar";
-import Sidebar from "../../components/sidebar";
-import MobileNav from "../../components/mobileNav";
-import TransactionModal from "../../components/transaction-modal";
-import ProtectedRoute from "../../components/protected-route";
-import { submitTransaction, updateTransaction, deleteTransaction } from '../../utils/transactions';
+import { useEffect, useRef, useState } from "react";
 import toast, { Toaster } from 'react-hot-toast';
+import { Database } from '../../../types/supabase';
+import MobileNav from "../../components/mobileNav";
+import Navbar from "../../components/navbar";
+import ProtectedRoute from "../../components/protected-route";
+import Sidebar from "../../components/sidebar";
+import TransactionModal from "../../components/transaction-modal";
+import { useSupabaseClient } from '../../hooks/useSupabaseClient';
+import { deleteTransaction, submitTransaction, updateTransaction } from '../../utils/transactions';
 
 import TransactionModalWrapper from "@/app/components/transactionSus";
 
@@ -35,7 +35,7 @@ export default function Transactions() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
-    const supabase = createClientComponentClient<Database>();
+    const supabase = useSupabaseClient();
 
     const closeModalFunc = () => {
         router.replace('/budget/transactions');
@@ -107,7 +107,7 @@ export default function Transactions() {
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
-            setTimeout(()=>{setLoading(false)}, 500);
+            setLoading(false);
         }
     };
 

@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useSupabase } from './contexts/supabase-provider';
+import { useEffect } from 'react';
 import Logo from './components/logo';
+import { useSupabase } from './contexts/supabase-provider';
 
 export default function Landing() {
     const router = useRouter();

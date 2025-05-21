@@ -1,9 +1,9 @@
 'use client';
 
-import { useSupabase } from '../contexts/supabase-provider';
-import LoadingScreen from './loading';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useSupabase } from '../contexts/supabase-provider';
+import LoadingScreen from './loading';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const { user, loading } = useSupabase();

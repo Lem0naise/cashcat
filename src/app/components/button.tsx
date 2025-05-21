@@ -1,7 +1,6 @@
 'use client';
 
-import {useRouter} from "next/navigation";
-import {useEffect} from "react";
+import { useRouter } from "next/navigation";
 
 const Button = (text: string, link:string, white:boolean) => {
     const router = useRouter();

@@ -1,27 +1,42 @@
 'use client';
 
+import { createClient } from '@/app/utils/supabase';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { createClient } from '@/app/utils/supabase';
-import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/budget';
-   
   const supabase = createClient();
-  const [isClient, setIsClient] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string>('');
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    // Set the redirect URL after component mounts (client-side only)
+    setRedirectUrl(`${window.location.origin}${redirectTo}`);
+  }, [redirectTo]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
+    // Check initial session to redirect if already logged in
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) {
         router.push(redirectTo);
+      }
+    };
+    checkSession();
+
+    // Setup auth state change listener for email login redirects
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Handle email login redirect
+        if (session.user?.app_metadata.provider === 'email') {
+          router.push(redirectTo);
+        }
       }
     });
 
@@ -72,10 +87,9 @@ export default function Login() {
           }}
           theme="dark"
           providers={[]}
-          redirectTo={`${window.location.origin}${redirectTo}`}
+          redirectTo={redirectUrl}
         />
       </div>
     </div>
   );
-  // providers={['google']}
 }

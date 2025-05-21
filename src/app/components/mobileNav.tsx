@@ -1,12 +1,8 @@
 'use client';
 
 import Image from "next/image";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
-import TransactionModal from "./transaction-modal";
-import { useRouter } from 'next/navigation';
-import { submitTransaction } from '../utils/transactions';
+import { usePathname, useRouter } from "next/navigation";
 
 export default function MobileNav() {
     const pathname = usePathname();

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Group, Category } from '../types/budget';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import type { Category, Group } from '../types/budget';
 
 type ManageBudgetModalProps = {
     isOpen: boolean;
