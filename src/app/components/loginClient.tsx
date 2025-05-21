@@ -4,18 +4,39 @@ import { createClient } from '@/app/utils/supabase';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/budget';
-   
   const supabase = createClient();
+  const [redirectUrl, setRedirectUrl] = useState<string>('');
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
+    // Set the redirect URL after component mounts (client-side only)
+    setRedirectUrl(`${window.location.origin}${redirectTo}`);
+  }, [redirectTo]);
+
+  useEffect(() => {
+    // Check initial session to redirect if already logged in
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) {
         router.push(redirectTo);
+      }
+    };
+    checkSession();
+
+    // Setup auth state change listener for email login redirects
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Handle email login redirect
+        if (session.user?.app_metadata.provider === 'email') {
+          router.push(redirectTo);
+        }
       }
     });
 
@@ -66,10 +87,9 @@ export default function Login() {
           }}
           theme="dark"
           providers={[]}
-          redirectTo={`${window.location.origin}${redirectTo}`}
+          redirectTo={redirectUrl}
         />
       </div>
     </div>
   );
-  // providers={['google']}
 }
