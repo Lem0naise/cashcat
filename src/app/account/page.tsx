@@ -6,12 +6,6 @@ import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Account | CashCat",
-  description: "Manage your CashCat account settings"
-};
 
 export default function Account() {
     const router = useRouter();
@@ -26,7 +20,9 @@ export default function Account() {
     const displayUser = user;
 
     return (
+        
         <ProtectedRoute>
+            
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <Navbar />
                 <Sidebar />

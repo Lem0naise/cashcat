@@ -1,16 +1,12 @@
 'use client';
 import Image from "next/image";
-import Navbar from "../components/navbar";
-import Sidebar from "../components/sidebar";
+import { useRef } from "react";
 import MobileNav from "../components/mobileNav";
+import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
-import {useEffect, useState, useRef} from "react";
-import { Metadata } from "next";
+import Sidebar from "../components/sidebar";
 
-export const metadata: Metadata = {
-  title: "Stats | CashCat",
-  description: "View detailed insights about your spending habits"
-};
+
 
 export default function Stats() {
     const overviewRef = useRef<HTMLDivElement>(null);
