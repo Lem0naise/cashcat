@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Category } from '../types/budget';
-import { Database } from '../../types/supabase';
-import { useCallback } from 'react';
 import { debounce } from 'lodash';
+import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Database } from '../../types/supabase';
+import type { Category } from '../types/budget';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 

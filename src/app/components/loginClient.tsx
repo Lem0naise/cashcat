@@ -1,10 +1,10 @@
 'use client';
 
+import { createClient } from '@/app/utils/supabase';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { createClient } from '@/app/utils/supabase';
-import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Login() {
   const router = useRouter();
@@ -12,12 +12,6 @@ export default function Login() {
   const redirectTo = searchParams.get('redirectTo') || '/budget';
    
   const supabase = createClient();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {

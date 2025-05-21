@@ -2,8 +2,8 @@
 
 
 import { useRouter } from 'next/navigation';
-import Logo from "./logo";
 import { useSupabase } from "../contexts/supabase-provider";
+import Logo from "./logo";
 
 
 export default function Navbar() {

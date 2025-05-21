@@ -1,7 +1,6 @@
 'use client';
 
-import {useRouter} from "next/navigation";
-import {useEffect} from "react";
+import { useRouter } from "next/navigation";
 
 
 const OpenButton = (text: string, white:boolean, click:()=>void) => {
