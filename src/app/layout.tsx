@@ -3,6 +3,7 @@ import { SUSE } from "next/font/google";
 import { Gabarito } from "next/font/google";
 import "./globals.css";
 import SupabaseProvider from './contexts/supabase-provider'
+import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const USEFont = Gabarito({
@@ -28,6 +29,7 @@ export default function RootLayout({
         className={`${USEFont.variable} antialiased`}
       >
         <SpeedInsights/>
+        <Analytics/>
         <SupabaseProvider>
           {children}
           <div id="toast-container" />
