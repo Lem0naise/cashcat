@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "../components/logo";
 import OpenButton from "../components/openButton";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Learn | CashCat",
+  description: "Learn about zero-based budgeting and how to use CashCat"
+};
 
 export default function LearnMore() {
     const router = useRouter();

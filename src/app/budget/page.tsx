@@ -12,6 +12,13 @@ import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Budget | CashCat",
+  description: "Manage your monthly budget and category assignments"
+};
+
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 

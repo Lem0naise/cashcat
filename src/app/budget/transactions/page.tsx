@@ -13,6 +13,12 @@ import { useSupabaseClient } from '../../hooks/useSupabaseClient';
 import { deleteTransaction, submitTransaction, updateTransaction } from '../../utils/transactions';
 
 import TransactionModalWrapper from "@/app/components/transactionSus";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Transactions | CashCat",
+  description: "View and manage your financial transactions"
+};
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {

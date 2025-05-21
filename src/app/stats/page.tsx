@@ -5,6 +5,12 @@ import Sidebar from "../components/sidebar";
 import MobileNav from "../components/mobileNav";
 import ProtectedRoute from "../components/protected-route";
 import {useEffect, useState, useRef} from "react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Stats | CashCat",
+  description: "View detailed insights about your spending habits"
+};
 
 export default function Stats() {
     const overviewRef = useRef<HTMLDivElement>(null);
