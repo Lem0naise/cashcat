@@ -20,6 +20,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
     const [isUpdating, setIsUpdating] = useState(false);
+    const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const remaining = assigned + rollover - spent;
     const goal = goalAmount || 0;
     const inputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +58,23 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         }, 50);
         return () => clearTimeout(timeout);
     }, [assigned, goal, isAssigning, isUpdating]);
+
+    // Listen for hide budget values changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
+            setHideBudgetValues(savedHideBudgetValues);
+
+            const handleHideBudgetValuesChange = (event: CustomEvent) => {
+                setHideBudgetValues(event.detail.hideBudgetValues);
+            };
+
+            window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            return () => {
+                window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            };
+        }
+    }, []);
 
     const handleCardClick = useCallback(() => {
         if (!onAssignmentUpdate || forceFlipMassAssign) return;
@@ -99,6 +117,12 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         }
     }, [editedAmount]);
 
+    // Helper function to format currency or return asterisks
+    const formatCurrency = (amount: number) => {
+        if (hideBudgetValues) return '****';
+        return `£${Math.abs(amount).toFixed(2)}`;
+    };
+
     return (
         <div 
             className={`relative p-3 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
@@ -108,7 +132,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 <h3 className="text-base md:text-lg font-bold">{name}</h3>
                 <div className="text-right">
                     <p className={`text-lg md:text-xl font-bold ${remaining >= 0 ? 'text-green' : 'text-reddy'}`}>
-                        £{remaining.toFixed(2)}
+                        {formatCurrency(remaining)}
                     </p>
                 </div>
             </div>
@@ -124,11 +148,11 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-sm text-white/50 mt-1 mb-2 md:mb-3 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">£{spent.toFixed(2)}</span> of <span className="text-white/70 font-medium">£{assigned.toFixed(2)}</span>
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}</span>
                         </span>
                         <span>
-                            {goal > 0 && assigned < goal && <>Goal: <span className="text-white/70 font-medium">£{goal.toFixed(2)}</span></>}
-                            {goal > 0 && assigned > goal && <>Extra: <span className="text-white/70 font-medium">£{(assigned-goal).toFixed(2)}</span></>}
+                            {goal > 0 && assigned < goal && <>Goal: <span className="text-white/70 font-medium">{formatCurrency(goal)}</span></>}
+                            {goal > 0 && assigned > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency(assigned-goal)}</span></>}
                         </span>
                     </div>
                 </div>
@@ -148,14 +172,15 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                 type="tel"
                                 data-category-id={name}
                                 className="w-18 bg-white/10 rounded px-3 py-2 xl:text-lg text-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                value={editedAmount}
+                                value={hideBudgetValues ? '****' : editedAmount}
                                 onChange={handleInputChange}
                                 onBlur={handleInputBlur}
                                 inputMode="decimal"
                                 pattern="[0-9]*\.?[0-9]*"
+                                disabled={hideBudgetValues}
                             />
                             <span className="text-white/50">/</span>
-                            <span className="text-green xl:text-lg text-md font-medium">£{goal.toFixed(2)}</span>
+                            <span className="text-green xl:text-lg text-md font-medium">{formatCurrency(goal)}</span>
                         </div>
                         <div className={`flex gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
                             <button
@@ -203,7 +228,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                     
                     <div className="flex gap-1 items-baseline ml-auto">
                         <span className="text-xs text-white/50">Goal:</span>
-                        <p className="text-sm font-medium">£{goal.toFixed(2)}</p>
+                        <p className="text-sm font-medium">{formatCurrency(goal)}</p>
                     </div>
                 </div>
             )}

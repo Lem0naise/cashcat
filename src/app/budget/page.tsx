@@ -41,6 +41,7 @@ export default function Budget() {
     const [wasMassAssigningSoShouldClose, setwasMassAssigningSoShouldClose] = useState(false);
     const [isMassAssigning, setIsMassAssigning] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [hideBudgetValues, setHideBudgetValues] = useState(false);
 
     // Update month string when current month changes
     useEffect(() => {
@@ -48,6 +49,23 @@ export default function Budget() {
         setMonthString(newMonthString);
         fetchBudgetData(); // Fetch new data when month changes
     }, [currentMonth]);
+
+    // Listen for hide budget values changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
+            setHideBudgetValues(savedHideBudgetValues);
+
+            const handleHideBudgetValuesChange = (event: CustomEvent) => {
+                setHideBudgetValues(event.detail.hideBudgetValues);
+            };
+
+            window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            return () => {
+                window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            };
+        }
+    }, []);
 
     const formatMonth = (date: Date) => {
         return date.toLocaleDateString('en-GB', {
@@ -346,6 +364,12 @@ export default function Budget() {
         ? categories 
         : categories.filter(cat => cat.group === activeGroup);
 
+    // Helper function to format currency or return asterisks
+    const formatCurrency = (amount: number) => {
+        if (hideBudgetValues) return '****';
+        return `£${Math.abs(amount).toFixed(2)}`;
+    };
+
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -501,11 +525,11 @@ export default function Budget() {
                                     <div>
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.budgetPool - balanceInfo.assigned).toFixed(2)}</span> left this month
+                                                <span className="text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left this month
                                             </p>
                                         ) : (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.assigned - balanceInfo.budgetPool).toFixed(2)}</span> too much assigned
+                                                <span className="text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
                                             </p>
                                         )}
                                     </div>
