@@ -159,8 +159,8 @@ export default function Budget() {
             const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
             setMonthString(queryMonthString);
 
-            // Fetch ALL data for rollover calculations
-            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse] = await Promise.all([
+            // Fetch ALL data for rollover calculations and budget pool
+            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse, allAssignmentsResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -186,6 +186,10 @@ export default function Budget() {
                 supabase
                     .from('transactions')
                     .select('amount, category_id, type, date')
+                    .eq('user_id', user.id),
+                supabase
+                    .from('assignments')
+                    .select('*')
                     .eq('user_id', user.id)
             ]);
 
@@ -193,28 +197,30 @@ export default function Budget() {
             if (transactionsResponse.error) throw transactionsResponse.error;
             if (assignmentsResponse.error) throw assignmentsResponse.error;
             if (allTransactionsResponse.error) throw allTransactionsResponse.error;
+            if (allAssignmentsResponse.error) throw allAssignmentsResponse.error;
 
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
             const allTransactionsData = allTransactionsResponse.data;
-
-            // Get all assignments for rollover calculations
-            const { data: allAssignments } = await supabase
-                .from('assignments')
-                .select('*')
-                .eq('user_id', user.id);
+            const allAssignments = allAssignmentsResponse.data;
 
             let startingBalance = 0;
             let totalIncome = 0;
             // Calculate spent amounts for each category
             const spentByCategory: { [key: string]: number } = {};
+            
+            // Get starting balance and total income from ALL transactions
+            allTransactionsData?.forEach(transaction => {
+                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
+                if (transaction.type == 'income') {totalIncome += transaction.amount;}
+            });
+
+            // Calculate spending for current month only
             transactionsData?.forEach(transaction => {
                 if (!spentByCategory[transaction.category_id]) {
                     spentByCategory[transaction.category_id] = 0;
                 }
-                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
-                if (transaction.type == 'income') {totalIncome += transaction.amount;}
                 // Only include negative amounts (expenses) in spent calculation
                 if (transaction.type === 'payment') {
                     spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
@@ -250,14 +256,15 @@ export default function Budget() {
                 };
             });
             
-            // Calculate total assigned amount 
-            const totalAssigned = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
+            // Calculate total assigned amount across ALL months (for budget pool calculation)
+            const totalAssignedAllTime = allAssignments?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
             const totalBudgetPoolThisMonth = startingBalance + totalIncome;
+            const totalAssignedCurrentMonth = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
 
             // Update balance info
             setBalanceInfo({
                 budgetPool: totalBudgetPoolThisMonth,
-                assigned: totalAssigned
+                assigned: totalAssignedAllTime // Use total assigned across all months
             });
             
             setCategories(categoriesWithSpent);
@@ -275,6 +282,19 @@ export default function Budget() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
+            
+            // Get current assignment for this category/month to calculate difference
+            const { data: currentAssignment } = await supabase
+                .from('assignments')
+                .select('assigned')
+                .eq('category_id', categoryId)
+                .eq('month', monthString)
+                .eq('user_id', user.id)
+                .single();
+            
+            const currentAssigned = currentAssignment?.assigned || 0;
+            const assignmentDifference = newAmount - currentAssigned;
+            
             // Calculate the new total assigned amount before making the API call
             const updatedCategories = categories.map(cat => {
                 if (cat.id === categoryId) {
@@ -284,14 +304,13 @@ export default function Budget() {
                 }
                 return cat;
             });
-            const newTotalAssigned = updatedCategories.reduce((total, cat) => total + cat.assigned, 0);
 
             // Update local state immediately
             setCategories(updatedCategories);
             if (balanceInfo) {
                 setBalanceInfo({
                     ...balanceInfo,
-                    assigned: newTotalAssigned
+                    assigned: balanceInfo.assigned + assignmentDifference // Add the difference to total assigned
                 });
             }
 
@@ -320,14 +339,8 @@ export default function Budget() {
             setCategories(cats => cats.map(cat => 
                 cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
             ));
-            if (balanceInfo) {
-                const currentTotalAssigned = categories.reduce((total, cat) => total + cat.assigned, 0);
-                setBalanceInfo({
-                    ...balanceInfo,
-                    assigned: currentTotalAssigned
-                });
-            }
-
+            // Refresh data to ensure consistency
+            await fetchBudgetData();
             throw error;
         }
     };
@@ -378,6 +391,15 @@ export default function Budget() {
                 return;
             }
 
+            // Calculate total assignment difference for balance info update
+            let totalDifference = 0;
+            for (const [categoryId, newAmount] of changes.entries()) {
+                const category = categories.find(c => c.id === categoryId);
+                if (category) {
+                    totalDifference += newAmount - category.assigned;
+                }
+            }
+
             // Update local state first for immediate feedback
             updatedCategories = categories.map(cat => {
                 const newAmount = changes.get(cat.id);
@@ -390,12 +412,11 @@ export default function Budget() {
             });
 
             // Update UI state immediately
-            const newTotalAssigned = updatedCategories.reduce((total, cat) => total + cat.assigned, 0);
             setCategories(updatedCategories);
             if (balanceInfo) {
                 setBalanceInfo({
                     ...balanceInfo,
-                    assigned: newTotalAssigned
+                    assigned: balanceInfo.assigned + totalDifference
                 });
             }
 
