@@ -19,3 +19,12 @@ export type Category = {
         end_date?: string;
     } | null;
 }
+
+export type RolloverCalculation = {
+    categoryId: string;
+    month: string;
+    assigned: number;
+    spent: number;
+    rolloverFromPrevious: number;
+    available: number;
+};

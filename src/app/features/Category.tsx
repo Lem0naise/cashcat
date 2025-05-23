@@ -13,15 +13,16 @@ interface CategoryProps {
     forceFlipMassAssign?: boolean;
     wasMassAssigningSoShouldClose? : boolean;
     onAssignmentUpdate?: (amount: number) => Promise<void>;
+    available?: number;
 }
 
-export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate}: CategoryProps) {
+export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate, available}: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
     const [isUpdating, setIsUpdating] = useState(false);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
-    const remaining = assigned + rollover - spent;
+    const displayAvailable = available !== undefined ? available : (assigned + rollover - spent);
     const goal = goalAmount || 0;
     const inputRef = useRef<HTMLInputElement>(null);
     
@@ -131,8 +132,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             <div className="flex justify-between items-start">
                 <h3 className="text-sm md:text-lg font-medium leading-tight">{name}</h3>
                 <div className="text-right">
-                    <p className={`text-base md:text-xl font-bold ${remaining >= -0.01 ? 'text-green' : 'text-reddy'}`}>
-                        {formatCurrency(remaining)}
+                    <p className={`text-base md:text-xl font-bold ${displayAvailable >= -0.01 ? 'text-green' : 'text-reddy'}`}>
+                        {formatCurrency(displayAvailable)}
                     </p>
                 </div>
             </div>
@@ -148,11 +149,16 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}</span>
+                            
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} {rollover > 0 && (
+                                <>
+                                    + <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> rolled 
+                                </>
+                            )}</span> 
                         </span>
                         <span>
-                            {goal > 0 && assigned < goal && <>Goal: <span className="text-white/70 font-medium">{formatCurrency(goal)}</span></>}
-                            {goal > 0 && assigned > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency(assigned-goal)}</span></>}
+                            {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
+                            {goal > 0 && (assigned + rollover) > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency((rollover+assigned)-goal)}</span></>}
                         </span>
                     </div>
                 </div>
@@ -207,15 +213,15 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 <div className={`rounded bg-green-dark/20 w-full transition-[height] duration-300 will-change-[height] ${isAssigning ? "h-0" : "h-2 md:h-3"}`}>
                     <div 
                         className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
-                        style={{width: goal ? `${Math.min((assigned / goal), 1) * 100}%` : '100%'}}
+                        style={{width: goal ? `${Math.min(((assigned + rollover) / goal), 1) * 100}%` : '100%'}}
                     />
                     {spent > 0 && (
                         <div 
                             className={`rounded h-full will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0 ${
-                                remaining >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
+                                displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
                             }`}
                             style={{
-                                width: goal ? `${Math.min(spent / goal, assigned / goal) * 100}%` : '0%',
+                                width: goal ? `${Math.min(spent / goal, (assigned + rollover) / goal) * 100}%` : '0%',
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />
