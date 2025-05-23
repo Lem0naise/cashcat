@@ -157,8 +157,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                             )}</span> 
                         </span>
                         <span>
-                            {goal > 0 && assigned < goal && <>Goal: <span className="text-white/70 font-medium">{formatCurrency(goal)}</span></>}
-                            {goal > 0 && assigned > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency(assigned-goal)}</span></>}
+                            {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
+                            {goal > 0 && (assigned + rollover) > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency((rollover+assigned)-goal)}</span></>}
                         </span>
                     </div>
                 </div>

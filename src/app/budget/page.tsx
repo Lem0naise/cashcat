@@ -709,7 +709,7 @@ export default function Budget() {
                                             pendingAction === 'fill-goals' ? null : 'fill-goals'
                                         )}
                                     >
-                                        Fill This Group
+                                        Fill Categories
                                     </button>
                                     <button
                                         className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
@@ -721,7 +721,7 @@ export default function Budget() {
                                             pendingAction === 'clear' ? null : 'clear'
                                         )}
                                     >
-                                        Empty This Group
+                                        Empty Categories
                                     </button>
                                 </div>
                             </div>
