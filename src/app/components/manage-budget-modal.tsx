@@ -741,16 +741,18 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                     ))}
                                                                                 </select>
                                                                             </div>
-                                                                            <div className="relative w-48">
-                                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                                                <input
-                                                                                    type="number"
-                                                                                    value={editingCategory.goal || ''}
-                                                                                    onChange={(e) => setEditingCategory({...editingCategory, goal: parseFloat(e.target.value) || null})}
-                                                                                    placeholder="Goal Amount"
-                                                                                    step="0.01"
-                                                                                    className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                                />
+                                                                            <div className="flex gap-4">
+                                                                                <div className="relative flex-1">
+                                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={editingCategory.goal || ''}
+                                                                                        onChange={(e) => setEditingCategory({...editingCategory, goal: parseFloat(e.target.value) || null})}
+                                                                                        placeholder="Goal Amount"
+                                                                                        step="0.01"
+                                                                                        className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                    />
+                                                                                </div>
                                                                             </div>
                                                                             <div className="flex justify-end gap-2">
                                                                                 <button
@@ -773,7 +775,9 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                         <div className="flex items-center justify-between">
                                                                             <div>
                                                                                 <span className="block font-medium">{category.name}</span>
-                                                                                <span className="text-sm text-white/50">Goal: £{category.goal || 0}</span>
+                                                                                <span className="text-sm text-white/50">
+                                                                                    Goal: £{category.goal || 0}
+                                                                                </span>
                                                                             </div>
                                                                             
                                                                             <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
