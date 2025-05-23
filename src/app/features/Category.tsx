@@ -120,24 +120,24 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     // Helper function to format currency or return asterisks
     const formatCurrency = (amount: number) => {
         if (hideBudgetValues) return '****';
-        return `£${Math.abs(amount).toFixed(2)}`;
+        return `${amount<0?'-':''}£${Math.abs(amount).toFixed(2)}`;
     };
 
     return (
         <div 
-            className={`relative p-3 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
+            className={`relative p-2 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
             onClick={!isAssigning ? handleCardClick : undefined}
         >
             <div className="flex justify-between items-start">
-                <h3 className="text-base md:text-lg font-bold">{name}</h3>
+                <h3 className="text-sm md:text-lg font-medium leading-tight">{name}</h3>
                 <div className="text-right">
-                    <p className={`text-lg md:text-xl font-bold ${remaining >= 0 ? 'text-green' : 'text-reddy'}`}>
+                    <p className={`text-base md:text-xl font-bold ${remaining >= -0.01 ? 'text-green' : 'text-reddy'}`}>
                         {formatCurrency(remaining)}
                     </p>
                 </div>
             </div>
 
-            <div className="relative h-[40px] md:h-[40px]">
+            <div className="relative h-[32px] md:h-[40px]">
                 {/* Normal view */}
                 <div 
                     className={`absolute inset-x-0 transition-all duration-300 ${
@@ -146,7 +146,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                         : 'opacity-100 translate-y-0'
                     }`}
                 >
-                    <div className="text-sm text-white/50 mt-1 mb-2 md:mb-3 flex w-full justify-between">
+                    <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
                             Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}</span>
                         </span>
@@ -165,13 +165,13 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                         : 'opacity-0 -translate-y-2'
                     }`}
                 >
-                    <div className={`flex items-center justify-between mt-1 ${!isAssigning ? 'pointer-events-none' : ''}`}>
+                    <div className={`flex items-center justify-between mt-0.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
                         <div className="flex items-center gap-1 xl:gap-2">
                             <input
                                 ref={inputRef}
                                 type="tel"
                                 data-category-id={name}
-                                className="w-18 bg-white/10 rounded px-3 py-2 xl:text-lg text-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-16 lg:w-18 bg-white/10 rounded px-2 md:px-3 py-1 md:py-2 text-sm xl:text-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                 value={hideBudgetValues ? '****' : editedAmount}
                                 onChange={handleInputChange}
                                 onBlur={handleInputBlur}
@@ -179,21 +179,21 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                 pattern="[0-9]*\.?[0-9]*"
                                 disabled={hideBudgetValues}
                             />
-                            <span className="text-white/50">/</span>
-                            <span className="text-green xl:text-lg text-md font-medium">{formatCurrency(goal)}</span>
+                            <span className="text-white/50 text-sm md:text-base">/</span>
+                            <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
                         </div>
-                        <div className={`flex gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
+                        <div className={`flex gap-1 md:gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
                             <button
                                 onClick={handleSave}
                                 disabled={isUpdating}
-                                className="xl:px-4 px-2 py-2 rounded bg-green/20 hover:bg-green/30 text-green transition-colors disabled:opacity-50"
+                                className="px-2 lg:px-4 py-2 rounded bg-green/20 hover:bg-green/30 text-green transition-colors disabled:opacity-50 text-xs lg:text-sm"
                             >
                                 {isUpdating ? "Saving..." : "Save"}
                             </button>
                             <button
                                 onClick={handleCancel}
                                 disabled={isUpdating}
-                                className="xl:px-4 px-2 py-2 rounded bg-reddy/20 hover:bg-reddy/30 text-reddy transition-colors disabled:opacity-50"
+                                className="px-2 lg:px-4 py-2 rounded bg-reddy/20 hover:bg-reddy/30 text-reddy transition-colors disabled:opacity-50 text-xs lg:text-sm"
                             >
                                 Cancel
                             </button>
@@ -203,8 +203,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             </div>
 
             {/* Progress bar - now outside conditional render */}
-            <div className={`relative w-full overflow-hidden transition-[opacity, margin] duration-300 will-change-[opacity, margin] ${isAssigning ? 'opacity-100 mb-5px' : 'mb:0'}`}>
-                <div className={`rounded bg-green-dark/20 w-full transition-[height] duration-300 will-change-[height] ${isAssigning ? "h-0" : "h-3 md:h-5"}`}>
+            <div className={`relative w-full overflow-hidden transition-[opacity, margin] duration-300 will-change-[opacity, margin] ${isAssigning ? 'opacity-100 mb-1' : 'mb-0'}`}>
+                <div className={`rounded bg-green-dark/20 w-full transition-[height] duration-300 will-change-[height] ${isAssigning ? "h-0" : "h-2 md:h-3"}`}>
                     <div 
                         className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
                         style={{width: goal ? `${Math.min((assigned / goal), 1) * 100}%` : '100%'}}
