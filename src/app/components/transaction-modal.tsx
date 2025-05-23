@@ -39,6 +39,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [categoryId, setCategoryId] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
+    const [categoryRemaining, setCategoryRemaining] = useState<number | null>(null);
+    const [loadingCategoryRemaining, setLoadingCategoryRemaining] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [vendorSuggestions, setVendorSuggestions] = useState<Vendor[]>([]);
@@ -130,6 +132,78 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         setVendor(value);
         setShowSuggestions(true);
         searchVendors(value);
+    };
+
+    // Fetch category remaining amount
+    const fetchCategoryRemaining = useCallback(async (categoryId: string) => {
+        if (!categoryId) {
+            setCategoryRemaining(null);
+            return;
+        }
+
+        try {
+            setLoadingCategoryRemaining(true);
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+
+            // Get current month
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            // Get first and last day of current month
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const startDate = firstDay.toISOString().split('T')[0];
+            const endDate = lastDay.toISOString().split('T')[0];
+
+            // Fetch assignment and spending in parallel
+            const [assignmentResponse, spendingResponse] = await Promise.all([
+                supabase
+                    .from('assignments')
+                    .select('assigned')
+                    .eq('category_id', categoryId)
+                    .eq('month', currentMonth)
+                    .eq('user_id', user.id)
+                    .single(),
+                supabase
+                    .from('transactions')
+                    .select('amount')
+                    .eq('category_id', categoryId)
+                    .eq('user_id', user.id)
+                    .eq('type', 'payment')
+                    .gte('date', startDate)
+                    .lte('date', endDate)
+            ]);
+
+            const assignment = assignmentResponse.data;
+            const transactions = spendingResponse.data || [];
+
+            // Calculate remaining amount
+            const assigned = assignment?.assigned || 0;
+            const totalSpent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const remaining = assigned - totalSpent;
+
+            setCategoryRemaining(remaining);
+        } catch (error) {
+            console.error('Error fetching category remaining:', error);
+            setCategoryRemaining(null);
+        } finally {
+            setLoadingCategoryRemaining(false);
+        }
+    }, [supabase]);
+
+    // Update remaining amount when category changes
+    useEffect(() => {
+        if (type === 'payment' && categoryId) {
+            fetchCategoryRemaining(categoryId);
+        } else {
+            setCategoryRemaining(null);
+        }
+    }, [categoryId, type, fetchCategoryRemaining]);
+
+    const handleVendorSelect = (vendorName: string) => {
+        setVendor(vendorName);
+        setShowSuggestions(false);
     };
 
     const selectVendor = async (vendorName: string) => {
@@ -330,7 +404,17 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
                             {type === 'payment' && (
                                 <div>
-                                    <label className="block text-sm text-white/50 mb-0.5">Category</label>
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <label className="block text-sm text-white/50">Category</label>
+                                        {categoryRemaining !== null && !loadingCategoryRemaining && (
+                                            <span className={`text-xs ${categoryRemaining >= 0 ? 'text-green' : 'text-reddy'}`}>
+                                                £{Math.abs(categoryRemaining).toFixed(2)} {categoryRemaining >= 0 ? 'left' : 'over'}
+                                            </span>
+                                        )}
+                                        {loadingCategoryRemaining && (
+                                            <span className="text-xs text-white/50">Loading...</span>
+                                        )}
+                                    </div>
                                     <select
                                         required={type === 'payment'}
                                         value={categoryId}

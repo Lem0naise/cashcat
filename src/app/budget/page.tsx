@@ -41,6 +41,8 @@ export default function Budget() {
     const [wasMassAssigningSoShouldClose, setwasMassAssigningSoShouldClose] = useState(false);
     const [isMassAssigning, setIsMassAssigning] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     // Update month string when current month changes
     useEffect(() => {
@@ -48,6 +50,23 @@ export default function Budget() {
         setMonthString(newMonthString);
         fetchBudgetData(); // Fetch new data when month changes
     }, [currentMonth]);
+
+    // Listen for hide budget values changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
+            setHideBudgetValues(savedHideBudgetValues);
+
+            const handleHideBudgetValuesChange = (event: CustomEvent) => {
+                setHideBudgetValues(event.detail.hideBudgetValues);
+            };
+
+            window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            return () => {
+                window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            };
+        }
+    }, []);
 
     const formatMonth = (date: Date) => {
         return date.toLocaleDateString('en-GB', {
@@ -184,7 +203,6 @@ export default function Budget() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
-
             // Calculate the new total assigned amount before making the API call
             const updatedCategories = categories.map(cat => 
                 cat.id === categoryId ? { ...cat, assigned: newAmount } : cat
@@ -232,6 +250,7 @@ export default function Budget() {
                     assigned: currentTotalAssigned
                 });
             }
+
             throw error;
         }
     };
@@ -345,6 +364,53 @@ export default function Budget() {
     const filteredCategories = activeGroup === 'All' 
         ? categories 
         : categories.filter(cat => cat.group === activeGroup);
+    
+    // Group categories by their group
+    const groupedCategories = categories.reduce((acc, category) => {
+        const groupName = category.group || 'Uncategorized';
+        if (!acc[groupName]) {
+            acc[groupName] = [];
+        }
+        acc[groupName].push(category);
+        return acc;
+    }, {} as Record<string, Category[]>);
+
+    // Helper function to format currency or return asterisks
+    const formatCurrency = (amount: number) => {
+        if (hideBudgetValues) return '****';
+        return `£${Math.abs(amount).toFixed(2)}`;
+    };
+
+    // Helper function to get group totals
+    const getGroupTotals = (groupCategories: Category[]) => {
+        const totalAssigned = groupCategories.reduce((sum, cat) => sum + cat.assigned, 0);
+        const totalSpent = groupCategories.reduce((sum, cat) => sum + cat.spent, 0);
+        const totalRemaining = totalAssigned - totalSpent;
+        return { totalAssigned, totalSpent, totalRemaining };
+    };
+
+    const toggleGroup = (groupName: string) => {
+        setExpandedGroups(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(groupName)) {
+                newSet.delete(groupName);
+            } else {
+                newSet.add(groupName);
+            }
+            return newSet;
+        });
+    };
+
+    const toggleAllGroups = () => {
+        const groups = Array.from(new Set(categories.map(cat => cat.group)));
+        const allExpanded = groups.every(group => expandedGroups.has(group));
+        
+        if (allExpanded) {
+            setExpandedGroups(new Set());
+        } else {
+            setExpandedGroups(new Set(groups));
+        }
+    };
 
     return(
         <ProtectedRoute>
@@ -355,57 +421,56 @@ export default function Budget() {
                 
 
                 {/* Mobile month switcher and manage button */}
-                <div className="flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen">
-                    <div className="w-14">
+                <div className="flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
+                    <div className="w-12">
                         {/* Space for future button */}
                     </div>
                     <div className="flex-1 flex justify-center">
                         <div className="flex items-center">
                             <button 
                                 onClick={goToPreviousMonth}
-                                className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                             >
                                 <Image
                                     src="/chevron-left.svg"
                                     alt="Previous month"
-                                    width={36}
-                                    height={36}
+                                    width={32}
+                                    height={32}
                                     className="opacity-90"
                                 />
                             </button>
-                            <h2 className="text-base font-medium min-w-[120px] text-center text-lg">
+                            <h2 className="text-base font-medium min-w-[120px] text-center">
                                 {formatMonth(currentMonth)}
                             </h2>
                             <button 
                                 onClick={goToNextMonth}
-                                className="p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                             >
                                 <Image
                                     src="/chevron-right.svg"
                                     alt="Next month"
-                                    width={36}
-                                    height={36}
+                                    width={32}
+                                    height={32}
                                     className="opacity-90"
                                 />
                             </button>
                         </div>
                     </div>
-                    <div className="w-14 flex justify-end">
+                    <div className="w-12 flex justify-end">
                         <button 
                             onClick={() => setShowManageModal(true)}
-                            className="flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                            className="flex gap-2 p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                         >
                             <Image
                                 src="/settings.svg"
                                 alt="Manage budget"
-                                width={20}
-                                height={20}
+                                width={18}
+                                height={18}
                                 className="opacity-70"
                             />
                         </button>
                     </div>
                 </div>
-
 
                 {/* Toast notifications */}
                 <Toaster 
@@ -433,9 +498,9 @@ export default function Budget() {
                     }}
                 />
 
-                <main className="pt-4 md:pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in">
+                <main className="pt-2 md:pt-12 pb-24 md:pb-6 md:pl-64 px-4 md:px-6 fade-in">
                     <div className="max-w-7xl mx-auto">
-                        <div className="md:flex hidden items-center mb-8 md:mt-5">
+                        <div className="md:flex hidden items-center mb-6 md:mt-3">
                             <div className="flex-1">
                                 <h1 className="text-2xl font-bold tracking-[-.01em]">Budget</h1>
                             </div>
@@ -470,7 +535,13 @@ export default function Budget() {
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex-1 flex justify-end">
+                            <div className="flex-1 flex justify-end gap-2">
+                                <button
+                                    onClick={toggleAllGroups}
+                                    className="bg-white/[.05] hover:bg-white/[.1] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
+                                >
+                                    {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
+                                </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
                                     className="bg-primary hover:bg-white/[.05] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all"
@@ -492,40 +563,40 @@ export default function Budget() {
                             <div 
                                 className={`rounded-lg overflow-hidden transition-all duration-200 ${
                                     balanceInfo.budgetPool == balanceInfo.assigned ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
-                                    ? 'bg-green/10 text-green border-b-4 border-b-green h-[64px] md:pb-6 mb-6' 
-                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[64px] md:pb-6 mb-6') 
-                                } ${isMassAssigning ? 'h-[108px]' : ''}
+                                    ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
+                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
+                                } ${isMassAssigning ? 'h-[96px] md:h-[108px]' : ''}
                                 `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
-                                <div className="p-4 flex justify-between items-center">
+                                <div className="p-3 md:p-4 flex justify-between items-center">
                                     <div>
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.budgetPool - balanceInfo.assigned).toFixed(2)}</span> left this month
+                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left this month
                                             </p>
                                         ) : (
                                             <p className="font-medium">
-                                                <span className="text-lg inline">£{(balanceInfo.assigned - balanceInfo.budgetPool).toFixed(2)}</span> too much assigned
+                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
                                             </p>
                                         )}
                                     </div>
                                     <button
                                         onClick={massAssign}
-                                        className={`px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
+                                        className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
                                     >
                                         {isMassAssigning ? 'Done' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
                                 </div>
                                 
                                 <div 
-                                    className={`px-4 pb-4 flex gap-2 transition-all duration-200 ${
+                                    className={`px-3 md:px-4 pb-3 md:pb-4 flex gap-2 transition-all duration-200 ${
                                         isMassAssigning 
                                         ? 'opacity-100 transform translate-y-0' 
                                         : 'opacity-0 transform -translate-y-2 pointer-events-none'
                                     }`}
                                 >
                                     <button
-                                        className={`px-4 py-1 rounded-full text-sm transition-colors ${
+                                        className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
                                             pendingAction === 'fill-goals' 
                                             ? 'bg-green text-background' 
                                             : 'bg-white/10 hover:bg-white/20'
@@ -537,7 +608,7 @@ export default function Budget() {
                                         Fill This Group
                                     </button>
                                     <button
-                                        className={`px-4 py-1 rounded-full text-sm transition-colors ${
+                                        className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
                                             pendingAction === 'clear' 
                                             ? 'bg-reddy text-background' 
                                             : 'bg-white/10 hover:bg-white/20'
@@ -552,24 +623,16 @@ export default function Budget() {
                             </div>
                         )}
 
-                        <div className="overflow-x-auto hide-scrollbar -mx-6 px-6 mb-6 bg-gradient-to-r from-black-500/10 to-black-500/100">
-                            <div className="flex gap-2 min-w-max">
-                                {groups.map((group) => (
-                                    <button
-                                        key={group}
-                                        onClick={() => setActiveGroup(group)}
-                                        className={`px-4 py-2 rounded-full text-sm transition-all ${
-                                            activeGroup === group
-                                                ? 'bg-green text-background'
-                                                : 'bg-white/15 hover:bg-white/[.05]'
-                                        }`}
-                                    >
-                                        {group}
-                                    </button>
-                                ))}
-                            </div>
+                        {/* Mobile expand all toggle */}
+                        <div className="flex md:hidden justify-between items-center mb-3">
+                            <button
+                                onClick={toggleAllGroups}
+                                className="bg-white/[.05] hover:bg-white/[.1] px-3 py-1.5 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
+                            >
+                                {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
+                            </button>
                         </div>
-                        
+
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green"></div>
@@ -613,28 +676,73 @@ export default function Budget() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-                                {filteredCategories.map((category) => (
-                                    <div key={category.id}
-                                    className="transform transition-all hover:scale-[1.01] hover:shadow-md"
-                                    style={{ 
-                                        animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
-                                    }}
-                                    >
-                                    <CategoryCard
-                                        name={category.name}
-                                        assigned={category.assigned}
-                                        rollover={category.rollover}
-                                        spent={category.spent}
-                                        goalAmount={category.goalAmount}
-                                        group={category.group}
-                                        showGroup={activeGroup === 'All'}
-                                        forceFlipMassAssign={isMassAssigning}
-                                        wasMassAssigningSoShouldClose={wasMassAssigningSoShouldClose}
-                                        onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
-                                    />
-                                    </div>
-                                ))}
+                            <div className="space-y-1 md:space-y-2">
+                                {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
+                                    const { totalAssigned, totalSpent, totalRemaining } = getGroupTotals(groupCategories);
+                                    
+                                    return (
+                                        <div key={groupName} className="space-y-1">
+                                            <button
+                                                onClick={() => toggleGroup(groupName)}
+                                                className={`w-full flex items-center justify-between p-2.5 md:p-3  rounded-lg transition-all
+                                                    ${expandedGroups.has(groupName) ? "bg-green/[0.1] hover:bg-white/[.1]" : "bg-white/[.03] hover:bg-white/[.1]"}
+                                                    `}
+                                            >
+                                                <div className="flex text-left flex-col md:flex-row">
+                                                    <h3 className="text-base md:text-lg font-medium min-w-40">{groupName}</h3>
+                                                    <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm opacity-70 ">
+                                                        <span className="text-white/60">{groupCategories.length} categor{groupCategories.length === 1 ? 'y' : 'ies'}</span>
+                                                        <span className={totalRemaining >= 0 ? 'text-green' : 'text-reddy'}>
+                                                            {formatCurrency(totalRemaining)} {totalRemaining >= 0 ? 'remaining' : 'over'}
+                                                        </span>
+                                                        <span className="text-white/60">
+                                                            {formatCurrency(totalSpent)} spent
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Image
+                                                    src="/chevron-right.svg"
+                                                    alt={expandedGroups.has(groupName) ? 'Collapse' : 'Expand'}
+                                                    width={18}
+                                                    height={18}
+                                                    className={`opacity-70 transition-transform duration-100 ${
+                                                        expandedGroups.has(groupName) ? 'rotate-90' : ''
+                                                    }`}
+                                                />
+                                            </button>
+                                            
+                                            <div className={`transition-all duration-100 overflow-hidden ${
+                                                expandedGroups.has(groupName) 
+                                                    ? 'opacity-100 max-h-[5000px]' 
+                                                    : 'opacity-0 max-h-0'
+                                            }`}>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-3">
+                                                    {groupCategories.map((category) => (
+                                                        <div key={category.id}
+                                                            className="transform transition-all hover:scale-[1.01] hover:shadow-md"
+                                                            style={{ 
+                                                                animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
+                                                            }}
+                                                        >
+                                                            <CategoryCard
+                                                                name={category.name}
+                                                                assigned={category.assigned}
+                                                                rollover={category.rollover}
+                                                                spent={category.spent}
+                                                                goalAmount={category.goalAmount}
+                                                                group={category.group}
+                                                                showGroup={false}
+                                                                forceFlipMassAssign={isMassAssigning}
+                                                                wasMassAssigningSoShouldClose={wasMassAssigningSoShouldClose}
+                                                                onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
