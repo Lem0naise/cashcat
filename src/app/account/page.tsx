@@ -6,11 +6,18 @@ import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
+import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 
 export default function Account() {
     const router = useRouter();
     const supabase = createClient();
     const { user } = useSupabase();
+    const { promptToInstall, isInstallable } = usePwaPrompt();
+
+    // Check if running in PWA mode
+    const isPWA = typeof window !== 'undefined' && 
+        (window.matchMedia('(display-mode: standalone)').matches || 
+         (window.navigator as any).standalone === true);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -33,7 +40,9 @@ export default function Account() {
                         <div className="flex items-center justify-between mb-8 mt-3 md:mt-6">
                            <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
                         </div>
+
                         
+
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
                             <p className={`${displayUser ? 'inline' : 'hidden'}`}>
                                 You're signed into CashCat! Your budget is saved to the cloud, you can rest safely.
@@ -54,6 +63,33 @@ export default function Account() {
                                 </button>
                             </div>
                         </div>
+
+                        {!isPWA && (
+                            isInstallable ? (
+                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                                    <h3 className="text-sm font-medium mb-2">Install CashCat</h3>
+                                    <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access and offline functionality.</p>
+                                    <button
+                                        onClick={promptToInstall}
+                                        className="px-8 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
+                                    >
+                                        Install App
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                                    <h3 className="text-sm font-medium mb-2">Install CashCat</h3>
+                                    <p className="text-sm text-white/70 mb-3">
+                                        You can install CashCat as an app for quick offline access:
+                                    </p>
+                                    <ul className="text-sm text-white/70 mb-3 space-y-1">
+                                        <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
+                                        <li>• <strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
+                                        <li>• <strong>Firefox:</strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
+                                    </ul>
+                                </div>
+                            )
+                        )}
                         
                         {/* Budget Settings */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
