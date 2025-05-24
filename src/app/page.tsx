@@ -4,11 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Logo from './components/logo';
 import { useSupabase } from './contexts/supabase-provider';
+import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 
 export default function Landing() {
     const router = useRouter();
     const { user, loading } = useSupabase();
-
+    const { promptToInstall, isInstallable } = usePwaPrompt();
+    console.log(isInstallable);
+    //
     useEffect(() => {
         if ((!loading && user)) {
             router.push('/budget');
@@ -39,6 +42,10 @@ export default function Landing() {
                         >
                             Learn More
                         </button>
+                        {isInstallable ? (
+                                <button onClick={promptToInstall}>Install App</button>
+                            ) : ""
+                        }
                     </div>
                     {/* Early Access Notice */}
                     <div className="mb-8 p-6 mt-15 bg-white/[.03] rounded-lg border-l-4 border-l-green">

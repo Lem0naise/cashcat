@@ -14,6 +14,7 @@ import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
 
 
+
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 

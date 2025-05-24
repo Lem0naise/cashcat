@@ -24,6 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <link rel="manifest" href="/manifest.json" />
+      <meta name="theme-color" content="#bac2ff" />
       <body
         className={`${USEFont.variable} antialiased`}
       >
