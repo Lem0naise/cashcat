@@ -89,11 +89,11 @@ export default function LearnMore() {
                     <h1 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6">Meet the CashCat Team</h1>
                     
                     <div className="flex gap-2">
-                        <div className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl bg-white/[.05]">
-                            <div className="w-12 h-12 rounded-full bg-green/20 flex items-center justify-center">
+                        <div onClick={() => {window.open("https://indigonolan.com"); return false;}} className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl bg-white/[.05] transition-bg duration-200 cursor-pointer hover:bg-white/[.2]">
+                            <div className="w-12 h-12 rounded-full bg-green/70 flex items-center justify-center">
                                 <Image
-                                    src="/money.svg"
-                                    alt="Team member"
+                                    src="/link.svg"
+                                    alt="Co-Founder"
                                     width={24}
                                     height={24}
                                     className="opacity-70"
@@ -103,16 +103,16 @@ export default function LearnMore() {
                                 <h3 className="text-xl font-semibold mb-2">Indigo Nolan</h3>
                                 <p className="text-base text-white/70">Co-Founder</p>
                                 <p className="mt-4 text-sm">
-                                    No other money management tool  worked for me - so I made one myself!
+                                    Indigo spent years trying to find the perfect way to manage his money - and decided to build CashCat instead!
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl bg-white/[.05]">
-                            <div className="w-12 h-12 rounded-full bg-green/20 flex items-center justify-center">
+                        <div onClick={() => {window.open("https://github.com/Joshua-Wilcox"); return false;}} className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl bg-white/[.05] transition-bg duration-200 cursor-pointer hover:bg-white/[.2]">
+                            <div className="w-12 h-12 rounded-full bg-green/70 flex items-center justify-center">
                                 <Image
-                                    src="/money.svg"
-                                    alt="Team Member"
+                                    src="/link.svg"
+                                    alt="Co-Founder"
                                     width={24}
                                     height={24}
                                     className="opacity-70"
@@ -122,7 +122,7 @@ export default function LearnMore() {
                                 <h3 className="text-xl font-semibold mb-2">Josh Wilcox</h3>
                                 <p className="text-base text-white/70">Co-Founder </p>
                                 <p className="mt-4 text-sm">
-                                    Josh is yet to write a description for himself, but he's an amazing developer!
+                                    Josh is a multitalented passionate designer and developer who won't stop until his vision is complete.
                                 </p>
                             </div>
                         </div>

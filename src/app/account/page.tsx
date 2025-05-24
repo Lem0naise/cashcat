@@ -82,7 +82,7 @@ export default function Account() {
                             isInstallable ? (
                                 <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                                     <h3 className="text-sm font-medium mb-2">Install CashCat</h3>
-                                    <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access and offline functionality.</p>
+                                    <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access.</p>
                                     <button
                                         onClick={promptToInstall}
                                         className="px-8 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
@@ -114,7 +114,7 @@ export default function Account() {
                                     {!isInstallDismissed && (
                                         <>
                                             <p className="text-sm text-white/70 mb-3">
-                                                You can install CashCat as an app for quick offline access:
+                                                You can install CashCat as an app for quick access:
                                             </p>
                                             <ul className="text-sm text-white/70 mb-3 space-y-1">
                                                 <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
@@ -178,8 +178,9 @@ export default function Account() {
                                     onClick={() => router.push('/learn')}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    How CashCat Works
+                                    About CashCat & Meet The Team
                                 </button>
+                                
                             </div>
                         </div>
 
