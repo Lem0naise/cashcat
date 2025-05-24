@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
 
-      <meta name="theme-color" content="#bac2ff" />
+      <meta name="theme-color" content="#0a0a0a" />
       <body
         className={`${USEFont.variable} antialiased`}
       >
