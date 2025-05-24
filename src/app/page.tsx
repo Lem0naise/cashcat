@@ -5,9 +5,11 @@ import { useEffect } from 'react';
 import Logo from './components/logo';
 import { useSupabase } from './contexts/supabase-provider';
 
+
 export default function Landing() {
     const router = useRouter();
     const { user, loading } = useSupabase();
+
 
     useEffect(() => {
         if ((!loading && user)) {

@@ -15,6 +15,7 @@ const USEFont = Gabarito({
 export const metadata: Metadata = {
   title: "CashCat",
   description: "Manage your budget with zero-based budgeting",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -24,6 +25,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+
+      <meta name="theme-color" content="#bac2ff" />
       <body
         className={`${USEFont.variable} antialiased`}
       >
