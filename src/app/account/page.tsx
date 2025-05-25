@@ -81,7 +81,7 @@ export default function Account() {
                         {!isPWA && (
                             isInstallable ? (
                                 <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                                    <h3 className="text-sm font-medium mb-2">Install CashCat</h3>
+                                    <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
                                     <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access.</p>
                                     <button
                                         onClick={promptToInstall}
@@ -93,7 +93,7 @@ export default function Account() {
                             ) : (
                                 <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-sm font-medium">Install CashCat</h3>
+                                        <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
                                         <button
                                             onClick={toggleInstallInstructions}
                                             className="p-1 hover:bg-white/[.05] rounded transition-colors"
@@ -182,18 +182,33 @@ export default function Account() {
                                 </button>
                                 
                             </div>
+                        
+
                         </div>
+
+                        {/* Patch Notes*/}
+                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
+                            <div className="flex flex-col gap-4 text-sm text-white/70">
+                                <p className="">
+                                    You are on CashCat <span className="text-green font-medium">0.2.6</span>. The latest features include:
+                                </p>
+                                <ul className="list-disc ml-4">
+                                    <li>An installable PWA for mobile</li>
+                                    <li>Rollover tracking</li>
+                                    <li>A new collapsible budget UI</li>
+                                </ul>
+                            </div>
+                        </div>
+
 
                         {/* Privacy Notice */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <h2 className="text-lg font-semibold mb-4">Privacy & Security</h2>
+                            <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
                                 Your data is securely stored and encrypted. If you are an early-access tester and wish to delete your account, please get in touch with a member of the team.
                             </p>
                             {/*This is the CashCat semantic version number. It should be updated with each update.*/}
-                            <p className="text-sm text-white/70">
-                                You are on CashCat 0.2.5.  
-                            </p>
                         </div>
                     </div>
                 </main>
