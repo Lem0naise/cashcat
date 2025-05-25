@@ -667,7 +667,7 @@ export default function Budget() {
                         {balanceInfo && (
                             <div 
                                 className={`rounded-lg overflow-hidden transition-all duration-200 ${
-                                    balanceInfo.budgetPool == balanceInfo.assigned ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
+                                    Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
                                 } ${isMassAssigning ? 'h-[96px] md:h-[108px]' : ''}
@@ -679,11 +679,11 @@ export default function Budget() {
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left this month
                                             </p>
-                                        ) : (
+                                        ) : balanceInfo.assigned > balanceInfo.budgetPool ? (
                                             <p className="font-medium">
-                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
+                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span>too much assigned
                                             </p>
-                                        )}
+                                        ) : (<>Yellow</>)}
                                     </div>
                                     <button
                                         onClick={massAssign}
