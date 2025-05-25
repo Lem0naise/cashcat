@@ -190,6 +190,10 @@ export default function Account() {
                             <p className="text-sm text-white/70">
                                 Your data is securely stored and encrypted. If you are an early-access tester and wish to delete your account, please get in touch with a member of the team.
                             </p>
+                            {/*This is the CashCat semantic version number. It should be updated with each update.*/}
+                            <p className="text-sm text-white/70">
+                                You are on CashCat 0.2.5.  
+                            </p>
                         </div>
                     </div>
                 </main>
