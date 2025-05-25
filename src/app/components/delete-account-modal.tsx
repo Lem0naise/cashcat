@@ -91,8 +91,8 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
                 // Don't throw error here, continue with deletion
             }
 
-            // Call the delete-user edge function
-            const { data, error } = await supabase.functions.invoke('delete-user', {
+            // Call the delete-user-account edge function
+            const { data, error } = await supabase.functions.invoke('delete-user-account', {
                 body: { userId: user.id }
             });
 
