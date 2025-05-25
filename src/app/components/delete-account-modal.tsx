@@ -109,7 +109,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
             });
 
             // Account deletion successful
-            onAccountDeleted();
+            setTimeout(onAccountDeleted, 500);
             
         } catch (error) {
             console.error('Error deleting account:', error);
