@@ -1,10 +1,12 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
+import FeedbackModal from "../components/feedback-modal";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
@@ -15,6 +17,7 @@ export default function Account() {
     const { user } = useSupabase();
     const { promptToInstall, isInstallable } = usePwaPrompt();
     const [isInstallDismissed, setIsInstallDismissed] = useState(false);
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
     // Load dismissed state from localStorage
     useEffect(() => {
@@ -48,6 +51,30 @@ export default function Account() {
                 <Navbar />
                 <Sidebar />
                 <MobileNav />
+
+                {/* Toast notifications */}
+                <Toaster 
+                    containerClassName='mb-[15dvh]'
+                    position="bottom-center"
+                    toastOptions={{
+                        style: {
+                            background: '#333',
+                            color: '#fff',
+                        },
+                        success: {
+                            iconTheme: {
+                                primary: '#bac2ff',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            iconTheme: {
+                                primary: '#EF4444',
+                                secondary: '#fff',
+                            },
+                        }
+                    }}
+                />
                 
                 <main className="pt-16 pb-28 md:pb-6 p-6 md:pl-64 fade-in md:ml-9">
                     <div className="max-w-7xl mx-auto">
@@ -180,6 +207,12 @@ export default function Account() {
                                 >
                                     About CashCat & Meet The Team
                                 </button>
+                                <button
+                                    onClick={() => setShowFeedbackModal(true)}
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Give Feedback on CashCat
+                                </button>
                                 
                             </div>
                         
@@ -206,12 +239,17 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored and encrypted. If you are an early-access tester and wish to delete your account, please get in touch with a member of the team.
+                                Your data is securely stored. If you are an early-access tester and wish to delete your account, please get in touch with a member of the team at indigogonolan@gmail.com.
                             </p>
                             {/*This is the CashCat semantic version number. It should be updated with each update.*/}
                         </div>
                     </div>
                 </main>
+
+                <FeedbackModal
+                    isOpen={showFeedbackModal}
+                    onClose={() => setShowFeedbackModal(false)}
+                />
             </div>
         </ProtectedRoute>
     );
