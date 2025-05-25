@@ -1,10 +1,13 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
+import FeedbackModal from "../components/feedback-modal";
+import DeleteAccountModal from "../components/delete-account-modal";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
@@ -15,6 +18,10 @@ export default function Account() {
     const { user } = useSupabase();
     const { promptToInstall, isInstallable } = usePwaPrompt();
     const [isInstallDismissed, setIsInstallDismissed] = useState(false);
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteConfirmStep, setDeleteConfirmStep] = useState(0); // 0: normal, 1: are you sure
+    const [contactConfirmStep, setContactConfirmStep] = useState(0); // 0: normal, 1: click again to email
 
     // Load dismissed state from localStorage
     useEffect(() => {
@@ -38,6 +45,34 @@ export default function Account() {
         localStorage.setItem('install-instructions-dismissed', newState.toString());
     };
 
+    const handleDeleteAccount = () => {
+        if (deleteConfirmStep === 0) {
+            setDeleteConfirmStep(1);
+            // Reset confirmation after 5 seconds
+            setTimeout(() => setDeleteConfirmStep(0), 5000);
+        } else {
+            setShowDeleteModal(true);
+            setDeleteConfirmStep(0);
+        }
+    };
+
+    const handleAccountDeleted = async () => {
+        // Sign out the user and redirect to login
+        await supabase.auth.signOut();
+        router.push('/login');
+    };
+
+    const handleContactSupport = () => {
+        if (contactConfirmStep === 0) {
+            setContactConfirmStep(1);
+            // Reset confirmation after 5 seconds
+            setTimeout(() => setContactConfirmStep(0), 5000);
+        } else {
+            window.location.href = 'mailto:lemonaise.dev@gmail.com?subject=CashCat Support Request';
+            setContactConfirmStep(0);
+        }
+    };
+
     const displayUser = user;
 
     return (
@@ -48,6 +83,30 @@ export default function Account() {
                 <Navbar />
                 <Sidebar />
                 <MobileNav />
+
+                {/* Toast notifications */}
+                <Toaster 
+                    containerClassName='mb-[15dvh]'
+                    position="bottom-center"
+                    toastOptions={{
+                        style: {
+                            background: '#333',
+                            color: '#fff',
+                        },
+                        success: {
+                            iconTheme: {
+                                primary: '#bac2ff',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            iconTheme: {
+                                primary: '#EF4444',
+                                secondary: '#fff',
+                            },
+                        }
+                    }}
+                />
                 
                 <main className="pt-16 pb-28 md:pb-6 p-6 md:pl-64 fade-in md:ml-9">
                     <div className="max-w-7xl mx-auto">
@@ -180,6 +239,32 @@ export default function Account() {
                                 >
                                     About CashCat & Meet The Team
                                 </button>
+                                <button
+                                    onClick={() => setShowFeedbackModal(true)}
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Give Feedback on CashCat
+                                </button>
+                                <button
+                                    onClick={handleContactSupport}
+                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left ${
+                                        contactConfirmStep === 1 
+                                            ? 'bg-green/20 text-green hover:bg-green/30 border border-green/30' 
+                                            : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-white'
+                                    }`}
+                                >
+                                    {contactConfirmStep === 1 ? 'Click again to email lemonaise.dev@gmail.com' : 'Contact Support'}
+                                </button>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${
+                                        deleteConfirmStep === 1 
+                                            ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30' 
+                                            : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-reddy'
+                                    }`}
+                                >
+                                    {deleteConfirmStep === 1 ? 'Are you sure? Click again to confirm' : 'Delete Account'}
+                                </button>
                                 
                             </div>
                         
@@ -187,15 +272,16 @@ export default function Account() {
                         </div>
 
                         {/* Patch Notes*/}
+                        {/*This is the CashCat semantic version number. It should be updated with each update.*/}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.2.6</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.2.7</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
+                                    <li>A new feedback form</li>
                                     <li>An installable PWA for mobile</li>
-                                    <li>Rollover tracking</li>
                                     <li>A new collapsible budget UI</li>
                                 </ul>
                             </div>
@@ -206,12 +292,25 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored and encrypted. If you are an early-access tester and wish to delete your account, please get in touch with a member of the team.
+                                Your data is securely stored. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com.
                             </p>
-                            {/*This is the CashCat semantic version number. It should be updated with each update.*/}
                         </div>
                     </div>
                 </main>
+
+                <FeedbackModal
+                    isOpen={showFeedbackModal}
+                    onClose={() => setShowFeedbackModal(false)}
+                />
+
+                <DeleteAccountModal
+                    isOpen={showDeleteModal}
+                    onClose={() => {
+                        setShowDeleteModal(false);
+                        setDeleteConfirmStep(0);
+                    }}
+                    onAccountDeleted={handleAccountDeleted}
+                />
             </div>
         </ProtectedRoute>
     );
