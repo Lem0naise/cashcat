@@ -178,7 +178,7 @@ export default function Account() {
                                             <ul className="text-sm text-white/70 mb-3 space-y-1">
                                                 <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
                                                 <li>• <strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li>• <strong>Firefox:</strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
+                                                <li>• <strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
                                             </ul>
                                         </>
                                     )}
@@ -277,9 +277,10 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.2.7</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.2.8</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
+                                    <li>Daily predictions</li>
                                     <li>A new feedback form</li>
                                     <li>An installable PWA for mobile</li>
                                     <li>A new collapsible budget UI</li>
