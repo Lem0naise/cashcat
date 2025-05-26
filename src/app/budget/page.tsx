@@ -27,6 +27,7 @@ type Category = {
     group: string;
     rollover: number;
     available: number;
+    dailyLeft?: number; // Amount available per day for rest of month
 };
 
 export default function Budget() {
@@ -141,6 +142,27 @@ export default function Budget() {
         return rollover;
     }, []);
 
+    // Helper function to calculate days remaining in current month
+    const getDaysRemainingInMonth = useCallback((date: Date = currentMonth): number => {
+        const today = new Date();
+        const currentDate = new Date(date.getFullYear(), date.getMonth(), today.getDate());
+        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        // If we're viewing a future month, return total days in that month
+        if (date.getMonth() > today.getMonth() || date.getFullYear() > today.getFullYear()) {
+            return lastDayOfMonth.getDate();
+        }
+        
+        // If we're viewing a past month, return 0
+        if (date.getMonth() < today.getMonth() || date.getFullYear() < today.getFullYear()) {
+            return 0;
+        }
+        
+        // For current month, calculate remaining days including today
+        const daysRemaining = lastDayOfMonth.getDate() - today.getDate() + 1;
+        return Math.max(0, daysRemaining);
+    }, [currentMonth]);
+
     // Memoize fetchBudgetData to prevent unnecessary recreations
     const fetchBudgetData = useCallback(async () => {
         try {
@@ -245,6 +267,10 @@ export default function Budget() {
                 
                 const available = assigned + rollover - spent;
                 
+                // Calculate daily amount left
+                const daysRemaining = getDaysRemainingInMonth();
+                const dailyLeft = daysRemaining > 0 ? available / daysRemaining : 0;
+                
                 return {
                     id: category.id,
                     name: category.name,
@@ -253,7 +279,8 @@ export default function Budget() {
                     goalAmount: category.goal || 0,
                     group: category.groups?.name || 'Uncategorized',
                     rollover,
-                    available
+                    available,
+                    dailyLeft
                 };
             });
             
@@ -276,7 +303,7 @@ export default function Budget() {
         } finally {
             setLoading(false);
         }
-    }, [currentMonth, supabase, calculateRolloverForCategory]);
+    }, [currentMonth, supabase, calculateRolloverForCategory, getDaysRemainingInMonth]);
 
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
@@ -301,7 +328,9 @@ export default function Budget() {
                 if (cat.id === categoryId) {
                     // Recalculate available when assigned changes
                     const newAvailable = newAmount + cat.rollover - cat.spent;
-                    return { ...cat, assigned: newAmount, available: newAvailable };
+                    const daysRemaining = getDaysRemainingInMonth();
+                    const dailyLeft = daysRemaining > 0 ? newAvailable / daysRemaining : 0;
+                    return { ...cat, assigned: newAmount, available: newAvailable, dailyLeft };
                 }
                 return cat;
             });
@@ -407,7 +436,9 @@ export default function Budget() {
                 if (newAmount !== undefined) {
                     // Recalculate available when assigned changes
                     const newAvailable = newAmount + cat.rollover - cat.spent;
-                    return { ...cat, assigned: newAmount, available: newAvailable };
+                    const daysRemaining = getDaysRemainingInMonth();
+                    const dailyLeft = daysRemaining > 0 ? newAvailable / daysRemaining : 0;
+                    return { ...cat, assigned: newAmount, available: newAvailable, dailyLeft };
                 }
                 return cat;
             });
@@ -841,6 +872,7 @@ export default function Budget() {
                                                                 wasMassAssigningSoShouldClose={wasMassAssigningSoShouldClose}
                                                                 onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
                                                                 available={category.available}
+                                                                dailyLeft={category.dailyLeft}
                                                             />
                                                         </div>
                                                     ))}

@@ -14,9 +14,10 @@ interface CategoryProps {
     wasMassAssigningSoShouldClose? : boolean;
     onAssignmentUpdate?: (amount: number) => Promise<void>;
     available?: number;
+    dailyLeft?: number;
 }
 
-export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate, available}: CategoryProps) {
+export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate, available, dailyLeft}: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
@@ -132,9 +133,17 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             <div className="flex justify-between items-start">
                 <h3 className="text-sm md:text-lg font-medium leading-tight">{name}</h3>
                 <div className="text-right">
-                    <p className={`text-base md:text-xl font-bold ${displayAvailable >= -0.01 ? 'text-green' : 'text-reddy'}`}>
-                        {formatCurrency(displayAvailable)}
-                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                        {dailyLeft !== undefined && Math.round(dailyLeft*100)/100 > 0 && displayAvailable > 0 && (
+                            <span className="text-xs text-white/50">
+                                ({formatCurrency(dailyLeft)}/day)
+                            </span>
+                        )}
+                        <p className={`text-base text-lg md:text-xl font-bold ${displayAvailable >= -0.01 ? 'text-green' : 'text-reddy'}`}>
+                            {formatCurrency(displayAvailable)}
+                        </p>
+                        
+                    </div>
                 </div>
             </div>
 
@@ -149,7 +158,6 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            
                             Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} {rollover > 0 && (
                                 <>
                                     + <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> rolled 
