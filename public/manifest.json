@@ -1,7 +1,7 @@
 {
   "name": "CashCat",
   "short_name": "CashCat",
-  "start_url": "/",
+  "start_url": "/budget",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",

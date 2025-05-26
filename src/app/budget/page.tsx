@@ -679,11 +679,11 @@ export default function Budget() {
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left this month
                                             </p>
-                                        ) : balanceInfo.assigned > balanceInfo.budgetPool ? (
+                                        ) : (
                                             <p className="font-medium">
-                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span>too much assigned
+                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
                                             </p>
-                                        ) : (<>Yellow</>)}
+                                        )}
                                     </div>
                                     <button
                                         onClick={massAssign}
