@@ -178,7 +178,7 @@ export default function Account() {
                                             <ul className="text-sm text-white/70 mb-3 space-y-1">
                                                 <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
                                                 <li>• <strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li>• <strong>Firefox:</strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
+                                                <li>• <strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
                                             </ul>
                                         </>
                                     )}
