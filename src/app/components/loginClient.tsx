@@ -89,6 +89,7 @@ export default function Login() {
           providers={[]}
           redirectTo={redirectUrl}
         />
+        <p className="text-xs font-400 text-white/70 text-center">There are currently rate limits in place for account creation. If you are encountering problems creating an account, please email lemonaise.dev@gmail.com.</p>
       </div>
     </div>
   );
