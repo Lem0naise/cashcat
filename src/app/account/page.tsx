@@ -151,16 +151,16 @@ export default function Account() {
                                 </div>
                             ) : (
                                 <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                                    <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center justify-between mb-0">
                                         <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
                                         <button
                                             onClick={toggleInstallInstructions}
                                             className="p-1 hover:bg-white/[.05] rounded transition-colors"
                                             aria-label={isInstallDismissed ? "Show install instructions" : "Hide install instructions"}
                                         >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path 
-                                                    d={isInstallDismissed ? "M15 18L9 12L15 6" : "M9 18L15 12L9 6"} 
+                                                    d={isInstallDismissed ? "M9 18L15 12L9 6 " : "M15 18L9 12L15 6"} 
                                                     stroke="white" 
                                                     strokeWidth="1.5" 
                                                     strokeLinecap="round" 
@@ -186,33 +186,6 @@ export default function Account() {
                             )
                         )}
                         
-                        {/* Budget Settings */}
-                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <h2 className="text-lg font-semibold mb-4">Budget Settings</h2>
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <label className="block text-sm text-white/50 mb-2">Currency</label>
-                                    <select
-                                        className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm disabled:opacity-50"
-                                        disabled
-                                    >
-                                        <option value="GBP">£ GBP (Coming Soon)</option>
-                                        <option value="USD">$ USD (Coming Soon)</option>
-                                        <option value="EUR">€ EUR (Coming Soon)</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm text-white/50 mb-2">Import Transactions</label>
-                                    <button
-                                        className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white disabled:opacity-50 disabled:hover:bg-white/[.05] disabled:hover:text-white/70"
-                                        disabled
-                                    >
-                                        Import from CSV (Coming Soon)
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Premium Features */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
@@ -232,6 +205,7 @@ export default function Account() {
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
+                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>To manage your budget settings, click the Manage button on the Budget page.</p></div>
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
@@ -277,7 +251,7 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.2.8</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.2.9</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>Daily predictions</li>

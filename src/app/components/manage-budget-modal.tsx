@@ -382,7 +382,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             onClick={handleBackdropClick}
         >
             <div 
-                className={`relative bg-white/[.09] md:rounded-lg border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${
+                className={`relative bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${
                     isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                 }`}
             >
@@ -493,7 +493,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                             ) : activeTab === 'settings' ? (
                                 <div className="space-y-6">
                                     <div className="bg-white/[.03] rounded-lg p-6">
-                                        <h3 className="text-lg font-medium text-green mb-4">Privacy & Display</h3>
+                                        <h3 className="text-lg font-medium text-green mb-4">Display</h3>
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between p-4 bg-white/[.03] rounded-lg">
                                                 <div>
@@ -513,6 +513,33 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                             hideBudgetValues ? 'translate-x-5' : 'translate-x-0.5'
                                                         }`}
                                                     />
+                                                </button>
+                                            </div>
+                                            <div className="flex  justify-between p-4 bg-white/[.03] rounded-lg flex-col">
+                                                <p className="block font-medium text-white mb-2">Currency</p>
+                                                <select
+                                                    className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm disabled:opacity-50"
+                                                    disabled
+                                                >
+                                                    <option value="GBP">£ GBP (Coming Soon)</option>
+                                                    <option value="USD">$ USD (Coming Soon)</option>
+                                                    <option value="EUR">€ EUR (Coming Soon)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                     {/* Budget Settings */}
+                                    <div className="bg-white/[.03] rounded-lg p-6">
+                                         <h3 className="text-lg font-medium text-green mb-4">Import</h3>
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex text-left justify-between p-4 bg-white/[.03] rounded-lg flex-col">
+                                                <p className="block font-medium text-white mb-2">Import Transactions</p>
+                                                <button
+                                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white disabled:opacity-50 disabled:hover:bg-white/[.05] disabled:hover:text-white/70"
+                                                    disabled
+                                                >
+                                                    Import from CSV (Coming Soon)
                                                 </button>
                                             </div>
                                         </div>
