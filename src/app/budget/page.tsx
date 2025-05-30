@@ -46,6 +46,7 @@ export default function Budget() {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+    const [showOverspentAlert, setShowOverspentAlert] = useState(false);
 
     // Update month string when current month changes
     useEffect(() => {
@@ -548,6 +549,26 @@ export default function Budget() {
         }
     };
 
+    // Helper function to get overspent categories
+    const getOverspentCategories = () => {
+        return categories.filter(cat => cat.available < 0);
+    };
+
+    // Helper function to calculate total overspent amount
+    const getTotalOverspent = () => {
+        return getOverspentCategories().reduce((sum, cat) => sum + Math.abs(cat.available), 0);
+    };
+
+    // Helper function to expand groups containing overspent categories
+    const expandOverspentGroups = () => {
+        const overspentCategories = getOverspentCategories();
+        const groupsToExpand = new Set([...expandedGroups]);
+        overspentCategories.forEach(cat => {
+            groupsToExpand.add(cat.group);
+        });
+        setExpandedGroups(groupsToExpand);
+    };
+
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -693,6 +714,59 @@ export default function Budget() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Overspent Alert */}
+                        {getOverspentCategories().length > 0 && (
+                            <div 
+                                className={`rounded-lg overflow-hidden transition-all duration-200 bg-reddy/10 text-reddy border-b-4 border-b-reddy mb-4 ${
+                                    showOverspentAlert ? 'h-auto pb-4' : 'h-[56px] md:h-[64px]'
+                                }`}
+                            >
+                                <div className="p-3 md:p-4 flex justify-between items-center">
+                                    <div>
+                                        <p className="font-medium">
+                                            <span className="text-base md:text-lg inline">{formatCurrency(getTotalOverspent())}</span> overspent
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (!showOverspentAlert) {
+                                                setShowOverspentAlert(true);
+                                                expandOverspentGroups();
+                                            } else {
+                                                setShowOverspentAlert(false);
+                                            }
+                                        }}
+                                        className="px-3 md:px-4 py-1 rounded-full bg-reddy text-background text-sm font-medium hover:bg-reddy/90 transition-colors"
+                                    >
+                                        {showOverspentAlert ? 'Close' : 'Fix'}
+                                    </button>
+                                </div>
+                                
+                                <div 
+                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
+                                        showOverspentAlert 
+                                        ? 'opacity-100 transform translate-y-0' 
+                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
+                                    }`}
+                                >
+                                    <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
+                                        <h4 className="font-medium mb-2">Overspent Categories:</h4>
+                                        <div className="space-y-1 text-sm">
+                                            {getOverspentCategories().map(cat => (
+                                                <div key={cat.id} className="flex justify-between">
+                                                    <span>{cat.name}</span>
+                                                    <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="text-sm opacity-90">
+                                        <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Balance Assignment Info */}
                         {balanceInfo && (
