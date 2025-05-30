@@ -708,7 +708,7 @@ export default function Budget() {
                                     <div>
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
-                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left this month
+                                                <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left to assign
                                             </p>
                                         ) : (
                                             <p className="font-medium">
