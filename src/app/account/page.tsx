@@ -211,7 +211,7 @@ export default function Account() {
                                     onClick={() => router.push('/learn')}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    About CashCat & Meet The Team
+                                    Meet The Team
                                 </button>
                                 <button
                                     onClick={() => setShowFeedbackModal(true)}
