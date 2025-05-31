@@ -136,8 +136,7 @@ export default function Budget() {
             // Add to rollover: assigned + previous rollover - spent
             rollover = rollover + assigned - monthSpent;
             
-            // Rollover can't be negative
-            if (rollover < 0) rollover = 0;
+            // Rollover CAN be negative
         }
         
         return rollover;

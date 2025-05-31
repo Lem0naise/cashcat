@@ -158,9 +158,10 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} {rollover > 0 && (
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} 
+                            {rollover != 0 &&(
                                 <>
-                                    + <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> rolled 
+                                    {rollover > 0 ? " + " : ' '} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> {rollover > 0 ? " rolled" : "overspent"}
                                 </>
                             )}</span> 
                         </span>
