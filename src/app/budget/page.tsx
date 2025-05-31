@@ -495,6 +495,15 @@ export default function Budget() {
         }
     };
 
+    const expandOverspent = async () => {
+        if (!showOverspentAlert) {
+            setShowOverspentAlert(true);
+            expandOverspentGroups();
+        } else {
+            setShowOverspentAlert(false);
+        }
+    }
+    
     const groups = ['All', ...new Set(categories.map(cat => cat.group))];
     const filteredCategories = activeGroup === 'All' 
         ? categories 
@@ -718,8 +727,9 @@ export default function Budget() {
                         {getOverspentCategories().length > 0 && (
                             <div 
                                 className={`rounded-lg overflow-hidden transition-all duration-200 bg-reddy/10 text-reddy border-b-4 border-b-reddy mb-4 ${
-                                    showOverspentAlert ? 'h-auto pb-4' : 'h-[56px] md:h-[64px]'
+                                    showOverspentAlert ? 'h-auto' : 'h-[56px] md:h-[64px]'
                                 }`}
+                                onClick={expandOverspent}
                             >
                                 <div className="p-3 md:p-4 flex justify-between items-center">
                                     <div>
@@ -728,17 +738,10 @@ export default function Budget() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => {
-                                            if (!showOverspentAlert) {
-                                                setShowOverspentAlert(true);
-                                                expandOverspentGroups();
-                                            } else {
-                                                setShowOverspentAlert(false);
-                                            }
-                                        }}
+                                        onClick={expandOverspent}
                                         className="px-3 md:px-4 py-1 rounded-full bg-reddy text-background text-sm font-medium hover:bg-reddy/90 transition-colors"
                                     >
-                                        {showOverspentAlert ? 'Close' : 'Fix'}
+                                        {showOverspentAlert ? 'Close' : 'Fix Now'}
                                     </button>
                                 </div>
                                 
@@ -793,7 +796,7 @@ export default function Budget() {
                                         onClick={massAssign}
                                         className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
                                     >
-                                        {isMassAssigning ? 'Done' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
+                                        {isMassAssigning ? 'Save Changes' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
                                 </div>
                                 
