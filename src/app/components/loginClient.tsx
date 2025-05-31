@@ -89,7 +89,7 @@ export default function Login() {
           providers={[]}
           redirectTo={redirectUrl}
         />
-        <p className="text-xs font-400 text-white/70 text-center">If you don't receive a confirmation email, check your spam / junk folder. There are currently rate limits in place for account creation. If you are encountering problems creating an account, please email lemonaise.dev@gmail.com.</p>
+        <p className="text-xs font-400 text-white/70 text-center">If you don't see a confirmation email, check your spam or junk folder. If you are encountering problems creating an account, please email lemonaise.dev@gmail.com.</p>
       </div>
     </div>
   );

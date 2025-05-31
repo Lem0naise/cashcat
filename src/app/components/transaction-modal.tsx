@@ -405,21 +405,33 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                             {type === 'payment' && (
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <label className="block text-sm text-white/50">Category</label>
+                                        <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
                                         {categoryRemaining !== null && !loadingCategoryRemaining && (
-                                            <span className={`text-xs ${categoryRemaining >= 0 ? 'text-green' : 'text-reddy'}`}>
-                                                £{Math.abs(categoryRemaining).toFixed(2)} {categoryRemaining >= 0 ? 'left' : 'over'}
+                                            <span className={`text-xs font-medium ${
+                                                categoryRemaining >= 0 
+                                                    ? 'text-green px-1 py-1' 
+                                                    : 'text-reddy animate-pulse bg-reddy/20 rounded-full px-1 py-1'
+                                            }`}>
+                                                {categoryRemaining >= 0 
+                                                    ? `£${categoryRemaining.toFixed(2)} left`
+                                                    : `⚠️ £${Math.abs(categoryRemaining).toFixed(2)} OVER`
+                                                }
                                             </span>
                                         )}
-                                        {loadingCategoryRemaining && (
-                                            <span className="text-xs text-white/50">Loading...</span>
+                                        {loadingCategoryRemaining && ( 
+                                            <span className="text-xs text-white/50 px-1 py-1">Loading...</span>
                                         )}
                                     </div>
                                     <select
                                         required={type === 'payment'}
                                         value={categoryId}
                                         onChange={(e) => setCategoryId(e.target.value)}
-                                        className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                        className={`w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors
+                                                    ${categoryRemaining && categoryRemaining < 0 
+                                                        ? 'text-reddy'
+                                                        : ''
+                                                    }
+                                            `}
                                         disabled={loadingCategories}
                                     >
                                         <option value="" disabled>

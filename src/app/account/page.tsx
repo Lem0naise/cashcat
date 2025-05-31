@@ -205,13 +205,14 @@ export default function Account() {
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
-                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>To manage your budget settings, click the Manage button on the Budget page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>To manage your budget settings, click the Manage button on the Budget page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    About CashCat & Meet The Team
+                                    Meet The Team & Learn to Budget
                                 </button>
                                 <button
                                     onClick={() => setShowFeedbackModal(true)}
@@ -251,7 +252,7 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.2.9</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.2.10</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>Daily predictions</li>
