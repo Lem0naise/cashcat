@@ -158,9 +158,10 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} {rollover > 0 && (
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} 
+                            {Math.round(rollover * 100) != 0 &&(
                                 <>
-                                    + <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> rolled 
+                                    {Math.round(rollover*100) > 0 ? " + " : ' '} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> {Math.round(rollover*100) > 0 ? " rolled" : "overspent"}
                                 </>
                             )}</span> 
                         </span>
@@ -229,7 +230,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                 displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
                             }`}
                             style={{
-                                width: goal ? `${Math.min(spent / goal, (assigned + rollover) / goal) * 100}%` : '0%',
+                                width: goal ? `${Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1) * 100}%` : '0%',
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />

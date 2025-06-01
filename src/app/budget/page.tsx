@@ -136,8 +136,7 @@ export default function Budget() {
             // Add to rollover: assigned + previous rollover - spent
             rollover = rollover + assigned - monthSpent;
             
-            // Rollover can't be negative
-            if (rollover < 0) rollover = 0;
+            // Rollover CAN be negative
         }
         
         return rollover;
@@ -175,9 +174,9 @@ export default function Budget() {
             const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-            // Format dates for database query
-            const startDate = firstDay.toISOString().split('T')[0];
-            const endDate = lastDay.toISOString().split('T')[0];
+            // Format dates for database query - use local timezone instead of UTC
+            const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+            const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
 
             // Format current month for assignments query
             const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
@@ -496,6 +495,15 @@ export default function Budget() {
         }
     };
 
+    const expandOverspent = async () => {
+        if (!showOverspentAlert) {
+            setShowOverspentAlert(true);
+            expandOverspentGroups();
+        } else {
+            setShowOverspentAlert(false);
+        }
+    }
+    
     const groups = ['All', ...new Set(categories.map(cat => cat.group))];
     const filteredCategories = activeGroup === 'All' 
         ? categories 
@@ -719,8 +727,9 @@ export default function Budget() {
                         {getOverspentCategories().length > 0 && (
                             <div 
                                 className={`rounded-lg overflow-hidden transition-all duration-200 bg-reddy/10 text-reddy border-b-4 border-b-reddy mb-4 ${
-                                    showOverspentAlert ? 'h-auto pb-4' : 'h-[56px] md:h-[64px]'
+                                    showOverspentAlert ? 'h-auto' : 'h-[56px] md:h-[64px]'
                                 }`}
+                                onClick={expandOverspent}
                             >
                                 <div className="p-3 md:p-4 flex justify-between items-center">
                                     <div>
@@ -729,17 +738,10 @@ export default function Budget() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => {
-                                            if (!showOverspentAlert) {
-                                                setShowOverspentAlert(true);
-                                                expandOverspentGroups();
-                                            } else {
-                                                setShowOverspentAlert(false);
-                                            }
-                                        }}
+                                        onClick={expandOverspent}
                                         className="px-3 md:px-4 py-1 rounded-full bg-reddy text-background text-sm font-medium hover:bg-reddy/90 transition-colors"
                                     >
-                                        {showOverspentAlert ? 'Close' : 'Fix'}
+                                        {showOverspentAlert ? 'Close' : 'Fix Now'}
                                     </button>
                                 </div>
                                 
@@ -775,7 +777,7 @@ export default function Budget() {
                                     Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
-                                } ${isMassAssigning ? 'h-[96px] md:h-[108px]' : ''}
+                                } ${isMassAssigning ? 'h-[108px] md:h-[128px]' : ''}
                                 `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
@@ -794,41 +796,46 @@ export default function Budget() {
                                         onClick={massAssign}
                                         className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
                                     >
-                                        {isMassAssigning ? 'Done' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
+                                        {isMassAssigning ? 'Apply Changes' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
                                 </div>
                                 
                                 <div 
-                                    className={`px-3 md:px-4 pb-3 md:pb-4 flex gap-2 transition-all duration-200 ${
+                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
                                         isMassAssigning 
                                         ? 'opacity-100 transform translate-y-0' 
                                         : 'opacity-0 transform -translate-y-2 pointer-events-none'
                                     }`}
                                 >
-                                    <button
-                                        className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
-                                            pendingAction === 'fill-goals' 
-                                            ? 'bg-green text-background' 
-                                            : 'bg-white/10 hover:bg-white/20'
-                                        }`}
-                                        onClick={() => setPendingAction(
-                                            pendingAction === 'fill-goals' ? null : 'fill-goals'
-                                        )}
-                                    >
-                                        Fill Categories
-                                    </button>
-                                    <button
-                                        className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
-                                            pendingAction === 'clear' 
-                                            ? 'bg-reddy text-background' 
-                                            : 'bg-white/10 hover:bg-white/20'
-                                        }`}
-                                        onClick={() => setPendingAction(
-                                            pendingAction === 'clear' ? null : 'clear'
-                                        )}
-                                    >
-                                        Empty Categories
-                                    </button>
+                                     <div className="text-sm opacity-90 mb-1 -mt-1">
+                                        <p className="">If you have money left over, assign it into next month's budget! This allows you to plan ahead.</p>
+                                    </div>
+                                    <div className= "flex gap-2">
+                                        <button
+                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
+                                                pendingAction === 'fill-goals' 
+                                                ? 'bg-green text-background' 
+                                                : 'bg-white/10 hover:bg-white/20'
+                                            }`}
+                                            onClick={() => setPendingAction(
+                                                pendingAction === 'fill-goals' ? null : 'fill-goals'
+                                            )}
+                                        >
+                                            Fill All
+                                        </button>
+                                        <button
+                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
+                                                pendingAction === 'clear' 
+                                                ? 'bg-reddy text-background' 
+                                                : 'bg-white/10 hover:bg-white/20'
+                                            }`}
+                                            onClick={() => setPendingAction(
+                                                pendingAction === 'clear' ? null : 'clear'
+                                            )}
+                                        >
+                                            Empty All
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

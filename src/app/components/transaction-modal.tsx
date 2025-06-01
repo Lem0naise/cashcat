@@ -153,11 +153,13 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             // Get first and last day of current month
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
             const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            const startDate = firstDay.toISOString().split('T')[0];
-            const endDate = lastDay.toISOString().split('T')[0];
+            
+            // Format dates for database query - use local timezone instead of UTC
+            const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+            const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
 
-            // Fetch assignment and spending in parallel
-            const [assignmentResponse, spendingResponse] = await Promise.all([
+            // Fetch current month assignment, current month spending, and ALL historical data for rollover
+            const [assignmentResponse, spendingResponse, allTransactionsResponse, allAssignmentsResponse] = await Promise.all([
                 supabase
                     .from('assignments')
                     .select('assigned')
@@ -172,16 +174,80 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                     .eq('user_id', user.id)
                     .eq('type', 'payment')
                     .gte('date', startDate)
-                    .lte('date', endDate)
+                    .lte('date', endDate),
+                supabase
+                    .from('transactions')
+                    .select('amount, category_id, type, date')
+                    .eq('user_id', user.id),
+                supabase
+                    .from('assignments')
+                    .select('*')
+                    .eq('user_id', user.id)
             ]);
 
             const assignment = assignmentResponse.data;
             const transactions = spendingResponse.data || [];
+            const allTransactions = allTransactionsResponse.data || [];
+            const allAssignments = allAssignmentsResponse.data || [];
 
-            // Calculate remaining amount
+            // Calculate rollover using the same logic as budget page
+            const calculateRolloverForCategory = (
+                categoryId: string, 
+                targetMonth: string, 
+                allAssignments: any[], 
+                allTransactions: any[]
+            ): number => {
+                if (!categoryId) return 0;
+
+                // Get all months from category creation up to target month
+                const targetDate = new Date(targetMonth + '-01');
+                const months: string[] = [];
+                
+                // Start from 12 months ago to ensure we capture enough history
+                const startDate = new Date(targetDate);
+                startDate.setMonth(startDate.getMonth() - 12);
+                
+                let currentDate = new Date(startDate);
+                while (currentDate <= targetDate) {
+                    const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (monthStr < targetMonth) { // Only include months before target
+                        months.push(monthStr);
+                    }
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                }
+
+                let rollover = 0;
+                
+                // Calculate rollover month by month
+                for (const month of months) {
+                    const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
+                    const assigned = assignment?.assigned || 0;
+                    
+                    // Calculate spending for this month
+                    const monthStart = month + '-01';
+                    const nextMonth = new Date(monthStart);
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    const monthEnd = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0];
+                    
+                    const monthSpent = allTransactions
+                        .filter(t => t.category_id === categoryId && 
+                                    t.date >= monthStart && 
+                                    t.date <= monthEnd &&
+                                    t.type === 'payment')
+                        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                    
+                    // Add to rollover: assigned + previous rollover - spent
+                    rollover = rollover + assigned - monthSpent;
+                }
+                
+                return rollover;
+            };
+
+            // Calculate remaining amount with rollover
             const assigned = assignment?.assigned || 0;
             const totalSpent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            const remaining = assigned - totalSpent;
+            const rollover = calculateRolloverForCategory(categoryId, currentMonth, allAssignments, allTransactions);
+            const remaining = assigned + rollover - totalSpent;
 
             setCategoryRemaining(remaining);
         } catch (error) {
@@ -388,7 +454,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 />
                                 {showSuggestions && vendorSuggestions.length > 0 && (
                                     <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
-                                        {vendorSuggestions.map((suggestion) => (
+                                        {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
+                                            .map((suggestion) => (
                                             <button
                                                 key={suggestion.id}
                                                 type="button"
@@ -408,12 +475,12 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                         <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
                                         {categoryRemaining !== null && !loadingCategoryRemaining && (
                                             <span className={`text-xs font-medium ${
-                                                categoryRemaining >= 0 
+                                                (categoryRemaining - parseFloat(amount)) >= 0 
                                                     ? 'text-green px-1 py-1' 
                                                     : 'text-reddy animate-pulse bg-reddy/20 rounded-full px-1 py-1'
                                             }`}>
                                                 {categoryRemaining >= 0 
-                                                    ? `£${categoryRemaining.toFixed(2)} left`
+                                                    ? `£${categoryRemaining.toFixed(2)} left` + (categoryRemaining - parseFloat(amount) >= 0 ? '' : ' - not enough!')
                                                     : `⚠️ £${Math.abs(categoryRemaining).toFixed(2)} OVER`
                                                 }
                                             </span>
