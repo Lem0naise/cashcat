@@ -12,6 +12,7 @@ import TransactionModal from "../../components/transaction-modal";
 import { useSupabaseClient } from '../../hooks/useSupabaseClient';
 import { deleteTransaction, submitTransaction, updateTransaction } from '../../utils/transactions';
 import TransactionModalWrapper from "@/app/components/transactionSus";
+import BankCompareModal from "../../components/bank-compare-modal";
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -33,6 +34,7 @@ export default function Transactions() {
     const [modalTransaction, setModalTransaction] = useState<Transaction | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
+    const [showBankCompareModal, setShowBankCompareModal] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const supabase = useSupabaseClient();
 
@@ -443,7 +445,15 @@ export default function Transactions() {
 
                       {/* Balance Section */}
                     <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-6 p-3 rounded-lg md:mb-6 mb-3 mt-0">
-                        <h2 className="text-lg font-medium text-white/90">Balance</h2>
+                        <div>
+                            <h2 className="text-lg font-medium text-white/90">Balance</h2>
+                            <button
+                                onClick={() => setShowBankCompareModal(true)}
+                                className="text-xs text-white/50 hover:text-white/70 transition-colors mt-1"
+                            >
+                                Compare with bank →
+                            </button>
+                        </div>
                         <span className={`text-2xl font-bold tabular-nums ${calculateTotalBalance(transactions) < 0 ? 'text-reddy' : 'text-green'}`}>
                             {formatAmount(calculateTotalBalance(transactions))}
                         </span>
@@ -539,6 +549,13 @@ export default function Transactions() {
                 onClose={closeModalFunc}
                 onSubmit={modalTransaction ? handleUpdateSubmit : handleSubmit}
                 onDelete={handleDelete}
+            />
+
+            <BankCompareModal
+                isOpen={showBankCompareModal}
+                onClose={() => setShowBankCompareModal(false)}
+                transactions={transactions}
+                onTransactionUpdated={fetchTransactions}
             />
         </div>
         </ProtectedRoute>
