@@ -161,6 +161,27 @@ export type Database = {
         }
         Relationships: []
       }
+      information: {
+        Row: {
+          created_at: string
+          reminder: string | null
+          user_id: string
+          month: string
+        }
+        Insert: {
+          created_at?: string
+          reminder?: string | null
+          user_id?: string
+          month: string
+        }
+        Update: {
+          created_at?: string
+          reminder?: string | null
+          user_id?: string
+          month?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           currency: string | null
