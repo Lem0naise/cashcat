@@ -3,6 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { Category, Group } from '../types/budget';
 
 type ManageBudgetModalProps = {
@@ -266,26 +267,36 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 created_at: new Date().toISOString(),
             };
 
-            let error;
-            if (startingBalanceId) {
-                // Update existing starting balance
-                const response = await supabase
-                    .from('transactions')
-                    .update({ ...transactionData, user_id: user.id })
-                    .eq('id', startingBalanceId);
-                error = response.error;
-            } else {
-                // Create new starting balance
-                const response = await supabase
-                    .from('transactions')
-                    .insert({ ...transactionData, user_id: user.id });
-                error = response.error;
-            }
+            const isUpdate = !!startingBalanceId;
+            const promise = (async () => {
+                let error;
+                if (startingBalanceId) {
+                    // Update existing starting balance
+                    const response = await supabase
+                        .from('transactions')
+                        .update({ ...transactionData, user_id: user.id })
+                        .eq('id', startingBalanceId);
+                    error = response.error;
+                } else {
+                    // Create new starting balance
+                    const response = await supabase
+                        .from('transactions')
+                        .insert({ ...transactionData, user_id: user.id });
+                    error = response.error;
+                }
 
-            if (error) throw error;
+                if (error) throw error;
 
-            await fetchStartingBalance();
-            setError(null);
+                await fetchStartingBalance();
+                setError(null);
+            })();
+
+            await toast.promise(promise, {
+                loading: isUpdate ? 'Updating starting balance...' : 'Setting starting balance...',
+                success: isUpdate ? 'Starting balance updated successfully!' : 'Starting balance set successfully!',
+                error: isUpdate ? 'Failed to update starting balance' : 'Failed to set starting balance'
+            });
+
         } catch (error) {
             console.error('Error saving starting balance:', error);
             setError('Failed to save starting balance');

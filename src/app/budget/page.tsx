@@ -47,12 +47,16 @@ export default function Budget() {
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [showOverspentAlert, setShowOverspentAlert] = useState(false);
+    const [reminderText, setReminderText] = useState<string>('');
+    const [reminderLoading, setReminderLoading] = useState(false);
+    const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // Update month string when current month changes
     useEffect(() => {
         const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         setMonthString(newMonthString);
         fetchBudgetData(); // Fetch new data when month changes
+        // Remove separate fetchReminderData call - now included in fetchBudgetData
     }, [currentMonth]);
 
     // Listen for hide budget values changes
@@ -182,8 +186,8 @@ export default function Budget() {
             const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
             setMonthString(queryMonthString);
 
-            // Fetch ALL data for rollover calculations and budget pool
-            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse, allAssignmentsResponse] = await Promise.all([
+            // Fetch ALL data for rollover calculations and budget pool, including reminder data
+            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -213,7 +217,13 @@ export default function Budget() {
                 supabase
                     .from('assignments')
                     .select('*')
+                    .eq('user_id', user.id),
+                supabase
+                    .from('information')
+                    .select('reminder')
                     .eq('user_id', user.id)
+                    .eq('month', queryMonthString)
+                    .single()
             ]);
 
             if (categoriesResponse.error) throw categoriesResponse.error;
@@ -221,12 +231,19 @@ export default function Budget() {
             if (assignmentsResponse.error) throw assignmentsResponse.error;
             if (allTransactionsResponse.error) throw allTransactionsResponse.error;
             if (allAssignmentsResponse.error) throw allAssignmentsResponse.error;
+            // Don't throw error for reminder response - it's okay if no reminder exists
 
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
             const allTransactionsData = allTransactionsResponse.data;
             const allAssignments = allAssignmentsResponse.data;
+
+            // Handle reminder data
+            if (reminderResponse.error && reminderResponse.error.code !== 'PGRST116') {
+                console.error('Error fetching reminder:', reminderResponse.error);
+            }
+            setReminderText(reminderResponse.data?.reminder || '');
 
             let startingBalance = 0;
             let totalIncome = 0;
@@ -577,6 +594,82 @@ export default function Budget() {
         setExpandedGroups(groupsToExpand);
     };
 
+    // Fetch reminder data
+    const fetchReminderData = useCallback(async () => {
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) return;
+
+            const { data, error } = await supabase
+                .from('information')
+                .select('reminder')
+                .eq('user_id', user.id)
+                .eq('month', monthString)
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+                console.error('Error fetching reminder:', error);
+                return;
+            }
+
+            setReminderText(data?.reminder || '');
+        } catch (error) {
+            console.error('Error fetching reminder data:', error);
+        }
+    }, [supabase, monthString]);
+
+    // Save reminder data with debouncing
+    const saveReminderData = useCallback(async (text: string) => {
+        try {
+            setReminderLoading(true);
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+
+            const { error } = await supabase
+                .from('information')
+                .upsert({
+                    user_id: user.id,
+                    month: monthString,
+                    reminder: text || null
+                }, {
+                    onConflict: 'user_id,month'
+                });
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error saving reminder:', error);
+            toast.error('Failed to save reminder');
+        } finally {
+            setReminderLoading(false);
+        }
+    }, [supabase, monthString]);
+
+    // Handle reminder text change with debounced save
+    const handleReminderChange = (text: string) => {
+        setReminderText(text);
+        
+        // Clear existing timeout
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        
+        // Set new timeout for auto-save
+        const newTimeout = setTimeout(() => {
+            saveReminderData(text);
+        }, 1000); // Save after 1 second of no typing
+        
+        setSaveTimeout(newTimeout);
+    };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+        };
+    }, [saveTimeout]);
+
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -586,9 +679,20 @@ export default function Budget() {
                 
 
                 {/* Mobile month switcher and manage button */}
-                <div className="flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
-                    <div className="w-12">
-                        {/* Space for future button */}
+                <div className="px-3 flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
+                    <div className="w-12 flex justify-start">
+                        <button
+                            onClick={toggleAllGroups}
+                            className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] invert opacity-70 hover:opacity-100"
+                        >
+                            <Image
+                                src={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "/minus.svg" : "/plus.svg"}
+                                alt={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "Collapse all" : "Expand all"}
+                                width={18}
+                                height={18}
+                                className="opacity-70"
+                            />
+                        </button>
                     </div>
                     <div className="flex-1 flex justify-center">
                         <div className="flex items-center">
@@ -666,50 +770,51 @@ export default function Budget() {
                 <main className="pt-2 md:pt-12 pb-24 md:pb-6 md:pl-64 px-4 md:px-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="md:flex hidden items-center mb-6 md:mt-3">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <h1 className="text-2xl font-bold tracking-[-.01em]">Budget</h1>
                             </div>
-                            <div className="flex-1 flex justify-center">
-                                <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0 flex justify-center mx-4 lg:mx-8">
+                                <div className="flex items-center gap-1 lg:gap-2">
                                     <button 
                                         onClick={goToPreviousMonth}
-                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                        className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >   
                                         <Image
                                             src="/chevron-left.svg"
                                             alt="Previous month"
-                                            width={36}
-                                            height={36}
-                                            className="opacity-70"
+                                            width={32}
+                                            height={32}
+                                            className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
-                                    <h2 className="text-lg font-medium min-w-[140px] text-center">
+                                    <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
                                         {formatMonth(currentMonth)}
                                     </h2>
                                     <button 
                                         onClick={goToNextMonth}
-                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                        className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >
                                         <Image
                                             src="/chevron-right.svg"
                                             alt="Next month"
-                                            width={36}
-                                            height={36}
-                                            className="opacity-70"
+                                            width={32}
+                                            height={32}
+                                            className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex-1 flex justify-end gap-2">
+                            <div className="flex-1 flex justify-end gap-2 min-w-0">
                                 <button
                                     onClick={toggleAllGroups}
-                                    className="bg-white/[.05] hover:bg-white/[.1] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
+                                    className="bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm whitespace-nowrap"
                                 >
-                                    {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
+                                    <span className="hidden xl:inline">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}</span>
+                                    <span className="xl:hidden">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse' : 'Expand'}</span>
                                 </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
-                                    className="bg-primary hover:bg-white/[.05] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all"
+                                    className="bg-primary hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
                                 >
                                     <Image
                                         src="/settings.svg"
@@ -840,16 +945,6 @@ export default function Budget() {
                             </div>
                         )}
 
-                        {/* Mobile expand all toggle */}
-                        <div className="flex md:hidden justify-between items-center mb-3">
-                            <button
-                                onClick={toggleAllGroups}
-                                className="bg-white/[.05] hover:bg-white/[.1] px-3 py-1.5 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
-                            >
-                                {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
-                            </button>
-                        </div>
-
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green"></div>
@@ -894,6 +989,20 @@ export default function Budget() {
                             </div>
                         ) : (
                             <div className="space-y-1 md:space-y-2">
+                                {/* Monthly Summary */}
+                                <div className="bg-white/[.03] rounded-lg py-1 md:py-3 md:p-4 mb-2">
+                                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
+                                        <div className="text-center">
+                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Assigned</div>
+                                            <div className="font-medium text-green">{formatCurrency(categories.reduce((sum, cat) => sum + cat.assigned, 0))}</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Spent</div>
+                                            <div className="font-medium text-reddy">{formatCurrency(categories.reduce((sum, cat) => sum + cat.spent, 0))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
                                     const { totalAssigned, totalSpent, totalAvailable } = getGroupTotals(groupCategories);
                                     
@@ -962,6 +1071,33 @@ export default function Budget() {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        )}
+
+                        {/* Reminders and IOUs Section */}
+                        {categories.length > 0 && !loading && (
+                            <div className="mt-6 md:mt-8">
+                                <div className="bg-white/[.03] rounded-lg p-4 md:p-6">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <h2 className="text-lg md:text-xl font-semibold">Notes & Reminders</h2>
+                                        {reminderLoading && (
+                                            <div className="flex items-center gap-2 text-sm text-white/60">
+                                                <div className="w-3 h-3 border border-white/30 border-t-white/60 rounded-full animate-spin"></div>
+                                                <span>Saving...</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <textarea
+                                        value={reminderText}
+                                        onChange={(e) => handleReminderChange(e.target.value)}
+                                        placeholder="Add reminders, IOUs, and general notes for this budget period..."
+                                        className="w-full text-sm min-h-[120px] bg-white/[.05] border border-white/[.1] rounded-lg p-3 text-white placeholder-white/50 resize-vertical focus:outline-none focus:border-green/50 focus:bg-white/[.08] transition-all"
+                                        rows={5}
+                                    />
+                                    <p className="text-xs text-white/50 mt-2">
+                                        Changes are automatically saved as you type
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
