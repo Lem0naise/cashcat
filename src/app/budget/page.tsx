@@ -679,9 +679,20 @@ export default function Budget() {
                 
 
                 {/* Mobile month switcher and manage button */}
-                <div className="flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
-                    <div className="w-12">
-                        {/* Space for future button */}
+                <div className="px-3 flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
+                    <div className="w-12 flex justify-start">
+                        <button
+                            onClick={toggleAllGroups}
+                            className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] invert opacity-70 hover:opacity-100"
+                        >
+                            <Image
+                                src={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "/minus.svg" : "/plus.svg"}
+                                alt={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "Collapse all" : "Expand all"}
+                                width={18}
+                                height={18}
+                                className="opacity-70"
+                            />
+                        </button>
                     </div>
                     <div className="flex-1 flex justify-center">
                         <div className="flex items-center">
@@ -934,16 +945,6 @@ export default function Budget() {
                             </div>
                         )}
 
-                        {/* Mobile expand all toggle */}
-                        <div className="flex md:hidden justify-between items-center mb-3">
-                            <button
-                                onClick={toggleAllGroups}
-                                className="bg-white/[.05] hover:bg-white/[.1] px-3 py-1.5 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
-                            >
-                                {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
-                            </button>
-                        </div>
-
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green"></div>
@@ -988,6 +989,20 @@ export default function Budget() {
                             </div>
                         ) : (
                             <div className="space-y-1 md:space-y-2">
+                                {/* Monthly Summary */}
+                                <div className="bg-white/[.03] rounded-lg py-1 md:py-3 md:p-4 mb-2">
+                                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
+                                        <div className="text-center">
+                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Assigned</div>
+                                            <div className="font-medium text-green">{formatCurrency(categories.reduce((sum, cat) => sum + cat.assigned, 0))}</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Spent</div>
+                                            <div className="font-medium text-reddy">{formatCurrency(categories.reduce((sum, cat) => sum + cat.spent, 0))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
                                     const { totalAssigned, totalSpent, totalAvailable } = getGroupTotals(groupCategories);
                                     
@@ -1076,7 +1091,7 @@ export default function Budget() {
                                         value={reminderText}
                                         onChange={(e) => handleReminderChange(e.target.value)}
                                         placeholder="Add reminders, IOUs, and general notes for this budget period..."
-                                        className="w-full min-h-[120px] bg-white/[.05] border border-white/[.1] rounded-lg p-3 text-white placeholder-white/50 resize-vertical focus:outline-none focus:border-green/50 focus:bg-white/[.08] transition-all"
+                                        className="w-full text-sm min-h-[120px] bg-white/[.05] border border-white/[.1] rounded-lg p-3 text-white placeholder-white/50 resize-vertical focus:outline-none focus:border-green/50 focus:bg-white/[.08] transition-all"
                                         rows={5}
                                     />
                                     <p className="text-xs text-white/50 mt-2">
