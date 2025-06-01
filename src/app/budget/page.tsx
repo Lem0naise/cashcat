@@ -759,50 +759,51 @@ export default function Budget() {
                 <main className="pt-2 md:pt-12 pb-24 md:pb-6 md:pl-64 px-4 md:px-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="md:flex hidden items-center mb-6 md:mt-3">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <h1 className="text-2xl font-bold tracking-[-.01em]">Budget</h1>
                             </div>
-                            <div className="flex-1 flex justify-center">
-                                <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0 flex justify-center mx-4 lg:mx-8">
+                                <div className="flex items-center gap-1 lg:gap-2">
                                     <button 
                                         onClick={goToPreviousMonth}
-                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                        className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >   
                                         <Image
                                             src="/chevron-left.svg"
                                             alt="Previous month"
-                                            width={36}
-                                            height={36}
-                                            className="opacity-70"
+                                            width={32}
+                                            height={32}
+                                            className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
-                                    <h2 className="text-lg font-medium min-w-[140px] text-center">
+                                    <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
                                         {formatMonth(currentMonth)}
                                     </h2>
                                     <button 
                                         onClick={goToNextMonth}
-                                        className="flex-shrink-0 p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                                        className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >
                                         <Image
                                             src="/chevron-right.svg"
                                             alt="Next month"
-                                            width={36}
-                                            height={36}
-                                            className="opacity-70"
+                                            width={32}
+                                            height={32}
+                                            className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex-1 flex justify-end gap-2">
+                            <div className="flex-1 flex justify-end gap-2 min-w-0">
                                 <button
                                     onClick={toggleAllGroups}
-                                    className="bg-white/[.05] hover:bg-white/[.1] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm"
+                                    className="bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm whitespace-nowrap"
                                 >
-                                    {Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}
+                                    <span className="hidden xl:inline">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}</span>
+                                    <span className="xl:hidden">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse' : 'Expand'}</span>
                                 </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
-                                    className="bg-primary hover:bg-white/[.05] px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all"
+                                    className="bg-primary hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
                                 >
                                     <Image
                                         src="/settings.svg"
