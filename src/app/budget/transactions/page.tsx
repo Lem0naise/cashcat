@@ -39,7 +39,10 @@ export default function Transactions() {
     const supabase = useSupabaseClient();
 
     const closeModalFunc = () => {
-        router.replace('/budget/transactions');
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('showModal')) {
+            router.replace('/budget/transactions', {scroll: false});
+        }
         setShowModal(false);
         setModalTransaction(null);
     }

@@ -322,7 +322,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         setTimeout(() => {
             setIsClosing(false);
             onClose();
-        }, 200); // Match animation duration
+        }, 100); // Match animation duration
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -473,14 +473,14 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
                                         <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        {categoryRemaining !== null && !loadingCategoryRemaining && (
+                                        {amount && categoryRemaining && !loadingCategoryRemaining && (
                                             <span className={`text-xs font-medium ${
-                                                (categoryRemaining - parseFloat(amount)) >= 0 
+                                                (categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0)
                                                     ? 'text-green px-1 py-1' 
                                                     : 'text-reddy animate-pulse bg-reddy/20 rounded-full px-1 py-1'
                                             }`}>
                                                 {categoryRemaining >= 0 
-                                                    ? `£${categoryRemaining.toFixed(2)} left` + (categoryRemaining - parseFloat(amount) >= 0 ? '' : ' - not enough!')
+                                                    ? `£${categoryRemaining.toFixed(2)} left` + ((categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0) ? '' : ' - not enough!')
                                                     : `⚠️ £${Math.abs(categoryRemaining).toFixed(2)} OVER`
                                                 }
                                             </span>
