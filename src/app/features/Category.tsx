@@ -230,7 +230,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                 displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
                             }`}
                             style={{
-                                width: goal ? `${Math.min(spent / goal, (assigned + rollover) / goal) * 100}%` : '0%',
+                                width: goal ? `${Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1) * 100}%` : '0%',
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />
