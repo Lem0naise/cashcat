@@ -3,7 +3,7 @@ import { Database } from '../../types/supabase';
 
 export type NewTransaction = {
     amount: number;
-    type: string;  // 'payment' | 'income' | 'starting' | 'correction'
+    type: string;  // 'payment' | 'income' | 'starting' |
     date: string;
     vendor: string;
     description?: string;
