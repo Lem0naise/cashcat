@@ -233,11 +233,11 @@ export default function BankCompareModal({
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                         >
                             <Image
-                                src="/minus.svg"
+                                src="/plus.svg"
                                 alt="Close"
                                 width={16}
                                 height={16}
-                                className="opacity-100 invert"
+                                className="opacity-100 invert rotate-45"
                             />
                         </button>
                     </div>
