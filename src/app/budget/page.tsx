@@ -316,7 +316,7 @@ export default function Budget() {
             setError(null);
         } catch (error) {
             console.error('Error fetching budget data:', error);
-            setError('Failed to load budget data');
+            setError('Failed to load budget data. Please try again in a second.');
         } finally {
             setLoading(false);
         }
