@@ -139,7 +139,7 @@ export default function Account() {
 
                         {!isPWA && (
                             isInstallable ? (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
                                     <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
                                     <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access.</p>
                                     <button
@@ -150,7 +150,7 @@ export default function Account() {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
                                     <div className="flex items-center justify-between mb-0">
                                         <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
                                         <button
@@ -212,13 +212,19 @@ export default function Account() {
                                     onClick={() => router.push('/learn')}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    Meet The Team & Learn to Budget
+                                    Learn to Budget
+                                </button>
+                                <button
+                                    onClick={() => router.push('/about')}
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Meet the Team
                                 </button>
                                 <button
                                     onClick={() => setShowFeedbackModal(true)}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    Give Feedback on CashCat
+                                    Give Feedback
                                 </button>
                                 <button
                                     onClick={handleContactSupport}

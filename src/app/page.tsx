@@ -207,7 +207,7 @@ export default function Landing() {
                             Get Started Free
                         </button>
                         <button
-                            onClick={() => router.push('/learn')}
+                            onClick={() => router.push('/about')}
                             className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
                         >
                             Meet the Team

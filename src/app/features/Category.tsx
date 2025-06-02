@@ -13,11 +13,12 @@ interface CategoryProps {
     forceFlipMassAssign?: boolean;
     wasMassAssigningSoShouldClose? : boolean;
     onAssignmentUpdate?: (amount: number) => Promise<void>;
+    onAssignmentStateChange?: (isAssigning: boolean) => void;
     available?: number;
     dailyLeft?: number;
 }
 
-export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentUpdate, available, dailyLeft}: CategoryProps) {
+export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft}: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
@@ -27,6 +28,10 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     const goal = goalAmount || 0;
     const inputRef = useRef<HTMLInputElement>(null);
     
+    useEffect(() => {
+        onAssignmentStateChange?.(isAssigning);
+    }, [isAssigning, onAssignmentStateChange]);
+
     // Handle autoFocus
     useEffect(() => {
         if (isAssigning && !forceFlipMassAssign && inputRef.current) {
