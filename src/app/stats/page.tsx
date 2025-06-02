@@ -23,7 +23,7 @@ export default function Stats() {
                 <Sidebar />
                 <MobileNav />
                 
-                <main className="pt-16 pb-28 md:pb-6 md:pl-64 p-6 fade-in md:ml-9">
+                <main className="pt-16 pb-28 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="hidden md:flex items-center justify-between mb-8 md:mt-8">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Statistics</h1>

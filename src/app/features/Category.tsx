@@ -136,8 +136,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             onClick={!isAssigning ? handleCardClick : undefined}
         >
             <div className="flex justify-between items-start">
-                <h3 className="text-sm md:text-lg font-medium leading-tight">{name}</h3>
-                <div className="text-right">
+                <h3 className="text-sm md:text-lg font-medium leading-tight truncate pr-2 flex-1 min-w-0">{name}</h3>
+                <div className="text-right flex-shrink-0">
                     <div className="flex items-baseline gap-1.5">
                         {dailyLeft !== undefined && Math.round(dailyLeft*100)/100 > 0 && displayAvailable > 0 && (
                             <span className="text-xs text-white/50">
@@ -163,10 +163,10 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)} 
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}
                             {Math.round(rollover * 100) != 0 &&(
                                 <>
-                                    {Math.round(rollover*100) > 0 ? " + " : ' '} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span> {Math.round(rollover*100) > 0 ? " rolled" : "overspent"}
+                                    {Math.round(rollover*100) > 0 ? " +" : ''} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>{Math.round(rollover*100) > 0 ? "" : ""}
                                 </>
                             )}</span> 
                         </span>
@@ -222,8 +222,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 </div>
             </div>
 
-            {/* Progress bar - now outside conditional render */}
-            <div className={`relative w-full overflow-hidden transition-[opacity, margin] duration-300 will-change-[opacity, margin] ${isAssigning ? 'opacity-100 mb-1' : 'mb-0'}`}>
+            {/* Progress bar - outside conditional render */}
+            <div className={`-mt-1 relative w-full overflow-hidden transition-[opacity, margin] duration-300 will-change-[opacity, margin] ${isAssigning ? 'opacity-100 mb-1' : 'mb-0'}`}>
                 <div className={`rounded bg-green-dark/20 w-full transition-[height] duration-300 will-change-[height] ${isAssigning ? "h-0" : "h-2 md:h-3"}`}>
                     <div 
                         className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"

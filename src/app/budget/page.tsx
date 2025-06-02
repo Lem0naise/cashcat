@@ -767,8 +767,9 @@ export default function Budget() {
                     }}
                 />
 
-                <main className="pt-2 md:pt-12 pb-24 md:pb-6 md:pl-64 px-4 md:px-6 fade-in">
-                    <div className="max-w-7xl mx-auto">
+                <main className="pt-2 md:pt-12 pb-24 md:pb-6 
+                        sm:ml-20 lg:ml-[max(16.66%,100px)] px-4 md:px-6 fade-in">
+                    <div className="max-w-7xl mx-auto md:mt-5">
                         <div className="md:flex hidden items-center mb-6 md:mt-3">
                             <div className="flex-1 min-w-0">
                                 <h1 className="text-2xl font-bold tracking-[-.01em]">Budget</h1>

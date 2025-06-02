@@ -10,7 +10,7 @@ export default function Sidebar() {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <aside className="fixed left-0 top-16 bottom-0 w-1/6 min-w-40 bg-background/95 backdrop-blur-sm border-r border-white/[.15] p-4 hidden md:block font-[family-name:var(--font-suse)] fade-in">
+        <aside className="fixed left-0 top-16 bottom-0 min-w-20 w-20 lg:w-1/7 bg-background/95 backdrop-blur-sm border-r border-white/[.15] p-4 hidden md:block font-[family-name:var(--font-suse)] fade-in">
             <div className="flex flex-col gap-4">
                 <div className="text-sm font-semibold mb-4 text-white/60 uppercase tracking-wider">Menu</div>
                
@@ -34,7 +34,7 @@ export default function Sidebar() {
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Budget</span>
+                    <span className="text-sm hidden lg:inline">Budget</span>
                 </a>
                  <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
@@ -56,7 +56,7 @@ export default function Sidebar() {
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Stats</span>
+                    <span className="text-sm hidden lg:inline">Stats</span>
                 </a>
                 <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
@@ -78,7 +78,7 @@ export default function Sidebar() {
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Transactions</span>
+                    <span className="text-sm hidden lg:inline">Transactions</span>
                 </a>
                 <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
@@ -100,7 +100,7 @@ export default function Sidebar() {
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
                     />
-                    <span className="text-sm">Account</span>
+                    <span className="text-sm hidden lg:inline">Account</span>
                 </a>
             </div>
         </aside>
