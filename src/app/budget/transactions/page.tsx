@@ -252,6 +252,79 @@ export default function Transactions() {
         return sortedGroups;
     };
 
+    const groupTransactionsByMonth = (transactions: Transaction[]) => {
+        // Filter out starting balance transactions
+        const regularTransactions = transactions.filter(t => t.type !== 'starting');
+        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
+        
+        // Group by month
+        const monthGroups: { [key: string]: Transaction[] } = {};
+        
+        regularTransactions.forEach(transaction => {
+            const date = new Date(transaction.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            
+            if (!monthGroups[monthKey]) {
+                monthGroups[monthKey] = [];
+            }
+            monthGroups[monthKey].push(transaction);
+        });
+
+        // Convert to array of month groups with day subgroups
+        const sortedMonthGroups = Object.entries(monthGroups)
+            .sort(([a], [b]) => b.localeCompare(a))
+            .map(([monthKey, monthTransactions]) => {
+                // Group transactions within this month by day
+                const dayGroups: { [key: string]: { date: string; transactions: Transaction[] } } = {};
+                
+                monthTransactions.forEach(transaction => {
+                    const date = transaction.date;
+                    if (!dayGroups[date]) {
+                        dayGroups[date] = {
+                            date,
+                            transactions: []
+                        };
+                    }
+                    dayGroups[date].transactions.push(transaction);
+                });
+
+                // Sort transactions within each day by creation time
+                Object.values(dayGroups).forEach(group => {
+                    group.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                });
+
+                // Sort days within the month
+                const sortedDayGroups = Object.values(dayGroups).sort((a, b) =>  
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                );
+
+                return {
+                    monthKey,
+                    monthName: new Date(monthKey + '-01').toLocaleDateString('en-GB', {
+                        month: 'long',
+                        year: 'numeric'
+                    }),
+                    dayGroups: sortedDayGroups,
+                    totalAmount: monthTransactions.reduce((sum, t) => sum + t.amount, 0)
+                };
+            });
+
+        // Add starting balance as a special group at the end
+        if (startingBalanceTransaction) {
+            sortedMonthGroups.push({
+                monthKey: 'starting-balance',
+                monthName: 'Starting Balance',
+                dayGroups: [{
+                    date: 'starting-balance',
+                    transactions: [startingBalanceTransaction]
+                }],
+                totalAmount: startingBalanceTransaction.amount
+            });
+        }
+
+        return sortedMonthGroups;
+    };
+
     return (
         <ProtectedRoute>
             <TransactionModalWrapper setShowModal={setShowModal} />
@@ -447,12 +520,12 @@ export default function Transactions() {
                     </div>
 
                       {/* Balance Section */}
-                    <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-6 p-3 rounded-lg md:mb-6 mb-3 mt-0">
+                    <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-6 mb-3 mt-0">
                         <div>
                             <h2 className="text-lg font-medium text-white/90">Balance</h2>
                             <button
                                 onClick={() => setShowBankCompareModal(true)}
-                                className="text-xs text-white/50 hover:text-white/70 transition-colors mt-1"
+                                className="text-xs text-white/50 hover:text-white/70 transition-colors "
                             >
                                 Compare with bank →
                             </button>
@@ -491,51 +564,70 @@ export default function Transactions() {
                             <p className="text-sm">Start adding your transactions to track your spending</p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            {groupTransactionsByDate(filteredTransactions).map(group => (
-                                <div key={group.date} className={`space-y-2 mb-2 md:mb-5 ${group.date === 'starting-balance' ? 'mt-8 pt-8 border-t border-white/[.15]' : ''}`}>
-                                    <div className="flex justify-between items-center sticky top-15 pt-0 px-3 md:top-[8.5rem] bg-background z-20">
-                                        <h3 className="text-sm font-medium text-white/40">
-                                            {group.date === 'starting-balance' ? 'Starting Balance' : formatDate(group.date)}
-                                        </h3>
-                                        {group.date !== 'starting-balance' && (
-                                            <span className="text-sm font-medium text-white/40 tabular-nums">
-                                                {formatAmount(group.transactions.reduce((total, t) => total + (t.amount), 0))}
+                        <div className="space-y-8">
+                            {groupTransactionsByMonth(filteredTransactions).map(monthGroup => (
+                                <div key={monthGroup.monthKey} className={`space-y-4 ${monthGroup.monthKey === 'starting-balance' ? 'mt-8 pt-8 border-t border-white/[.15]' : ''}`}>
+                                    {/* Month Header */}
+                                    <div className="flex justify-between items-center sticky top-15 md:top-[8.5rem] bg-background z-30 py-1">
+                                        <h2 className="text-lg font-semibold text-white/80">
+                                            {monthGroup.monthName}
+                                        </h2>
+                                        {monthGroup.monthKey !== 'starting-balance' && (
+                                            <span className={`text-lg font-semibold tabular-nums ${monthGroup.totalAmount < 0 ? 'text-reddy' : 'text-green'}`}>
+                                                {formatAmount(monthGroup.totalAmount)}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        {group.transactions.map((transaction) => (
-                                            <div key={transaction.id} 
-                                                onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setShowModal(true)) : null}
-                                                className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
-                                                    transaction.type === 'starting' 
-                                                    ? 'bg-white/[.02] cursor-default' 
-                                                    : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
-                                                } transition-colors`}
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-3">
-                                                        <h4 className="font-medium truncate text-white/90">
-                                                            {transaction.type === 'starting' ? 'Initial Net Worth' : transaction.vendors?.name || transaction.vendor}
-                                                        </h4>
-                                                    </div>
-                                                    {transaction.type !== 'starting' && (
-                                                        <div className="text-sm text-white/40 truncate mt-0.5">
-                                                            {transaction.categories ? transaction.categories.name : "Income"}
-                                                            {transaction.description && (
-                                                                <span className="inline truncate text-white/30 text-sm">
-                                                                    &nbsp; - {transaction.description}
-                                                                </span>
-                                                            )}
-                                                        </div>
+
+                                    {/* Day Groups within Month */}
+                                    <div className="space-y-6">
+                                        {monthGroup.dayGroups.map(group => (
+                                            <div key={group.date} className="space-y-2">
+                                                <div className="flex justify-between items-center sticky top-20 pt-0 px-3 md:top-[10.5rem] bg-background z-20">
+                                                    <h3 className="text-sm font-medium text-white/40">
+                                                        {group.date === 'starting-balance' ? 'Starting Balance' : formatDate(group.date)}
+                                                    </h3>
+                                                    {group.date !== 'starting-balance' && (
+                                                        <span className="text-sm font-medium text-white/40 tabular-nums">
+                                                            {formatAmount(group.transactions.reduce((total, t) => total + (t.amount), 0))}
+                                                        </span>
                                                     )}
                                                 </div>
-                                                <span className={`font-medium whitespace-nowrap tabular-nums ${
-                                                    transaction.type === 'starting' ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
-                                                }`}>
-                                                    {formatAmount(transaction.amount)}
-                                                </span>
+                                                <div className="space-y-1">
+                                                    {group.transactions.map((transaction) => (
+                                                        <div key={transaction.id} 
+                                                            onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setShowModal(true)) : null}
+                                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
+                                                                transaction.type === 'starting' 
+                                                                ? 'bg-white/[.02] cursor-default' 
+                                                                : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
+                                                            } transition-colors`}
+                                                        >
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-3">
+                                                                    <h4 className="font-medium truncate text-white/90">
+                                                                        {transaction.type === 'starting' ? 'Initial Net Worth' : transaction.vendors?.name || transaction.vendor}
+                                                                    </h4>
+                                                                </div>
+                                                                {transaction.type !== 'starting' && (
+                                                                    <div className="text-sm text-white/40 truncate mt-0.5">
+                                                                        {transaction.categories ? transaction.categories.name : "Income"}
+                                                                        {transaction.description && (
+                                                                            <span className="inline truncate text-white/30 text-sm">
+                                                                                &nbsp; - {transaction.description}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <span className={`font-medium whitespace-nowrap tabular-nums ${
+                                                                transaction.type === 'starting' ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
+                                                            }`}>
+                                                                {formatAmount(transaction.amount)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
