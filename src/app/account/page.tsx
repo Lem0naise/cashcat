@@ -252,13 +252,14 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.3.2</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.3.3</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>A new notes and reminders section</li>
                                     <li>A 'compare with bank' feature</li>
                                     <li>A smoother rollover system</li>
                                     <li>A new monthly summary</li>
+                                    <li>A fresh new logo</li>
                                 </ul>
                             </div>
                         </div>

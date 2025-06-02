@@ -26,12 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicons/cashcatfavicon16.ico" sizes="16x16" />
-        <link rel="icon" href="/favicons/cashcatfavicon32.ico" sizes="32x32" />
-        <link rel="icon" href="/favicons/cashcatfavicon64.ico" sizes="64x64" />
-        <link rel="icon" href="/favicons/cashcatfavicon128.ico" sizes="128x128" />
-        <link rel="icon" href="/favicons/cashcatfavicon256.ico" sizes="256x256" />
-        <link rel="apple-touch-icon" href="/favicons/cashcatpwa512.png" />
+        <link rel="icon" href="/favicons/cashcatfavicon16.ico?v=2" sizes="16x16" />
+        <link rel="icon" href="/favicons/cashcatfavicon32.ico?v=2" sizes="32x32" />
+        <link rel="icon" href="/favicons/cashcatfavicon64.ico?v=2" sizes="64x64" />
+        <link rel="icon" href="/favicons/cashcatfavicon128.ico?v=2" sizes="128x128" />
+        <link rel="icon" href="/favicons/cashcatfavicon256.ico?v=2" sizes="256x256" />
+        <link rel="apple-touch-icon" href="/favicons/cashcatpwa512.png?v=2" />
         <meta name="theme-color" content="#0a0a0a" />
       </head>
       <body
