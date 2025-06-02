@@ -202,7 +202,7 @@ export default function BankCompareModal({
             setPotentialIssues([]);
             setCorrectionAmount('');
             onClose();
-        }, 200);
+        }, 100);
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {

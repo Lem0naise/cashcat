@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { Category, Group } from '../types/budget';
-
 type ManageBudgetModalProps = {
     isOpen: boolean;
     onClose: () => void;
@@ -138,11 +137,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     // Group CRUD operations
     const createGroup = async (name: string) => {
         try {
-            const { error } = await supabase
+            
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('groups')
                 .insert({ name });
+                if (error) throw error;
+            })();
             
-            if (error) throw error;
+            await toast.promise(promise, {
+                loading: 'Creating group...',
+                success: 'Group created successfully!',
+                error: 'Failed to create group'
+            });
             
             await fetchGroups();
             setNewGroupName('');
@@ -153,13 +160,20 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     };
 
     const updateGroup = async (id: string, name: string) => {
-        try {
-            const { error } = await supabase
+        try {            
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('groups')
                 .update({ name })
                 .eq('id', id);
-            
-            if (error) throw error;
+                if (error) throw error;
+            })();
+
+            await toast.promise(promise, {
+                loading: 'Updating group...',
+                success: 'Group updated successfully!',
+                error: 'Failed to update group'
+            });
             
             await fetchGroups();
             setEditingGroup(null);
@@ -171,12 +185,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     const deleteGroup = async (id: string) => {
         try {
-            const { error } = await supabase
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('groups')
                 .delete()
                 .eq('id', id);
+                if (error) throw error;
+            })();
             
-            if (error) throw error;
+            await toast.promise(promise, {
+                loading: 'Deleting group...',
+                success: 'Group deleted successfully!',
+                error: 'Failed to delete group - make sure you delete or reassign all categories in this group first'
+            });
             
             await fetchGroups();
             await fetchCategories(); // Refresh categories as they might be affected
@@ -193,16 +214,23 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 throw new Error('Group is required');
             }
             
-            const { error } = await supabase
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('categories')
                 .insert({
                     name: categoryData.name,
                     group: categoryData.group,
                     goal: categoryData.goal ? parseFloat(categoryData.goal) : null,
                     timeframe: { type: categoryData.timeframe }
-                });
+                })
+                if (error) throw error;
+            })();
             
-            if (error) throw error;
+            await toast.promise(promise, {
+                loading: 'Creating category...',
+                success: 'Category created successfully!',
+                error: 'Failed to create category'
+            });
             
             await fetchCategories();
             setNewCategoryData({
@@ -219,12 +247,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     const updateCategory = async (id: string, categoryData: Partial<Category>) => {
         try {
-            const { error } = await supabase
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('categories')
                 .update(categoryData)
                 .eq('id', id);
+                if (error) throw error;
+            })();
             
-            if (error) throw error;
+            await toast.promise(promise, {
+                loading: 'Updating category...',
+                success: 'Category updated successfully!',
+                error: 'Failed to update category'
+            });
             
             await fetchCategories();
             setEditingCategory(null);
@@ -236,12 +271,21 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     const deleteCategory = async (id: string) => {
         try {
-            const { error } = await supabase
+        
+            const promise = (async () => {
+                const {error} = await supabase
                 .from('categories')
                 .delete()
                 .eq('id', id);
+                if (error) throw error;
+            })();
             
-            if (error) throw error;
+            
+            await toast.promise(promise, {
+                loading: 'Deleting category...',
+                success: 'Category deleted successfully!',
+                error: 'Failed to delete category - make sure all transactions in this category are reassigned first'
+            });
             
             await fetchCategories();
         } catch (error) {
