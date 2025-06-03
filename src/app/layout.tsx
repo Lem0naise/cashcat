@@ -33,6 +33,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicons/cashcatfavicon256.ico?v=2" sizes="256x256" />
         <link rel="apple-touch-icon" href="/favicons/cashcatpwa512.png?v=2" />
         <meta name="theme-color" content="#0a0a0a" />
+        <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'/>
       </head>
       <body
         className={`${USEFont.variable} antialiased`}

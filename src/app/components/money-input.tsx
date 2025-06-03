@@ -199,7 +199,7 @@ export default function MoneyInput({
             {/* Custom Mobile Keypad - Rendered as Portal */}
             {isMobile && showKeypad && typeof window !== 'undefined' && createPortal(
                 <div 
-                    className="fixed inset-0 bg-black/80 z-[9999] flex flex-col justify-end"
+                    className="iphone-padding fixed inset-0 bg-black/80 z-[9999] flex flex-col justify-end"
                     onClick={handleBackdropClick}
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, fontFamily:'var(--font-suse'}}
                 >

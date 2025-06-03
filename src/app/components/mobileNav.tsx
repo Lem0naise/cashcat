@@ -15,8 +15,8 @@ export default function MobileNav() {
     };
 
     return (
-        <nav className="z-50 fixed bottom-0 left-0 right-0 h-16 border-t border-white/[.15] md:hidden font-[family-name:var(--font-suse)]">
-            <div className="relative flex w-full h-full bg-black">
+        <nav className="iphone-padding-container z-50 fixed bottom-0 left-0 right-0 h-16 border-t border-white/[.15] md:hidden font-[family-name:var(--font-suse)]">
+            <div className="iphone-padding relative flex w-full h-full bg-black">
                 <div className="w-full grid grid-cols-5 px-2">
                     <Link
                         href="/budget"
