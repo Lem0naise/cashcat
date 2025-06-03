@@ -13,6 +13,8 @@ import {
   Tooltip,
   TooltipItem,
   BarElement,
+  ChartEvent,
+  ActiveElement,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { addDays, format, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -456,9 +458,9 @@ export default function BudgetAssignmentChart({
               const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
               const pointCount = chartData.dataPoints.length;
               
-              if (pointCount > 100 || diffInDays > 730) return 'month';
-              if (pointCount > 50 || diffInDays > 180) return 'week';
-              return 'day';
+              if (pointCount > 100 || diffInDays > 730) return 'month' as const;
+              if (pointCount > 50 || diffInDays > 180) return 'week' as const;
+              return 'day' as const;
             })(),
             displayFormats: {
               day: 'MMM dd',
@@ -480,23 +482,24 @@ export default function BudgetAssignmentChart({
           },
           ticks: {
             color: '#ffffff',
-            callback: function(value) {
+            callback: function(value: any) {
               return formatCurrency(Number(value));
             }
           }
         }
       },
-      onHover: (event, activeElements) => {
+      onHover: (event: ChartEvent, activeElements: ActiveElement[]) => {
         if (event.native && event.native.target) {
           (event.native.target as HTMLElement).style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
         }
       },
-      onClick: (event, activeElements, chart) => {
+      onClick: (event: ChartEvent, activeElements: ActiveElement[], chart: any) => {
         if (activeElements.length > 0 && lineChartRef.current) {
           // Use the modern Chart.js way to get relative position
           const rect = chart.canvas.getBoundingClientRect();
-          const x = event.native ? event.native.clientX - rect.left : 0;
-          const y = event.native ? event.native.clientY - rect.top : 0;
+          const mouseEvent = event.native as MouseEvent;
+          const x = mouseEvent ? mouseEvent.clientX - rect.left : 0;
+          const y = mouseEvent ? mouseEvent.clientY - rect.top : 0;
           const dataIndex = activeElements[0].index;
           
           if (!isDragging) {
@@ -650,10 +653,10 @@ export default function BudgetAssignmentChart({
           time: {
             unit: (() => {
               const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-              if (diffInDays <= 7) return 'day';
-              if (diffInDays <= 90) return 'day';
-              if (diffInDays <= 365) return 'week';
-              return 'month';
+              if (diffInDays <= 7) return 'day' as const;
+              if (diffInDays <= 90) return 'day' as const;
+              if (diffInDays <= 365) return 'week' as const;
+              return 'month' as const;
             })(),
             displayFormats: {
               day: 'MMM dd',
@@ -674,7 +677,7 @@ export default function BudgetAssignmentChart({
           },
           ticks: {
             color: '#ffffff',
-            callback: function(value) {
+            callback: function(value: any) {
               return formatCurrency(Math.abs(Number(value)));
             }
           }

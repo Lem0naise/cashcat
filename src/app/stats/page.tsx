@@ -84,14 +84,14 @@ export default function Stats() {
 
     // Get available groups for filtering
     const availableGroups = Array.from(new Set(
-        categories.map(cat => cat.groups?.name || 'Uncategorized')
+        categories.map(cat => cat.group || 'Uncategorized')
     )).sort();
 
     // Get available categories for filtering
     const availableCategories = categories.map(cat => ({
         id: cat.id,
         name: cat.name,
-        group: cat.groups?.name || 'Uncategorized'
+        group: cat.group || 'Uncategorized'
     }));
 
     const handleCustomDateChange = (start: Date, end: Date) => {
