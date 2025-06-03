@@ -40,7 +40,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             const focusTimer = setTimeout(() => {
                 inputRef.current?.setSelectionRange(100, 100);
                 inputRef.current?.focus();
-            }, 200);
+            }, 150);
             return () => clearTimeout(focusTimer);
         }
     }, [isAssigning, forceFlipMassAssign]);

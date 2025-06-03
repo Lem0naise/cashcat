@@ -12,7 +12,6 @@ const BUDGET_TIPS = [
     "If you overspend in one category, move money from another - don't give up!",
     "Set up a 'Fun Money' category so you don't feel restricted by your budget.",
     "Pay yourself first - assign money to savings before anything else.",
-    "Round up your spending entries to the nearest pound for a buffer.",
     "Use specific category names like 'Lunch Out' instead of just 'Food'. Set up a 'Food' Group!",
     "Track your spending for a week before creating your first budget.",
     "The goal isn't a perfect world - it's being aware of where your money goes.",
@@ -25,6 +24,8 @@ export default function LearnMore() {
     const [isAnimatingAway, setIsAnimatingAway] = useState(false);
     const [mockAssigning, setMockAssigning] = useState(false);
     const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+    const [mockAssignedValue, setMockAssignedValue] = useState(45);
 
     const handleClick = () => {
         setIsAnimatingAway(true);
@@ -56,34 +57,36 @@ export default function LearnMore() {
                         
                         <div className="space-y-4 text-sm sm:text-base">
                             <div className="flex gap-3">
-                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-xs flex-shrink-0 mt-0.5">1</div>
+                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-0.5">1</div>
                                 <div>
-                                    <h4 className="font-medium mb-1">Start with Your Money</h4>
+                                    <h4 className="font-medium text-xl mb-1">Start with Your Money</h4>
                                     <p className="text-white/70">Tell CashCat how much money you have in your <span className="text-green">Bank Accounts</span> right now.</p>
                                 </div>
                             </div>
                             
                             <div className="flex gap-3">
-                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-xs flex-shrink-0 mt-0.5">2</div>
+                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-0.5">2</div>
                                 <div>
-                                    <h4 className="font-medium mb-1">Create Your Budget</h4>
-                                    <p className="text-white/70">Create <span className="text-green">Groups</span> like "Food", "Shopping", or "Savings". Then, create <span className="text-green">Categories</span> like "Groceries", "Rent", "New Car". Give each of these categories a <span className="text-green">Goal</span> - how much you want to save to, or how much you want to spent each month.</p>
+                                    <h4 className="font-medium text-xl mb-1">Create Your Budget</h4>
+                                    <p className="text-white/70">Create <span className="text-green">Groups</span> like "Food", "Shopping", or "Savings". <br/>Then, create <span className="text-green">Categories</span> like "Groceries", "Rent", "New Car". <br/>Give each of these categories a <span className="text-green">Goal</span> - how much you want to save to, or how much you want to spent each month.</p>
                                 </div>
                             </div>
 
                             <div className="flex gap-3">
-                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-xs flex-shrink-0 mt-0.5">3</div>
+                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-0.5">3</div>
                                 <div>
-                                    <h4 className="font-medium mb-1">Give Every Penny a Job</h4>
+                                    <h4 className="font-medium text-xl mb-1">Give Every Penny a Job</h4>
                                     <p className="text-white/70"><span className="text-green">Assign</span> all your money to each <span className="text-green">Category</span> until all your money is assigned. If you have some left over, assign it to next month!</p>
                                 </div>
                             </div>
                             
                             <div className="flex gap-3">
-                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-xs flex-shrink-0 mt-0.5">4</div>
+                                <div className="w-6 h-6 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-0.5">4</div>
                                 <div>
-                                    <h4 className="font-medium mb-1">Spend Within Your Categories</h4>
+                                    <h4 className="font-medium text-xl mb-1">Spend Within Your Categories</h4>
                                     <p className="text-white/70">When you buy something, log it as a <span className="text-green">Transaction</span> and watch your available money in that category adjust instantly. No overspending surprises!</p>
+                                    <p className="text-xs text-white/60 mt-4">The CashCat mentality encourages manually logging transactions. This way, spending is a conscious decision. In the future, you will be able to import transactions automatically from your bank.</p>
+                            
                                 </div>
                             </div>
                             
@@ -147,16 +150,16 @@ export default function LearnMore() {
                         
                         <CategoryCard
                             name={"Groceries"}
-                            assigned={45}
+                            assigned={mockAssignedValue}
                             rollover={10}
                             spent={32.80}
                             goalAmount={60}
                             forceFlipMassAssign={false}
                             wasMassAssigningSoShouldClose={false}
                             onAssignmentStateChange={(isAssigning) => {setMockAssigning(isAssigning)}}
-                            onAssignmentUpdate={async (amount) => {setMockAssigning(false)}}
-                            available={22.20}
-                            dailyLeft={3.17}
+                            onAssignmentUpdate={async (amount) => {setMockAssignedValue(amount);setMockAssigning(false)}}
+                            available={10+mockAssignedValue-32.80}
+                            dailyLeft={(10+mockAssignedValue-32.80)/7}
                         />
                         
 
