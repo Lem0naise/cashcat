@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import MoneyInput from '../components/money-input';
+import { Parser} from 'expr-eval';
 
 interface CategoryProps {
     name: string;
@@ -111,16 +113,27 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         }
     }, [forceFlipMassAssign, assigned]);
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/[^0-9+\-*/.]/g, '');
+    const handleInputChange = useCallback((value: string) => {
         setEditedAmount(value);
     }, []);
 
     const handleInputBlur = useCallback(() => {
         if (editedAmount !== '') {
-            const result = new Function(`return ${editedAmount}`)();
-            const sanitized = typeof result === 'number' && !isNaN(result) ? Math.max(0, result) : 0;
-            setEditedAmount(sanitized.toFixed(2));
+            try {
+                // Only allow numbers, +, -, *, /, ., and parentheses
+                const sanitized = editedAmount.replace(/[^0-9+\-*/.()]/g, '');
+                if (!sanitized) {
+                    setEditedAmount('0.00');
+                    return;
+                }
+                
+                const parser = new Parser();
+                const result = parser.evaluate(sanitized);
+                const finalAmount = typeof result === 'number' && !isNaN(result) ? Math.max(0, result) : 0;
+                setEditedAmount(finalAmount.toFixed(2));
+            } catch {
+                setEditedAmount('0.00');
+            }
         }
     }, [editedAmount]);
 
@@ -187,18 +200,16 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className={`flex items-center justify-between mt-0.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
                         <div className="flex items-center gap-1 xl:gap-2">
-                            <input
-                                ref={inputRef}
-                                type="tel"
-                                data-category-id={name}
-                                className="w-16 lg:w-18 bg-white/10 rounded px-2 md:px-3 py-1 md:py-2 text-sm xl:text-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                                value={hideBudgetValues ? '****' : editedAmount}
-                                onChange={handleInputChange}
-                                onBlur={handleInputBlur}
-                                inputMode="decimal"
-                                pattern="[0-9]*\.?[0-9]*"
-                                disabled={hideBudgetValues}
-                            />
+                            <div className="w-16 lg:w-18">
+                                <MoneyInput
+                                    inputRef={inputRef}
+                                    value={hideBudgetValues ? '****' : editedAmount}
+                                    onChange={handleInputChange}
+                                    onBlur={handleInputBlur}
+                                    className="bg-white/10 px-2 md:px-3 py-1 md:py-2 xl:text-lg focus:outline-none focus:ring-1 focus:ring-primary p-1 !text-sm"
+                                    placeholder="0.00"
+                                />
+                            </div>
                             <span className="text-white/50 text-sm md:text-base">/</span>
                             <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
                         </div>

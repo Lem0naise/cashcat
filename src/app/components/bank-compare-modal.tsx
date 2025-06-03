@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Database } from '../../types/supabase';
 import TransactionModal from './transaction-modal';
+import MoneyInput from './money-input';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -253,17 +254,13 @@ export default function BankCompareModal({
 
                                     <div>
                                         <label className="block text-sm text-white/50 mb-2">Your Actual Bank Balance</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-white/50">£</span>
-                                            <input
-                                                type="tel"
-                                                inputMode="decimal"
-                                                value={bankBalance}
-                                                onChange={(e) => setBankBalance(e.target.value)}
-                                                placeholder="0.00"
-                                                className="w-full p-3 pl-7 text-xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                            />
-                                        </div>
+                                        <MoneyInput
+                                            value={bankBalance}
+                                            onChange={(value) => setBankBalance(value)}
+                                            placeholder="0.00"
+                                            currencySymbol={true}
+                                            className=""
+                                        />
                                     </div>
 
                                     <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
@@ -384,17 +381,11 @@ export default function BankCompareModal({
 
                                     <div>
                                         <label className="block text-sm text-white/50 mb-2">Correction Amount</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                            <input
-                                                type="tel"
-                                                inputMode="decimal"
-                                                value={correctionAmount}
-                                                onChange={(e) => setCorrectionAmount(e.target.value)}
-                                                placeholder="0.00"
-                                                className="w-full p-3 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                            />
-                                        </div>
+                                        <MoneyInput
+                                            value={correctionAmount}
+                                            onChange={(value) => setCorrectionAmount(value)}
+                                            placeholder="0.00"
+                                        />
                                     </div>
                                 </div>
                             )}

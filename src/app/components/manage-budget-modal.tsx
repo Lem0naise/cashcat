@@ -4,6 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import MoneyInput from './money-input';
 import type { Category, Group } from '../types/budget';
 type ManageBudgetModalProps = {
     isOpen: boolean;
@@ -523,25 +524,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                     }} className="space-y-4">
                                         <div>
                                             <label className="block text-sm text-white/50 mb-1">Balance Amount</label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                <input
-                                                    type="tel"
-                                                    inputMode="decimal"
-                                                    pattern="[0-9]*\.?[0-9]*"
-                                                    value={startingBalance}
-                                                    onChange={(e) => setStartingBalance(e.target.value)}
-                                                    required
-                                                    placeholder="0.00"
-                                                    className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                />
-                                            </div>
+                                            <MoneyInput
+                                                value={startingBalance}
+                                                onChange={(value) => setStartingBalance(value)}
+                                                placeholder="0.00"
+                                                currencySymbol={true}
+                                                className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-md"
+                                            />
                                         </div>
                                         <button
                                             type="submit"
                                             className="w-full bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"
                                         >
-                                            {startingBalanceId ? "Update Balance" : "Save Balance"}
+                                            {startingBalanceId ? 'Update Starting Balance' : 'Set Starting Balance'}
                                         </button>
                                     </form>
                                 </div>
@@ -704,17 +699,13 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
                                                     <div>
                                                         <label className="block text-sm text-white/50 mb-1">Monthly Goal (Optional)</label>
-                                                        <div className="relative">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                            <input
-                                                                type="number"
-                                                                value={newCategoryData.goal}
-                                                                onChange={(e) => setNewCategoryData({...newCategoryData, goal: e.target.value})}
-                                                                placeholder="0.00"
-                                                                step="0.01"
-                                                                className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                            />
-                                                        </div>
+                                                        <MoneyInput
+                                                            value={newCategoryData.goal}
+                                                            onChange={(value) => setNewCategoryData({...newCategoryData, goal: value})}
+                                                            placeholder="0.00"
+                                                            currencySymbol={true}
+                                                            className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                        />
                                                     </div>
 
                                                     <button
@@ -815,7 +806,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                 <select
                                                                                     value={editingCategory.group || ''}
                                                                                     onChange={(e) => setEditingCategory({...editingCategory, group: e.target.value})}
-                                                                                    className="w-48 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                    className="w-1/3 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                                                     required
                                                                                 >
                                                                                     {groups.map((g) => (
@@ -825,14 +816,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             </div>
                                                                             <div className="flex gap-4">
                                                                                 <div className="relative flex-1">
-                                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">£</span>
-                                                                                    <input
-                                                                                        type="number"
-                                                                                        value={editingCategory.goal || ''}
-                                                                                        onChange={(e) => setEditingCategory({...editingCategory, goal: parseFloat(e.target.value) || null})}
+                                                                                    <MoneyInput
+                                                                                        value={editingCategory.goal?.toString() || ''}
+                                                                                        onChange={(value) => setEditingCategory({...editingCategory, goal: parseFloat(value) || null})}
                                                                                         placeholder="Goal Amount"
-                                                                                        step="0.01"
-                                                                                        className="w-full p-2 pl-7 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                        currencySymbol={true}
+                                                                                        className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                                                     />
                                                                                 </div>
                                                                             </div>

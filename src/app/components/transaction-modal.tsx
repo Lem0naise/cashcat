@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database } from '../../types/supabase';
 import type { Category } from '../types/budget';
+import MoneyInput from './money-input';
+import { RolloverCalculation } from '../types/budget';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -47,7 +49,6 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
-    const amountInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch categories
     useEffect(() => {
@@ -308,21 +309,10 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         };
     }, [isOpen]);
 
-    // Auto focus amount input on mobile
-    useEffect(() => {
-        if (isOpen && amountInputRef.current) {
-            amountInputRef.current.focus();
-        }
-    }, [isOpen]);
-
     if (!isOpen) return null;
 
     const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            setIsClosing(false);
-            onClose();
-        }, 100); // Match animation duration
+        onClose();
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -356,7 +346,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     return (
         <div 
             className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+                isClosing ? '' : 'animate-[fadeIn_0.2s_ease-out]'
             }`}
             onClick={handleBackdropClick}
         >
@@ -409,31 +399,13 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         </div>
 
                         <div className="mb-6">
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-3xl text-white/50">£</span>
-                                <input
-                                    ref={amountInputRef}
-                                    type="tel"
-                                    inputMode="decimal"
-                                    pattern="[0-9]*\.?[0-9]*"
-                                    required
-                                    value={amount}
-                                    onBlur={() => {
-                                        if (amount != ''){
-                                            setAmount(parseFloat(amount).toFixed(2));
-                                        }
-                                    }}
-                                    onChange={(e) => {
-                                        // Only allow numbers and one decimal point
-                                        const value = e.target.value.replace(/[^\d.]/g, '');
-                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                            setAmount(value);
-                                        }
-                                    }}
-                                    placeholder="0.00"
-                                    className="w-full p-4 pl-8 text-3xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                />
-                            </div>
+                            <MoneyInput
+                                value={amount}
+                                onChange={(value) => setAmount(value)}
+                                placeholder="0.00"
+                                autoFocus={true}
+                                currencySymbol={true}
+                            />
                         </div>
 
                         <div className="space-y-3">
