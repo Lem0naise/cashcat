@@ -46,6 +46,27 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@supports (-webkit-touch-callout: none) {
+ 
+  .iphone-padding-container {
+    height: calc(64px + env(safe-area-inset-bottom));
+  }
+  .iphone-padding {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media screen and (max-width: 430px) {
+
+  .iphone-padding-container {
+    height: calc(64px + env(safe-area-inset-bottom));
+  }
+  .iphone-padding {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
