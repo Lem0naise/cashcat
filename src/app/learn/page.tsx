@@ -12,7 +12,6 @@ const BUDGET_TIPS = [
     "If you overspend in one category, move money from another - don't give up!",
     "Set up a 'Fun Money' category so you don't feel restricted by your budget.",
     "Pay yourself first - assign money to savings before anything else.",
-    "Round up your spending entries to the nearest pound for a buffer.",
     "Use specific category names like 'Lunch Out' instead of just 'Food'. Set up a 'Food' Group!",
     "Track your spending for a week before creating your first budget.",
     "The goal isn't a perfect world - it's being aware of where your money goes.",
