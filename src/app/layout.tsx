@@ -42,6 +42,7 @@ export default function RootLayout({
         <SupabaseProvider>
           {children}
         </SupabaseProvider>
+        <div id='portal-root' className={`${USEFont.variable} antialiased`}></div>
       </body>
     </html>
   );

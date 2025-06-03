@@ -28,3 +28,5 @@ export type RolloverCalculation = {
     rolloverFromPrevious: number;
     available: number;
 };
+
+export type MoneyInputValue = string;
