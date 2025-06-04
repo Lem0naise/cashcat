@@ -92,14 +92,12 @@ export default function BudgetAssignmentChart({
     absoluteChange: number;
     percentageChange: number;
     timeSpan: number;
-  } | null>(null);
-
-  // Filter transactions based on selected groups/categories
+  } | null>(null);  // Filter transactions based on selected groups/categories
   const filteredTransactions = useMemo(() => {
     if (!transactions || !Array.isArray(transactions)) {
       return [];
     }
-    
+
     return transactions.filter(transaction => {
       // Skip if transaction is null/undefined
       if (!transaction) return false;
@@ -406,6 +404,260 @@ export default function BudgetAssignmentChart({
     }).format(amount);
   }, []);
 
+  // Get filtered categories with goals for distance calculation
+  const filteredCategoriesWithGoals = useMemo(() => {
+    let targetCategories: Category[] = [];
+    
+    if (selectedCategories.length > 0) {
+      targetCategories = categories.filter(cat => selectedCategories.includes(cat.id));
+    } else if (selectedGroups.length > 0) {
+      targetCategories = categories.filter(cat => {
+        const categoryGroup = (cat as any).groups?.name || cat.group || 'Uncategorized';
+        return selectedGroups.includes(categoryGroup);
+      });
+    }
+    
+    // Debug the goal values in detail
+    console.log('=== DETAILED GOAL DEBUG ===');
+    targetCategories.forEach(cat => {
+      console.log(`Category "${cat.name}":`, {
+        goal: cat.goal,
+        goalType: typeof cat.goal,
+        goalIsUndefined: cat.goal === undefined,
+        goalIsNull: cat.goal === null,
+        goalIsZero: cat.goal === 0,
+        fullCategory: cat
+      });
+    });
+    console.log('============================');
+    
+    // Include categories that have goals (including zero goals)
+    // For now, let's include ALL target categories to see if they show up
+    const filteredWithGoals = targetCategories; // Temporarily include all to test
+    
+    // Debug logging for savings group issue
+    console.log('=== FILTERING DEBUG ===');
+    console.log('selectedGroups:', selectedGroups);
+    console.log('selectedCategories:', selectedCategories);
+    console.log('all categories:', categories.map(c => ({ id: c.id, name: c.name, group: c.group, goal: c.goal })));
+    console.log('targetCategories:', targetCategories.map(c => ({ id: c.id, name: c.name, group: c.group, goal: c.goal })));
+    console.log('filteredWithGoals:', filteredWithGoals.map(c => ({ id: c.id, name: c.name, group: c.group, goal: c.goal })));
+    console.log('=======================');
+    
+    return filteredWithGoals;
+  }, [categories, selectedCategories, selectedGroups]);
+
+  // Calculate distance from goal data for filtered categories
+  const distanceFromGoalData = useMemo(() => {
+    console.log('=== DISTANCE FROM GOAL CALCULATION DEBUG ===');
+    console.log('filteredCategoriesWithGoals.length:', filteredCategoriesWithGoals.length);
+    console.log('filteredCategoriesWithGoals:', filteredCategoriesWithGoals);
+    
+    if (filteredCategoriesWithGoals.length === 0) {
+      console.log('No filtered categories with goals, returning empty data');
+      return { dataPoints: [], datasets: [] };
+    }
+
+    // Use the same date grouping logic as main chart
+    const validTransactions = transactions.filter(t => {
+      return t && t.date && t.amount !== undefined && t.amount !== null;
+    });
+
+    const allSorted = [...validTransactions]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Filter transactions within date range
+    const transactionsInRange = allSorted.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      const inRange = !isNaN(transactionDate.getTime()) && 
+             transactionDate >= dateRange.start && 
+             transactionDate <= dateRange.end;
+      return inRange;
+    });
+
+    if (transactionsInRange.length === 0) {
+      console.log('No transactions in range, but we should still show goal data');
+      console.log('dateRange:', dateRange);
+      
+      // Even with no transactions, we should show the goal amounts for each category
+      // Create a single data point showing full goal amounts (no spending)
+      const todayKey = format(new Date(), 'yyyy-MM-dd 12:00:00');
+      
+      const datasets = filteredCategoriesWithGoals.map((category, index) => {
+        // For categories without goals, show 0 (no accumulated value yet)
+        // For categories with goals, show the full goal amount (no spending yet)
+        const initialValue = (category.goal === null || category.goal === undefined) ? 0 : category.goal;
+        
+        // Generate distinct colors for each category
+        const colors = [
+          '#bac2ff', '#ff7f7f', '#7fff7f', '#ffff7f', '#ff7fff', 
+          '#7fffff', '#ffa500', '#ff69b4', '#98fb98', '#dda0dd'
+        ];
+        const color = colors[index % colors.length];
+
+        const label = (category.goal === null || category.goal === undefined)
+          ? `${category.name} (Savings/No Goal)`
+          : `${category.name} (Goal: ${formatCurrency(category.goal)})`;
+
+        return {
+          label: label,
+          data: [{ x: todayKey, y: initialValue }],
+          borderColor: color,
+          backgroundColor: `${color}20`,
+          fill: false,
+          tension: 0.2,
+          pointRadius: 6,
+          pointHoverRadius: 10,
+          pointBackgroundColor: color,
+          pointBorderColor: '#0a0a0a',
+          pointBorderWidth: 1,
+        };
+      });
+      
+      console.log('Generated datasets for no-transaction case:', datasets);
+      return { dataPoints: [todayKey], datasets };
+    }
+
+    // Get unique transaction dates
+    const uniqueDates = [...new Set(transactionsInRange.map(t => t.date))].sort();
+    
+    // Determine grouping strategy based on data density and time range
+    const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let groupedByPeriod: { [dateKey: string]: Transaction[] };
+    
+    if (uniqueDates.length <= 100) {
+      groupedByPeriod = uniqueDates.reduce((acc, date) => {
+        const key = format(new Date(date), 'yyyy-MM-dd 12:00:00');
+        acc[key] = transactionsInRange.filter(t => t.date === date);
+        return acc;
+      }, {} as { [dateKey: string]: Transaction[] });
+    } else {
+      const getGranularityKey = (date: Date) => {
+        if (diffInDays <= 90) {
+          return format(date, 'yyyy-MM-dd 12:00:00');
+        } else if (diffInDays <= 365) {
+          const startOfWeek = new Date(date);
+          startOfWeek.setDate(date.getDate() - date.getDay());
+          return format(startOfWeek, 'yyyy-MM-dd 12:00:00');
+        } else {
+          const startOfWeek = new Date(date);
+          startOfWeek.setDate(date.getDate() - date.getDay());
+          const weekOfYear = Math.floor((startOfWeek.getTime() - new Date(startOfWeek.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+          const biWeeklyPeriod = Math.floor(weekOfYear / 2) * 2;
+          const biWeeklyStart = new Date(startOfWeek.getFullYear(), 0, 1 + (biWeeklyPeriod * 7));
+          return format(biWeeklyStart, 'yyyy-MM-dd 12:00:00');
+        }
+      };
+
+      groupedByPeriod = transactionsInRange.reduce((acc, transaction) => {
+        const transactionDate = new Date(transaction.date);
+        const key = getGranularityKey(transactionDate);
+        
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(transaction);
+        return acc;
+      }, {} as { [dateKey: string]: Transaction[] });
+    }
+
+    const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
+    
+    // Create datasets for each filtered category
+    const datasets = filteredCategoriesWithGoals.map((category, index) => {
+      let currentMonthSpending = 0;
+      let currentMonth = '';
+      
+      const dataPoints = sortedPeriodKeys.map(periodKey => {
+        const periodDate = new Date(periodKey);
+        const monthKey = format(periodDate, 'yyyy-MM');
+        
+        // Reset spending if we've moved to a new month
+        if (currentMonth !== monthKey) {
+          currentMonthSpending = 0;
+          currentMonth = monthKey;
+        }
+        
+        // Calculate spending in this period for this category
+        const periodTransactions = groupedByPeriod[periodKey] || [];
+        const periodSpending = periodTransactions
+          .filter(t => t.category_id === category.id && t.type === 'payment')
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        
+        // Add to current month's cumulative spending
+        currentMonthSpending += periodSpending;
+        
+        // Calculate distance from goal or value accumulation based on goal type
+        let yValue: number;
+        
+        if (category.goal === null || category.goal === undefined) {
+          // For categories without goals (likely savings), show accumulation of assignments/income
+          // Calculate assignments and income for this category in the current month
+          const monthKey = format(periodDate, 'yyyy-MM');
+          const monthAssignments = assignments
+            .filter(a => a.category_id === category.id && a.month === monthKey)
+            .reduce((sum, a) => sum + (a.assigned || 0), 0);
+          
+          // For savings categories, show positive accumulation (assignments minus spending)
+          yValue = monthAssignments - currentMonthSpending;
+        } else {
+          // For categories with goals, show traditional distance from spending goal
+          const goalAmount = category.goal;
+          yValue = goalAmount - currentMonthSpending;
+        }
+        
+        return {
+          x: periodKey,
+          y: yValue
+        };
+      });
+
+      // Generate distinct colors for each category
+      const colors = [
+        '#bac2ff', '#ff7f7f', '#7fff7f', '#ffff7f', '#ff7fff', 
+        '#7fffff', '#ffa500', '#ff69b4', '#98fb98', '#dda0dd'
+      ];
+      const color = colors[index % colors.length];
+
+      // Create different labels based on goal type
+      const label = category.goal === null || category.goal === undefined
+        ? `${category.name} (Savings/No Goal)`
+        : `${category.name} (Goal: ${formatCurrency(category.goal)})`;
+
+      return {
+        label: label,
+        data: dataPoints,
+        borderColor: color,
+        backgroundColor: `${color}20`,
+        fill: false,
+        tension: 0.2,
+        pointRadius: dataPoints.length > 50 ? 2 : dataPoints.length > 30 ? 4 : 6,
+        pointHoverRadius: dataPoints.length > 50 ? 4 : dataPoints.length > 30 ? 6 : 10,
+        pointBackgroundColor: color,
+        pointBorderColor: '#0a0a0a',
+        pointBorderWidth: 1,
+      };
+    });
+
+    console.log('Generated datasets with transactions:', datasets);
+    console.log('Number of datasets:', datasets.length);
+    console.log('Sample dataset data points:', datasets[0]?.data?.length || 0);
+    console.log('=======================');
+
+    return { dataPoints: sortedPeriodKeys, datasets };
+  }, [filteredCategoriesWithGoals, transactions, dateRange, formatCurrency]);
+
+  // Determine if we should show distance from goal chart
+  const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
+  
+  // Debug the decision
+  console.log('=== CHART TYPE DECISION DEBUG ===');
+  console.log('shouldShowDistanceFromGoal:', shouldShowDistanceFromGoal);
+  console.log('filteredCategoriesWithGoals.length:', filteredCategoriesWithGoals.length);
+  console.log('distanceFromGoalData.datasets.length:', distanceFromGoalData.datasets.length);
+  console.log('====================================');
+
   // --- X-Axis Label Alignment Fix ---
   // Force both charts to use the same x-axis tick labels by setting the same 'unit' and 'displayFormats' for both line and bar chart configs
 
@@ -420,7 +672,7 @@ export default function BudgetAssignmentChart({
   const lineChartConfig = useMemo(() => ({
     type: 'line' as const,
     data: {
-      datasets: [
+      datasets: shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : [
         {
           label: 'Account Balance',
           data: chartData.dataPoints,
@@ -446,7 +698,9 @@ export default function BudgetAssignmentChart({
       plugins: {
         title: {
           display: true,
-          text: `Account Balance Over Time (${chartData.dataPoints.length} points)`,
+          text: shouldShowDistanceFromGoal 
+            ? `Category Progress Tracking (${filteredCategoriesWithGoals.length} categories)`
+            : `Account Balance Over Time (${chartData.dataPoints.length} points)`,
           color: '#ffffff',
           font: {
             size: 16,
@@ -454,7 +708,10 @@ export default function BudgetAssignmentChart({
           }
         },
         legend: {
-          display: false
+          display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
+          labels: {
+            color: '#ffffff'
+          }
         },
         tooltip: {
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -477,23 +734,83 @@ export default function BudgetAssignmentChart({
             },
             label: (context: TooltipItem<'line'>) => {
               const value = context.parsed.y;
-              return `Balance: ${formatCurrency(value)}`;
+              const datasetIndex = context.datasetIndex;
+              const category = filteredCategoriesWithGoals[datasetIndex];
+              
+              if (!category) {
+                return shouldShowDistanceFromGoal ? `${formatCurrency(value)} remaining` : `Balance: ${formatCurrency(value)}`;
+              }
+              
+              if (shouldShowDistanceFromGoal) {
+                if (category.goal === null || category.goal === undefined) {
+                  // Savings category
+                  if (value >= 0) {
+                    return `${category.name}: ${formatCurrency(value)} accumulated`;
+                  } else {
+                    return `${category.name}: ${formatCurrency(Math.abs(value))} spent from savings`;
+                  }
+                } else {
+                  // Regular spending category with goal
+                  if (value >= 0) {
+                    return `${category.name}: ${formatCurrency(value)} remaining`;
+                  } else {
+                    return `${category.name}: ${formatCurrency(Math.abs(value))} over budget`;
+                  }
+                }
+              } else {
+                return `Balance: ${formatCurrency(value)}`;
+              }
             },
             afterBody: (context: TooltipItem<'line'>[]) => {
-              const dataPoint = chartData.dataPoints[context[0].dataIndex];
-              if (dataPoint?.assignmentBreakdown) {
-                const breakdown = Object.entries(dataPoint.assignmentBreakdown)
-                  .filter(([_, amount]) => Math.abs(amount) > 0)
-                  .sort(([,a], [,b]) => Math.abs(b) - Math.abs(a))
-                  .slice(0, 8)
-                  .map(([categoryId, amount]) => {
-                    const category = categories.find(c => c.id === categoryId);
-                    const sign = amount >= 0 ? '+' : '-';
-                    return `${category?.name || 'Unknown'}: ${sign}${formatCurrency(Math.abs(amount))}`;
-                  });
-                return breakdown.length > 0 ? ['', 'This Period:', ...breakdown] : [];
+              if (shouldShowDistanceFromGoal) {
+                // Show additional goal information for distance from goal view
+                const datasetIndex = context[0].datasetIndex;
+                const category = filteredCategoriesWithGoals[datasetIndex];
+                if (category) {
+                  const currentValue = context[0].parsed.y;
+                  
+                  if (category.goal === null || category.goal === undefined) {
+                    // Savings category without goal
+                    const spentAmount = Math.max(0, -currentValue); // If negative, show how much was spent
+                    return [
+                      '',
+                      `Category Type: Savings/No Goal`,
+                      currentValue >= 0 
+                        ? `Value accumulated this month: ${formatCurrency(currentValue)}`
+                        : `Spent from savings this month: ${formatCurrency(spentAmount)}`
+                    ];
+                  } else {
+                    // Regular spending category with goal
+                    const goalAmount = category.goal;
+                    const spentAmount = goalAmount - currentValue;
+                    return [
+                      '',
+                      `Monthly Goal: ${formatCurrency(goalAmount)}`,
+                      `Month-to-date Spent: ${formatCurrency(Math.max(0, spentAmount))}`,
+                      currentValue >= 0 
+                        ? `Remaining this month: ${formatCurrency(currentValue)}`
+                        : `Over budget this month: ${formatCurrency(Math.abs(currentValue))}`
+                    ];
+                  }
+                }
+                return [];
+              } else {
+                // Show assignment breakdown for account balance view
+                const dataPoint = chartData.dataPoints[context[0].dataIndex];
+                if (dataPoint?.assignmentBreakdown) {
+                  const breakdown = Object.entries(dataPoint.assignmentBreakdown)
+                    .filter(([_, amount]) => Math.abs(amount) > 0)
+                    .sort(([,a], [,b]) => Math.abs(b) - Math.abs(a))
+                    .slice(0, 8)
+                    .map(([categoryId, amount]) => {
+                      const category = categories.find(c => c.id === categoryId);
+                      const sign = amount >= 0 ? '+' : '-';
+                      return `${category?.name || 'Unknown'}: ${sign}${formatCurrency(Math.abs(amount))}`;
+                    });
+                  return breakdown.length > 0 ? ['', 'This Period:', ...breakdown] : [];
+                }
+                return [];
               }
-              return [];
             }
           }
         }
@@ -528,7 +845,16 @@ export default function BudgetAssignmentChart({
           ticks: {
             color: '#ffffff',
             callback: function(value: any) {
-              return formatCurrency(Number(value));
+              if (shouldShowDistanceFromGoal) {
+                const numValue = Number(value);
+                if (numValue >= 0) {
+                  return `+${formatCurrency(numValue)}`;
+                } else {
+                  return `-${formatCurrency(Math.abs(numValue))}`;
+                }
+              } else {
+                return formatCurrency(Number(value));
+              }
             }
           }
         }
@@ -599,7 +925,7 @@ export default function BudgetAssignmentChart({
         }
       }
     }
-  }), [chartData, categories, formatCurrency, dateRange, isDragging, dragStart]);
+  }), [chartData, categories, formatCurrency, dateRange, isDragging, dragStart, shouldShowDistanceFromGoal, distanceFromGoalData, filteredCategoriesWithGoals]);
 
   // Chart.js configuration for volume chart
   const volumeChartConfig = useMemo(() => ({
