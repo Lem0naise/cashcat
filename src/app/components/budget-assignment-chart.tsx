@@ -17,7 +17,7 @@ import {
   ActiveElement,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
-import { addDays, format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { addDays, format, parseISO, startOfDay, endOfDay, startOfWeek, startOfMonth } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
 import { Database } from '../../types/supabase';
@@ -399,8 +399,8 @@ export default function BudgetAssignmentChart({
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   }, []);
 
@@ -537,26 +537,15 @@ export default function BudgetAssignmentChart({
         if (diffInDays <= 90) {
           return format(date, 'yyyy-MM-dd 12:00:00');
         } else if (diffInDays <= 365) {
-          const startOfWeek = new Date(date);
-          startOfWeek.setDate(date.getDate() - date.getDay());
-          return format(startOfWeek, 'yyyy-MM-dd 12:00:00');
+          return format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd 12:00:00');
         } else {
-          const startOfWeek = new Date(date);
-          startOfWeek.setDate(date.getDate() - date.getDay());
-          const weekOfYear = Math.floor((startOfWeek.getTime() - new Date(startOfWeek.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-          const biWeeklyPeriod = Math.floor(weekOfYear / 2) * 2;
-          const biWeeklyStart = new Date(startOfWeek.getFullYear(), 0, 1 + (biWeeklyPeriod * 7));
-          return format(biWeeklyStart, 'yyyy-MM-dd 12:00:00');
+          return format(startOfMonth(date), 'yyyy-MM-dd 12:00:00');
         }
       };
 
       groupedByPeriod = transactionsInRange.reduce((acc, transaction) => {
-        const transactionDate = new Date(transaction.date);
-        const key = getGranularityKey(transactionDate);
-        
-        if (!acc[key]) {
-          acc[key] = [];
-        }
+        const key = getGranularityKey(new Date(transaction.date));
+        if (!acc[key]) acc[key] = [];
         acc[key].push(transaction);
         return acc;
       }, {} as { [dateKey: string]: Transaction[] });
@@ -648,25 +637,161 @@ export default function BudgetAssignmentChart({
     return { dataPoints: sortedPeriodKeys, datasets };
   }, [filteredCategoriesWithGoals, transactions, dateRange, formatCurrency]);
 
+  // Calculate filtered volume data for bar chart when filters are active
+  const filteredVolumeData = useMemo(() => {
+    // If no filters are active, return the original volume data
+    const hasActiveFilters = selectedCategories.length > 0 || selectedGroups.length > 0;
+    if (!hasActiveFilters) {
+      return chartData.volumePoints;
+    }
+
+    // Get filtered transactions using the same logic as distanceFromGoalData
+    const validTransactions = transactions.filter(t => {
+      return t && t.date && t.amount !== undefined && t.amount !== null;
+    });
+
+    const allSorted = [...validTransactions]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Filter transactions within date range
+    const transactionsInRange = allSorted.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      const inRange = !isNaN(transactionDate.getTime()) && 
+             transactionDate >= dateRange.start && 
+             transactionDate <= dateRange.end;
+      return inRange;
+    });
+
+    // Apply category and group filters to transactions
+    const filteredTransactions = transactionsInRange.filter(transaction => {
+      // Skip starting balance transactions
+      if (transaction.type === 'starting') return false;
+      
+      // Find the category for this transaction
+      const category = categories.find(c => c && c.id === transaction.category_id);
+      
+      // For payments without categories, exclude them
+      if (!category && transaction.type === 'payment') return false;
+      
+      // For income without categories, exclude them when filters are active
+      if (!category && transaction.type === 'income') return false;
+      
+      // Apply category filters
+      if (selectedCategories.length > 0) {
+        return transaction.category_id && selectedCategories.includes(transaction.category_id);
+      }
+      
+      // Apply group filters
+      if (selectedGroups.length > 0) {
+        if (!category) return false;
+        const categoryGroup = (category as any).groups?.name || category.group || 'Uncategorized';
+        return selectedGroups.includes(categoryGroup);
+      }
+      
+      return true;
+    });
+
+    // If no filtered transactions, return empty volume points matching the original structure
+    if (filteredTransactions.length === 0) {
+      return chartData.volumePoints.map(point => ({
+        x: point.x,
+        assigned: 0,
+        removed: 0,
+        net: 0,
+        categories: []
+      }));
+    }
+
+    // Use the same date grouping logic as the main chart
+    const uniqueDates = [...new Set(filteredTransactions.map(t => t.date))].sort();
+    const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let groupedByPeriod: { [dateKey: string]: Transaction[] };
+    
+    if (uniqueDates.length <= 100) {
+      // Use individual transaction dates for maximum granularity
+      groupedByPeriod = uniqueDates.reduce((acc, date) => {
+        const key = format(new Date(date), 'yyyy-MM-dd 12:00:00');
+        acc[key] = filteredTransactions.filter(t => t.date === date);
+        return acc;
+      }, {} as { [dateKey: string]: Transaction[] });
+    } else {
+      // For dense data, use time-based grouping
+      const getGranularityKey = (date: Date) => {
+        if (diffInDays <= 90) {
+          return format(date, 'yyyy-MM-dd 12:00:00');
+        } else if (diffInDays <= 365) {
+          return format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd 12:00:00');
+        } else {
+          return format(startOfMonth(date), 'yyyy-MM-dd 12:00:00');
+        }
+      };
+
+      groupedByPeriod = filteredTransactions.reduce((acc, transaction) => {
+        const key = getGranularityKey(new Date(transaction.date));
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(transaction);
+        return acc;
+      }, {} as { [dateKey: string]: Transaction[] });
+    }
+
+    // Calculate filtered volume points
+    const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
+    const filteredVolumePoints: VolumeDataPoint[] = [];
+
+    // Create volume points for all periods that exist in the original data
+    chartData.volumePoints.forEach(originalPoint => {
+      const periodTransactions = groupedByPeriod[originalPoint.x] || [];
+      
+      let income = 0;
+      let spending = 0;
+      const affectedCategories: string[] = [];
+
+      // Process filtered transactions for this period
+      periodTransactions.forEach(transaction => {
+        if (!transaction || typeof transaction.amount !== 'number') return;
+        
+        const amount = transaction.amount;
+        
+        if (transaction.type === 'income') {
+          income += amount;
+        } else if (transaction.type === 'payment') {
+          spending += Math.abs(amount);
+        }
+
+        // Track category names
+        if (transaction.category_id) {
+          const category = categories.find(c => c && c.id === transaction.category_id);
+          if (category && category.name && !affectedCategories.includes(category.name)) {
+            affectedCategories.push(category.name);
+          }
+        }
+      });
+
+      filteredVolumePoints.push({
+        x: originalPoint.x,
+        assigned: income,
+        removed: spending,
+        net: income - spending,
+        categories: affectedCategories
+      });
+    });
+
+    return filteredVolumePoints;
+  }, [chartData.volumePoints, selectedCategories, selectedGroups, transactions, categories, dateRange]);
+
   // Determine if we should show distance from goal chart
   const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
   
-  // Debug the decision
-  console.log('=== CHART TYPE DECISION DEBUG ===');
-  console.log('shouldShowDistanceFromGoal:', shouldShowDistanceFromGoal);
-  console.log('filteredCategoriesWithGoals.length:', filteredCategoriesWithGoals.length);
-  console.log('distanceFromGoalData.datasets.length:', distanceFromGoalData.datasets.length);
-  console.log('====================================');
-
-  // --- X-Axis Label Alignment Fix ---
-  // Force both charts to use the same x-axis tick labels by setting the same 'unit' and 'displayFormats' for both line and bar chart configs
-
   // Find the correct time unit for the current range
   const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
   let xUnit: 'day' | 'week' | 'month' = 'day';
   if (diffInDays <= 90) xUnit = 'day';
   else if (diffInDays <= 365) xUnit = 'week';
   else xUnit = 'month';
+
+  // Determine if we should show filtered title
+  const hasActiveFilters = selectedCategories.length > 0 || selectedGroups.length > 0;
 
   // Chart.js configuration for line chart
   const lineChartConfig = useMemo(() => ({
@@ -934,14 +1059,14 @@ export default function BudgetAssignmentChart({
       datasets: [
         {
           label: 'Income',
-          data: chartData.volumePoints.map(point => ({ x: point.x, y: point.assigned })),
+          data: filteredVolumeData.map(point => ({ x: point.x, y: point.assigned })),
           backgroundColor: 'rgba(186, 194, 255, 0.6)',
           borderColor: '#bac2ff',
           borderWidth: 1,
         },
         {
           label: 'Spending',
-          data: chartData.volumePoints.map(point => ({ x: point.x, y: -point.removed })),
+          data: filteredVolumeData.map(point => ({ x: point.x, y: -point.removed })),
           backgroundColor: 'rgba(239, 68, 68, 0.6)',
           borderColor: '#ef4444',
           borderWidth: 1,
@@ -954,7 +1079,9 @@ export default function BudgetAssignmentChart({
       plugins: {
         title: {
           display: true,
-          text: 'Income vs Spending Activity',
+          text: hasActiveFilters 
+            ? 'Filtered Income vs Spending Activity' 
+            : 'Income vs Spending Activity',
           color: '#ffffff',
           font: {
             size: 14,
@@ -996,7 +1123,7 @@ export default function BudgetAssignmentChart({
             },
             label: (context: TooltipItem<'bar'>) => {
               const dataIndex = context.dataIndex;
-              const volumePoint = chartData.volumePoints[dataIndex];
+              const volumePoint = filteredVolumeData[dataIndex];
               if (!volumePoint) return '';
               
               const lines = [
@@ -1063,7 +1190,7 @@ export default function BudgetAssignmentChart({
         }
       }
     }
-  }), [chartData, formatCurrency, dateRange, xUnit]);
+  }), [filteredVolumeData, formatCurrency, dateRange, xUnit, hasActiveFilters]);
 
   return (
     <div className="space-y-6">
