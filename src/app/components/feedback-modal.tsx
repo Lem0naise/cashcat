@@ -4,7 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Database } from '../../types/supabase';
+import { Database } from '@/types/supabase';
 
 type FeedbackModalProps = {
     isOpen: boolean;

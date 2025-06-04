@@ -4,10 +4,9 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Database } from '../../types/supabase';
-import type { Category } from '../types/budget';
+import { Database } from '@/types/supabase';
+import type { Category } from '@/types/supabase';
 import MoneyInput from './money-input';
-import { RolloverCalculation } from '../types/budget';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
