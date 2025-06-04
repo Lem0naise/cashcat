@@ -45,7 +45,19 @@ export default function ChartControls({
 
   const handleGroupToggle = (group: string) => {
     if (selectedGroups.includes(group)) {
+      // Remove the group
       onGroupsChange(selectedGroups.filter(g => g !== group));
+      
+      // Also remove all categories that belong to this group
+      const categoriesToRemove = availableCategories
+        .filter(cat => cat.group === group)
+        .map(cat => cat.id);
+      
+      const updatedCategories = selectedCategories.filter(
+        catId => !categoriesToRemove.includes(catId)
+      );
+      
+      onCategoriesChange(updatedCategories);
     } else {
       onGroupsChange([...selectedGroups, group]);
     }
