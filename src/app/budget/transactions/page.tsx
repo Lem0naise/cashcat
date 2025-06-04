@@ -553,10 +553,10 @@ export default function Transactions() {
                     {/* Balance Section */}
                     <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-6 mb-3 mt-0">
                         <div>
-                            <h2 className="text-lg font-medium text-white/90">Balance</h2>
+                            <h2 className="text-lg font-medium text-white/90">{!selectedAccountId&&("Total ")}Balance</h2>
                             <button
                                 onClick={() => setShowBankCompareModal(true)}
-                                className="text-xs text-white/50 hover:text-white/70 transition-colors "
+                                className={`text-xs text-white/50 hover:text-white/70 transition-colors ${selectedAccountId?'inline':'hidden'}`}
                             >
                                 Compare with bank →
                             </button>
