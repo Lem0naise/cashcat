@@ -13,6 +13,8 @@ import { useSupabaseClient } from '../../hooks/useSupabaseClient';
 import { deleteTransaction, submitTransaction, updateTransaction } from '../../utils/transactions';
 import TransactionModalWrapper from "@/app/components/transactionSus";
 import BankCompareModal from "../../components/bank-compare-modal";
+import AccountSelector from "../../components/account-selector";
+import AccountModal from "../../components/account-modal";
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -23,6 +25,11 @@ type Transaction = Database['public']['Tables']['transactions']['Row'] & {
         id: string;
         name: string;
         group: string;
+    } | null;
+    accounts?: {
+        id: string;
+        name: string;
+        type: string;
     } | null;
 };
 
@@ -35,6 +42,8 @@ export default function Transactions() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [showBankCompareModal, setShowBankCompareModal] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+    const [showAccountModal, setShowAccountModal] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const supabase = useSupabaseClient();
 
@@ -47,8 +56,14 @@ export default function Transactions() {
         setModalTransaction(null);
     }
 
-    // Filter transactions based on search query
+    // Filter transactions based on search query and selected account
     const filteredTransactions = transactions.filter(transaction => {
+        // Account filter
+        if (selectedAccountId && transaction.account_id !== selectedAccountId) {
+            return false;
+        }
+        
+        // Search filter
         if (!searchQuery.trim()) return true;
         
         const query = searchQuery.toLowerCase();
@@ -102,6 +117,11 @@ export default function Transactions() {
                     vendors (
                         id,
                         name
+                    ),
+                    accounts (
+                        id,
+                        name,
+                        type
                     )
                 `)
                 .eq('user_id', user.id);
@@ -120,6 +140,7 @@ export default function Transactions() {
         date: string;
         vendor: string;
         type: string;
+        account_id: string;
         description?: string;
         category_id?: string | null;
     }) => {
@@ -146,6 +167,7 @@ export default function Transactions() {
         type: string;
         date: string;
         vendor: string;
+        account_id: string;
         description?: string;
         category_id?: string | null;
     }) => {
@@ -215,47 +237,10 @@ export default function Transactions() {
         }).format(amount);
     };
 
-    const groupTransactionsByDate = (transactions: Transaction[]) => {
-        // Filter out starting balance transactions
-        const regularTransactions = transactions.filter(t => t.type !== 'starting');
-        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
-        
-        const groups: { [key: string]: { date: string; transactions: Transaction[] } } = {};
-        
-        regularTransactions.forEach(transaction => {
-            const date = transaction.date;
-            if (!groups[date]) {
-                groups[date] = {
-                    date,
-                    transactions: []
-                };
-            }
-            groups[date].transactions.push(transaction);
-        });
-        Object.values(groups).forEach(group => { // sort by time descending
-            group.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        });
-
-        // Convert to array and sort by date
-        const sortedGroups = Object.values(groups).sort((a, b) =>  
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
-        // If there is a starting balance, add it as a special group at the bottom
-        if (startingBalanceTransaction) {
-            sortedGroups.push({
-                date: 'starting-balance',
-                transactions: [startingBalanceTransaction]
-            });
-        }
-
-        return sortedGroups;
-    };
-
     const groupTransactionsByMonth = (transactions: Transaction[]) => {
         // Filter out starting balance transactions
         const regularTransactions = transactions.filter(t => t.type !== 'starting');
-        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
+        const startingBalanceTransactions = transactions.filter(t => t.type === 'starting');
         
         // Group by month
         const monthGroups: { [key: string]: Transaction[] } = {};
@@ -310,15 +295,15 @@ export default function Transactions() {
             });
 
         // Add starting balance as a special group at the end
-        if (startingBalanceTransaction) {
+        if (startingBalanceTransactions.length != 0) {
             sortedMonthGroups.push({
                 monthKey: 'starting-balance',
                 monthName: 'Starting Balance',
                 dayGroups: [{
                     date: 'starting-balance',
-                    transactions: [startingBalanceTransaction]
+                    transactions: startingBalanceTransactions
                 }],
-                totalAmount: startingBalanceTransaction.amount
+                totalAmount: startingBalanceTransactions.reduce((sum, t) => sum + t.amount, 0)
             });
         }
 
@@ -356,7 +341,7 @@ export default function Transactions() {
             <MobileNav />
 
             {/*Mobile add transactions*/}
-            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-31 px-8 border-b border-white/[.2] min-w-screen">
+            <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-31 px-4 border-b border-white/[.2] min-w-screen">
                 <div className="flex items-center gap-3">
                     {showMobileSearch ? (
                         <div className="absolute inset-x-0 top-0 bg-background pt-3 pb-2 px-8 border-b border-white/[.2] z-40 animate-[slideIn_0.2s_ease-out]">
@@ -387,25 +372,29 @@ export default function Transactions() {
                                         className="p-2 hover:bg-white/[.05] rounded-lg"
                                     >
                                         <Image
-                                            src="/minus.svg"
+                                            src="/plus.svg"
                                             alt="Clear"
                                             width={16}
                                             height={16}
-                                            className="opacity-60 invert"
+                                            className="opacity-60 invert rotate-45"
                                         />
                                     </button>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
+                        <AccountSelector
+                            selectedAccountId={selectedAccountId}
+                            onAccountChange={setSelectedAccountId}
+                            onManageAccounts={() => setShowAccountModal(true)}
+                        />
                     )}
                 </div>
-                <div className="flex gap-5">
+                <div className="flex gap-2">
                     {!showMobileSearch && (
                         <button
                             onClick={() => setShowMobileSearch(true)}
-                            className="p-2 hover:bg-white/[.05] rounded-lg transition-all opacity-70 hover:opacity-100"
+                            className="p-2 hover:bg-white/[.05] rounded-lg transition-all opacity-70 hover:opacity-100 flex-shrink-0"
                         >
                             <Image
                                 src="/magnify.svg"
@@ -438,6 +427,11 @@ export default function Transactions() {
                     <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
+                            <AccountSelector
+                                selectedAccountId={selectedAccountId}
+                                onAccountChange={setSelectedAccountId}
+                                onManageAccounts={() => setShowAccountModal(true)}
+                            />
                         </div>
                         
                         <div className="flex-1 max-w-md mx-8">
@@ -462,11 +456,11 @@ export default function Transactions() {
                                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/[.1] rounded-full transition-colors"
                                     >
                                         <Image
-                                            src="/minus.svg"
+                                            src="/plus.svg"
                                             alt="Clear"
                                             width={12}
                                             height={12}
-                                            className="opacity-60 invert"
+                                            className="opacity-60 invert rotate-45"
                                         />
                                     </button>
                                 )}
@@ -517,19 +511,21 @@ export default function Transactions() {
                         </div>
                     </div>
 
-                      {/* Balance Section */}
+                    
+
+                    {/* Balance Section */}
                     <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-6 mb-3 mt-0">
                         <div>
-                            <h2 className="text-lg font-medium text-white/90">Balance</h2>
+                            <h2 className="text-lg font-medium text-white/90">{!selectedAccountId&&("Total ")}Balance</h2>
                             <button
                                 onClick={() => setShowBankCompareModal(true)}
-                                className="text-xs text-white/50 hover:text-white/70 transition-colors "
+                                className={`text-xs text-white/50 hover:text-white/70 transition-colors ${selectedAccountId?'inline':'hidden'}`}
                             >
                                 Compare with bank →
                             </button>
                         </div>
-                        <span className={`text-2xl font-bold tabular-nums ${calculateTotalBalance(transactions) < 0 ? 'text-reddy' : 'text-green'}`}>
-                            {formatAmount(calculateTotalBalance(transactions))}
+                        <span className={`text-2xl font-bold tabular-nums ${calculateTotalBalance(filteredTransactions) < 0 ? 'text-reddy' : 'text-green'}`}>
+                            {formatAmount(calculateTotalBalance(filteredTransactions))}
                         </span>
                     </div>
 
@@ -566,7 +562,7 @@ export default function Transactions() {
                             {groupTransactionsByMonth(filteredTransactions).map(monthGroup => (
                                 <div key={monthGroup.monthKey} className={`space-y-4 ${monthGroup.monthKey === 'starting-balance' ? 'mt-8 pt-8 border-t border-white/[.15]' : ''}`}>
                                     {/* Month Header */}
-                                    <div className="flex justify-between items-center sticky top-15 md:top-[8.5rem] bg-background z-30 md:pb-1">
+                                    <div className="flex justify-between items-center sticky top-15 md:top-[8.5rem] bg-background z-28 md:pb-1">
                                         <h2 className="text-lg font-semibold text-white/80">
                                             {monthGroup.monthName}
                                         </h2>
@@ -601,11 +597,16 @@ export default function Transactions() {
                                                                 : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
                                                             } transition-colors`}
                                                         >
-                                                            <div className="flex-1 min-w-0">
+                                                            <div className="flex-1 min-w-0 relative group">
                                                                 <div className="flex items-center gap-3">
                                                                     <h4 className="font-medium truncate text-white/90">
                                                                         {transaction.type === 'starting' ? 'Initial Net Worth' : transaction.vendors?.name || transaction.vendor}
                                                                     </h4>
+                                                                    {transaction.accounts && (selectedAccountId === null) && (
+                                                                        <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">
+                                                                            {transaction.accounts.name}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 {transaction.type !== 'starting' && (
                                                                     <div className="text-sm text-white/40 truncate mt-0.5">
@@ -645,10 +646,19 @@ export default function Transactions() {
             />
 
             <BankCompareModal
+                bankAccountId={selectedAccountId}
                 isOpen={showBankCompareModal}
                 onClose={() => setShowBankCompareModal(false)}
                 transactions={transactions}
                 onTransactionUpdated={fetchTransactions}
+            />
+
+            <AccountModal
+                isOpen={showAccountModal}
+                onClose={() => {setShowAccountModal(false); fetchTransactions()}}
+                onAccountsUpdated={() => {
+                    // Refresh any account-related data if needed
+                }}
             />
         </div>
         </ProtectedRoute>

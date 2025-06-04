@@ -13,16 +13,13 @@ type ManageBudgetModalProps = {
 
 export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModalProps) {
     const supabase = createClientComponentClient();
-    const [activeTab, setActiveTab] = useState<'categories'|'starting'|'settings'>('categories');
+    const [activeTab, setActiveTab] = useState<'categories'|'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [startingBalance, setStartingBalance] = useState('');
-    const [startingBalanceId, setStartingBalanceId] = useState<string | null>(null);
-    const [isInitialSetup, setIsInitialSetup] = useState(true);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
-    
+
     // Form states
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -36,16 +33,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const [isClosing, setIsClosing] = useState(false);
     const [showAddGroup, setShowAddGroup] = useState(false);
     const [showAddCategory, setShowAddCategory] = useState(false);
-
-
-    useEffect(() => {
-        if (!startingBalance) {
-            setActiveTab('starting');
-        }
-        else {
-            setActiveTab('categories');
-        }
-    }, [startingBalanceId])
 
     // Load settings from localStorage on component mount
     useEffect(() => {
@@ -103,35 +90,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
         } catch (error) {
             console.error('Error fetching categories:', error);
             setError('Failed to load categories');
-        }
-    };
-
-    const fetchStartingBalance = async () => {
-        try {
-            const {data: {user}, error: userError} = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
-
-            const {data, error} = await supabase
-                .from('transactions')
-                .select('id, amount')
-                .eq('user_id', user.id)
-                .eq('type', 'starting')
-                .single();
-
-            if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
-
-            if (data) {
-                setStartingBalance(Math.abs(data.amount).toFixed(2));
-                setStartingBalanceId(data.id);
-                setIsInitialSetup(false);
-            } else {
-                setStartingBalance('');
-                setStartingBalanceId(null);
-                setIsInitialSetup(true);
-            }
-        } catch (error) {
-            console.error('Error fetching starting balance:', error);
-            setError('Failed to load starting balance');
         }
     };
 
@@ -295,58 +253,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
         }
     };
 
-    // Function to save or update starting balance
-    const saveStartingBalance = async () => {
-        try {
-            const {data: {user}, error: userError} = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
-
-            const parsedBalance = parseFloat(startingBalance);
-            if (isNaN(parsedBalance)) throw new Error('Invalid amount');
-
-            const transactionData = {
-                amount: parsedBalance,
-                type: 'starting',
-                date: new Date().toISOString().split('T')[0],
-                vendor: 'Starting Balance',
-                created_at: new Date().toISOString(),
-            };
-
-            const isUpdate = !!startingBalanceId;
-            const promise = (async () => {
-                let error;
-                if (startingBalanceId) {
-                    // Update existing starting balance
-                    const response = await supabase
-                        .from('transactions')
-                        .update({ ...transactionData, user_id: user.id })
-                        .eq('id', startingBalanceId);
-                    error = response.error;
-                } else {
-                    // Create new starting balance
-                    const response = await supabase
-                        .from('transactions')
-                        .insert({ ...transactionData, user_id: user.id });
-                    error = response.error;
-                }
-
-                if (error) throw error;
-
-                await fetchStartingBalance();
-                setError(null);
-            })();
-
-            await toast.promise(promise, {
-                loading: isUpdate ? 'Updating starting balance...' : 'Setting starting balance...',
-                success: isUpdate ? 'Starting balance updated successfully!' : 'Starting balance set successfully!',
-                error: isUpdate ? 'Failed to update starting balance' : 'Failed to set starting balance'
-            });
-
-        } catch (error) {
-            console.error('Error saving starting balance:', error);
-            setError('Failed to save starting balance');
-        }
-    };
+    
 
     // Initial data fetch
     useEffect(() => {
@@ -364,7 +271,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            Promise.all([fetchGroups(), fetchCategories(), fetchStartingBalance()])
+            Promise.all([fetchGroups(), fetchCategories()])
                 .finally(() => setLoading(false));
         }
     }, [isOpen]);
@@ -396,35 +303,6 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             handleClose();
-        }
-    };
-
-    // Check if there are any categories or transactions to determine if this is initial setup
-    const checkIsInitialSetup = async () => {
-        try {
-            const {data: {user}} = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
-
-            const [categoriesResponse, transactionsResponse] = await Promise.all([
-                supabase
-                    .from('categories')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .limit(1),
-                supabase
-                    .from('transactions')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .eq('type', 'starting')
-                    .limit(1)
-            ]);
-
-            if (categoriesResponse.error) throw categoriesResponse.error;
-            if (transactionsResponse.error) throw transactionsResponse.error;
-
-            setIsInitialSetup(!categoriesResponse.data?.length && !transactionsResponse.data?.length);
-        } catch (error) {
-            console.error('Error checking setup status:', error);
         }
     };
 
@@ -481,16 +359,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                         >
                             Other Settings
                         </button>
-                         <button 
-                            onClick={() => setActiveTab('starting')}
-                            className={`px-4 py-2 transition-all duration-200 ${
-                                activeTab === 'starting' 
-                                ? 'text-green border-b-2 border-green' 
-                                : 'text-white/60 hover:text-white'
-                            }`}
-                        >
-                            Starting Balance
-                        </button>
+                         
                         
                     </div>
                 </div>
@@ -509,38 +378,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                 </div>
                             )}
                             
-                            
-                            {activeTab === 'starting' ? (
-                                <div className="bg-white/[.03] rounded-lg p-6 mb-8">
-                                    <h3 className="text-lg font-medium text-green mb-4">Starting Balance</h3>
-                                    <p className="text-sm text-white/70 mb-6">
-                                        {startingBalanceId 
-                                            ? "Update your starting balance if you need to correct it."
-                                            : "Set your starting balance to begin tracking your finances."}
-                                    </p>
-                                    <form onSubmit={(e) => {
-                                        e.preventDefault();
-                                        saveStartingBalance();
-                                    }} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm text-white/50 mb-1">Balance Amount</label>
-                                            <MoneyInput
-                                                value={startingBalance}
-                                                onChange={(value) => setStartingBalance(value)}
-                                                placeholder="0.00"
-                                                currencySymbol={true}
-                                                className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-md"
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            className="w-full bg-green text-black px-4 py-2 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium"
-                                        >
-                                            {startingBalanceId ? 'Update Starting Balance' : 'Set Starting Balance'}
-                                        </button>
-                                    </form>
-                                </div>
-                            ) : activeTab === 'settings' ? (
+                            {activeTab === 'settings' ? (
                                 <div className="space-y-6">
                                     <div className="bg-white/[.03] rounded-lg p-6">
                                         <h3 className="text-lg font-medium text-green mb-4">Display</h3>

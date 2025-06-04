@@ -12,6 +12,7 @@ import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
+import AccountModal from '../components/account-modal';
 
 
 
@@ -38,6 +39,7 @@ export default function Budget() {
     const [monthString, setMonthString] = useState(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
+    const [showAccountModal, setShowAccountModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [balanceInfo, setBalanceInfo] = useState<{ budgetPool: number; assigned: number } | null>(null);
@@ -252,7 +254,7 @@ export default function Budget() {
             
             // Get starting balance and total income from ALL transactions
             allTransactionsData?.forEach(transaction => {
-                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
+                if (transaction.type == 'starting') {startingBalance += transaction.amount;}
                 if (transaction.type == 'income') {totalIncome += transaction.amount;}
             });
 
@@ -964,9 +966,10 @@ export default function Budget() {
                                     className="image-black opacity-40 mx-auto mb-4"
                                 />
                                 <h2 className="text-2xl font-semibold mb-2">Welcome to CashCat!</h2>
-                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 backdrop-blur-sm">
-                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 3 Steps:</h3>
+                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 md:mb-8 md:mt-4 backdrop-blur-sm">
+                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 4 Steps:</h3>
                                     <ul className="inline-block text-left list-disc list-inside space-y-3 text-base">
+                                        <li className="opacity-90">Enter your bank account balances</li>
                                         <li className="opacity-90">Create your budget</li>
                                         <li className="opacity-90">Log your first transaction</li>
                                         <li className="opacity-90">View your stats</li>
@@ -980,7 +983,7 @@ export default function Budget() {
                                         Learn the Basics
                                     </button>
                                     <button
-                                        onClick={() => setShowManageModal(true)}
+                                        onClick={() => setShowAccountModal(true)}
                                         className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
                                     >
                                         Create Your First Budget
@@ -1107,6 +1110,15 @@ export default function Budget() {
                 <ManageBudgetModal
                   isOpen={showManageModal}
                   onClose={() => (fetchBudgetData(), setShowManageModal(false))}
+                />
+
+                <AccountModal
+                    isOpen={showAccountModal}
+                    onClose={() => setShowAccountModal(false)}
+                    onAccountsUpdated={() => {
+                        setShowAccountModal(false);
+                        setShowManageModal(true);
+                    }}
                 />
             </div>
         </ProtectedRoute>

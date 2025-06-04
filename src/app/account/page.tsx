@@ -205,8 +205,9 @@ export default function Account() {
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>To manage your budget settings, click the Manage button on the Budget page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your budget settings, click the Manage button on the Budget page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your bank accounts, click the account selector on on the Transactions page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>&gt; To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
@@ -258,13 +259,13 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.4.3</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.5.0</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
+                                    <li>Support for multiple bank accounts!</li>
                                     <li>A new mobile input modal</li>
                                     <li>A new notes and reminders section</li>
                                     <li>A 'compare with bank' feature</li>
-                                    <li>A fresh new logo</li>
                                 </ul>
                             </div>
                         </div>
@@ -274,7 +275,7 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
+                                Your data is securely stored. This project is not affiliated with or endorsed by YNAB. "YNAB" is a registered trademark of YouNeedABudget.com. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
                             </p>
                         </div>
                     </div>

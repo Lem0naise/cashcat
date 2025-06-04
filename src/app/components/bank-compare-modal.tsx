@@ -25,13 +25,15 @@ type BankCompareModalProps = {
     onClose: () => void;
     transactions: Transaction[];
     onTransactionUpdated: () => void;
+    bankAccountId: string | null
 };
 
 export default function BankCompareModal({ 
     isOpen, 
     onClose, 
+    bankAccountId,
     transactions, 
-    onTransactionUpdated 
+    onTransactionUpdated,
 }: BankCompareModalProps) {
     const supabase = createClientComponentClient();
     const [bankBalance, setBankBalance] = useState('');
@@ -43,12 +45,21 @@ export default function BankCompareModal({
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [correctionAmount, setCorrectionAmount] = useState('');
+    const [usableTransactions, setUsableTransactions] = useState(transactions);
 
     // Calculate budget balance from transactions
     useEffect(() => {
-        const balance = transactions.reduce((total, transaction) => total + transaction.amount, 0);
+        // filter transactions by the current bank account
+        const filteredTransactions = (transactions.filter(transaction => 
+            transaction.account_id === bankAccountId
+        ));
+
+        setUsableTransactions(filteredTransactions);
+
+        const balance = filteredTransactions
+            .reduce((total, transaction) => total + transaction.amount, 0);
         setBudgetBalance(balance);
-    }, [transactions]);
+    }, [transactions, bankAccountId]);
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -81,13 +92,13 @@ export default function BankCompareModal({
         setDifference(diff);
 
         // Find potential problematic transactions
-        const recentTransactions = transactions
+        const recentTransactions = usableTransactions
             .filter(t => t.type !== 'starting')
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             .slice(0, 10); // Last 10 transactions
 
         // Also include transactions that match the difference amount
-        const matchingAmountTransactions = transactions.filter(t => 
+        const matchingAmountTransactions = usableTransactions.filter(t => 
             Math.abs(t.amount) === Math.abs(diff) && t.type !== 'starting'
         );
 
@@ -124,6 +135,7 @@ export default function BankCompareModal({
     };
 
     const handleTransactionUpdate = async (transaction: {
+        account_id: string;
         amount: number;
         date: string;
         vendor: string;
@@ -141,6 +153,7 @@ export default function BankCompareModal({
                     type: transaction.type,
                     date: transaction.date,
                     vendor: transaction.vendor,
+                    account_id: transaction.account_id,
                     description: transaction.description || null,
                     category_id: transaction.category_id || null
                 })
@@ -170,7 +183,8 @@ export default function BankCompareModal({
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) throw new Error('Not authenticated');
 
-            const { error } = await supabase
+            // Insert a Balance Correction 
+            {/*const { error } = await supabase
                 .from('transactions')
                 .insert({
                     user_id: user.id,
@@ -181,7 +195,24 @@ export default function BankCompareModal({
                     description: `Bank reconciliation adjustment: ${formatCurrency(correctionAmountNum)}`,
                     created_at: new Date().toISOString(),
                 });
+            if (error) throw error;
+            */}
+            
+            // Instead, adjust the starting balance
+            const startingTransaction = usableTransactions.find(t => t.type === 'starting' && t.account_id === bankAccountId);
 
+            if (!startingTransaction) {
+                toast.error("Could not find starting transaction. Please contact support.");
+                return;
+            }
+            const newAmount = startingTransaction.amount + correctionAmountNum;
+
+            const { error } = await supabase
+                .from('transactions')
+                .update({
+                    amount: newAmount,
+                })
+                .eq('id', startingTransaction.id);
             if (error) throw error;
 
             toast.success('Balance correction added successfully');
@@ -213,6 +244,10 @@ export default function BankCompareModal({
     };
 
     if (!isOpen) return null;
+
+    if (!bankAccountId) {
+        return null; // Return, the modal cannot be shown without a bank account to reconciliate
+    }
 
     return (
         <>
@@ -345,7 +380,7 @@ export default function BankCompareModal({
                                                 <h4 className="font-medium mb-2">Or add a balance correction:</h4>
                                                 <p className="text-sm text-white/60 mb-3">
                                                     This is less precise but will quickly fix the difference. 
-                                                    The correction will appear as a transaction.
+                                                    The correction will adjust your account's initial balance.
                                                 </p>
                                                 <button
                                                     onClick={() => {
@@ -374,7 +409,7 @@ export default function BankCompareModal({
                                     <div className="bg-yellow/10 border border-yellow/20 rounded-lg p-4">
                                         <h3 className="font-medium text-yellow mb-2">Balance Correction</h3>
                                         <p className="text-sm text-white/70">
-                                            This will add a correction transaction to match your bank balance. 
+                                            This will adjust your account's initial balance to make your current balance your bank balance. 
                                             It's better to find and fix the actual incorrect transaction, but this works as a quick fix.
                                         </p>
                                     </div>
