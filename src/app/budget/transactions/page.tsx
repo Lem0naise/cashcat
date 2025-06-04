@@ -655,7 +655,7 @@ export default function Transactions() {
 
             <AccountModal
                 isOpen={showAccountModal}
-                onClose={() => setShowAccountModal(false)}
+                onClose={() => {setShowAccountModal(false); fetchTransactions()}}
                 onAccountsUpdated={() => {
                     // Refresh any account-related data if needed
                 }}

@@ -165,8 +165,14 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1a1a] rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden border border-white/10">
+        <div 
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            onClick={onClose}
+        >
+            <div 
+                className="bg-[#1a1a1a] rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden border border-white/10"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
                     <h2 className="text-xl font-semibold">Manage Accounts</h2>
                     <button
