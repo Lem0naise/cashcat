@@ -65,6 +65,7 @@ interface VolumeDataPoint {
   removed: number;
   net: number;
   categories: string[];
+  vendors: string[];
 }
 
 export default function BudgetAssignmentChart({
@@ -208,7 +209,8 @@ export default function BudgetAssignmentChart({
           assigned: 0,
           removed: 0,
           net: 0,
-          categories: []
+          categories: [],
+          vendors: []
         }]
       };
     }
@@ -296,7 +298,8 @@ export default function BudgetAssignmentChart({
           assigned: 0,
           removed: 0,
           net: 0,
-          categories: []
+          categories: [],
+          vendors: []
         });
       }
     }
@@ -309,6 +312,7 @@ export default function BudgetAssignmentChart({
       let spending = 0;
       let netChange = 0;
       const affectedCategories: string[] = [];
+      const affectedVendors: string[] = [];
       const categoryBreakdown: { [categoryId: string]: number } = {};
 
       // Process transactions for this period
@@ -339,6 +343,11 @@ export default function BudgetAssignmentChart({
             }
           }
         }
+
+        // Track vendor names
+        if (transaction.vendor && !affectedVendors.includes(transaction.vendor)) {
+          affectedVendors.push(transaction.vendor);
+        }
       });
 
       cumulativeBalance += netChange;
@@ -354,7 +363,8 @@ export default function BudgetAssignmentChart({
         assigned: income,
         removed: spending,
         net: netChange,
-        categories: affectedCategories
+        categories: affectedCategories,
+        vendors: affectedVendors
       });
     });
 
@@ -387,7 +397,7 @@ export default function BudgetAssignmentChart({
       if (volumePointMap[periodKey]) {
         alignedVolumePoints.push(volumePointMap[periodKey]);
       } else {
-        alignedVolumePoints.push({ x: periodKey, assigned: 0, removed: 0, net: 0, categories: [] });
+        alignedVolumePoints.push({ x: periodKey, assigned: 0, removed: 0, net: 0, categories: [], vendors: [] });
       }
     });
 
@@ -698,7 +708,8 @@ export default function BudgetAssignmentChart({
         assigned: 0,
         removed: 0,
         net: 0,
-        categories: []
+        categories: [],
+        vendors: []
       }));
     }
 
@@ -746,6 +757,7 @@ export default function BudgetAssignmentChart({
       let income = 0;
       let spending = 0;
       const affectedCategories: string[] = [];
+      const affectedVendors: string[] = [];
 
       // Process filtered transactions for this period
       periodTransactions.forEach(transaction => {
@@ -766,6 +778,11 @@ export default function BudgetAssignmentChart({
             affectedCategories.push(category.name);
           }
         }
+
+        // Track vendor names
+        if (transaction.vendor && !affectedVendors.includes(transaction.vendor)) {
+          affectedVendors.push(transaction.vendor);
+        }
       });
 
       filteredVolumePoints.push({
@@ -773,7 +790,8 @@ export default function BudgetAssignmentChart({
         assigned: income,
         removed: spending,
         net: income - spending,
-        categories: affectedCategories
+        categories: affectedCategories,
+        vendors: affectedVendors
       });
     });
 
@@ -1132,7 +1150,14 @@ export default function BudgetAssignmentChart({
                 `Net: ${formatCurrency(volumePoint.net)}`
               ];
               
-              if (volumePoint.categories.length > 0) {
+              // Show vendors when filters are active, otherwise show categories
+              if (hasActiveFilters && volumePoint.vendors.length > 0) {
+                lines.push('', 'Vendors:');
+                lines.push(...volumePoint.vendors.slice(0, 5));
+                if (volumePoint.vendors.length > 5) {
+                  lines.push(`... and ${volumePoint.vendors.length - 5} more`);
+                }
+              } else if (volumePoint.categories.length > 0) {
                 lines.push('', 'Categories:');
                 lines.push(...volumePoint.categories.slice(0, 5));
                 if (volumePoint.categories.length > 5) {
