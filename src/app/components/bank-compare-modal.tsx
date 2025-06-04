@@ -246,7 +246,7 @@ export default function BankCompareModal({
     if (!isOpen) return null;
 
     if (!bankAccountId) {
-        return; // Return, the modal cannot be shown without a bank account to reconciliate
+        return null; // Return, the modal cannot be shown without a bank account to reconciliate
     }
 
     return (

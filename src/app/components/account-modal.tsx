@@ -104,7 +104,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                         .from('transactions')
                         .insert(transactionData);
     
-                    if (transerror) throw error
+                    if (transerror) throw transerror
                 }
                 catch (error) {
                     throw error;
