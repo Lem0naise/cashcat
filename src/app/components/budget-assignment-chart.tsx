@@ -1247,15 +1247,6 @@ export default function BudgetAssignmentChart({
         </div>
       )}
 
-      {/* Instructions */}
-      {!comparisonData && (
-        <div className="bg-blue/10 rounded-lg p-3 border border-blue/20">
-          <p className="text-sm text-blue/90">
-            💡 <strong>Tip:</strong> Click and hold on any point, then click another point to compare spending over time.
-          </p>
-        </div>
-      )}
-
       {/* Show helpful message when no data */}
       {Array.isArray(transactions) && transactions.length === 0 && (
         <div className="bg-blue/10 rounded-lg p-4 border border-blue/20">
