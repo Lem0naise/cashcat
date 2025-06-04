@@ -127,12 +127,20 @@ export default function BudgetAssignmentChart({
     });
   }, [transactions, categories, selectedGroups, selectedCategories]);
 
-  // Calculate date range based on timeRange
+  // --- Fix 'All time' time range: ensure correct date range for all data ---
+  // Use all assignments and transactions to determine the earliest and latest dates
+  const allDates = [
+    ...assignments.map(a => new Date(a.month + '-01')),
+    ...transactions.map(t => new Date(t.date))
+  ].filter(d => !isNaN(d.getTime()));
+
+  const allTimeStart = allDates.length > 0 ? new Date(Math.min(...allDates.map(d => d.getTime()))) : new Date();
+  const allTimeEnd = allDates.length > 0 ? new Date(Math.max(...allDates.map(d => d.getTime()))) : new Date();
+
   const dateRange = useMemo(() => {
     const now = new Date();
     let start: Date;
     let end: Date = now;
-
     switch (timeRange) {
       case '7d':
         start = addDays(now, -7);
@@ -152,16 +160,12 @@ export default function BudgetAssignmentChart({
         break;
       case 'all':
       default:
-        const oldestTransaction = filteredTransactions.reduce((oldest, transaction) => {
-          const transactionDate = new Date(transaction.date);
-          return transactionDate < oldest ? transactionDate : oldest;
-        }, now);
-        start = oldestTransaction;
+        start = allTimeStart;
+        end = allTimeEnd;
         break;
     }
-
     return { start: startOfDay(start), end: endOfDay(end) };
-  }, [timeRange, customStartDate, customEndDate, filteredTransactions]);
+  }, [timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd]);
 
   // Process transactions into chart data points
   const chartData = useMemo(() => {
@@ -299,6 +303,7 @@ export default function BudgetAssignmentChart({
       }
     }
     
+    // For each period, always push a dataPoint and a volumePoint for that periodKey
     sortedPeriodKeys.forEach((periodKey, index) => {
       const periodTransactions = groupedByPeriod[periodKey] || [];
       
@@ -355,7 +360,40 @@ export default function BudgetAssignmentChart({
       });
     });
 
-    return { dataPoints, volumePoints };
+    // --- X-Axis Alignment Fix: Force all period keys to be present in both dataPoints and volumePoints ---
+    // 1. Get all unique period keys (dates) from groupedByPeriod and include the startingKey if present
+    let allPeriodKeys = [...sortedPeriodKeys];
+    if (dataPoints.length > 0 && !allPeriodKeys.includes(dataPoints[0].x)) {
+      allPeriodKeys = [dataPoints[0].x, ...allPeriodKeys];
+    }
+
+    // 2. Build a map for quick lookup
+    const dataPointMap = Object.fromEntries(dataPoints.map(dp => [dp.x, dp]));
+    const volumePointMap = Object.fromEntries(volumePoints.map(vp => [vp.x, vp]));
+
+    // 3. For each period key, ensure both dataPoints and volumePoints have an entry (pad with previous value or zero)
+    let lastBalance = startingBalance;
+    let lastBreakdown = {};
+    const alignedDataPoints: ChartDataPoint[] = [];
+    const alignedVolumePoints: VolumeDataPoint[] = [];
+    allPeriodKeys.forEach(periodKey => {
+      // Data point
+      if (dataPointMap[periodKey]) {
+        alignedDataPoints.push(dataPointMap[periodKey]);
+        lastBalance = dataPointMap[periodKey].y;
+        lastBreakdown = dataPointMap[periodKey].assignmentBreakdown || {};
+      } else {
+        alignedDataPoints.push({ x: periodKey, y: lastBalance, assignmentBreakdown: lastBreakdown });
+      }
+      // Volume point
+      if (volumePointMap[periodKey]) {
+        alignedVolumePoints.push(volumePointMap[periodKey]);
+      } else {
+        alignedVolumePoints.push({ x: periodKey, assigned: 0, removed: 0, net: 0, categories: [] });
+      }
+    });
+
+    return { dataPoints: alignedDataPoints, volumePoints: alignedVolumePoints };
   }, [transactions, categories, dateRange]);
 
   // Format currency
@@ -367,6 +405,16 @@ export default function BudgetAssignmentChart({
       maximumFractionDigits: 0
     }).format(amount);
   }, []);
+
+  // --- X-Axis Label Alignment Fix ---
+  // Force both charts to use the same x-axis tick labels by setting the same 'unit' and 'displayFormats' for both line and bar chart configs
+
+  // Find the correct time unit for the current range
+  const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
+  let xUnit: 'day' | 'week' | 'month' = 'day';
+  if (diffInDays <= 90) xUnit = 'day';
+  else if (diffInDays <= 365) xUnit = 'week';
+  else xUnit = 'month';
 
   // Chart.js configuration for line chart
   const lineChartConfig = useMemo(() => ({
@@ -454,14 +502,7 @@ export default function BudgetAssignmentChart({
         x: {
           type: 'time' as const,
           time: {
-            unit: (() => {
-              const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-              const pointCount = chartData.dataPoints.length;
-              
-              if (pointCount > 100 || diffInDays > 730) return 'month' as const;
-              if (pointCount > 50 || diffInDays > 180) return 'week' as const;
-              return 'day' as const;
-            })(),
+            unit: xUnit,
             displayFormats: {
               day: 'MMM dd',
               week: 'MMM dd',
@@ -469,11 +510,15 @@ export default function BudgetAssignmentChart({
             }
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: 'rgba(255, 255, 255, 0.1)',
+            alignToPixels: false, // ensure grid lines are not offset
+            offset: false // ensure grid lines/ticks are not offset
           },
           ticks: {
             color: '#ffffff',
-            maxTicksLimit: Math.min(chartData.dataPoints.length > 50 ? 8 : 12, 15)
+            maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+            // align: 'center', // center tick labels
+            // No offset
           }
         },
         y: {
@@ -651,13 +696,7 @@ export default function BudgetAssignmentChart({
         x: {
           type: 'time' as const,
           time: {
-            unit: (() => {
-              const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-              if (diffInDays <= 7) return 'day' as const;
-              if (diffInDays <= 90) return 'day' as const;
-              if (diffInDays <= 365) return 'week' as const;
-              return 'month' as const;
-            })(),
+            unit: xUnit,
             displayFormats: {
               day: 'MMM dd',
               week: 'MMM dd',
@@ -665,11 +704,25 @@ export default function BudgetAssignmentChart({
             }
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: 'rgba(255, 255, 255, 0.1)',
+            alignToPixels: false, // ensure grid lines are not offset
+            offset: false // ensure grid lines/ticks are not offset
           },
           ticks: {
-            color: '#ffffff'
-          }
+            color: '#ffffff',
+            maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+            // align: 'center', // center tick labels
+            // No offset
+          },
+          // Remove bar chart category and bar padding
+          // This ensures bars are centered on ticks, matching the line chart
+          // Chart.js v3+ uses these for bar width and alignment
+          // @ts-ignore
+          barPercentage: 1.0,
+          // @ts-ignore
+          categoryPercentage: 1.0,
+          // @ts-ignore
+          offset: false,
         },
         y: {
           grid: {
@@ -684,7 +737,7 @@ export default function BudgetAssignmentChart({
         }
       }
     }
-  }), [chartData, formatCurrency, dateRange]);
+  }), [chartData, formatCurrency, dateRange, xUnit]);
 
   return (
     <div className="space-y-6">

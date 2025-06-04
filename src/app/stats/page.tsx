@@ -83,15 +83,20 @@ export default function Stats() {
     }, [fetchData]);
 
     // Get available groups for filtering
+    // Fix: Calculate availableGroups and availableCategories using group name from joined groups
+    const categoriesWithGroupNames = categories.map(cat => ({
+        ...cat,
+        groupName: (cat as any).groups?.name || cat.group || 'Uncategorized',
+    }));
     const availableGroups = Array.from(new Set(
-        categories.map(cat => cat.group || 'Uncategorized')
+        categoriesWithGroupNames.map(cat => cat.groupName)
     )).sort();
 
     // Get available categories for filtering
-    const availableCategories = categories.map(cat => ({
+    const availableCategories = categoriesWithGroupNames.map(cat => ({
         id: cat.id,
         name: cat.name,
-        group: cat.group || 'Uncategorized'
+        group: cat.groupName
     }));
 
     const handleCustomDateChange = (start: Date, end: Date) => {
@@ -192,10 +197,7 @@ export default function Stats() {
                                     availableCategories={availableCategories}
                                     selectedCategories={selectedCategories}
                                     onCategoriesChange={setSelectedCategories}
-                                    showGoals={showGoals}
-                                    onShowGoalsChange={setShowGoals}
-                                    showRollover={showRollover}
-                                    onShowRolloverChange={setShowRollover}
+                                    // Removed showGoals, onShowGoalsChange, showRollover, onShowRolloverChange
                                 />
 
                                 {/* Budget Assignment Chart - NOW WITH TRANSACTIONS! */}
