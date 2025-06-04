@@ -274,7 +274,7 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
+                                Your data is securely stored. This project is not affiliated with or endorsed by YNAB. "YNAB" is a registered trademark of YouNeedABudget.com. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
                             </p>
                         </div>
                     </div>
