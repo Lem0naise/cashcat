@@ -1,4 +1,4 @@
-# [💸 CashCat — A Better Way to Budget](https://cashcat.indigonolan.com)
+# [💸 CashCat — A Better Way to Budget](https://cashcat.app)
 
 
 **CashCat** is a modern budgeting tool built for people who want to take control of their money. We use **zero-based budgeting**, a popular and tried-and-tested method.
