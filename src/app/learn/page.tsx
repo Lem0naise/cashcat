@@ -7,7 +7,7 @@ import OpenButton from "../components/openButton";
 import CategoryCard from '../features/Category';
 
 const BUDGET_TIPS = [
-    "Start small - even £1 assigned to a category is better than £0!",
+    "If you select an account on the transactions page, you can compare CashCat's balance with your bank's!",
     "If you have leftover money, assign it to next month!",
     "If you overspend in one category, move money from another - don't give up!",
     "Set up a 'Fun Money' category so you don't feel restricted by your budget.",

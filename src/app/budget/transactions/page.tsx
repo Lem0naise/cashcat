@@ -237,47 +237,10 @@ export default function Transactions() {
         }).format(amount);
     };
 
-    const groupTransactionsByDate = (transactions: Transaction[]) => {
-        // Filter out starting balance transactions
-        const regularTransactions = transactions.filter(t => t.type !== 'starting');
-        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
-        
-        const groups: { [key: string]: { date: string; transactions: Transaction[] } } = {};
-        
-        regularTransactions.forEach(transaction => {
-            const date = transaction.date;
-            if (!groups[date]) {
-                groups[date] = {
-                    date,
-                    transactions: []
-                };
-            }
-            groups[date].transactions.push(transaction);
-        });
-        Object.values(groups).forEach(group => { // sort by time descending
-            group.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        });
-
-        // Convert to array and sort by date
-        const sortedGroups = Object.values(groups).sort((a, b) =>  
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
-        // If there is a starting balance, add it as a special group at the bottom
-        if (startingBalanceTransaction) {
-            sortedGroups.push({
-                date: 'starting-balance',
-                transactions: [startingBalanceTransaction]
-            });
-        }
-
-        return sortedGroups;
-    };
-
     const groupTransactionsByMonth = (transactions: Transaction[]) => {
         // Filter out starting balance transactions
         const regularTransactions = transactions.filter(t => t.type !== 'starting');
-        const startingBalanceTransaction = transactions.find(t => t.type === 'starting');
+        const startingBalanceTransactions = transactions.filter(t => t.type === 'starting');
         
         // Group by month
         const monthGroups: { [key: string]: Transaction[] } = {};
@@ -332,15 +295,15 @@ export default function Transactions() {
             });
 
         // Add starting balance as a special group at the end
-        if (startingBalanceTransaction) {
+        if (startingBalanceTransactions.length != 0) {
             sortedMonthGroups.push({
                 monthKey: 'starting-balance',
                 monthName: 'Starting Balance',
                 dayGroups: [{
                     date: 'starting-balance',
-                    transactions: [startingBalanceTransaction]
+                    transactions: startingBalanceTransactions
                 }],
-                totalAmount: startingBalanceTransaction.amount
+                totalAmount: startingBalanceTransactions.reduce((sum, t) => sum + t.amount, 0)
             });
         }
 

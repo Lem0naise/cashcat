@@ -254,7 +254,7 @@ export default function Budget() {
             
             // Get starting balance and total income from ALL transactions
             allTransactionsData?.forEach(transaction => {
-                if (transaction.type == 'starting') {startingBalance = transaction.amount;}
+                if (transaction.type == 'starting') {startingBalance += transaction.amount;}
                 if (transaction.type == 'income') {totalIncome += transaction.amount;}
             });
 

@@ -205,8 +205,9 @@ export default function Account() {
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>To manage your budget settings, click the Manage button on the Budget page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your budget settings, click the Manage button on the Budget page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your bank accounts, click the account selector on on the Transactions page.</p></div>
+                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>&gt; To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
