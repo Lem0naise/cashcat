@@ -646,6 +646,7 @@ export default function Transactions() {
             />
 
             <BankCompareModal
+                bankAccountId={selectedAccountId}
                 isOpen={showBankCompareModal}
                 onClose={() => setShowBankCompareModal(false)}
                 transactions={transactions}
