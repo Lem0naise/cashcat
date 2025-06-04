@@ -16,10 +16,6 @@ interface ChartControlsProps {
   availableCategories: { id: string; name: string; group: string }[];
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
-  showGoals: boolean;
-  onShowGoalsChange: (show: boolean) => void;
-  showRollover: boolean;
-  onShowRolloverChange: (show: boolean) => void;
 }
 
 export default function ChartControls({
@@ -33,11 +29,7 @@ export default function ChartControls({
   onGroupsChange,
   availableCategories,
   selectedCategories,
-  onCategoriesChange,
-  showGoals,
-  onShowGoalsChange,
-  showRollover,
-  onShowRolloverChange
+  onCategoriesChange
 }: ChartControlsProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(false);
@@ -124,31 +116,6 @@ export default function ChartControls({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Quick Toggles */}
-      <div className="bg-white/[.03] rounded-lg p-4">
-        <h3 className="font-medium mb-3">Display Options</h3>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showGoals}
-              onChange={(e) => onShowGoalsChange(e.target.checked)}
-              className="rounded border-white/[.3] bg-white/[.05] text-green focus:ring-green focus:ring-offset-0"
-            />
-            <span className="text-sm">Show Goal Lines</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showRollover}
-              onChange={(e) => onShowRolloverChange(e.target.checked)}
-              className="rounded border-white/[.3] bg-white/[.05] text-green focus:ring-green focus:ring-offset-0"
-            />
-            <span className="text-sm">Show Rollover Impact</span>
-          </label>
-        </div>
       </div>
 
       {/* Filters */}
