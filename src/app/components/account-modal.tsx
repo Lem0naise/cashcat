@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { useSupabaseClient } from '../hooks/useSupabaseClient';
+import MoneyInput from "./money-input";
 
 type Account = {
     id: string;
@@ -24,9 +25,10 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     const [loading, setLoading] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [showForm, setShowForm] = useState(false);
+    const [startingBalance, setStartingBalance] = useState('');
     const [formData, setFormData] = useState({
         name: '',
-        type: 'checking'
+        type: 'checking',
     });
     const supabase = useSupabaseClient();
 
@@ -60,7 +62,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
+        try { // create the account in the table
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
@@ -76,20 +78,43 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 if (error) throw error;
                 toast.success('Account updated successfully');
             } else {
-                const { error } = await supabase
+                const { data: newAccount, error } = await supabase
                     .from('accounts')
                     .insert({
                         name: formData.name,
                         type: formData.type,
                         user_id: user.id,
                         is_active: true
-                    });
-
+                    })
+                    .select()
+                    .single();
                 if (error) throw error;
+                // create starting balance transaction
+                try {
+                    const transactionData = {
+                        amount: parseFloat(startingBalance),
+                        type: 'starting',
+                        date: new Date().toISOString().split('T')[0],
+                        vendor: 'Starting Balance',
+                        account_id: newAccount.id,
+                        created_at: new Date().toISOString(),
+                        user_id: user.id,
+                    };
+                    const { error: transerror }  = await supabase
+                        .from('transactions')
+                        .insert(transactionData);
+    
+                    if (transerror) throw error
+                }
+                catch (error) {
+                    throw error;
+                }
+                
                 toast.success('Account created successfully');
             }
 
             setFormData({ name: '', type: 'checking' });
+            setStartingBalance('');
             setEditingAccount(null);
             setShowForm(false);
             fetchAccounts();
@@ -102,6 +127,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
     const handleEdit = (account: Account) => {
         setEditingAccount(account);
+        setStartingBalance('');
         setFormData({
             name: account.name,
             type: account.type
@@ -185,6 +211,19 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     <option value="other">Other</option>
                                 </select>
                             </div>
+
+                            {!editingAccount && (<div>
+                                 <label className="block text-sm font-medium text-white/80 mb-2">
+                                    Balance Right Now
+                                </label>
+                                <MoneyInput
+                                    value={startingBalance}
+                                    onChange={(value) => setStartingBalance(value)}
+                                    placeholder="0.00"
+                                    autoFocus={false}
+                                    currencySymbol={true}
+                                />
+                            </div>)}
 
                             <div className="flex gap-3 pt-4">
                                 <button

@@ -12,6 +12,7 @@ import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
+import AccountModal from '../components/account-modal';
 
 
 
@@ -38,6 +39,7 @@ export default function Budget() {
     const [monthString, setMonthString] = useState(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
+    const [showAccountModal, setShowAccountModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [balanceInfo, setBalanceInfo] = useState<{ budgetPool: number; assigned: number } | null>(null);
@@ -981,7 +983,7 @@ export default function Budget() {
                                         Learn the Basics
                                     </button>
                                     <button
-                                        onClick={() => setShowManageModal(true)}
+                                        onClick={() => setShowAccountModal(true)}
                                         className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
                                     >
                                         Create Your First Budget
@@ -1108,6 +1110,15 @@ export default function Budget() {
                 <ManageBudgetModal
                   isOpen={showManageModal}
                   onClose={() => (fetchBudgetData(), setShowManageModal(false))}
+                />
+
+                <AccountModal
+                    isOpen={showAccountModal}
+                    onClose={() => setShowAccountModal(false)}
+                    onAccountsUpdated={() => {
+                        setShowAccountModal(false);
+                        setShowManageModal(true);
+                    }}
                 />
             </div>
         </ProtectedRoute>
