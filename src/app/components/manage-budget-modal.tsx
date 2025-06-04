@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
-import type { Category, Group } from '../types/budget';
+import type { Category, Group } from '@/types/supabase';
 type ManageBudgetModalProps = {
     isOpen: boolean;
     onClose: () => void;

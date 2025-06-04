@@ -1,5 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../types/supabase';
+import { Database } from '@/types/supabase';
 
 export type NewTransaction = {
     amount: number;

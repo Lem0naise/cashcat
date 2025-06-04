@@ -6,6 +6,30 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+
+export type Category = {
+    id: string;
+    user_id: string;
+    name: string;
+    created_at: string;
+    assigned: number | null;
+    goal: number | null;
+    group: string | null;
+    timeframe: {
+        type: 'monthly' | 'yearly' | 'once';
+        start_date?: string;
+        end_date?: string;
+    } | null;
+}
+
+export type Group = {
+    id: string;
+    created_at: string;
+    user_id: string;
+    name: string;
+}
+
+
 export type Database = {
   graphql_public: {
     Tables: {
@@ -34,6 +58,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assignments: {
         Row: {
           assigned: number | null
@@ -66,7 +117,7 @@ export type Database = {
           {
             foreignKeyName: "assignments_category_id_fkey"
             columns: ["category_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
@@ -164,21 +215,21 @@ export type Database = {
       information: {
         Row: {
           created_at: string
+          month: string
           reminder: string | null
           user_id: string
-          month: string
         }
         Insert: {
           created_at?: string
+          month: string
           reminder?: string | null
           user_id?: string
-          month: string
         }
         Update: {
           created_at?: string
+          month?: string
           reminder?: string | null
           user_id?: string
-          month?: string
         }
         Relationships: []
       }
@@ -280,7 +331,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_user: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -302,7 +356,7 @@ export type Tables<
   }
     ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
