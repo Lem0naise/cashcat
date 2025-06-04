@@ -964,9 +964,10 @@ export default function Budget() {
                                     className="image-black opacity-40 mx-auto mb-4"
                                 />
                                 <h2 className="text-2xl font-semibold mb-2">Welcome to CashCat!</h2>
-                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 backdrop-blur-sm">
-                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 3 Steps:</h3>
+                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 md:mb-8 md:mt-4 backdrop-blur-sm">
+                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 4 Steps:</h3>
                                     <ul className="inline-block text-left list-disc list-inside space-y-3 text-base">
+                                        <li className="opacity-90">Enter your bank account balances</li>
                                         <li className="opacity-90">Create your budget</li>
                                         <li className="opacity-90">Log your first transaction</li>
                                         <li className="opacity-90">View your stats</li>

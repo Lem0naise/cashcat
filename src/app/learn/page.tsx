@@ -93,9 +93,9 @@ export default function LearnMore() {
                         </div>
                         
                         <div className="mt-6 p-4 bg-green/10 rounded-lg border border-green/20">
-                            <h4 className="font-bold text-green mb-2 text-center">The Zero-Based Secret</h4>
+                            <h4 className="font-bold text-green mb-2 text-center">The Zero-Based Method</h4>
                             <p className="text-sm text-white/80 text-center">
-                                 <strong className="font-bold">Income - Assigned Money = 0. </strong><br/> Every penny has a purpose before you spend it. <br/>Never wonder "where did my money go?" again.
+                                 <strong className="font-bold">Income - Assigned Money = 0. </strong><br/> Every penny has a purpose before you spend it - savings, spending, paying of debt. Never wonder "where did my money go?" again.
                             </p>
                         </div>
                     </div>
@@ -168,9 +168,9 @@ export default function LearnMore() {
                         
                         
                         <div className="mt-6 p-4 bg-green/10 rounded-lg border border-green/20">
-                            <h4 className="font-bold text-green mb-2 text-center">The Zero-Based Secret</h4>
+                            <h4 className="font-bold text-green mb-2 text-center">The Zero-Based Method - Reminder!</h4>
                             <p className="text-sm text-white/80 text-center">
-                                 <strong className="font-bold">Income - Assigned Money = 0. </strong><br/> Every penny has a purpose before you spend it. <br/>Never wonder "where did my money go?" again.
+                                 <strong className="font-bold">Income - Assigned Money = 0. </strong>
                             </p>
                         </div>
                     </div>

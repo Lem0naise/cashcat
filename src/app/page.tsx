@@ -30,7 +30,7 @@ export default function Landing() {
                             Take Control of Every Penny
                         </h2>
                         <p className="text-md md:text-xl text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
-                            Stop wondering where your money went. CashCat's zero-based budgeting gives you complete control over your finances, one category at a time.
+                            Stop wondering where your money went. CashCat's zero-based budgeting gives you complete control over your finances, one purchase at a time.
                         </p>
                         
                         
@@ -55,7 +55,7 @@ export default function Landing() {
                 {/* Key Benefits Section */}
                 <div id='intro' className="py-16 max-w-6xl mx-auto">
                     <h3 className="text-2xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
-                        Why Choose Zero-Based Budgeting?
+                        What is Zero-Based Budgeting?
                     </h3>
                     
                     <div className="grid md:grid-cols-3 md:gap-8 md:mb-16">
@@ -66,7 +66,7 @@ export default function Landing() {
                                     <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </div>
-                            <h4 className="text-xl font-semibold mb-3 text-white">No Money Left Behind</h4>
+                            <h4 className="text-xl font-semibold mb-3 text-white">Give Everything a Purpose</h4>
                             <p className="text-white/70">
                                 Assign every penny a purpose. Know exactly where your money is going before you spend it.
                             </p>
@@ -99,9 +99,9 @@ export default function Landing() {
                         
                     </div>
                     <div className="mb-8 p-6 bg-green/10 rounded-lg border border-green/20 max-w-xl mx-auto">
-                        <h4 className="font-bold text-lg md:text-2xl text-center text-green mb-2">The Zero-Based Secret</h4>
+                        <h4 className="font-bold text-xl md:text-3xl text-center text-green mb-2">The Zero-Based Method</h4>
                         <p className="text-md text-white/70 text-center">
-                            <strong className="font-bold">Income - Assigned Money = 0. </strong><br/> Every penny has a purpose before you spend it. <br/>Never wonder "where did my money go?" again.
+                            <strong className="font-bold text-lg">Income - Assigned Money = 0. </strong><br/> Every penny has a purpose before you spend it - savings, spending, paying of debt. Never wonder "where did my money go?" again.
                         </p>
                     </div>
                 </div>
@@ -113,13 +113,13 @@ export default function Landing() {
                             Simple Steps to Financial Control
                         </h3>
                         
-                        <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className=" gap-12 items-center">
                             <div className="space-y-8">
                                 <div className="flex gap-4">
                                     <div className="w-8 h-8 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-1">1</div>
                                     <div>
                                         <h4 className="text-lg font-semibold mb-2 text-white">Set Your Starting Balance</h4>
-                                        <p className="text-white/70">Tell CashCat how much money you have right now.</p>
+                                        <p className="text-white/70">Tell CashCat how much money you have in your accounts right now.</p>
                                     </div>
                                 </div>
                                 
@@ -127,7 +127,7 @@ export default function Landing() {
                                     <div className="w-8 h-8 bg-green rounded-full flex items-center justify-center text-black font-bold text-sm flex-shrink-0 mt-1">2</div>
                                     <div>
                                         <h4 className="text-lg font-semibold mb-2 text-white">Create Budget Categories</h4>
-                                        <p className="text-white/70">Organize your spending into groups like "Food", "Bills", and "Entertainment".</p>
+                                        <p className="text-white/70">Organize your spending into groups like "Food", "Bills", "Entertainment" and categories like "Takeouts", "Rent", and "Cinema".</p>
                                     </div>
                                 </div>
                                 
@@ -147,27 +147,55 @@ export default function Landing() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Common Questions */}
+                <div id="common-questions" className="py-16 bg-white/[.02] rounded-2xl max-w-6xl mx-auto mb-16">
+                    <div className="px-8">
+                        <h3 className="text-2xl md:text-4xl font-bold text-center mb-12 text-white">
+                            Common Questions
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                                <h4 className="text-lg font-semibold mb-2 text-green">
+                                    "I've tried budgeting before and failed. How is this different?"
+                                </h4>
+                                <p className="text-white/70">
+                                    Traditional budgets fail because they're based on estimates. Zero-based budgeting uses your actual money right now. 
+                                    You're not guessing what you'll spend - you're deciding what each pound will do before you spend it.
+                                </p>
+                            </div>
                             
-                            <div className="bg-white/[.05] rounded-lg p-6 border-l-4 border-green">
-                                <h4 className="text-lg font-semibold mb-4 text-green">The CashCat Difference</h4>
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-green rounded-full"></div>
-                                        <span className="text-white/80">Zero-based budgeting methodology</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-green rounded-full"></div>
-                                        <span className="text-white/80">Instant spending feedback</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-green rounded-full"></div>
-                                        <span className="text-white/80">Goal tracking & rollover support</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-green rounded-full"></div>
-                                        <span className="text-white/80">Simple, distraction-free interface</span>
-                                    </div>
-                                </div>
+                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                                <h4 className="text-lg font-semibold mb-2 text-green">
+                                    "This sounds complicated. How much time does it take?"
+                                </h4>
+                                <p className="text-white/70">
+                                    Initial setup: 15 minutes. Daily use: 2-3 minutes to log purchases. 
+                                    The time you save not worrying about money makes it worth it.
+                                </p>
+                            </div>
+                            
+                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                                <h4 className="text-lg font-semibold mb-2 text-green">
+                                    "What if I have irregular income?"
+                                </h4>
+                                <p className="text-white/70">
+                                    Perfect for irregular income! Budget only the money you have right now. 
+                                    When new money comes in, assign it then. No more stress over traditional budgets.
+                                </p>
+                            </div>
+
+                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                                <h4 className="text-lg font-semibold mb-2 text-green">
+                                    "Is this all locked behind an expensive subscription?"
+                                </h4>
+                                <p className="text-white/70">
+                                    CashCat is free forever. We built this with affordability in mind. Our current plan is to never charge for access to the website itself. 
+                                    If, in the future, we add bank integration, this will require a small user subscription to cover our costs - but we will never ask for this from users not using the feature.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -179,7 +207,7 @@ export default function Landing() {
                         Join Users Taking Control
                     </h3>
                     <p className="text-lg text-white/80 mb-8">
-                        CashCat is built by people who actually use zero-based budgeting daily. We understand the frustrations with other tools and built something better.
+                        CashCat is built by people who actually use zero-based budgeting daily. We understand the frustrations with other tools and are building something better.
                     </p>
                     
                     <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green mb-8">
