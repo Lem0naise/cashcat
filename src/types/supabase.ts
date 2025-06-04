@@ -253,6 +253,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          account_id: string | null
           amount: number
           category_id: string
           created_at: string
@@ -265,6 +266,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Insert: {
+          account_id?: string | null
           amount: number
           category_id?: string
           created_at?: string
@@ -277,6 +279,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category_id?: string
           created_at?: string
@@ -289,6 +292,13 @@ export type Database = {
           vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]
@@ -356,7 +366,7 @@ export type Tables<
   }
     ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {

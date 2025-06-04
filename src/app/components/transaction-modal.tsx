@@ -25,6 +25,7 @@ type TransactionModalProps = {
         vendor: string;
         description?: string;
         type: string;
+        account_id: string;
         category_id?: string | null;
     }) => void;
     onDelete : () => void;
@@ -38,8 +39,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [vendor, setVendor] = useState('');
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [accountId, setAccountId] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
+    const [accounts, setAccounts] = useState<{id: string; name: string; type: string}[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
+    const [loadingAccounts, setLoadingAccounts] = useState(true);
     const [categoryRemaining, setCategoryRemaining] = useState<number | null>(null);
     const [loadingCategoryRemaining, setLoadingCategoryRemaining] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -49,28 +53,55 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
 
-    // Fetch categories
+    // Fetch categories and accounts
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchCategoriesAndAccounts = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('categories')
-                    .select('*')
-                    .order('name');
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+
+                const [categoriesResponse, accountsResponse, recentTransactionResponse] = await Promise.all([
+                    supabase
+                        .from('categories')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('name'),
+                    supabase
+                        .from('accounts')
+                        .select('id, name, type')
+                        .eq('user_id', user.id)
+                        .eq('is_active', true)
+                        .order('name'),
+                    supabase
+                        .from('transactions')
+                        .select('account_id')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                ]);
                 
-                if (error) throw error;
-                setCategories(data || []);
+                if (categoriesResponse.error) throw categoriesResponse.error;
+                if (accountsResponse.error) throw accountsResponse.error;
+                
+                setCategories(categoriesResponse.data || []);
+                setAccounts(accountsResponse.data || []);
+                
+                // Set default account from most recent transaction if creating new transaction
+                if (!transaction && recentTransactionResponse.data && recentTransactionResponse.data.length > 0) {
+                    setAccountId(recentTransactionResponse.data[0].account_id || '');
+                }
             } catch (error) {
-                console.error('Error fetching categories:', error);
+                console.error('Error fetching data:', error);
             } finally {
                 setLoadingCategories(false);
+                setLoadingAccounts(false);
             }
         };
 
         if (isOpen) {
-            fetchCategories();
+            fetchCategoriesAndAccounts();
         }
-    }, [isOpen]);
+    }, [isOpen, transaction]);
 
     useEffect(() => {
         if (transaction){
@@ -80,6 +111,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             setDescription(transaction.description ? transaction.description : '');
             setVendor(transaction.vendor);
             setCategoryId(transaction.category_id || '');
+            setAccountId(transaction.account_id || '');
         } else {
             setType('payment');
             setAmount('');
@@ -87,6 +119,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             setDescription('');
             setVendor('');
             setCategoryId('');
+            setAccountId('');
         }
     }, [isOpen, transaction]);
 
@@ -318,12 +351,14 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         e.preventDefault();
         const parsedAmount = parseFloat(amount);
         if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
+        if (!accountId) return; // Prevent submission if no account selected
         
         onSubmit({
             amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
             type: type || 'payment', // Ensure type is never undefined
             date,
             vendor,
+            account_id: accountId,
             description: description || undefined,
             category_id: type === 'payment' ? categoryId : null // Only include category for payments
         });
@@ -333,6 +368,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         setDescription('');
         setDate(new Date().toISOString().split('T')[0]);
         setCategoryId('');
+        setAccountId('');
         handleClose();
     };
 
@@ -483,6 +519,26 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                     </select>
                                 </div>
                             )}
+
+                            <div>
+                                <label className="block text-sm text-white/50 mb-0.5">Account</label>
+                                <select
+                                    required
+                                    value={accountId}
+                                    onChange={(e) => setAccountId(e.target.value)}
+                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                    disabled={loadingAccounts}
+                                >
+                                    <option value="" disabled>
+                                        {loadingAccounts ? 'Loading accounts...' : 'Select an account'}
+                                    </option>
+                                    {accounts.map((account) => (
+                                        <option key={account.id} value={account.id}>
+                                            {account.name} ({account.type})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
                             <div>
                                 <label className="block text-sm text-white/50 mb-0.5">Date</label>

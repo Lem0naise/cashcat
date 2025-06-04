@@ -6,6 +6,7 @@ export type NewTransaction = {
     type: string;  // 'payment' | 'income' | 'starting'
     date: string;
     vendor: string;
+    account_id: string;
     description?: string;
     category_id?: string | null;  // Required if type === 'payment'
 };
@@ -14,6 +15,7 @@ export type Transaction = Omit<NewTransaction, 'category_id'> & {
     id: string;
     user_id: string;
     created_at: string;
+    account_id: string;
     category_id: string | null;
 };
 
@@ -30,6 +32,7 @@ export async function submitTransaction(
         amount: transaction.amount,
         type: transaction.type,
         date: transaction.date,
+        account_id: transaction.account_id,
         vendor: transaction.vendor,
         description: transaction.description || undefined,
         category_id: transaction.category_id || undefined,
@@ -57,6 +60,7 @@ export async function updateTransaction(
             type: transaction.type,
             date: transaction.date,
             vendor: transaction.vendor,
+            account_id: transaction.account_id,
             description: transaction.description || null,
             category_id: transaction.category_id || undefined
         })
