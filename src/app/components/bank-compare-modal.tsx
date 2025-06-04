@@ -4,7 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Database } from '../../types/supabase';
+import { Database } from '@/types/supabase';
 import TransactionModal from './transaction-modal';
 import MoneyInput from './money-input';
 
