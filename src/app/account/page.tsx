@@ -259,13 +259,13 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.5.0</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.5.1</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>Support for multiple bank accounts!</li>
-                                    <li>A new mobile input modal</li>
                                     <li>A new notes and reminders section</li>
                                     <li>A 'compare with bank' feature</li>
+                                    <li>Routine bug fixes as always</li>
                                 </ul>
                             </div>
                         </div>
