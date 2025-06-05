@@ -297,7 +297,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-xl font-semibold">Manage Accounts</h2>
+                    <h2 className="text-xl font-semibold">Manage Bank Accounts</h2>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
