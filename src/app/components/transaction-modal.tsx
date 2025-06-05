@@ -487,7 +487,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
                                         <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        {amount && categoryRemaining && !loadingCategoryRemaining && (
+                                        {amount && categoryRemaining !== null && !loadingCategoryRemaining && (
                                             <span className={`text-xs font-medium ${
                                                 (categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0)
                                                     ? 'text-green px-1 py-1' 
