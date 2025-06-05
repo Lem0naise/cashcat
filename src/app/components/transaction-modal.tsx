@@ -52,6 +52,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
+    const vendorInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch categories and accounts
     useEffect(() => {
@@ -440,13 +441,19 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 placeholder="0.00"
                                 autoFocus={(transaction === null)}
                                 currencySymbol={true}
+                                onBlur={(transaction === null) ? () => {
+                                    setTimeout(() => {
+                                        vendorInputRef.current?.focus();
+                                    }, 100);
+                                } :  () => {}}
                             />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-1">
                             <div ref={vendorRef} className="relative">
                                 <label className="block text-sm text-white/50 mb-0.5">Vendor</label>
                                 <input
+                                    ref={vendorInputRef}
                                     type="text"
                                     required
                                     value={vendor}
