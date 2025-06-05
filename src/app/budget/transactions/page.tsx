@@ -600,7 +600,7 @@ export default function Transactions() {
                                                             <div className="flex-1 min-w-0 relative group">
                                                                 <div className="flex items-center gap-3">
                                                                     <h4 className="font-medium truncate text-white/90">
-                                                                        {transaction.type === 'starting' ? 'Initial Net Worth' : transaction.vendors?.name || transaction.vendor}
+                                                                        {transaction.type === 'starting' ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
                                                                     </h4>
                                                                     {transaction.accounts && (selectedAccountId === null) && (
                                                                         <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">

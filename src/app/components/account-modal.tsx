@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { useSupabaseClient } from '../hooks/useSupabaseClient';
 import MoneyInput from "./money-input";
+import ConfirmationModal from "./confirmation-modal";
 
 type Account = {
     id: string;
@@ -24,12 +25,24 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+    const [otherAccountsAvailable, setOtherAccountsAvailable] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [startingBalance, setStartingBalance] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         type: 'checking',
     });
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        type: 'delete' | 'close' | 'reopen' | null;
+        account: Account | null;
+        balance?: number;
+    }>({
+        isOpen: false,
+        type: null,
+        account: null,
+    });
+    const [confirmLoading, setConfirmLoading] = useState(false);
     const supabase = useSupabaseClient();
 
     useEffect(() => {
@@ -37,6 +50,12 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             fetchAccounts();
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        // Check if the user has other accounts available (cannot have zero bank accounts open)
+        let openAccounts = accounts.filter(account => (account.is_active));
+        setOtherAccountsAvailable(openAccounts.length > 1);
+    }, [accounts])
 
     const fetchAccounts = async () => {
         try {
@@ -135,24 +154,128 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         setShowForm(true);
     };
 
-    const handleDelete = async (account: Account) => {
-        if (!confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
-            return;
-        }
-
+    const handleBankAccountClose = async (account: Account) => {
+        // Check if account has non-zero balance
         try {
-            const { error } = await supabase
-                .from('accounts')
-                .delete()
-                .eq('id', account.id);
+            const { data: transactions, error: transerror} = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('account_id', account.id);
+            if (transerror) throw transerror;
 
-            if (error) throw error;
-            toast.success('Account deleted successfully');
+            const balance = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+
+            setConfirmModal({
+                isOpen: true,
+                type: 'close',
+                account,
+                balance
+            });
+        }
+        catch (error) {
+            console.log("Error checking account balance:", error);
+            toast.error("Failed to check account balance");
+        }
+    };
+    
+    const handleBankAccountReopen = async (account: Account) => {
+        // Check if account has non-zero balance
+        try {
+            setConfirmModal({
+                isOpen: true,
+                type: 'reopen',
+                account,
+            });
+        }
+        catch (error) {
+            console.log("Error checking account balance:", error);
+            toast.error("Failed to check account balance");
+        }
+    };
+
+    const handleDelete = (account: Account) => {
+        setConfirmModal({
+            isOpen: true,
+            type: 'delete',
+            account
+        });
+    };
+
+    const handleConfirmAction = async () => {
+        if (!confirmModal.account || !confirmModal.type) return;
+
+        setConfirmLoading(true);
+        try {
+            if (confirmModal.type === 'close') {
+                const {error} = await supabase
+                    .from('accounts')
+                    .update({is_active: false})
+                    .eq('id', confirmModal.account.id);
+                if (error) throw error;
+
+                toast.success("Account closed successfully!");
+            } else if (confirmModal.type === 'delete') {
+                const { error } = await supabase
+                    .from('accounts')
+                    .delete()
+                    .eq('id', confirmModal.account.id);
+
+                if (error) throw error;
+                toast.success('Account deleted successfully');
+            } else if (confirmModal.type === 'reopen') {
+                const { error } = await supabase
+                    .from('accounts')
+                    .update({is_active: true})
+                    .eq('id', confirmModal.account.id);
+
+                if (error) throw error;
+                toast.success('Account re-opened successfully');
+            }
+
             fetchAccounts();
             onAccountsUpdated();
+            setConfirmModal({ isOpen: false, type: null, account: null });
+            setShowForm(false);
+            setEditingAccount(null);
         } catch (error) {
-            console.error('Error deleting account:', error);
-            toast.error('Failed to delete account');
+            console.error(`Error ${confirmModal.type}ing account:`, error);
+            toast.error(`Failed to ${confirmModal.type} account`);
+        } finally {
+            setConfirmLoading(false);
+        }
+    };
+
+    const getConfirmationContent = () => {
+        if (!confirmModal.account || !confirmModal.type) return { title: '', message: '', confirmText: '' };
+
+        if (confirmModal.type === 'delete') {
+            return {
+                title: 'Delete Account',
+                message: `This is not a recommended action. We highly recommend 'closing' the account instead. If you delete "${confirmModal.account.name}", this cannot be undone. The account, together with all transactions and balances, will be deleted from your account forever. This will create inconsistencies in past budgeting, and make it overall more difficult to manage your money.`,
+                confirmText: 'Delete',
+            };
+        } else if (confirmModal.type === 'reopen') {
+             return {
+                title: 'Re-open Account',
+                message: `Are you sure you want to re-open "${confirmModal.account.name}"?`,
+                confirmText: 'Reopen',
+            };
+        }
+        else {
+            const hasBalance = confirmModal.balance !== undefined && confirmModal.balance !== 0;
+            let message = `Are you sure you want to close ${confirmModal.account.name}?`;
+            
+            if (hasBalance) {
+                message += `\n\nWarning: This account has a balance of $${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
+            }
+            
+            message += '\n\nYou can reopen the account later if needed.';
+
+            return {
+                title: 'Close Account',
+                message,
+                confirmText: 'Close Account',
+            };
         }
     };
 
@@ -231,6 +354,44 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 />
                             </div>)}
 
+                            {editingAccount && (
+                                <div className="flex gap-3 pt-2">
+                                    
+                                    {editingAccount.is_active && otherAccountsAvailable && (
+                                        <button
+                                        type="button"
+                                        onClick={() => handleBankAccountClose(editingAccount)}
+                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                            >
+                                        Close Account
+                                    </button>)}
+                                    {!editingAccount.is_active && (
+                                        <button
+                                        type="button"
+                                        onClick={() => handleBankAccountReopen(editingAccount)}
+                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                        >
+                                        Re-open Account
+                                    </button>
+                                    )}
+
+                                    {(!editingAccount.is_active || otherAccountsAvailable) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(editingAccount)}
+                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                    >
+                                        Delete Account
+                                    </button>)}
+                                    
+                                </div>
+                            )}
+
+                            {editingAccount?.is_active && !otherAccountsAvailable && (
+                                <p className="text-xs text-white/60 mt-2">You cannot close or delete the only account you have left open.</p>
+                            )}
+                           
+
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
@@ -246,6 +407,8 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     {editingAccount ? 'Update' : 'Create'}
                                 </button>
                             </div>
+
+                            
                         </form>
                     ) : (
                         <div className="space-y-4">
@@ -269,9 +432,14 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                             ) : (
                                 <div className="space-y-2">
                                     {accounts.map((account) => (
-                                        <div key={account.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                        <div key={account.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors
+                                            ${account.is_active} 
+                                                ? 'bg-white/5 hover:bg-white/10'
+                                                : 'bg-white/2 hover:bg-white/5 opacity-60'`}>
                                             <div>
-                                                <h3 className="font-medium">{account.name}</h3>
+                                                <h3 className={`font-medium ${account.is_active ? '' : 'text-white/50'}`}>{account.name} {!account.is_active && (<span className="ml-2 text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
+                                                    CLOSED
+                                                </span>)}</h3>
                                                 <p className="text-sm text-white/60 capitalize">{account.type}</p>
                                             </div>
                                             <div className="flex gap-2">
@@ -282,13 +450,6 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                                 >
                                                     <Image src="/pencil.svg" alt="Edit" width={16} height={16} className="invert" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDelete(account)}
-                                                    className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
-                                                    title="Delete account"
-                                                >
-                                                    <Image src="/trash-can.svg" alt="Delete" width={16} height={16} className="invert" />
-                                                </button>
                                             </div>
                                         </div>
                                     ))}
@@ -298,6 +459,14 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, type: null, account: null })}
+                onConfirm={handleConfirmAction}
+                isLoading={confirmLoading}
+                {...getConfirmationContent()}
+            />
         </div>
     );
 }
