@@ -184,6 +184,7 @@ export default function MoneyInput({
                 {currencySymbol && (<span className={`absolute left-3 top-1/2 -translate-y-1/2 text-3xl text-white/50`}>£</span>)}
                 <input
                     ref={inputRef}
+                    onFocus={handleInputClick}
                     type={isMobile ? "text" : "tel"}
                     inputMode={isMobile ? "none" : "decimal"}
                     readOnly={isMobile}
