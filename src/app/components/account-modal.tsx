@@ -266,7 +266,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
             
             if (hasBalance) {
-                message += `\n\nWarning: This account has a balance of $${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
+                message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
             
             message += '\n\nYou can reopen the account later if needed.';
