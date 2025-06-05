@@ -438,7 +438,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 value={amount}
                                 onChange={(value) => setAmount(value)}
                                 placeholder="0.00"
-                                autoFocus={true}
+                                autoFocus={(transaction === null)}
                                 currencySymbol={true}
                             />
                         </div>
@@ -520,6 +520,19 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 </div>
                             )}
 
+                            
+
+                            <div>
+                                <label className="block text-sm text-white/50 mb-0.5">Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm text-white/50 mb-0.5">Account</label>
                                 <select
@@ -538,17 +551,6 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm text-white/50 mb-0.5">Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                />
                             </div>
 
                             <div>
