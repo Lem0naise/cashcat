@@ -208,6 +208,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                     onBlur={handleInputBlur}
                                     className="bg-white/10 px-2 md:px-3 py-1 md:py-2 xl:text-lg focus:outline-none focus:ring-1 focus:ring-primary p-1 !text-sm"
                                     placeholder="0.00"
+                                    dataCategoryId={forceFlipMassAssign ? name : undefined}
                                 />
                             </div>
                             <span className="text-white/50 text-sm md:text-base">/</span>

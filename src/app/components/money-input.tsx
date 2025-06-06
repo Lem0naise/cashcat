@@ -13,6 +13,7 @@ interface MoneyInputProps {
     className?: string;
     autoFocus?: boolean;
     inputRef?: RefObject<HTMLInputElement | null>;
+    dataCategoryId?: string;
 }
 
 export default function MoneyInput({ 
@@ -23,7 +24,8 @@ export default function MoneyInput({
     className = "",
     currencySymbol = false,
     autoFocus = false,
-    inputRef
+    inputRef,
+    dataCategoryId,
 }: MoneyInputProps) {
     const [showKeypad, setShowKeypad] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -194,6 +196,7 @@ export default function MoneyInput({
                     onClick={handleInputClick}
                     placeholder={placeholder}
                     className={`w-full p-4 ${currencySymbol ? 'pl-8' : ''} text-3xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors ${className}`}
+                    data-category-id={dataCategoryId}
                 />
             </div>
 
