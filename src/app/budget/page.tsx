@@ -885,7 +885,7 @@ export default function Budget() {
                                     Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
-                                } ${isMassAssigning ? 'h-[128px]' : ''}
+                                } ${isMassAssigning ? 'h-[128px] md:h-[128px]' : ''}
                                 `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
@@ -902,7 +902,7 @@ export default function Budget() {
                                     </div>
                                     <button
                                         onClick={massAssign}
-                                        className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green' : 'bg-reddy'} text-background text-sm font-medium hover:bg-green/90 transition-colors`}
+                                        className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green hover:bg-green-dark' : 'bg-reddy hover:bg-old-reddy'} text-background text-sm font-medium transition-colors`}
                                     >
                                         {isMassAssigning ? 'Apply Changes' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
@@ -916,7 +916,7 @@ export default function Budget() {
                                     }`}
                                 >
                                      <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
-                                        <p className="">If you have money left over, assign it into next month's budget! This allows you to plan ahead.</p>
+                                        <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
                                     </div>
                                     <div className= "flex gap-2">
                                         <button
