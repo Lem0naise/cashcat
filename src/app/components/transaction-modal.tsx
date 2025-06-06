@@ -37,6 +37,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [vendor, setVendor] = useState('');
+    const [allVendors, setAllVendors] = useState<Vendor[]>([]);
+    const [loadingVendors, setLoadingVendors] = useState(false);
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [accountId, setAccountId] = useState('');
@@ -56,12 +58,12 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
     // Fetch categories and accounts
     useEffect(() => {
-        const fetchCategoriesAndAccounts = async () => {
+        const fetchCategoriesAndAccountsAndVendors = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
 
-                const [categoriesResponse, accountsResponse] = await Promise.all([
+                const [categoriesResponse, accountsResponse, vendorsResponse] = await Promise.all([
                     supabase
                         .from('categories')
                         .select('*')
@@ -72,14 +74,21 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         .select('id, name, type, is_default')
                         .eq('user_id', user.id)
                         .eq('is_active', true)
+                        .order('name'),
+                    supabase
+                        .from('vendors')
+                        .select('id, name')
+                        .eq('user_id', user.id)
                         .order('name')
                 ]);
                 
                 if (categoriesResponse.error) throw categoriesResponse.error;
                 if (accountsResponse.error) throw accountsResponse.error;
+                if (vendorsResponse.error) throw vendorsResponse.error;
                 
                 setCategories(categoriesResponse.data || []);
                 setAccounts(accountsResponse.data || []);
+                setAllVendors(vendorsResponse.data || []);
                 
                 // Set default account from most recent transaction if creating new transaction
                 if (!transaction && accountsResponse.data.length > 0) {
@@ -95,7 +104,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         };
 
         if (isOpen) {
-            fetchCategoriesAndAccounts();
+            fetchCategoriesAndAccountsAndVendors();
         }
     }, [isOpen, transaction]);
 
@@ -131,7 +140,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Debounced vendor search
+    // Debounced vendor search (now local instead of supabase)
     const searchVendors = useCallback(
         debounce(async (searchTerm: string) => {
             if (!searchTerm.trim()) {
@@ -139,21 +148,16 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 return;
             }
 
-            try {
-                const { data: vendors } = await supabase
-                    .from('vendors')
-                    .select('id, name')
-                    .order('name')
-                    .limit(5)
-                    .filter('name', 'ilike', `${searchTerm}%`);
+            const filtered = allVendors
+                .filter(vendor => 
+                    vendor.name != "Starting Balance" && 
+                    vendor.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+                )
+                .slice(0, 5);
+            setVendorSuggestions(filtered);
 
-                setVendorSuggestions(vendors || []);
-            } catch (error) {
-                console.error('Error searching vendors:', error);
-                setVendorSuggestions([]);
-            }
-        }, 300),
-        [supabase]
+        }, 50),
+        [allVendors]
     );
 
     const handleVendorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
