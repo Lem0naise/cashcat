@@ -61,7 +61,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
 
-                const [categoriesResponse, accountsResponse, recentTransactionResponse] = await Promise.all([
+                const [categoriesResponse, accountsResponse] = await Promise.all([
                     supabase
                         .from('categories')
                         .select('*')
@@ -69,16 +69,10 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         .order('name'),
                     supabase
                         .from('accounts')
-                        .select('id, name, type')
+                        .select('id, name, type, is_default')
                         .eq('user_id', user.id)
                         .eq('is_active', true)
-                        .order('name'),
-                    supabase
-                        .from('transactions')
-                        .select('account_id')
-                        .eq('user_id', user.id)
-                        .order('created_at', { ascending: false })
-                        .limit(1)
+                        .order('name')
                 ]);
                 
                 if (categoriesResponse.error) throw categoriesResponse.error;
@@ -88,8 +82,9 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 setAccounts(accountsResponse.data || []);
                 
                 // Set default account from most recent transaction if creating new transaction
-                if (!transaction && recentTransactionResponse.data && recentTransactionResponse.data.length > 0) {
-                    setAccountId(recentTransactionResponse.data[0].account_id || '');
+                if (!transaction && accountsResponse.data.length > 0) {
+                    const defaultAccount = accountsResponse.data.find(account => account.is_default === true);
+                    setAccountId(defaultAccount?.id || accountsResponse.data[0].id);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -314,7 +309,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         try {
             const { data: transactions, error } = await supabase
                 .from('transactions')
-                .select('category_id')
+                .select('category_id, account_id')
                 .eq('vendor', vendorName)
                 .order('created_at', { ascending: false })
                 .limit(1);
@@ -324,6 +319,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             // If we found a transaction, set its category
             if (transactions && transactions.length > 0) {
                 setCategoryId(transactions[0].category_id);
+                setAccountId(transactions[0].account_id);
             }
         } catch (error) {
             console.error('Error fetching vendor category:', error);
