@@ -37,6 +37,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [vendor, setVendor] = useState('');
+    const [allVendors, setAllVendors] = useState<Vendor[]>([]);
+    const [loadingVendors, setLoadingVendors] = useState(false);
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [accountId, setAccountId] = useState('');
@@ -56,12 +58,12 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
     // Fetch categories and accounts
     useEffect(() => {
-        const fetchCategoriesAndAccounts = async () => {
+        const fetchCategoriesAndAccountsAndVendors = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
 
-                const [categoriesResponse, accountsResponse, recentTransactionResponse] = await Promise.all([
+                const [categoriesResponse, accountsResponse, vendorsResponse] = await Promise.all([
                     supabase
                         .from('categories')
                         .select('*')
@@ -69,27 +71,29 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         .order('name'),
                     supabase
                         .from('accounts')
-                        .select('id, name, type')
+                        .select('id, name, type, is_default')
                         .eq('user_id', user.id)
                         .eq('is_active', true)
                         .order('name'),
                     supabase
-                        .from('transactions')
-                        .select('account_id')
+                        .from('vendors')
+                        .select('id, name')
                         .eq('user_id', user.id)
-                        .order('created_at', { ascending: false })
-                        .limit(1)
+                        .order('name')
                 ]);
                 
                 if (categoriesResponse.error) throw categoriesResponse.error;
                 if (accountsResponse.error) throw accountsResponse.error;
+                if (vendorsResponse.error) throw vendorsResponse.error;
                 
                 setCategories(categoriesResponse.data || []);
                 setAccounts(accountsResponse.data || []);
+                setAllVendors(vendorsResponse.data || []);
                 
                 // Set default account from most recent transaction if creating new transaction
-                if (!transaction && recentTransactionResponse.data && recentTransactionResponse.data.length > 0) {
-                    setAccountId(recentTransactionResponse.data[0].account_id || '');
+                if (!transaction && accountsResponse.data.length > 0) {
+                    const defaultAccount = accountsResponse.data.find(account => account.is_default === true);
+                    setAccountId(defaultAccount?.id || accountsResponse.data[0].id);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -100,7 +104,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         };
 
         if (isOpen) {
-            fetchCategoriesAndAccounts();
+            fetchCategoriesAndAccountsAndVendors();
         }
     }, [isOpen, transaction]);
 
@@ -136,7 +140,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Debounced vendor search
+    // Debounced vendor search (now local instead of supabase)
     const searchVendors = useCallback(
         debounce(async (searchTerm: string) => {
             if (!searchTerm.trim()) {
@@ -144,21 +148,16 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 return;
             }
 
-            try {
-                const { data: vendors } = await supabase
-                    .from('vendors')
-                    .select('id, name')
-                    .order('name')
-                    .limit(5)
-                    .filter('name', 'ilike', `${searchTerm}%`);
+            const filtered = allVendors
+                .filter(vendor => 
+                    vendor.name != "Starting Balance" && 
+                    vendor.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+                )
+                .slice(0, 5);
+            setVendorSuggestions(filtered);
 
-                setVendorSuggestions(vendors || []);
-            } catch (error) {
-                console.error('Error searching vendors:', error);
-                setVendorSuggestions([]);
-            }
-        }, 300),
-        [supabase]
+        }, 50),
+        [allVendors]
     );
 
     const handleVendorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,7 +313,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         try {
             const { data: transactions, error } = await supabase
                 .from('transactions')
-                .select('category_id')
+                .select('category_id, account_id')
                 .eq('vendor', vendorName)
                 .order('created_at', { ascending: false })
                 .limit(1);
@@ -324,6 +323,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             // If we found a transaction, set its category
             if (transactions && transactions.length > 0) {
                 setCategoryId(transactions[0].category_id);
+                setAccountId(transactions[0].account_id);
             }
         } catch (error) {
             console.error('Error fetching vendor category:', error);
@@ -487,7 +487,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
                                         <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        {amount && categoryRemaining && !loadingCategoryRemaining && (
+                                        {amount && categoryRemaining !== null && !loadingCategoryRemaining && (
                                             <span className={`text-xs font-medium ${
                                                 (categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0)
                                                     ? 'text-green px-1 py-1' 

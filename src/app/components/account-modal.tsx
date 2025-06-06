@@ -11,6 +11,7 @@ type Account = {
     name: string;
     type: string;
     is_active: boolean | null;
+    is_default: boolean;
     created_at: string | null;
     user_id: string;
 };
@@ -97,13 +98,17 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 if (error) throw error;
                 toast.success('Account updated successfully');
             } else {
+                // Check if this is the user's first account
+                const isFirstAccount = accounts.length === 0;
+                
                 const { data: newAccount, error } = await supabase
                     .from('accounts')
                     .insert({
                         name: formData.name,
                         type: formData.type,
                         user_id: user.id,
-                        is_active: true
+                        is_active: true,
+                        is_default: isFirstAccount
                     })
                     .select()
                     .single();
@@ -201,6 +206,37 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         });
     };
 
+    const handleSetDefault = async (account: Account) => {
+         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { error: updateAllError} = await supabase
+                .from('accounts')
+                .update({is_default: false})
+                .eq('user_id', user.id);
+
+            if (updateAllError) throw updateAllError;
+
+            if (editingAccount) {
+                const { error: setDefaultError } = await supabase
+                    .from('accounts')
+                    .update({ is_default: true })
+                    .eq('id', editingAccount.id);
+
+                if (setDefaultError) throw setDefaultError;
+                
+                // Update local state
+                setEditingAccount({ ...editingAccount, is_default: true });
+                toast.success('Default account updated successfully');
+            }
+        }
+        catch (error) {
+            console.log("Error setting default account:", error);
+            toast.error("Failed to set default account");
+        }
+    };
+
     const handleConfirmAction = async () => {
         if (!confirmModal.account || !confirmModal.type) return;
 
@@ -250,9 +286,9 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
         if (confirmModal.type === 'delete') {
             return {
-                title: 'Delete Account',
-                message: `This is not a recommended action. We highly recommend 'closing' the account instead. If you delete "${confirmModal.account.name}", this cannot be undone. The account, together with all transactions and balances, will be deleted from your account forever. This will create inconsistencies in past budgeting, and make it overall more difficult to manage your money.`,
-                confirmText: 'Delete',
+                title: '⚠️ Delete Account',
+                message: `⚠️ This is not a recommended action. We highly recommend 'closing' the account instead. If you delete "${confirmModal.account.name}", this cannot be undone. The account, together with all transactions and balances, will be deleted from your account forever. This will create inconsistencies in past budgeting, and make it overall more difficult to manage your money.`,
+                confirmText: 'Delete ⚠️',
             };
         } else if (confirmModal.type === 'reopen') {
              return {
@@ -266,7 +302,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
             
             if (hasBalance) {
-                message += `\n\nWarning: This account has a balance of $${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
+                message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
             
             message += '\n\nYou can reopen the account later if needed.';
@@ -341,6 +377,22 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 </select>
                             </div>
 
+                            {editingAccount !== null && (
+                                <div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetDefault(editingAccount)}
+                                    disabled={editingAccount.is_default}
+                                    className={`w-full p-3 rounded-lg border transition-colors ${
+                                        editingAccount?.is_default
+                                            ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
+                                    }`}
+                                >
+                                      {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}
+                                </button>
+                            </div>)}
+
                             {!editingAccount && (<div>
                                  <label className="block text-sm font-medium text-white/80 mb-2">
                                     Balance Right Now
@@ -357,7 +409,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                             {editingAccount && (
                                 <div className="flex gap-3 pt-2">
                                     
-                                    {editingAccount.is_active && otherAccountsAvailable && (
+                                    {(editingAccount.is_active && otherAccountsAvailable) && !editingAccount.is_default && (
                                         <button
                                         type="button"
                                         onClick={() => handleBankAccountClose(editingAccount)}
@@ -375,7 +427,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     </button>
                                     )}
 
-                                    {(!editingAccount.is_active || otherAccountsAvailable) && (
+                                    {(!editingAccount.is_active || otherAccountsAvailable) && !editingAccount.is_default && (
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(editingAccount)}
@@ -387,8 +439,11 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 </div>
                             )}
 
-                            {editingAccount?.is_active && !otherAccountsAvailable && (
+                            {editingAccount?.is_active && !otherAccountsAvailable && !editingAccount.is_default && (
                                 <p className="text-xs text-white/60 mt-2">You cannot close or delete the only account you have left open.</p>
+                            )}
+                            {editingAccount?.is_default && (
+                                <p className="text-xs text-white/60 mt-2">You cannot close or delete your default account.</p>
                             )}
                            
 
@@ -439,7 +494,11 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                             <div>
                                                 <h3 className={`font-medium ${account.is_active ? '' : 'text-white/50'}`}>{account.name} {!account.is_active && (<span className="ml-2 text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
                                                     CLOSED
+                                                </span>)}
+                                                {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
+                                                    DEFAULT
                                                 </span>)}</h3>
+                                               
                                                 <p className="text-sm text-white/60 capitalize">{account.type}</p>
                                             </div>
                                             <div className="flex gap-2">

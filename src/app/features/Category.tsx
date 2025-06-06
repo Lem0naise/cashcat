@@ -195,10 +195,10 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                     className={`absolute inset-x-0 transition-all duration-300 ${
                         isAssigning 
                         ? 'opacity-100 translate-y-0 delay-150' 
-                        : 'opacity-0 -translate-y-2'
+                        : 'opacity-0 -translate-y-2 pointer-events-none'
                     }`}
                 >
-                    <div className={`flex items-center justify-between mt-0.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
+                    <div className={`pb-10 flex items-center justify-between mt-0.5 md:mt-2.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
                         <div className="flex items-center gap-1 xl:gap-2">
                             <div className="w-16 lg:w-18">
                                 <MoneyInput
@@ -208,6 +208,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                     onBlur={handleInputBlur}
                                     className="bg-white/10 px-2 md:px-3 py-1 md:py-2 xl:text-lg focus:outline-none focus:ring-1 focus:ring-primary p-1 !text-sm"
                                     placeholder="0.00"
+                                    dataCategoryId={forceFlipMassAssign ? name : undefined}
                                 />
                             </div>
                             <span className="text-white/50 text-sm md:text-base">/</span>
@@ -234,8 +235,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             </div>
 
             {/* Progress bar - outside conditional render */}
-            <div className={`-mt-1 relative w-full overflow-hidden transition-[opacity, margin] duration-300 will-change-[opacity, margin] ${isAssigning ? 'opacity-100 mb-1' : 'mb-0'}`}>
-                <div className={`rounded bg-green-dark/20 w-full transition-[height] duration-300 will-change-[height] ${isAssigning ? "h-0" : "h-2 md:h-3"}`}>
+            <div className={`-mt-1 relative w-full overflow-hidden transition-[opacity] duration-300 will-change-[opacity] mb-0 ${isAssigning ? 'opacity-0' : 'opacity-100'}`}>
+                <div className={`rounded bg-green-dark/20 w-full transition-[height, margin] duration-300 will-change-[height, margin] ${isAssigning ? "h-0 mb-2 md:mb-3" : "h-2 md:h-3"}`}>
                     <div 
                         className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
                         style={{width: goal ? `${Math.min(((assigned + rollover) / goal), 1) * 100}%` : '100%'}}
