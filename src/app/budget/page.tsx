@@ -980,13 +980,13 @@ export default function Budget() {
                                         onClick={() => router.push('/learn')}
                                         className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
                                     >
-                                        Learn the Basics
+                                        Learn the Basics First
                                     </button>
                                     <button
                                         onClick={() => setShowAccountModal(true)}
                                         className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
                                     >
-                                        Create Your First Budget
+                                        Let's Create Your Budget!
                                     </button>
                                     
                                 </div>
