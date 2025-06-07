@@ -33,7 +33,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const [isClosing, setIsClosing] = useState(false);
     const [showAddGroup, setShowAddGroup] = useState(false);
     const [showAddCategory, setShowAddCategory] = useState(false);
-
+    const [editingGoalAsString, setEditingGoalAsString] = useState('');
     // Load settings from localStorage on component mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -41,6 +41,11 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             setHideBudgetValues(savedHideBudgetValues);
         }
     }, []);
+
+    const handleEditCategory = (category: Category) => {
+        setEditingCategory(category);
+        setEditingGoalAsString(category.goal?.toFixed(2) || '');
+    }
 
     // Save hide budget values setting to localStorage and update global state
     const toggleHideBudgetValues = () => {
@@ -542,7 +547,8 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                             onChange={(value) => setNewCategoryData({...newCategoryData, goal: value})}
                                                             placeholder="0.00"
                                                             currencySymbol={true}
-                                                            className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                            className="text-lg"
+                                                            inline={true}
                                                         />
                                                     </div>
 
@@ -628,7 +634,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             updateCategory(category.id, {
                                                                                 name: editingCategory.name,
                                                                                 group: editingCategory.group,
-                                                                                goal: editingCategory.goal
+                                                                                goal: parseFloat(editingGoalAsString) || null
                                                                             });
                                                                         }} className="space-y-3">
                                                                             <div className="flex gap-4">
@@ -655,12 +661,14 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             <div className="flex gap-4">
                                                                                 <div className="relative flex-1">
                                                                                     <MoneyInput
-                                                                                        value={editingCategory.goal?.toString() || ''}
-                                                                                        onChange={(value) => setEditingCategory({...editingCategory, goal: parseFloat(value) || null})}
-                                                                                        placeholder="Goal Amount"
+                                                                                        value={editingGoalAsString}
+                                                                                        onChange={(value) => setEditingGoalAsString(value)}
+                                                                                        placeholder="0.00"
                                                                                         currencySymbol={true}
-                                                                                        className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                        className="text-lg"
+                                                                                        inline={true}
                                                                                     />
+                                                                                    
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex justify-end gap-2">
@@ -691,7 +699,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             
                                                                             <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                                                 <button
-                                                                                    onClick={() => setEditingCategory(category)}
+                                                                                    onClick={() => handleEditCategory(category)}
                                                                                     className="p-2 rounded-lg hover:bg-white/[.05] transition-colors text-sm"
                                                                                 >
                                                                                     Edit

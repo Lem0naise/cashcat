@@ -14,6 +14,8 @@ interface MoneyInputProps {
     autoFocus?: boolean;
     inputRef?: RefObject<HTMLInputElement | null>;
     dataCategoryId?: string;
+    canBeNegative?: boolean | false;
+    inline?: boolean | false;
 }
 
 export default function MoneyInput({ 
@@ -26,6 +28,8 @@ export default function MoneyInput({
     autoFocus = false,
     inputRef,
     dataCategoryId,
+    canBeNegative=false,
+    inline=false,
 }: MoneyInputProps) {
     const [showKeypad, setShowKeypad] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -54,7 +58,10 @@ export default function MoneyInput({
 
             const parser = new Parser();
             const result = parser.evaluate(sanitized);
-            return typeof result === 'number' && !isNaN(result) ? Math.max(0, result) : 0;
+            if (typeof result === 'number' && !isNaN(result)){
+                if (canBeNegative) return result;
+                return Math.max(0, result);
+            } else return 0;
         } catch {
             return 0;
         }
@@ -183,7 +190,7 @@ export default function MoneyInput({
     return (
         <>
             <div className="relative">
-                {currencySymbol && (<span className={`absolute left-3 top-1/2 -translate-y-1/2 text-3xl text-white/50`}>£</span>)}
+                {currencySymbol && (<span className={`absolute left-3 top-1/2 -translate-y-1/2 ${inline ? "text-lg" : "text-3xl"} text-white/50`}>£</span>)}
                 <input
                     ref={inputRef}
                     onFocus={handleInputClick}
