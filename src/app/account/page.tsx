@@ -187,18 +187,18 @@ export default function Account() {
                         )}
                         
 
-                        {/* Premium Features */}
+                        {/* Bank Integration (Previously Premium) */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Premium Features</h2>
+                                <h2 className="text-lg font-semibold">Bank Account Integration</h2>
                                 <span className="px-2 py-1 bg-green/20 text-green text-xs rounded-full">Coming Soon</span>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">Get early access to new features and support CashCat's development.</p>
+                            <p className="text-sm text-white/70 mb-4">A small subscription fee may apply to bank integration, to cover our costs. This will support CashCat's development.</p>
                             <button
                                 className="w-full px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
                                 disabled
                             >
-                                Upgrade to Premium
+                                Connect Account
                             </button>
                         </div>
 
