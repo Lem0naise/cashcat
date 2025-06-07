@@ -61,7 +61,7 @@ export default function Landing() {
                        
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                             <button
-                                onClick={() => router.push('/login')}
+                                onClick={() => router.push('/signup')}
                                 className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                             >
                                 Start Budgeting Free
@@ -268,7 +268,7 @@ export default function Landing() {
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <button
-                            onClick={() => router.push('/login')}
+                            onClick={() => router.push('/signup')}
                             className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                         >
                             Get Started Free
