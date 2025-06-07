@@ -10,10 +10,7 @@ export default function About() {
     const [isAnimatingAway, setIsAnimatingAway] = useState(false);
 
     const handleClick = () => {
-        setIsAnimatingAway(true);
-        setTimeout(() => {
-            router.push("/budget");
-        }, 500);
+        router.back();
     };
 
     return (

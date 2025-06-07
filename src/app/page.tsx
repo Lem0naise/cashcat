@@ -291,6 +291,14 @@ export default function Landing() {
                 {/* Footer */}
                 <div className="py-8 text-center text-white/50 text-sm border-t border-white/10">
                     <p>Built with ❤️ for people who want to take control of their money</p>
+                    <div className="flex gap-4 mt-2 justify-center">
+                            <button
+                                onClick={() => router.push('/terms')}
+                                className="text-green hover:text-green-dark transition-colors text-sm underline"
+                            >
+                                Terms of Service & Privacy Policy
+                            </button>
+                    </div>
                 </div>
             </main>
         </div>

@@ -276,8 +276,17 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored. This project is not affiliated with or endorsed by YNAB. "YNAB" is a registered trademark of YouNeedABudget.com. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
+                                For any questions or queries related to privacy or terms of usage of the website, please use the contact form above, or email lemonaise.dev@gmail.com
                             </p>
+
+                            <div className="flex flex-col gap-4 mt-4">
+                                <button
+                                    onClick={() => router.push('/terms')}
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Terms of Service & Privacy Policy
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </main>
