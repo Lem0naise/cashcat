@@ -175,10 +175,10 @@ export default function Account() {
                                             <p className="text-sm text-white/70 mb-3">
                                                 You can install CashCat as an app for quick access:
                                             </p>
-                                            <ul className="text-sm text-white/70 mb-3 space-y-1">
-                                                <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
-                                                <li>• <strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li>• <strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
+                                            <ul className="text-sm text-white/70 mb-3 space-y-1 list-disc list-inside">
+                                                <li><strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
+                                                <li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
+                                                <li><strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
                                             </ul>
                                         </>
                                     )}
@@ -205,9 +205,11 @@ export default function Account() {
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your budget settings, click the Manage button on the Budget page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your bank accounts, click the account selector on on the Transactions page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>&gt; To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
+                            <ul className="text-sm text-white/70 list-disc list-inside mb-4">
+                                <li>To manage your budget settings, click the Manage button on the Budget page.</li>
+                                <li>To manage your bank accounts, click the account selector on on the Transactions page.</li>
+                            </ul>
+                     
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
@@ -259,14 +261,15 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.5.3</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.5.5</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>Support for multiple bank accounts!</li>
                                     <li>A faster vendor autocomplete</li>
-                                    <li>A new notes and reminders section</li>
+                                    <li>A new terms of service and privacy policy</li>
                                     <li>A 'compare with bank' feature</li>
                                     <li>Routine bug fixes as always</li>
+                
                                 </ul>
                             </div>
                         </div>

@@ -300,11 +300,11 @@ export default function BankCompareModal({
 
                                     <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
                                         <h4 className="font-medium text-blue mb-2">How this works:</h4>
-                                        <ul className="text-sm text-white/70 space-y-1">
-                                            <li>• Enter your current bank account balance</li>
-                                            <li>• We'll compare it with your CashCat balance</li>
-                                            <li>• If they don't match, we'll help you find the issue</li>
-                                            <li>• You can edit transactions or add a correction</li>
+                                        <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
+                                            <li>Enter your current bank account balance</li>
+                                            <li>We'll compare it with your CashCat balance</li>
+                                            <li>If they don't match, we'll help you find the issue</li>
+                                            <li>You can edit transactions or add a correction</li>
                                         </ul>
                                     </div>
                                 </div>
