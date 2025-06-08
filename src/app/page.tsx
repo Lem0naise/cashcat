@@ -222,7 +222,7 @@ export default function Landing() {
                                     "Is CashCat really free? What's the catch?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Yes! With one small exception - automatic syncing with your bank account. Every core budgeting feature is completely free. However, if we want to add automatic bank syncing, we estimate this will cost us a lot! We just need to cover our costs - we may implement a small subscription fee for users who wish to use this feature.
+                                    Yes! With one small exception - automatic syncing with your bank account. Every core budgeting feature is completely free. However, if we want to add automatic bank syncing, we have to pay the banks a lot! We just need to cover our costs - we may implement a small subscription fee for users who wish to use this feature.
                                 </p>
                             </div>
                             
