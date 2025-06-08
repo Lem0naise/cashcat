@@ -77,7 +77,7 @@ export default function Landing() {
                 </div>
 
                 {/* Key Features Section */}
-                <div id='features' className="py-16 max-w-6xl mx-auto">
+                <div id='features' className="py-16 max-w-6xl mx-auto leading-4.5 md:leading-6">
                     <h3 className="text-3xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
                         Why Choose CashCat?
                     </h3>
@@ -93,7 +93,7 @@ export default function Landing() {
                                 </div>
                                 <h4 className="text-xl font-semibold mb-3 text-green">Free Forever</h4>
                             </div>
-                            <p className="text-white/70">
+                            <p className="text-white/70 ">
                                 No hidden fees, no free trial. CashCat is built to be accessible to everyone who wants better financial control.
                                 <span className="text-sm block mt-1 text-white/60">*Core budgeting features always free, small fees may apply to optional external bank integration</span>
 
