@@ -13,7 +13,7 @@ import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
 import AccountModal from '../components/account-modal';
-
+import Link from 'next/link';
 
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
@@ -976,12 +976,12 @@ export default function Budget() {
                                     </ul>
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <button
-                                        onClick={() => router.push('/learn')}
+                                    <Link
+                                        href="/learn"
                                         className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
                                     >
                                         Learn the Basics First
-                                    </button>
+                                    </Link>
                                     <button
                                         onClick={() => setShowAccountModal(true)}
                                         className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"

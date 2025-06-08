@@ -157,12 +157,14 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}
-                            {Math.round(rollover * 100) != 0 &&(
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of {' '}
+                            {Math.round(rollover * 100) != 0 ? (
                                 <>
-                                    {Math.round(rollover*100) > 0 ? " +" : ''} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>{Math.round(rollover*100) > 0 ? "" : ""}
+                                    <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>
+                                    {assigned != 0 && (<span className="text-white/50"> {assigned > 0 ? '+' : ' minus '} </span>)}
                                 </>
-                            )}</span> 
+                            ) : null}
+                            {assigned != 0 && (<span className="text-green font-medium">{formatCurrency(assigned)}</span>)}
                         </span>
                         <span>
                             {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
@@ -218,17 +220,39 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             {/* Progress bar - outside conditional render */}
             <div className={`-mt-1 relative w-full overflow-hidden transition-[opacity] duration-300 will-change-[opacity] mb-0 ${isAssigning ? 'opacity-0' : 'opacity-100'}`}>
                 <div className={`rounded bg-green-dark/20 w-full transition-[height, margin] duration-300 will-change-[height, margin] ${isAssigning ? "h-0 mb-2 md:mb-3" : "h-2 md:h-3"}`}>
-                    <div 
-                        className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
-                        style={{width: goal ? `${Math.min(((assigned + rollover) / goal), 1) * 100}%` : '100%'}}
-                    />
+                    {/* Main progress bar - only show positive progress */}
+                    {(assigned + rollover) > 0 && (
+                        <div 
+                            className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
+                            style={{
+                                width: goal > 0 
+                                    ? `${Math.max(Math.min(((assigned + rollover) / goal), 1), 0) * 100}%` 
+                                    : '100%'
+                            }}
+                        />
+                    )}
+
+                    {/* Negative indicator - show red bar from left when assigned is negative */}
+                    {(assigned + rollover) < 0 && goal > 0 && (
+                        <div 
+                            className="rounded h-full bg-reddy/60 will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
+                            style={{
+                                width: `${Math.min(Math.abs((assigned + rollover) / goal), 1) * 100}%`,
+                                backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.2) 3px, rgba(255,255,255,0.2) 6px)'
+                            }}
+                        />
+                    )}
+
+                    {/* Spent overlay - adjusted for negative values */}
                     {spent > 0 && (
                         <div 
                             className={`rounded h-full will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0 ${
                                 displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
                             }`}
                             style={{
-                                width: goal ? `${Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1) * 100}%` : '0%',
+                                width: goal 
+                                ? `${Math.max(Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1), 0) * 100}%` 
+                                : '0%', // don't use a spent bar if there is no 'goal'
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />
