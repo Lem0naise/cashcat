@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MoneyInput from '../components/money-input';
-import { Parser} from 'expr-eval';
 
 interface CategoryProps {
     name: string;
@@ -94,7 +93,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         if (!onAssignmentUpdate) return;
         try {
             setIsUpdating(true);
-            await onAssignmentUpdate(Number(editedAmount));
+            await onAssignmentUpdate(parseFloat(editedAmount));
             if (!forceFlipMassAssign) {
                 setIsAssigning(false);
             }
@@ -117,25 +116,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         setEditedAmount(value);
     }, []);
 
-    const handleInputBlur = useCallback(() => {
-        if (editedAmount !== '') {
-            try {
-                // Only allow numbers, +, -, *, /, ., and parentheses
-                const sanitized = editedAmount.replace(/[^0-9+\-*/.()]/g, '');
-                if (!sanitized) {
-                    setEditedAmount('0.00');
-                    return;
-                }
-                
-                const parser = new Parser();
-                const result = parser.evaluate(sanitized);
-                const finalAmount = typeof result === 'number' && !isNaN(result) ? Math.max(0, result) : 0;
-                setEditedAmount(finalAmount.toFixed(2));
-            } catch {
-                setEditedAmount('0.00');
-            }
-        }
-    }, [editedAmount]);
+
 
     // Helper function to format currency or return asterisks
     const formatCurrency = (amount: number) => {
@@ -205,7 +186,6 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                     inputRef={inputRef}
                                     value={hideBudgetValues ? '****' : editedAmount}
                                     onChange={handleInputChange}
-                                    onBlur={handleInputBlur}
                                     className="bg-white/10 px-2 md:px-3 py-1 md:py-2 xl:text-lg focus:outline-none focus:ring-1 focus:ring-primary p-1 !text-sm"
                                     placeholder="0.00"
                                     dataCategoryId={forceFlipMassAssign ? name : undefined}

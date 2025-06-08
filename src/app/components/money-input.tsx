@@ -164,9 +164,10 @@ export default function MoneyInput({
     };
 
     const handleNativeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const inputValue = e.target.value.replace(/[^\d.\-+*/]/g, '');
+        const inputValue = e.target.value.replace(/[^0-9+\-*/.()]/g, '');
+        
         // Allow multiple decimal points for mathematical expressions
-        if (inputValue === '' || /^[0-9+\-*/.]*$/.test(inputValue)) {
+        if (inputValue === '' || /^[0-9+\-*/.()]*$/.test(inputValue)) {
             onChange(inputValue);
             setShouldReplaceValue(false);
         }
