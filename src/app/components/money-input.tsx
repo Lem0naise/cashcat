@@ -203,7 +203,7 @@ export default function MoneyInput({
                     onBlur={handleNativeBlur}
                     onClick={handleInputClick}
                     placeholder={placeholder}
-                    className={`w-full p-4 ${currencySymbol ? 'pl-8' : ''} text-3xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors ${className}`}
+                    className={`w-full p-4 ${currencySymbol ? 'pl-8' : ''} text-3xl rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors touch-manipulation ${className}`}
                     data-category-id={dataCategoryId}
                 />
             </div>

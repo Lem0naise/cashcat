@@ -126,7 +126,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
 
     return (
         <div 
-            className={`relative p-2 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
+            className={`relative p-2 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all touch-manipulation ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
             onClick={!isAssigning ? handleCardClick : undefined}
         >
             <div className="flex justify-between items-start">

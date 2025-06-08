@@ -65,6 +65,19 @@ body {
   }
 }
 
+/* Prevent double tap zoom on interactive input buttons */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+button,
+input[type="text"], 
+input[type="tel"],
+input[type="number"],
+a,
+select {
+  touch-action: manipulation;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
