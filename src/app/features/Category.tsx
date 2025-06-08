@@ -157,12 +157,14 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned)}
-                            {Math.round(rollover * 100) != 0 &&(
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of {' '}
+                            {Math.round(rollover * 100) != 0 ? (
                                 <>
-                                    {Math.round(rollover*100) > 0 ? " +" : ''} <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>{Math.round(rollover*100) > 0 ? "" : ""}
+                                    <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>
+                                    {assigned != 0 && (<span className="text-white/50"> {assigned > 0 ? '+' : ' minus '} </span>)}
                                 </>
-                            )}</span> 
+                            ) : null}
+                            {assigned != 0 && (<span className="text-green font-medium">{formatCurrency(assigned)}</span>)}
                         </span>
                         <span>
                             {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
