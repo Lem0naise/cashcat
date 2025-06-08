@@ -211,12 +211,12 @@ export default function MoneyInput({
             {/* Custom Mobile Keypad - Rendered as Portal */}
             {isMobile && showKeypad && typeof window !== 'undefined' && createPortal(
                 <div 
-                    className="iphone-padding fixed inset-0 bg-black/80 z-[9999] flex flex-col justify-end"
+                    className="fixed inset-0 bg-black/80 z-[9999] flex flex-col justify-end"
                     onClick={handleBackdropClick}
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, fontFamily:'var(--font-suse'}}
                 >
                     <div 
-                        className="bg-black/[.90] border-t border-white/[.15] p-3 rounded-t-xl"
+                        className="iphone-padding bg-black/[.90] border-t border-white/[.15] p-3 rounded-t-xl"
                         style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
                     >
                         {/* Display */}
