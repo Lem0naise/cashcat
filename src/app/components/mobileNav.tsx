@@ -20,7 +20,7 @@ export default function MobileNav() {
                 <div className="w-full grid grid-cols-5 px-2">
                     <Link
                         href="/budget"
-                        className={`flex flex-col items-center justify-center transition-all ${
+                        className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/budget') 
                             ? 'text-green' 
                             : 'text-white/60'
@@ -48,7 +48,7 @@ export default function MobileNav() {
 
                       <Link
                         href="/stats"
-                        className={`flex flex-col items-center justify-center transition-all ${
+                        className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/stats') 
                             ? 'text-green' 
                             : 'text-white/60'
@@ -78,7 +78,7 @@ export default function MobileNav() {
 
                     <Link
                         href="/budget/transactions"
-                        className={`flex flex-col items-center justify-center transition-all ${
+                        className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/budget/transactions') 
                             ? 'text-green' 
                             : 'text-white/60'
@@ -107,7 +107,7 @@ export default function MobileNav() {
                       
                     <Link
                         href="/account"
-                        className={`flex flex-col items-center justify-center transition-all ${
+                        className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/account') 
                             ? 'text-green' 
                             : 'text-white/60'
@@ -138,7 +138,7 @@ export default function MobileNav() {
                 <div className="absolute left-1/2 -translate-x-1/2 -top-6">
                     <button
                         onClick={handleAddClick}
-                        className="flex flex-col items-center"
+                        className="flex flex-col items-center touch-manipulation"
                     >
                         <div className="p-4 rounded-full bg-green text-background shadow-lg">
                             <Image

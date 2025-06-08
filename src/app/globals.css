@@ -57,16 +57,27 @@ body {
 }
 
 @media screen and (max-width: 430px) {
-
-  .iphone-padding-container {
+ .iphone-padding-container {
     height: calc(64px + env(safe-area-inset-bottom));
   }
   .iphone-padding {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
 }
 
+/* Prevent double tap zoom on interactive input buttons */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+button,
+input[type="text"], 
+input[type="tel"],
+input[type="number"],
+a,
+select {
+  touch-action: manipulation;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;

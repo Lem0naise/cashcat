@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
+export function generateViewport() {
+  return {
+     width: 'device-width',
+     initialScale: 1,
+     viewportFit: 'cover',
+  }
+}
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,8 +39,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicons/cashcatfavicon128.ico?v=2" sizes="128x128" />
         <link rel="icon" href="/favicons/cashcatfavicon256.ico?v=2" sizes="256x256" />
         <link rel="apple-touch-icon" href="/favicons/cashcatpwa512.png?v=2" />
-        <meta name="theme-color" content="#0a0a0a" />
-        <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'/>
+        <meta name="theme-color" content="#0a0a0a" />  
       </head>
       <body
         className={`${USEFont.variable} antialiased`}

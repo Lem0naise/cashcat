@@ -591,7 +591,7 @@ export default function Transactions() {
                                                     {group.transactions.map((transaction) => (
                                                         <div key={transaction.id} 
                                                             onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setShowModal(true)) : null}
-                                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
+                                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation ${
                                                                 transaction.type === 'starting' 
                                                                 ? 'bg-white/[.02] cursor-default' 
                                                                 : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'

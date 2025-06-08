@@ -175,10 +175,10 @@ export default function Account() {
                                             <p className="text-sm text-white/70 mb-3">
                                                 You can install CashCat as an app for quick access:
                                             </p>
-                                            <ul className="text-sm text-white/70 mb-3 space-y-1">
-                                                <li>• <strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
-                                                <li>• <strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li>• <strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
+                                            <ul className="text-sm text-white/70 mb-3 space-y-1 list-disc list-inside">
+                                                <li><strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
+                                                <li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
+                                                <li><strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
                                             </ul>
                                         </>
                                     )}
@@ -187,27 +187,29 @@ export default function Account() {
                         )}
                         
 
-                        {/* Premium Features */}
+                        {/* Bank Integration (Previously Premium) */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Premium Features</h2>
+                                <h2 className="text-lg font-semibold">Bank Account Integration</h2>
                                 <span className="px-2 py-1 bg-green/20 text-green text-xs rounded-full">Coming Soon</span>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">Get early access to new features and support CashCat's development.</p>
+                            <p className="text-sm text-white/70 mb-4">A small subscription fee may apply to bank integration, to cover our costs. This will support CashCat's development.</p>
                             <button
                                 className="w-full px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
                                 disabled
                             >
-                                Upgrade to Premium
+                                Connect Account
                             </button>
                         </div>
 
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your budget settings, click the Manage button on the Budget page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70"><p>&gt; To manage your bank accounts, click the account selector on on the Transactions page.</p></div>
-                            <div className="flex flex-col gap-4 text-sm text-white/70 mb-5"><p>&gt; To view the budgeting instructions on the landing page again, click the Learn button below.</p></div>
+                            <ul className="text-sm text-white/70 list-disc list-inside mb-4">
+                                <li>To manage your budget settings, click the Manage button on the Budget page.</li>
+                                <li>To manage your bank accounts, click the account selector on on the Transactions page.</li>
+                            </ul>
+                     
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => router.push('/learn')}
@@ -259,14 +261,15 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.5.3</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.5.5</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>Support for multiple bank accounts!</li>
                                     <li>A faster vendor autocomplete</li>
-                                    <li>A new notes and reminders section</li>
+                                    <li>A new terms of service and privacy policy</li>
                                     <li>A 'compare with bank' feature</li>
                                     <li>Routine bug fixes as always</li>
+                
                                 </ul>
                             </div>
                         </div>
@@ -276,8 +279,17 @@ export default function Account() {
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <h2 className="text-lg font-semibold mb-4">Privacy</h2>
                             <p className="text-sm text-white/70">
-                                Your data is securely stored. This project is not affiliated with or endorsed by YNAB. "YNAB" is a registered trademark of YouNeedABudget.com. If you are an early-access tester and wish to provide feedback or delete your account, please use the form provided above or get in touch with a member of the team at lemonaise.dev@gmail.com
+                                For any questions or queries related to privacy or terms of usage of the website, please use the contact form above, or email lemonaise.dev@gmail.com
                             </p>
+
+                            <div className="flex flex-col gap-4 mt-4">
+                                <button
+                                    onClick={() => router.push('/terms')}
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Terms of Service & Privacy Policy
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </main>
