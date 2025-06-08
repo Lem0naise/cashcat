@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Logo from "../components/logo";
+import Link from 'next/link';
 
 
 export default function About() {
@@ -126,12 +127,12 @@ export default function About() {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={() => router.push('/learn')}
+                        <Link
+                            href="/learn"
                             className="px-6 py-3 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-base"
                         >
                             Learn How CashCat Works
-                        </button>
+                        </Link>
                         <button
                             onClick={handleClick}
                             className="px-6 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-base"

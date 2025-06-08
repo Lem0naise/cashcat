@@ -10,6 +10,7 @@ import FeedbackModal from "../components/feedback-modal";
 import DeleteAccountModal from "../components/delete-account-modal";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
+import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 
 export default function Account() {
@@ -211,18 +212,18 @@ export default function Account() {
                             </ul>
                      
                             <div className="flex flex-col gap-4">
-                                <button
-                                    onClick={() => router.push('/learn')}
+                                <Link
+                                    href="/learn"
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
                                     Learn to Budget
-                                </button>
-                                <button
-                                    onClick={() => router.push('/about')}
+                                </Link>
+                                <Link
+                                    href="/about"
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
                                     Meet the Team
-                                </button>
+                                </Link>
                                 <button
                                     onClick={() => setShowFeedbackModal(true)}
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
@@ -283,12 +284,12 @@ export default function Account() {
                             </p>
 
                             <div className="flex flex-col gap-4 mt-4">
-                                <button
-                                    onClick={() => router.push('/terms')}
+                                <Link
+                                    href="/terms"
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
                                     Terms of Service & Privacy Policy
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>

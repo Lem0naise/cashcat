@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Logo from './components/logo';
 import { useSupabase } from './contexts/supabase-provider';
-
+import Link from 'next/link';
 
 export default function Landing() {
     const router = useRouter();
@@ -60,12 +60,12 @@ export default function Landing() {
                         </div>
                        
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <button
-                                onClick={() => router.push('/signup')}
+                            <Link
+                                href="/signup"
                                 className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                             >
                                 Start Budgeting Free
-                            </button>
+                            </Link>
                             <button
                                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20"
@@ -267,24 +267,24 @@ export default function Landing() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={() => router.push('/signup')}
+                        <Link
+                            href="/signup"
                             className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                         >
                             Get Started Free
-                        </button>
-                        <button
-                            onClick={() => router.push('/about')}
+                        </Link>
+                        <Link
+                            href="/about"
                             className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
                         >
                             Meet the Team
-                        </button>
-                         <button
-                            onClick={() => router.push('/learn')}
+                        </Link>
+                         <Link
+                            href="/learn"
                             className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
                         >
                             A More Detailed How-To
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -292,12 +292,12 @@ export default function Landing() {
                 <div className="py-8 text-center text-white/50 text-sm border-t border-white/10">
                     <p>Built with ❤️ for people who want to take control of their money</p>
                     <div className="flex gap-4 mt-2 justify-center">
-                            <button
-                                onClick={() => router.push('/terms')}
+                            <Link
+                                href="/terms"
                                 className="text-green hover:text-green-dark transition-colors text-sm underline"
                             >
                                 Terms of Service & Privacy Policy
-                            </button>
+                            </Link>
                     </div>
                 </div>
             </main>
