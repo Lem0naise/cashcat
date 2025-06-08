@@ -49,19 +49,19 @@ body {
 @supports (-webkit-touch-callout: none) {
  
   .iphone-padding-container {
-    height: 74px;
+    height: calc(64px + env(safe-area-inset-bottom));
   }
   .iphone-padding {
-    padding-bottom: 10px;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
 @media screen and (max-width: 430px) {
  .iphone-padding-container {
-    height: 74px;
+    height: calc(64px + env(safe-area-inset-bottom));
   }
   .iphone-padding {
-    padding-bottom: 10px;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
