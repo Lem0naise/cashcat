@@ -264,7 +264,52 @@ export default function Landing() {
                                 </p>
                             </div>
                         </div>
+                        <h4 className="text-2xl font-semibold mb-4 mt-8 md:mt-16 text-green">Coming Soon</h4>
+                        <div className="grid gap-4 text-left md:justify-center">
+                            
+                            <div className="flex items-start gap-3">
+                                <div className="w-2 h-2 bg-green rounded-full mt-2 flex-shrink-0"></div>
+                                <div>
+                                    <p className="text-white font-medium">Spending Analytics</p>
+                                    <p className="text-white/60 text-sm">Visual charts and spending insights over time</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="w-2 h-2 bg-green rounded-full mt-2 flex-shrink-0"></div>
+                                <div>
+                                    <p className="text-white font-medium">CSV Imports and Exports</p>
+                                    <p className="text-white/60 text-sm">Importing and exporting transactions (e.g. from bank statements)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
+                                <div>
+                                    <p className="text-white font-medium">Bank Integration</p>
+                                    <p className="text-white/60 text-sm">Optional automatic transaction syncing (for a small subscription fee)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
+                                <div>
+                                    <p className="text-white font-medium">Shared Budgets</p>
+                                    <p className="text-white/60 text-sm">Share your budgets with friends, family, or roommates!</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
+                                <div>
+                                    <p className="text-white font-medium">Native Mobile App</p>
+                                    <p className="text-white/60 text-sm">Budget on-the-go with native iOS and Android apps (don't worry, the webapp works perfectly on mobile!)</p>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <p className="text-white/50 text-xs mt-4 text-center">
+                            <span className="inline-block w-2 h-2 bg-green rounded-full mr-1"></span>High priority features
+                            <span className="inline-block w-2 h-2 bg-green/60 rounded-full mr-1 ml-4"></span>On the roadmap
+                        </p>
                     </div>
+
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
