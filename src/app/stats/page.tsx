@@ -1,10 +1,10 @@
 'use client';
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
-import BudgetAssignmentChart from '../components/budget-assignment-chart';
+import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
 import ChartControls from '../components/chart-controls';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
@@ -83,21 +83,25 @@ export default function Stats() {
     }, [fetchData]);
 
     // Get available groups for filtering
-    // Fix: Calculate availableGroups and availableCategories using group name from joined groups
-    const categoriesWithGroupNames = categories.map(cat => ({
-        ...cat,
-        groupName: (cat as any).groups?.name || cat.group || 'Uncategorized',
-    }));
-    const availableGroups = Array.from(new Set(
-        categoriesWithGroupNames.map(cat => cat.groupName)
-    )).sort();
+    // Memoize expensive calculations to prevent re-computation on every render
+    const categoriesWithGroupNames = useMemo(() => 
+        categories.map(cat => ({
+            ...cat,
+            groupName: (cat as any).groups?.name || cat.group || 'Uncategorized',
+        })), [categories]);
+    
+    const availableGroups = useMemo(() => 
+        Array.from(new Set(
+            categoriesWithGroupNames.map(cat => cat.groupName)
+        )).sort(), [categoriesWithGroupNames]);
 
     // Get available categories for filtering
-    const availableCategories = categoriesWithGroupNames.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        group: cat.groupName
-    }));
+    const availableCategories = useMemo(() => 
+        categoriesWithGroupNames.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            group: cat.groupName
+        })), [categoriesWithGroupNames]);
 
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
