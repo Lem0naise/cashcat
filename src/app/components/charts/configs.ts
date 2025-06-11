@@ -22,7 +22,8 @@ export const useLineChartConfig = (
   distanceFromGoalData: DistanceFromGoalData,
   filteredCategoriesWithGoals: Category[],
   selectedCategories: string[],
-  xUnit: 'day' | 'week' | 'month'
+  xUnit: 'day' | 'week' | 'month',
+  comparisonData: any // Add comparison data parameter
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -59,7 +60,8 @@ export const useLineChartConfig = (
             chartData,
             selectedCategories,
             shouldShowDistanceFromGoal,
-            distanceFromGoalData
+            distanceFromGoalData,
+            comparisonData
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {

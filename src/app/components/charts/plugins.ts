@@ -43,16 +43,6 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         return;
       }
       
-      // Debug the data point structure to understand why getPixelForValue returns NaN
-      console.log('Raw data points:', { 
-        startPoint: Object.assign({}, startPoint), 
-        endPoint: Object.assign({}, endPoint),
-        startPointX: startPoint.x,
-        endPointX: endPoint.x,
-        startPointXType: typeof startPoint.x,
-        endPointXType: typeof endPoint.x
-      });
-      
       // Convert string dates to Date objects for Chart.js time scale
       const startDate = new Date(startPoint.x);
       const endDate = new Date(endPoint.x);
@@ -61,19 +51,8 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       const startX = scales.x.getPixelForValue(startDate.getTime());
       const endX = scales.x.getPixelForValue(endDate.getTime());
       
-      console.log('Pixel calculation:', { 
-        startDate: startDate.toISOString(), 
-        endDate: endDate.toISOString(), 
-        startTimestamp: startDate.getTime(),
-        endTimestamp: endDate.getTime(),
-        startX, 
-        endX,
-        scaleType: scales.x.type
-      });
-      
       // Check if we got valid pixel positions
       if (isNaN(startX) || isNaN(endX)) {
-        console.warn('Invalid pixel positions, skipping draw');
         ctx.restore();
         return;
       }
@@ -102,28 +81,39 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       const shouldDrawShadedArea = selectedCategories.length <= 1;
       
       if (shouldDrawShadedArea) {
-        // Determine color based on value change
+        // Use the same logic as the ComparisonAnalysis component for color determination
         let isPositiveChange = false;
         
-        if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
-          // For goal tracking, use the first dataset's values
-          const dataset = distanceFromGoalData.datasets[0];
-          const startValue = dataset.data[startIdx]?.y;
-          const endValue = dataset.data[endIdx]?.y;
-          if (startValue !== undefined && endValue !== undefined) {
+        try {
+          // Calculate color directly from data points for immediate and accurate feedback
+          // This ensures we match exactly what the comparison analysis will calculate
+          
+          if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
+            // For goal tracking, use the first dataset's values
+            const dataset = distanceFromGoalData.datasets[0];
+            const startValue = dataset.data[startIdx]?.y;
+            const endValue = dataset.data[endIdx]?.y;
+            if (startValue !== undefined && endValue !== undefined) {
+              // For distance from goal: positive change = getting closer to goal (green)
+              isPositiveChange = endValue >= startValue;
+            }
+          } else {
+            // For balance tracking, use the chart data points
+            const startValue = startPoint.y;
+            const endValue = endPoint.y;
+            // For balance: positive change = balance increased (green)
             isPositiveChange = endValue >= startValue;
           }
-        } else {
-          // For balance tracking
-          const startValue = startPoint.y;
-          const endValue = endPoint.y;
-          isPositiveChange = endValue >= startValue;
+        } catch (error) {
+          // If there's an error, default to positive
+          isPositiveChange = true;
         }
         
-        // Set fill color based on change direction
+        // Set fill color based on change direction - use exact same colors as ComparisonAnalysis
+        // text-green = #bac2ff (light blue), text-reddy = #f2602f (orange-red)
         ctx.fillStyle = isPositiveChange 
-          ? 'rgba(0, 255, 0, 0.15)' 
-          : 'rgba(255, 100, 0, 0.15)';
+          ? 'rgba(186, 194, 255, 0.15)'  // Light blue with transparency (matches text-green)
+          : 'rgba(242, 96, 47, 0.15)';   // Orange-red with transparency (matches text-reddy)
         
         ctx.fillRect(leftX, top, rightX - leftX, bottom - top);
       }

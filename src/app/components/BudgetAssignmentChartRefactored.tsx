@@ -244,7 +244,8 @@ export default function BudgetAssignmentChart({
     distanceFromGoalData,
     filteredCategoriesWithGoals,
     selectedCategories,
-    xUnit
+    xUnit,
+    comparisonData
   );
 
   const volumeChartConfig = useVolumeChartConfig(
