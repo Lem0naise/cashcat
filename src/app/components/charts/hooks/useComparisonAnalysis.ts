@@ -72,7 +72,26 @@ export const useComparisonAnalysis = (
         if (isNaN(endValue) || !isFinite(endValue)) endValue = 0;
         
         absoluteChange = endValue - startValue;
-        percentageChange = startValue !== 0 ? (absoluteChange / startValue) * 100 : 0;
+        
+        // For distance from goal, calculate percentage based on goal amount, not distance value
+        // This provides a more meaningful percentage that represents improvement/deterioration
+        if (datasets.length === 1 && selectedCategories.length === 1) {
+          // Single category - get the goal amount for meaningful percentage
+          const categoryId = selectedCategories[0];
+          const category = categoriesMap.get(categoryId);
+          const goalAmount = category?.goal || 0;
+          
+          if (goalAmount > 0) {
+            // Calculate percentage as change relative to the goal amount
+            percentageChange = (absoluteChange / goalAmount) * 100;
+          } else {
+            // No goal set, use traditional percentage calculation
+            percentageChange = startValue !== 0 ? (absoluteChange / Math.abs(startValue)) * 100 : 0;
+          }
+        } else {
+          // Multiple categories or other scenarios - use traditional calculation with absolute values
+          percentageChange = startValue !== 0 ? (absoluteChange / Math.abs(startValue)) * 100 : 0;
+        }
         
         // Validate calculated values
         if (isNaN(absoluteChange) || !isFinite(absoluteChange)) absoluteChange = 0;
@@ -93,7 +112,18 @@ export const useComparisonAnalysis = (
               if (isNaN(catEndValue) || !isFinite(catEndValue)) catEndValue = 0;
               
               const catAbsoluteChange = catEndValue - catStartValue;
-              const catPercentageChange = catStartValue !== 0 ? (catAbsoluteChange / catStartValue) * 100 : 0;
+              
+              // For distance from goal, calculate percentage based on goal amount
+              let catPercentageChange: number;
+              const goalAmount = category.goal || 0;
+              
+              if (goalAmount > 0) {
+                // Calculate percentage as change relative to the goal amount
+                catPercentageChange = (catAbsoluteChange / goalAmount) * 100;
+              } else {
+                // No goal set, use traditional percentage calculation with absolute values
+                catPercentageChange = catStartValue !== 0 ? (catAbsoluteChange / Math.abs(catStartValue)) * 100 : 0;
+              }
               
               categoryBreakdown.push({
                 categoryId,
