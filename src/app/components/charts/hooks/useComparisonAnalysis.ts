@@ -82,8 +82,28 @@ export const useComparisonAnalysis = (
           const goalAmount = category?.goal || 0;
           
           if (goalAmount > 0) {
-            // Calculate percentage as change relative to the goal amount
-            percentageChange = (absoluteChange / goalAmount) * 100;
+            // For distance-from-goal, calculate percentage change relative to the starting distance
+            // This gives a more intuitive percentage (e.g., "50% closer to goal" rather than "1000% of goal amount")
+            if (startValue !== 0) {
+              percentageChange = (absoluteChange / Math.abs(startValue)) * 100;
+            } else {
+              // If starting from goal (distance = 0), calculate relative to goal amount
+              percentageChange = (absoluteChange / goalAmount) * 100;
+            }
+            
+            // Debug logging for troubleshooting extreme percentages
+            if (Math.abs(percentageChange) > 500) {
+              console.log('High percentage detected:', {
+                categoryId,
+                categoryName: category?.name,
+                goalAmount,
+                absoluteChange,
+                startValue,
+                endValue,
+                percentageChange,
+                calculationMethod: startValue !== 0 ? 'relative to starting distance' : 'relative to goal amount'
+              });
+            }
           } else {
             // No goal set, use traditional percentage calculation
             percentageChange = startValue !== 0 ? (absoluteChange / Math.abs(startValue)) * 100 : 0;
@@ -113,13 +133,18 @@ export const useComparisonAnalysis = (
               
               const catAbsoluteChange = catEndValue - catStartValue;
               
-              // For distance from goal, calculate percentage based on goal amount
+              // For distance from goal, calculate percentage based on starting distance for more intuitive results
               let catPercentageChange: number;
               const goalAmount = category.goal || 0;
               
               if (goalAmount > 0) {
-                // Calculate percentage as change relative to the goal amount
-                catPercentageChange = (catAbsoluteChange / goalAmount) * 100;
+                // Calculate percentage change relative to the starting distance (more intuitive)
+                if (catStartValue !== 0) {
+                  catPercentageChange = (catAbsoluteChange / Math.abs(catStartValue)) * 100;
+                } else {
+                  // If starting from goal (distance = 0), calculate relative to goal amount
+                  catPercentageChange = (catAbsoluteChange / goalAmount) * 100;
+                }
               } else {
                 // No goal set, use traditional percentage calculation with absolute values
                 catPercentageChange = catStartValue !== 0 ? (catAbsoluteChange / Math.abs(catStartValue)) * 100 : 0;
@@ -141,7 +166,21 @@ export const useComparisonAnalysis = (
         if (selectedCategories.length > 1 && categoryBreakdown.length > 1) {
           const overallAbsoluteChange = categoryBreakdown.reduce((sum, cat) => sum + cat.absoluteChange, 0);
           const overallStartValue = categoryBreakdown.reduce((sum, cat) => sum + cat.startValue, 0);
-          const overallPercentageChange = overallStartValue !== 0 ? (overallAbsoluteChange / overallStartValue) * 100 : 0;
+          
+          // For multiple categories in distance-from-goal mode, use the same logic as individual categories
+          // Calculate percentage relative to the overall starting distance for consistency
+          let overallPercentageChange: number;
+          if (overallStartValue !== 0) {
+            overallPercentageChange = (overallAbsoluteChange / Math.abs(overallStartValue)) * 100;
+          } else {
+            // If starting from goal (total distance = 0), calculate relative to total goal amounts
+            const totalGoalAmount = selectedCategories.reduce((sum, categoryId) => {
+              const category = categoriesMap.get(categoryId);
+              return sum + (category?.goal || 0);
+            }, 0);
+            
+            overallPercentageChange = totalGoalAmount > 0 ? (overallAbsoluteChange / totalGoalAmount) * 100 : 0;
+          }
           
           // Update the main values to reflect the overall change
           absoluteChange = overallAbsoluteChange;

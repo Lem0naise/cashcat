@@ -86,23 +86,29 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         
         try {
           // Calculate color directly from data points for immediate and accurate feedback
-          // This ensures we match exactly what the comparison analysis will calculate
+          // Ensure we always compare chronologically (earlier date vs later date)
+          
+          // Determine chronological order regardless of drag direction
+          const chronoStartIdx = Math.min(startIdx, endIdx);
+          const chronoEndIdx = Math.max(startIdx, endIdx);
           
           if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
             // For goal tracking, use the first dataset's values
             const dataset = distanceFromGoalData.datasets[0];
-            const startValue = dataset.data[startIdx]?.y;
-            const endValue = dataset.data[endIdx]?.y;
-            if (startValue !== undefined && endValue !== undefined) {
-              // For distance from goal: positive change = getting closer to goal (green)
-              isPositiveChange = endValue >= startValue;
+            const chronoStartValue = dataset.data[chronoStartIdx]?.y;
+            const chronoEndValue = dataset.data[chronoEndIdx]?.y;
+            if (chronoStartValue !== undefined && chronoEndValue !== undefined) {
+              // For distance from goal: positive change = getting closer to goal (lower distance = green)
+              isPositiveChange = chronoEndValue <= chronoStartValue;
             }
           } else {
             // For balance tracking, use the chart data points
-            const startValue = startPoint.y;
-            const endValue = endPoint.y;
-            // For balance: positive change = balance increased (green)
-            isPositiveChange = endValue >= startValue;
+            const chronoStartPoint = chartData.dataPoints[chronoStartIdx];
+            const chronoEndPoint = chartData.dataPoints[chronoEndIdx];
+            if (chronoStartPoint && chronoEndPoint) {
+              // For balance: positive change = balance increased from earlier to later date (green)
+              isPositiveChange = chronoEndPoint.y >= chronoStartPoint.y;
+            }
           }
         } catch (error) {
           // If there's an error, default to positive
