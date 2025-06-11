@@ -24,14 +24,23 @@ export const useComparisonAnalysis = (
     dataToUse: any[], 
     datasets?: any[]
   ): ComparisonData | null => {
-    if (!dataToUse || dataToUse.length === 0 || startIdx < 0 || endIdx < 0 || 
-        startIdx >= dataToUse.length || endIdx >= dataToUse.length) {
+    if (!dataToUse || dataToUse.length === 0) {
+      return null;
+    }
+    
+    // Round fractional indices to integers for actual data access
+    const roundedStartIdx = Math.round(startIdx);
+    const roundedEndIdx = Math.round(endIdx);
+    
+    // Ensure indices are within bounds
+    if (roundedStartIdx < 0 || roundedEndIdx < 0 || 
+        roundedStartIdx >= dataToUse.length || roundedEndIdx >= dataToUse.length) {
       return null;
     }
     
     // Ensure chronological order
-    const earlierIdx = Math.min(startIdx, endIdx);
-    const laterIdx = Math.max(startIdx, endIdx);
+    const earlierIdx = Math.min(roundedStartIdx, roundedEndIdx);
+    const laterIdx = Math.max(roundedStartIdx, roundedEndIdx);
     
     const startPoint = dataToUse[earlierIdx];
     const endPoint = dataToUse[laterIdx];
@@ -232,54 +241,33 @@ export const useComparisonAnalysis = (
     const rect = chart.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     
-    // Convert pixel position to time value on x-axis
-    const xScale = chart.scales.x;
-    if (!xScale) return null;
+    const { chartArea } = chart;
+    if (!chartArea) return null;
     
-    const xValue = xScale.getValueForPixel(x);
-    const dataPoints = chart.data.datasets[0]?.data || [];
+    // Check if mouse is within chart area
+    if (x < chartArea.left || x > chartArea.right) return null;
     
-    if (dataPoints.length === 0) return null;
+    // Get the data length
+    const dataLength = chart.data.datasets[0]?.data?.length || 0;
+    if (dataLength === 0) return null;
     
-    // Find the data points that bracket the mouse position
-    let leftIndex = 0;
-    let rightIndex = dataPoints.length - 1;
+    // Calculate fractional index based on pixel position
+    // This gives us smooth interpolation without depending on Chart.js's time scale snapping
+    const chartWidth = chartArea.right - chartArea.left;
+    const relativeX = x - chartArea.left;
+    const fractionalIndex = (relativeX / chartWidth) * (dataLength - 1);
     
-    for (let i = 0; i < dataPoints.length - 1; i++) {
-      const currentTime = new Date(dataPoints[i].x).getTime();
-      const nextTime = new Date(dataPoints[i + 1].x).getTime();
-      
-      if (xValue >= currentTime && xValue <= nextTime) {
-        leftIndex = i;
-        rightIndex = i + 1;
-        break;
-      }
-    }
-    
-    // Calculate interpolated position between the two data points
-    const leftTime = new Date(dataPoints[leftIndex].x).getTime();
-    const rightTime = new Date(dataPoints[rightIndex].x).getTime();
-    
-    if (rightTime === leftTime) {
-      return leftIndex;
-    }
-    
-    // Linear interpolation to get smooth positioning
-    const ratio = (xValue - leftTime) / (rightTime - leftTime);
-    const interpolatedIndex = leftIndex + ratio;
-    
-    // Return the interpolated index (can be fractional for smooth selection)
-    return Math.max(0, Math.min(dataPoints.length - 1, interpolatedIndex));
+    // Clamp to valid range
+    return Math.max(0, Math.min(dataLength - 1, fractionalIndex));
   }, []);
 
   // Mouse event handlers for drag-to-select with smooth positioning (no snapping)
   const handleMouseDown = useCallback((event: MouseEvent, chart: any) => {
     const dataIndex = getDataIndexFromMousePosition(event, chart);
     if (dataIndex !== null) {
-      // Round to nearest integer for actual data point selection
-      const roundedIndex = Math.round(dataIndex);
-      setDragStartDataIndex(roundedIndex);
-      setDragEndDataIndex(roundedIndex);
+      // Keep fractional index for smooth positioning - no rounding!
+      setDragStartDataIndex(dataIndex);
+      setDragEndDataIndex(dataIndex);
       setIsDragging(true);
       chart.update('none');
     }
@@ -290,12 +278,12 @@ export const useComparisonAnalysis = (
     
     const dataIndex = getDataIndexFromMousePosition(event, chart);
     if (dataIndex !== null) {
-      // Round to nearest integer for actual data point selection
-      const roundedIndex = Math.round(dataIndex);
+      // Keep fractional index for smooth positioning - no rounding!
       
-      // Only update if the index actually changed to reduce re-renders
-      if (dragEndDataIndex !== roundedIndex) {
-        setDragEndDataIndex(roundedIndex);
+      // Only update if the index actually changed significantly to reduce re-renders
+      const threshold = 0.1; // Small threshold to avoid micro-updates
+      if (dragEndDataIndex === null || Math.abs(dragEndDataIndex - dataIndex) > threshold) {
+        setDragEndDataIndex(dataIndex);
         // Force immediate chart redraw to show visual feedback
         chart.update('none');
       }
@@ -307,9 +295,8 @@ export const useComparisonAnalysis = (
     
     const dataIndex = getDataIndexFromMousePosition(event, chart);
     if (dataIndex !== null) {
-      // Round to nearest integer for actual data point selection
-      const roundedIndex = Math.round(dataIndex);
-      setDragEndDataIndex(roundedIndex);
+      // Keep fractional index for smooth positioning - final selection can be fractional
+      setDragEndDataIndex(dataIndex);
       setIsDragging(false);
     }
   }, [isDragging, dragStartDataIndex, getDataIndexFromMousePosition]);

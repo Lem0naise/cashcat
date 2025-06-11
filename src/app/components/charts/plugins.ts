@@ -31,35 +31,51 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         return;
       }
       
-      // Ensure indices are within bounds
-      const startIdx = Math.max(0, Math.min(dragStartDataIndex, chartData.dataPoints.length - 1));
-      const endIdx = Math.max(0, Math.min(dragEndDataIndex, chartData.dataPoints.length - 1));
+      // Helper function to get interpolated x position and date for fractional indices
+      const getInterpolatedPosition = (fractionalIndex: number) => {
+        const clampedIndex = Math.max(0, Math.min(fractionalIndex, chartData.dataPoints.length - 1));
+        const lowerIndex = Math.floor(clampedIndex);
+        const upperIndex = Math.min(Math.ceil(clampedIndex), chartData.dataPoints.length - 1);
+        
+        if (lowerIndex === upperIndex) {
+          // Exact index, no interpolation needed
+          const point = chartData.dataPoints[lowerIndex];
+          const date = new Date(point.x);
+          return {
+            x: scales.x.getPixelForValue(date.getTime()),
+            date: date
+          };
+        }
+        
+        // Interpolate between two data points
+        const ratio = clampedIndex - lowerIndex;
+        const lowerPoint = chartData.dataPoints[lowerIndex];
+        const upperPoint = chartData.dataPoints[upperIndex];
+        
+        const lowerTime = new Date(lowerPoint.x).getTime();
+        const upperTime = new Date(upperPoint.x).getTime();
+        const interpolatedTime = lowerTime + (upperTime - lowerTime) * ratio;
+        
+        return {
+          x: scales.x.getPixelForValue(interpolatedTime),
+          date: new Date(interpolatedTime)
+        };
+      };
       
-      const startPoint = chartData.dataPoints[startIdx];
-      const endPoint = chartData.dataPoints[endIdx];
-      
-      if (!startPoint || !endPoint) {
-        ctx.restore();
-        return;
-      }
-      
-      // Convert string dates to Date objects for Chart.js time scale
-      const startDate = new Date(startPoint.x);
-      const endDate = new Date(endPoint.x);
-      
-      // Get pixel positions for the dates using timestamps
-      const startX = scales.x.getPixelForValue(startDate.getTime());
-      const endX = scales.x.getPixelForValue(endDate.getTime());
+      const startPos = getInterpolatedPosition(dragStartDataIndex);
+      const endPos = getInterpolatedPosition(dragEndDataIndex);
       
       // Check if we got valid pixel positions
-      if (isNaN(startX) || isNaN(endX)) {
+      if (isNaN(startPos.x) || isNaN(endPos.x)) {
         ctx.restore();
         return;
       }
       
       // Ensure start is always left of end
-      const leftX = Math.min(startX, endX);
-      const rightX = Math.max(startX, endX);
+      const leftX = Math.min(startPos.x, endPos.x);
+      const rightX = Math.max(startPos.x, endPos.x);
+      const leftDate = startPos.x <= endPos.x ? startPos.date : endPos.date;
+      const rightDate = startPos.x <= endPos.x ? endPos.date : startPos.date;
       
       // Draw vertical lines
       ctx.beginPath();
@@ -88,9 +104,9 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
           // Calculate color directly from data points for immediate and accurate feedback
           // Ensure we always compare chronologically (earlier date vs later date)
           
-          // Determine chronological order regardless of drag direction
-          const chronoStartIdx = Math.min(startIdx, endIdx);
-          const chronoEndIdx = Math.max(startIdx, endIdx);
+          // Round fractional indices for data access
+          const chronoStartIdx = Math.min(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+          const chronoEndIdx = Math.max(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
           
           if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
             // For goal tracking, use the first dataset's values
@@ -132,11 +148,8 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       ctx.lineWidth = 3;
       
       try {
-        const startDate = new Date(startPoint.x);
-        const endDate = new Date(endPoint.x);
-        
-        const startLabel = format(startDate, 'MMM dd');
-        const endLabel = format(endDate, 'MMM dd');
+        const startLabel = format(leftDate, 'MMM dd');
+        const endLabel = format(rightDate, 'MMM dd');
         
         // Draw text with stroke for better visibility
         ctx.strokeText(startLabel, leftX, bottom + 20);
