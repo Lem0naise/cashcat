@@ -188,46 +188,92 @@ export const useComparisonAnalysis = (
     }
   }, [selectedCategories, categoriesMap]);
 
-  // Mouse event handlers for drag-to-select with throttling for performance
+  // Helper function to convert mouse position to data index with smooth interpolation (no snapping)
+  const getDataIndexFromMousePosition = useCallback((event: MouseEvent, chart: any): number | null => {
+    const rect = chart.canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    
+    // Convert pixel position to time value on x-axis
+    const xScale = chart.scales.x;
+    if (!xScale) return null;
+    
+    const xValue = xScale.getValueForPixel(x);
+    const dataPoints = chart.data.datasets[0]?.data || [];
+    
+    if (dataPoints.length === 0) return null;
+    
+    // Find the data points that bracket the mouse position
+    let leftIndex = 0;
+    let rightIndex = dataPoints.length - 1;
+    
+    for (let i = 0; i < dataPoints.length - 1; i++) {
+      const currentTime = new Date(dataPoints[i].x).getTime();
+      const nextTime = new Date(dataPoints[i + 1].x).getTime();
+      
+      if (xValue >= currentTime && xValue <= nextTime) {
+        leftIndex = i;
+        rightIndex = i + 1;
+        break;
+      }
+    }
+    
+    // Calculate interpolated position between the two data points
+    const leftTime = new Date(dataPoints[leftIndex].x).getTime();
+    const rightTime = new Date(dataPoints[rightIndex].x).getTime();
+    
+    if (rightTime === leftTime) {
+      return leftIndex;
+    }
+    
+    // Linear interpolation to get smooth positioning
+    const ratio = (xValue - leftTime) / (rightTime - leftTime);
+    const interpolatedIndex = leftIndex + ratio;
+    
+    // Return the interpolated index (can be fractional for smooth selection)
+    return Math.max(0, Math.min(dataPoints.length - 1, interpolatedIndex));
+  }, []);
+
+  // Mouse event handlers for drag-to-select with smooth positioning (no snapping)
   const handleMouseDown = useCallback((event: MouseEvent, chart: any) => {
-    const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, false);
-    if (elements.length > 0) {
-      const dataIndex = elements[0].index;
-      setDragStartDataIndex(dataIndex);
-      setDragEndDataIndex(dataIndex); // Set end to same as start initially
+    const dataIndex = getDataIndexFromMousePosition(event, chart);
+    if (dataIndex !== null) {
+      // Round to nearest integer for actual data point selection
+      const roundedIndex = Math.round(dataIndex);
+      setDragStartDataIndex(roundedIndex);
+      setDragEndDataIndex(roundedIndex);
       setIsDragging(true);
-      // Force immediate chart update to show the start line
       chart.update('none');
     }
-  }, []);
+  }, [getDataIndexFromMousePosition]);
 
   const handleMouseMove = useCallback((event: MouseEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
     
-    console.log('Mouse move during drag');
-    const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, false);
-    if (elements.length > 0) {
-      const dataIndex = elements[0].index;
+    const dataIndex = getDataIndexFromMousePosition(event, chart);
+    if (dataIndex !== null) {
+      // Round to nearest integer for actual data point selection
+      const roundedIndex = Math.round(dataIndex);
+      
       // Only update if the index actually changed to reduce re-renders
-      if (dragEndDataIndex !== dataIndex) {
-        console.log('Updating drag end index:', dataIndex);
-        setDragEndDataIndex(dataIndex);
+      if (dragEndDataIndex !== roundedIndex) {
+        setDragEndDataIndex(roundedIndex);
         // Force immediate chart redraw to show visual feedback
         chart.update('none');
       }
     }
-  }, [isDragging, dragStartDataIndex, dragEndDataIndex]);
+  }, [isDragging, dragStartDataIndex, dragEndDataIndex, getDataIndexFromMousePosition]);
 
   const handleMouseUp = useCallback((event: MouseEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
     
-    const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, false);
-    if (elements.length > 0) {
-      const endIndex = elements[0].index;
-      setDragEndDataIndex(endIndex);
+    const dataIndex = getDataIndexFromMousePosition(event, chart);
+    if (dataIndex !== null) {
+      // Round to nearest integer for actual data point selection
+      const roundedIndex = Math.round(dataIndex);
+      setDragEndDataIndex(roundedIndex);
       setIsDragging(false);
     }
-  }, [isDragging, dragStartDataIndex]);
+  }, [isDragging, dragStartDataIndex, getDataIndexFromMousePosition]);
 
   const clearSelection = useCallback(() => {
     setComparisonData(defaultComparisonData);
