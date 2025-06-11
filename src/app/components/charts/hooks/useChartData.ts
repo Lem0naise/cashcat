@@ -43,7 +43,9 @@ export const useFilteredTransactions = (
       
       // Apply group filters
       if (selectedGroups.length > 0) {
-        return category && category.group && selectedGroups.includes(category.group);
+        if (!category) return false;
+        const categoryGroup = (category as any).groups?.name || category.group || 'Uncategorized';
+        return selectedGroups.includes(categoryGroup);
       }
 
       return true;

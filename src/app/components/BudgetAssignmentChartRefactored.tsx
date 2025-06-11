@@ -140,19 +140,33 @@ export default function BudgetAssignmentChart({
       return chartData.volumePoints;
     }
 
-    // Apply the exact same filtering logic as the original code
-    // Create volume points for all periods that exist in the original data
+    // Create filtered volume data by re-processing the same time periods 
+    // but only including transactions that match our filters
+    console.log('Creating filtered volume data with filters:', { selectedGroups, selectedCategories });
+    console.log('Filtered transactions count:', filteredTransactions.length);
+    console.log('Original volume points count:', chartData.volumePoints.length);
+
+    // Process each time period using the filtered transactions
     const filteredVolumePoints = chartData.volumePoints.map(originalPoint => {
-      // Get filtered transactions for this specific time period
+      // Create a category map for quick lookups
+      const categoryMap = new Map(categories.map(c => [c.id, c]));
+      
+      // Get all transactions that fall within this time period
+      // We need to compare by date only, not the full timestamp
+      const periodDate = new Date(originalPoint.x);
+      const periodDateString = format(periodDate, 'yyyy-MM-dd');
+      
       const periodTransactions = filteredTransactions.filter(t => {
-        // Format the transaction date to match the period key format
         try {
-          const transactionKey = format(new Date(t.date), 'yyyy-MM-dd 12:00:00');
-          return transactionKey === originalPoint.x;
+          const transactionDate = new Date(t.date);
+          const transactionDateString = format(transactionDate, 'yyyy-MM-dd');
+          return transactionDateString === periodDateString;
         } catch (error) {
           return false;
         }
       });
+
+      console.log(`Period ${originalPoint.x}: found ${periodTransactions.length} filtered transactions`);
 
       let income = 0;
       let spending = 0;
@@ -172,7 +186,7 @@ export default function BudgetAssignmentChart({
 
         // Track category names
         if (transaction.category_id) {
-          const category = categories.find(c => c && c.id === transaction.category_id);
+          const category = categoryMap.get(transaction.category_id);
           if (category && category.name && !affectedCategories.includes(category.name)) {
             affectedCategories.push(category.name);
           }
@@ -184,7 +198,7 @@ export default function BudgetAssignmentChart({
         }
       });
 
-      return {
+      const result = {
         x: originalPoint.x,
         assigned: income,
         removed: spending,
@@ -192,10 +206,14 @@ export default function BudgetAssignmentChart({
         categories: affectedCategories,
         vendors: affectedVendors
       };
+
+      console.log(`Period ${originalPoint.x} result:`, result);
+      return result;
     });
 
+    console.log('Final filtered volume points:', filteredVolumePoints);
     return filteredVolumePoints;
-  }, [chartData.volumePoints, hasActiveFilters, filteredTransactions, categories]);
+  }, [chartData.volumePoints, hasActiveFilters, filteredTransactions, categories, selectedGroups, selectedCategories]);
 
   // Determine if we should show distance from goal chart
   const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
