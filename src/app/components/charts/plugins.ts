@@ -140,23 +140,80 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         ctx.fillRect(leftX, top, rightX - leftX, bottom - top);
       }
       
-      // Draw date labels
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '12px Arial';
-      ctx.strokeStyle = '#0a0a0a';
-      ctx.lineWidth = 3;
-      
+      // Draw highlighted date labels below the chart area but above x-axis labels
       try {
         const startLabel = format(leftDate, 'MMM dd');
         const endLabel = format(rightDate, 'MMM dd');
         
-        // Draw text with stroke for better visibility
-        ctx.strokeText(startLabel, leftX, bottom + 20);
-        ctx.fillText(startLabel, leftX, bottom + 20);
+        // Set up text styling
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
         
-        ctx.strokeText(endLabel, rightX, bottom + 20);
-        ctx.fillText(endLabel, rightX, bottom + 20);
+        // Calculate text dimensions for background
+        const startTextWidth = ctx.measureText(startLabel).width;
+        const endTextWidth = ctx.measureText(endLabel).width;
+        const textHeight = 16;
+        const padding = 8;
+        
+        // Position labels below chart area but above x-axis labels
+        // This creates a dedicated vertical space for selection labels
+        const labelY = bottom + 20;
+        
+        // Draw background rectangles for labels with rounded corners
+        ctx.fillStyle = 'rgba(186, 194, 255, 0.9)'; // Light blue background
+        
+        // Helper function to draw rounded rectangle
+        const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + width - radius, y);
+          ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+          ctx.lineTo(x + width, y + height - radius);
+          ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+          ctx.lineTo(x + radius, y + height);
+          ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+        };
+        
+        // Draw rounded background for start label
+        drawRoundedRect(leftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+                       startTextWidth + padding*2, textHeight + padding, 4);
+        ctx.fill();
+        
+        // Draw rounded background for end label
+        drawRoundedRect(rightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+                       endTextWidth + padding*2, textHeight + padding, 4);
+        ctx.fill();
+        
+        // Draw border around labels
+        ctx.strokeStyle = '#bac2ff';
+        ctx.lineWidth = 2;
+        
+        drawRoundedRect(leftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+                       startTextWidth + padding*2, textHeight + padding, 4);
+        ctx.stroke();
+        
+        drawRoundedRect(rightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+                       endTextWidth + padding*2, textHeight + padding, 4);
+        ctx.stroke();
+        
+        // Draw the text labels with shadow for better readability
+        ctx.fillStyle = '#0a0a0a'; // Dark text for contrast
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.shadowBlur = 1;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 1;
+        
+        ctx.fillText(startLabel, leftX, labelY + 2);
+        ctx.fillText(endLabel, rightX, labelY + 2);
+        
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
       } catch (error) {
         console.error('Error formatting dates for labels:', error);
       }
