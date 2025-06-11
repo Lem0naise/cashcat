@@ -129,7 +129,7 @@ export default function About() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href="/learn"
-                            className="px-6 py-3 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-base"
+                            className="text-center px-6 py-3 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-base"
                         >
                             Learn How CashCat Works
                         </Link>
