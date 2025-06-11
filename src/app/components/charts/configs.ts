@@ -231,7 +231,7 @@ export const useLineChartConfig = (
       },
     }
   }), [
-    chartData.dataPoints, 
+    chartData.dataPoints.length, 
     categories.length, 
     dateRange.start.getTime(), 
     dateRange.end.getTime(), 

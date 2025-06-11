@@ -79,6 +79,7 @@ export default function BudgetAssignmentChart({
     [assignments.length, transactions.length]
   );
   
+  // Memoize date range calculation with better dependencies
   const dateRange = useMemo(() => 
     calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd),
     [timeRange, customStartDate?.getTime(), customEndDate?.getTime(), allTimeStart?.getTime(), allTimeEnd?.getTime()]
@@ -94,10 +95,14 @@ export default function BudgetAssignmentChart({
 
   // Process transactions into chart data points
   // Always use ALL transactions for the main balance calculation (like original code)
-  const hasActiveFilters = selectedCategories.length > 0 || selectedGroups.length > 0;
+  const hasActiveFilters = useMemo(() => 
+    selectedCategories.length > 0 || selectedGroups.length > 0,
+    [selectedCategories.length, selectedGroups.length]
+  );
+  
   const chartData = useChartData(transactions, categories, dateRange);
 
-  // Get filtered categories with goals for distance calculation
+  // Get filtered categories for distance calculation - memoized with stable dependencies
   const filteredCategoriesWithGoals = useMemo(() => {
     let targetCategories: Category[] = [];
     
@@ -114,8 +119,10 @@ export default function BudgetAssignmentChart({
       });
     }
     
+    // Return all selected categories - the distance from goal chart will handle
+    // showing different visualizations for categories with/without goals
     return targetCategories;
-  }, [categories, selectedCategories.length, selectedGroups.length, selectedCategories, selectedGroups]);
+  }, [categories, selectedCategories, selectedGroups]);
 
   // Calculate distance from goal data for filtered categories
   const distanceFromGoalData = useDistanceFromGoalData(
@@ -190,6 +197,15 @@ export default function BudgetAssignmentChart({
     return filteredVolumePoints;
   }, [chartData.volumePoints, hasActiveFilters, filteredTransactions, categories]);
 
+  // Determine if we should show distance from goal chart
+  const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
+
+  // Memoize the category IDs array to prevent infinite re-renders
+  const comparisonCategoryIds = useMemo(() => 
+    shouldShowDistanceFromGoal ? filteredCategoriesWithGoals.map(cat => cat.id) : selectedCategories,
+    [shouldShowDistanceFromGoal, filteredCategoriesWithGoals.map(cat => cat.id).join(','), selectedCategories.join(',')]
+  );
+
   // Comparison analysis functionality
   const {
     isDragging,
@@ -204,10 +220,10 @@ export default function BudgetAssignmentChart({
     handleMouseMove,
     handleMouseUp,
     clearSelection
-  } = useComparisonAnalysis(selectedCategories, categories);
-
-  // Determine if we should show distance from goal chart
-  const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
+  } = useComparisonAnalysis(
+    comparisonCategoryIds, 
+    categories
+  );
   
   // Find the correct time unit for the current range
   const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
@@ -216,7 +232,7 @@ export default function BudgetAssignmentChart({
   // Determine if we should show filtered title
   // hasActiveFilters already defined above
 
-  // Chart configurations
+  // Chart configurations with stable dependencies
   const lineChartConfig = useLineChartConfig(
     chartData,
     categories,
@@ -267,31 +283,41 @@ export default function BudgetAssignmentChart({
     }
   }, [handleMouseDown, handleMouseMove, handleMouseUp, isDragging]);
 
-  // Effect to calculate default comparison data for the entire range
-  useEffect(() => {
+  // Memoize expensive calculations to prevent unnecessary re-renders
+  const chartDataLength = chartData?.dataPoints?.length || 0;
+  const distanceFromGoalDatasetsLength = distanceFromGoalData?.datasets?.length || 0;
+  
+  // Memoize default comparison data calculation
+  const defaultComparisonDataMemo = useMemo(() => {
     if (chartData && chartData.dataPoints.length > 1) {
       const startIdx = 0;
       const endIdx = chartData.dataPoints.length - 1;
-      const dataToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.dataPoints : chartData.dataPoints;
+      const dataToUse = chartData.dataPoints;
       const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
       
       if (dataToUse && dataToUse.length > 1) {
-        const defaultData = calculateComparisonData(startIdx, endIdx, dataToUse, datasetsToUse);
-        if (defaultData) {
-          setDefaultComparisonData(defaultData);
-          // Only set as active comparison if no drag selection has been made
-          if (dragStartDataIndex === null && dragEndDataIndex === null) {
-            setComparisonData(defaultData);
-          }
-        }
+        return calculateComparisonData(startIdx, endIdx, dataToUse, datasetsToUse);
       }
     }
-  }, [chartData, shouldShowDistanceFromGoal, distanceFromGoalData, calculateComparisonData, dragStartDataIndex, dragEndDataIndex]);
+    return null;
+  }, [chartDataLength, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, calculateComparisonData]);
+
+  // Effect to set default comparison data (only when the memoized calculation changes)
+  useEffect(() => {
+    if (defaultComparisonDataMemo) {
+      setDefaultComparisonData(defaultComparisonDataMemo);
+      // Only set as active comparison if no drag selection has been made
+      if (dragStartDataIndex === null && dragEndDataIndex === null) {
+        setComparisonData(defaultComparisonDataMemo);
+      }
+    }
+  }, [defaultComparisonDataMemo, dragStartDataIndex, dragEndDataIndex]);
 
   // Effect to update comparison data when drag selection changes
   useEffect(() => {
-    if (dragStartDataIndex !== null && dragEndDataIndex !== null && !isDragging) {
-      const dataToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.dataPoints : chartData.dataPoints;
+    if (dragStartDataIndex !== null && dragEndDataIndex !== null && !isDragging && chartData?.dataPoints) {
+      // Always use chart data points for dates/structure, datasets for multi-category analysis
+      const dataToUse = chartData.dataPoints;
       const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
       
       if (dataToUse && dataToUse.length > 0) {
@@ -301,7 +327,7 @@ export default function BudgetAssignmentChart({
         }
       }
     }
-  }, [dragStartDataIndex, dragEndDataIndex, isDragging, shouldShowDistanceFromGoal, distanceFromGoalData, chartData, calculateComparisonData]);
+  }, [dragStartDataIndex, dragEndDataIndex, isDragging, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, chartDataLength, calculateComparisonData]);
 
   return (
     <div className="space-y-6">

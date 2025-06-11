@@ -1,5 +1,5 @@
 // Chart components index - easy imports
-export { default as BudgetAssignmentChart } from '../BudgetAssignmentChart';
+export { default as BudgetAssignmentChart } from '../BudgetAssignmentChartRefactored';
 export { ComparisonAnalysis } from './ComparisonAnalysis';
 export { comparisonSelectionPlugin } from './plugins';
 
