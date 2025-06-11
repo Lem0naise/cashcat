@@ -43,9 +43,40 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         return;
       }
       
-      // Get pixel positions for the dates
-      const startX = scales.x.getPixelForValue(startPoint.x);
-      const endX = scales.x.getPixelForValue(endPoint.x);
+      // Debug the data point structure to understand why getPixelForValue returns NaN
+      console.log('Raw data points:', { 
+        startPoint: Object.assign({}, startPoint), 
+        endPoint: Object.assign({}, endPoint),
+        startPointX: startPoint.x,
+        endPointX: endPoint.x,
+        startPointXType: typeof startPoint.x,
+        endPointXType: typeof endPoint.x
+      });
+      
+      // Convert string dates to Date objects for Chart.js time scale
+      const startDate = new Date(startPoint.x);
+      const endDate = new Date(endPoint.x);
+      
+      // Get pixel positions for the dates using timestamps
+      const startX = scales.x.getPixelForValue(startDate.getTime());
+      const endX = scales.x.getPixelForValue(endDate.getTime());
+      
+      console.log('Pixel calculation:', { 
+        startDate: startDate.toISOString(), 
+        endDate: endDate.toISOString(), 
+        startTimestamp: startDate.getTime(),
+        endTimestamp: endDate.getTime(),
+        startX, 
+        endX,
+        scaleType: scales.x.type
+      });
+      
+      // Check if we got valid pixel positions
+      if (isNaN(startX) || isNaN(endX)) {
+        console.warn('Invalid pixel positions, skipping draw');
+        ctx.restore();
+        return;
+      }
       
       // Ensure start is always left of end
       const leftX = Math.min(startX, endX);

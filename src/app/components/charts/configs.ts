@@ -61,7 +61,7 @@ export const useLineChartConfig = (
             shouldShowDistanceFromGoal,
             distanceFromGoalData
           }
-        },
+        } as any, // Type assertion to avoid TypeScript issues
         title: {
           display: true,
           text: shouldShowDistanceFromGoal 

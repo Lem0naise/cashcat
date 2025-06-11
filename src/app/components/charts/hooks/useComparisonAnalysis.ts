@@ -194,21 +194,29 @@ export const useComparisonAnalysis = (
     if (elements.length > 0) {
       const dataIndex = elements[0].index;
       setDragStartDataIndex(dataIndex);
+      setDragEndDataIndex(dataIndex); // Set end to same as start initially
       setIsDragging(true);
+      // Force immediate chart update to show the start line
+      chart.update('none');
     }
   }, []);
 
   const handleMouseMove = useCallback((event: MouseEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
     
+    console.log('Mouse move during drag');
     const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, false);
     if (elements.length > 0) {
       const dataIndex = elements[0].index;
       // Only update if the index actually changed to reduce re-renders
-      setDragEndDataIndex(prev => prev !== dataIndex ? dataIndex : prev);
-      chart.update('none'); // Update without animation
+      if (dragEndDataIndex !== dataIndex) {
+        console.log('Updating drag end index:', dataIndex);
+        setDragEndDataIndex(dataIndex);
+        // Force immediate chart redraw to show visual feedback
+        chart.update('none');
+      }
     }
-  }, [isDragging, dragStartDataIndex]);
+  }, [isDragging, dragStartDataIndex, dragEndDataIndex]);
 
   const handleMouseUp = useCallback((event: MouseEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
