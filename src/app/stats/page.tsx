@@ -180,7 +180,7 @@ export default function Stats() {
                                         <path d="M9 9L15 15M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                     </svg>
                                 </div>
-                                <h2 className="text-xl font-semibold mb-2">No Budget History Yet</h2>
+                                <h2 className="text-xl font-semibold mb-2">No Budget History</h2>
                                 <p className="text-sm max-w-md mx-auto">
                                     Start using your budget for a few months to see charts and trends of your spending habits.
                                 </p>
