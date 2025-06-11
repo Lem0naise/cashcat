@@ -114,8 +114,11 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
             const chronoStartValue = dataset.data[chronoStartIdx]?.y;
             const chronoEndValue = dataset.data[chronoEndIdx]?.y;
             if (chronoStartValue !== undefined && chronoEndValue !== undefined) {
-              // For distance from goal: positive change = getting closer to goal (lower distance = green)
-              isPositiveChange = chronoEndValue <= chronoStartValue;
+              // For distance from goal: match ComparisonAnalysis logic
+              // absoluteChange = endValue - startValue, so positive when distance increases (bad)
+              // We want green when absoluteChange >= 0 to match ComparisonAnalysis component
+              const absoluteChange = chronoEndValue - chronoStartValue;
+              isPositiveChange = absoluteChange >= 0;
             }
           } else {
             // For balance tracking, use the chart data points
@@ -123,7 +126,9 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
             const chronoEndPoint = chartData.dataPoints[chronoEndIdx];
             if (chronoStartPoint && chronoEndPoint) {
               // For balance: positive change = balance increased from earlier to later date (green)
-              isPositiveChange = chronoEndPoint.y >= chronoStartPoint.y;
+              // absoluteChange = endValue - startValue, so positive when balance increases (good)
+              const absoluteChange = chronoEndPoint.y - chronoStartPoint.y;
+              isPositiveChange = absoluteChange >= 0;
             }
           }
         } catch (error) {
