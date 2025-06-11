@@ -24,19 +24,19 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
     if (dragStartDataIndex !== null && dragEndDataIndex !== null) {
       ctx.save();
       
-      // Get the actual data points to work with
-      const dataToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.dataPoints : chartData.dataPoints;
-      if (!dataToUse || dataToUse.length === 0) {
+      // Always use the main chart data points for x-axis positions
+      // The time periods are the same regardless of whether we show distance from goal
+      if (!chartData.dataPoints || chartData.dataPoints.length === 0) {
         ctx.restore();
         return;
       }
       
       // Ensure indices are within bounds
-      const startIdx = Math.max(0, Math.min(dragStartDataIndex, dataToUse.length - 1));
-      const endIdx = Math.max(0, Math.min(dragEndDataIndex, dataToUse.length - 1));
+      const startIdx = Math.max(0, Math.min(dragStartDataIndex, chartData.dataPoints.length - 1));
+      const endIdx = Math.max(0, Math.min(dragEndDataIndex, chartData.dataPoints.length - 1));
       
-      const startPoint = dataToUse[startIdx];
-      const endPoint = dataToUse[endIdx];
+      const startPoint = chartData.dataPoints[startIdx];
+      const endPoint = chartData.dataPoints[endIdx];
       
       if (!startPoint || !endPoint) {
         ctx.restore();

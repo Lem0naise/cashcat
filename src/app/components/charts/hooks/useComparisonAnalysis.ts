@@ -57,12 +57,13 @@ export const useComparisonAnalysis = (
         percentageChange: number;
       }> | undefined;
       
-      // Handle multiple category breakdown
-      if (selectedCategories.length > 1 && datasets && datasets.length > 1) {
-        // Multi-category analysis
+      // Handle category analysis when we have distance-from-goal datasets
+      if (datasets && datasets.length > 0) {
+        // Single or multi-category analysis with distance from goal datasets
         categoryBreakdown = [];
         
-        // Use the first dataset for main values or calculate average
+        // For single category, use the dataset values directly for main stats
+        // For multiple categories, use the first dataset for main values  
         startValue = datasets[0].data[earlierIdx]?.y || 0;
         endValue = datasets[0].data[laterIdx]?.y || 0;
         
@@ -77,7 +78,7 @@ export const useComparisonAnalysis = (
         if (isNaN(absoluteChange) || !isFinite(absoluteChange)) absoluteChange = 0;
         if (isNaN(percentageChange) || !isFinite(percentageChange)) percentageChange = 0;
         
-        // Calculate breakdown for each category
+        // Calculate breakdown for each category (works for single or multiple)
         datasets.forEach((dataset, index) => {
           if (index < selectedCategories.length && categoryBreakdown) {
             const categoryId = selectedCategories[index];
@@ -105,6 +106,19 @@ export const useComparisonAnalysis = (
             }
           }
         });
+        
+        // For multiple categories, calculate overall change as sum of all category changes
+        if (selectedCategories.length > 1 && categoryBreakdown.length > 1) {
+          const overallAbsoluteChange = categoryBreakdown.reduce((sum, cat) => sum + cat.absoluteChange, 0);
+          const overallStartValue = categoryBreakdown.reduce((sum, cat) => sum + cat.startValue, 0);
+          const overallPercentageChange = overallStartValue !== 0 ? (overallAbsoluteChange / overallStartValue) * 100 : 0;
+          
+          // Update the main values to reflect the overall change
+          absoluteChange = overallAbsoluteChange;
+          percentageChange = overallPercentageChange;
+          startValue = overallStartValue;
+          endValue = overallStartValue + overallAbsoluteChange;
+        }
       } else {
         // Single category or account balance analysis
         startValue = startPoint.y || 0;
