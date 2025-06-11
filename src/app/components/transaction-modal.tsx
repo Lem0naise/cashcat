@@ -407,7 +407,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col h-[calc(100dvh-4rem)] md:h-auto">
+                <form onSubmit={handleSubmit} className="flex flex-col h-[calc(100dvh-4rem)] md:h-auto iphone-padding">
                     <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-0">
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             <button

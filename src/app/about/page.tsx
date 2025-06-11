@@ -86,7 +86,7 @@ export default function About() {
                                     <p className="text-base text-green font-medium mb-3">Co-Founder</p>
                                     <p className="text-sm text-white/70 leading-relaxed">
                                         Indigo spent years trying to find the perfect way to manage his money - and decided to build CashCat instead! 
-                                        He's passionate about creating tools that make personal finance accessible and intuitive.
+                                        He's committed to tools that make personal finance accessible and intuitive.
                                     </p>
                                 </div>
                             </div>
@@ -115,7 +115,7 @@ export default function About() {
                         <div className="mt-6 p-6 rounded-xl bg-white/[.05] text-center">
                             <h3 className="text-lg sm:text-xl font-semibold mb-3">Our Story</h3>
                             <p className="text-white/70 leading-relaxed mb-4">
-                                Josh and I are students at the University of Southampton, where we met and discovered our shared passion for building tools 
+                                Josh and I are students at the University of Southampton, where we met and discovered our shared interest for building tools 
                                 that solve real problems. CashCat started as a personal project to create the budgeting app we wished existed - 
                                 one that truly puts you in control of your money.
                             </p>
@@ -129,7 +129,7 @@ export default function About() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href="/learn"
-                            className="px-6 py-3 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-base"
+                            className="text-center px-6 py-3 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-base"
                         >
                             Learn How CashCat Works
                         </Link>
