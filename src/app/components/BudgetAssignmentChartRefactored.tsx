@@ -329,6 +329,12 @@ export default function BudgetAssignmentChart({
     }
   }, [dragStartDataIndex, dragEndDataIndex, isDragging, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, chartDataLength, calculateComparisonData]);
 
+  // Effect to clear drag selection when time range changes
+  useEffect(() => {
+    // Clear any existing drag selection when time range changes
+    clearSelection();
+  }, [timeRange, customStartDate?.getTime(), customEndDate?.getTime(), clearSelection]);
+
   return (
     <div className="space-y-6">
       {/* Comparison Analysis - Always visible */}
