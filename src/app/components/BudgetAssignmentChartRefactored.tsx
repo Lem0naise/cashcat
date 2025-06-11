@@ -237,6 +237,9 @@ export default function BudgetAssignmentChart({
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
     clearSelection
   } = useComparisonAnalysis(
     comparisonCategoryIds, 
@@ -279,6 +282,7 @@ export default function BudgetAssignmentChart({
     if (chart && chart.canvas) {
       const canvas = chart.canvas;
       
+      // Mouse event handlers
       const onMouseDown = (e: MouseEvent) => handleMouseDown(e, chart);
       const onMouseMove = (e: MouseEvent) => handleMouseMove(e, chart);
       const onMouseUp = (e: MouseEvent) => handleMouseUp(e, chart);
@@ -288,19 +292,43 @@ export default function BudgetAssignmentChart({
         }
       };
       
+      // Touch event handlers
+      const onTouchStart = (e: TouchEvent) => handleTouchStart(e, chart);
+      const onTouchMove = (e: TouchEvent) => handleTouchMove(e, chart);
+      const onTouchEnd = (e: TouchEvent) => handleTouchEnd(e, chart);
+      const onTouchCancel = (e: TouchEvent) => {
+        if (isDragging) {
+          setComparisonData(null);
+        }
+      };
+      
+      // Add mouse event listeners
       canvas.addEventListener('mousedown', onMouseDown);
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseup', onMouseUp);
       canvas.addEventListener('mouseleave', onMouseLeave);
       
+      // Add touch event listeners
+      canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+      canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+      canvas.addEventListener('touchcancel', onTouchCancel, { passive: false });
+      
       return () => {
+        // Remove mouse event listeners
         canvas.removeEventListener('mousedown', onMouseDown);
         canvas.removeEventListener('mousemove', onMouseMove);
         canvas.removeEventListener('mouseup', onMouseUp);
         canvas.removeEventListener('mouseleave', onMouseLeave);
+        
+        // Remove touch event listeners
+        canvas.removeEventListener('touchstart', onTouchStart);
+        canvas.removeEventListener('touchmove', onTouchMove);
+        canvas.removeEventListener('touchend', onTouchEnd);
+        canvas.removeEventListener('touchcancel', onTouchCancel);
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, isDragging]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd, isDragging]);
 
   // Memoize expensive calculations to prevent unnecessary re-renders
   const chartDataLength = chartData?.dataPoints?.length || 0;

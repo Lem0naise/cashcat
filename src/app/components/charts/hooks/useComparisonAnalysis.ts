@@ -236,15 +236,15 @@ export const useComparisonAnalysis = (
     }
   }, [selectedCategories, categoriesMap]);
 
-  // Helper function to convert mouse position to data index with smooth interpolation (no snapping)
-  const getDataIndexFromMousePosition = useCallback((event: MouseEvent, chart: any): number | null => {
+  // Helper function to convert pointer position to data index with smooth interpolation (no snapping)
+  const getDataIndexFromPointerPosition = useCallback((clientX: number, chart: any): number | null => {
     const rect = chart.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    const x = clientX - rect.left;
     
     const { chartArea } = chart;
     if (!chartArea) return null;
     
-    // Check if mouse is within chart area
+    // Check if pointer is within chart area
     if (x < chartArea.left || x > chartArea.right) return null;
     
     // Get the data length
@@ -261,9 +261,27 @@ export const useComparisonAnalysis = (
     return Math.max(0, Math.min(dataLength - 1, fractionalIndex));
   }, []);
 
-  // Mouse event handlers for drag-to-select with smooth positioning (no snapping)
-  const handleMouseDown = useCallback((event: MouseEvent, chart: any) => {
-    const dataIndex = getDataIndexFromMousePosition(event, chart);
+  // Helper function to extract clientX from either mouse or touch event
+  const getClientX = useCallback((event: MouseEvent | TouchEvent): number => {
+    if ('touches' in event) {
+      // Touch event - use the first touch if available
+      if (event.type === 'touchend' || event.type === 'touchcancel') {
+        // For touch end/cancel, use changedTouches instead of touches
+        return event.changedTouches.length > 0 ? event.changedTouches[0].clientX : 0;
+      } else {
+        // For touchstart and touchmove, use touches
+        return event.touches.length > 0 ? event.touches[0].clientX : 0;
+      }
+    } else {
+      // Mouse event
+      return event.clientX;
+    }
+  }, []);
+
+  // Mouse and touch event handlers for drag-to-select with smooth positioning (no snapping)
+  const handlePointerDown = useCallback((event: MouseEvent | TouchEvent, chart: any) => {
+    const clientX = getClientX(event);
+    const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
     if (dataIndex !== null) {
       // Keep fractional index for smooth positioning - no rounding!
       setDragStartDataIndex(dataIndex);
@@ -271,12 +289,13 @@ export const useComparisonAnalysis = (
       setIsDragging(true);
       chart.update('none');
     }
-  }, [getDataIndexFromMousePosition]);
+  }, [getDataIndexFromPointerPosition, getClientX]);
 
-  const handleMouseMove = useCallback((event: MouseEvent, chart: any) => {
+  const handlePointerMove = useCallback((event: MouseEvent | TouchEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
     
-    const dataIndex = getDataIndexFromMousePosition(event, chart);
+    const clientX = getClientX(event);
+    const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
     if (dataIndex !== null) {
       // Keep fractional index for smooth positioning - no rounding!
       
@@ -288,18 +307,51 @@ export const useComparisonAnalysis = (
         chart.update('none');
       }
     }
-  }, [isDragging, dragStartDataIndex, dragEndDataIndex, getDataIndexFromMousePosition]);
+  }, [isDragging, dragStartDataIndex, dragEndDataIndex, getDataIndexFromPointerPosition, getClientX]);
 
-  const handleMouseUp = useCallback((event: MouseEvent, chart: any) => {
+  const handlePointerUp = useCallback((event: MouseEvent | TouchEvent, chart: any) => {
     if (!isDragging || dragStartDataIndex === null) return;
     
-    const dataIndex = getDataIndexFromMousePosition(event, chart);
+    const clientX = getClientX(event);
+    const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
     if (dataIndex !== null) {
       // Keep fractional index for smooth positioning - final selection can be fractional
       setDragEndDataIndex(dataIndex);
       setIsDragging(false);
     }
-  }, [isDragging, dragStartDataIndex, getDataIndexFromMousePosition]);
+  }, [isDragging, dragStartDataIndex, getDataIndexFromPointerPosition, getClientX]);
+
+  // Legacy mouse event handlers (for backward compatibility)
+  const handleMouseDown = useCallback((event: MouseEvent, chart: any) => {
+    handlePointerDown(event, chart);
+  }, [handlePointerDown]);
+
+  const handleMouseMove = useCallback((event: MouseEvent, chart: any) => {
+    handlePointerMove(event, chart);
+  }, [handlePointerMove]);
+
+  const handleMouseUp = useCallback((event: MouseEvent, chart: any) => {
+    handlePointerUp(event, chart);
+  }, [handlePointerUp]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((event: TouchEvent, chart: any) => {
+    // Prevent default to avoid scrolling while dragging
+    event.preventDefault();
+    handlePointerDown(event, chart);
+  }, [handlePointerDown]);
+
+  const handleTouchMove = useCallback((event: TouchEvent, chart: any) => {
+    // Prevent default to avoid scrolling while dragging
+    event.preventDefault();
+    handlePointerMove(event, chart);
+  }, [handlePointerMove]);
+
+  const handleTouchEnd = useCallback((event: TouchEvent, chart: any) => {
+    // Prevent default to avoid triggering mouse events
+    event.preventDefault();
+    handlePointerUp(event, chart);
+  }, [handlePointerUp]);
 
   const clearSelection = useCallback(() => {
     setComparisonData(defaultComparisonData);
@@ -321,9 +373,22 @@ export const useComparisonAnalysis = (
     
     // Functions
     calculateComparisonData,
+    
+    // Mouse event handlers (legacy)
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    
+    // Touch event handlers
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    
+    // Unified pointer handlers
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    
     clearSelection
   };
 };
