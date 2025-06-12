@@ -74,11 +74,11 @@ export default function About() {
                             <div onClick={() => {window.open("https://indigonolan.com"); return false;}} className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
                                 <div className="w-16 h-16 rounded-full bg-green/70 flex items-center justify-center">
                                     <Image
-                                        src="/link.svg"
+                                        src="/indigo.jpg"
                                         alt="Visit Indigo's website"
-                                        width={24}
-                                        height={24}
-                                        className="opacity-90"
+                                        width={100}
+                                        height={100}
+                                        className="opacity-90 rounded-full"
                                     />
                                 </div>
                                 <div>
@@ -94,19 +94,19 @@ export default function About() {
                             <div onClick={() => {window.open("https://github.com/Joshua-Wilcox"); return false;}} className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
                                 <div className="w-16 h-16 rounded-full bg-green/70 flex items-center justify-center">
                                     <Image
-                                        src="/link.svg"
+                                        src="https://avatars.githubusercontent.com/u/86571733?v=4"
                                         alt="Visit Josh's GitHub"
-                                        width={24}
-                                        height={24}
-                                        className="opacity-90"
+                                        width={100}
+                                        height={100}
+                                        className="opacity-90 rounded-full"
                                     />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-semibold mb-2">Josh Wilcox</h3>
                                     <p className="text-base text-green font-medium mb-3">Co-Founder</p>
                                     <p className="text-sm text-white/70 leading-relaxed">
-                                        Josh is a multitalented passionate designer and developer who has clear visions and is committed to his work. 
-                                        He brings the creative vision that makes CashCat both beautiful and functional.
+                                        Josh is a multitalented passionate designer and developer.
+                                        He brings the creative vision that makes CashCat both beautiful and functional!
                                     </p>
                                 </div>
                             </div>
@@ -115,7 +115,7 @@ export default function About() {
                         <div className="mt-6 p-6 rounded-xl bg-white/[.05] text-center">
                             <h3 className="text-lg sm:text-xl font-semibold mb-3">Our Story</h3>
                             <p className="text-white/70 leading-relaxed mb-4">
-                                Josh and I are students at the University of Southampton, where we met and discovered our shared interest for building tools 
+                                Josh and Indigo are students at the University of Southampton, where we met and discovered our shared interest for building tools 
                                 that solve real problems. CashCat started as a personal project to create the budgeting app we wished existed - 
                                 one that truly puts you in control of your money.
                             </p>

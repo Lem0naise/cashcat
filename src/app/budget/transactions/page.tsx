@@ -591,13 +591,13 @@ export default function Transactions() {
                                                     {group.transactions.map((transaction) => (
                                                         <div key={transaction.id} 
                                                             onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setShowModal(true)) : null}
-                                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation ${
+                                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group ${
                                                                 transaction.type === 'starting' 
                                                                 ? 'bg-white/[.02] cursor-default' 
                                                                 : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
                                                             } transition-colors`}
                                                         >
-                                                            <div className="flex-1 min-w-0 relative group">
+                                                            <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-3">
                                                                     <h4 className="font-medium truncate text-white/90">
                                                                         {transaction.type === 'starting' ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
