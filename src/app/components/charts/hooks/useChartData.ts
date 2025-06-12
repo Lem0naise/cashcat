@@ -75,31 +75,50 @@ export const useChartData = (
     const allSorted = [...validTransactions]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Show starting balance calculation
+    // Calculate the actual starting balance for the chart
+    // This should be: starting balance + all transactions before the date range
     const startingTransaction = allTransactions.find(t => t && t.type === 'starting');
-    let startingBalance = startingTransaction?.amount || 0;
+    let chartStartingBalance = startingTransaction?.amount || 0;
     
+    // Add all transactions that occurred before the date range to get the correct starting point
+    const transactionsBeforeRange = allSorted.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return !isNaN(transactionDate.getTime()) && 
+             transactionDate < dateRange.start &&
+             transaction.type !== 'starting'; // Don't double-count starting balance
+    });
+
+    // Calculate balance up to the start of the date range
+    transactionsBeforeRange.forEach(transaction => {
+      if (transaction.type === 'income') {
+        chartStartingBalance += transaction.amount;
+      } else if (transaction.type === 'payment') {
+        chartStartingBalance -= Math.abs(transaction.amount);
+      }
+    });
+
     // Validate starting balance
-    if (isNaN(startingBalance) || !isFinite(startingBalance)) {
-      startingBalance = 0;
+    if (isNaN(chartStartingBalance) || !isFinite(chartStartingBalance)) {
+      chartStartingBalance = 0;
     }
 
-    // Filter transactions within date range
+    // Get transactions within date range for display purposes
     const transactionsInRange = allSorted.filter(transaction => {
       const transactionDate = new Date(transaction.date);
       const inRange = !isNaN(transactionDate.getTime()) && 
              transactionDate >= dateRange.start && 
-             transactionDate <= dateRange.end;
+             transactionDate <= dateRange.end &&
+             transaction.type !== 'starting'; // Starting balance is already included
       return inRange;
     });
 
-    // If no transactions in range, create a simple starting point
+    // If no transactions in range, create a simple starting point with the correct balance
     if (transactionsInRange.length === 0) {
       const todayKey = format(new Date(), 'yyyy-MM-dd 12:00:00');
       return {
         dataPoints: [{
           x: todayKey,
-          y: startingBalance,
+          y: chartStartingBalance,
           assignmentBreakdown: {}
         }],
         volumePoints: [{
@@ -173,7 +192,7 @@ export const useChartData = (
     const dataPoints: ChartDataPoint[] = [];
     const volumePoints: VolumeDataPoint[] = [];
     
-    let cumulativeBalance = startingBalance;
+    let cumulativeBalance = chartStartingBalance;
 
     // Calculate running balance for each period
     const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
@@ -192,7 +211,7 @@ export const useChartData = (
           const startingKey = format(dayBefore, 'yyyy-MM-dd 12:00:00');
           dataPoints.push({
             x: startingKey,
-            y: startingBalance,
+            y: chartStartingBalance,
             assignmentBreakdown: {}
           });
           
@@ -286,7 +305,7 @@ export const useChartData = (
     const volumePointMap = Object.fromEntries(volumePoints.map(vp => [vp.x, vp]));
 
     // 3. For each period key, ensure both dataPoints and volumePoints have an entry (pad with previous value or zero)
-    let lastBalance = startingBalance;
+    let lastBalance = chartStartingBalance;
     let lastBreakdown = {};
     const alignedDataPoints: ChartDataPoint[] = [];
     const alignedVolumePoints: VolumeDataPoint[] = [];
