@@ -83,7 +83,7 @@ export default function Landing() {
                     </h3>
                     
                     <div className="grid md:grid-cols-3 md:gap-8 md:mb-16">
-                        <div className="md:text-center p-6">
+                        <div className="md:text-center p-6 glass-card-blue">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -99,7 +99,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6">
+                        <div className="md:text-center p-6 glass-card-blue">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mb-4 mx-auto">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -115,7 +115,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6">
+                        <div className="md:text-center p-6 glass-card-blue">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -130,13 +130,13 @@ export default function Landing() {
                         </div>
                     </div>
 
-                    <h3 className="text-3xl md:text-4xl font-bold text-center mt-4 md:mt-12 text-white/90">
+                    <h3 className="text-3xl md:text-4xl font-bold text-center mt-4 md:mt-6 mb-4 md:mb-12 text-white/90">
                         Say Hello to Control
                     </h3>
 
                     <div className="grid md:grid-cols-2 md:gap-8 md:mb-16">
                         
-                        <div className="md:text-center p-6">
+                        <div className="md:text-center p-6 glass-card-blue">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -151,7 +151,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6">
+                        <div className="md:text-center p-6 glass-card-blue">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -169,7 +169,7 @@ export default function Landing() {
 
                 {/* What is Zero-Based Budgeting */}
                 <div id='intro' className="md:py-4 max-w-6xl mx-auto">
-                    <div className="mb-8 p-6 bg-green/10 rounded-lg border border-green/20 max-w-4xl mx-auto">
+                    <div className="mb-8 p-6 max-w-4xl mx-auto glass-card-blue">
                         <h3 className="font-bold text-2xl md:text-4xl text-center text-green mb-4">What is Zero-Based Budgeting?</h3>
                         <p className="text-lg md:text-xl text-white/80 text-center mb-4">
                             <strong className="font-bold text-green">Income - Assigned Money = 0</strong>
@@ -190,7 +190,7 @@ export default function Landing() {
                         </h3>
                         <div className="space-y-6">
                         
-                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                            <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "I've tried budgeting before and failed. How is this different?"
                                 </h4>
@@ -200,7 +200,7 @@ export default function Landing() {
                                 </p>
                             </div>
 
-                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                            <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "Can I really track multiple bank accounts in one place?"
                                 </h4>
@@ -210,7 +210,7 @@ export default function Landing() {
                             </div>
                             
                             
-                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                            <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "This sounds complicated. How much time does it take?"
                                 </h4>
@@ -220,7 +220,7 @@ export default function Landing() {
                                 </p>
                             </div>
 
-                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                            <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "Is CashCat really free? What's the catch?"
                                 </h4>
@@ -229,7 +229,7 @@ export default function Landing() {
                                 </p>
                             </div>
                             
-                            <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green">
+                            <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "What if I have irregular income?"
                                 </h4>
@@ -252,7 +252,7 @@ export default function Landing() {
                         CashCat is built by people who actually use zero-based budgeting daily. We understand the frustrations with other tools and are building something better.
                     </p>
                     
-                    <div className="bg-white/[.03] rounded-lg p-6 border-l-4 border-green mb-8">
+                    <div className="left-envelope-card mb-8">
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-green">

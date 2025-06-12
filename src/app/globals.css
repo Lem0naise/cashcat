@@ -175,3 +175,21 @@ select {
 .image-black {
 filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-rotate(135deg) brightness(86%) contrast(89%);
 }
+
+
+/* Enhanced glass effect */
+.glass-card-blue {
+  background: rgba(186, 194, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(186, 194, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(186, 194, 255, 0.1);
+  margin-bottom: 10px;
+  border-radius: 15px;
+}
+
+.left-envelope-card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 1.4rem;
+  border-left: 0.3rem solid var(--blue);
+}

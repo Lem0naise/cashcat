@@ -105,8 +105,8 @@ export default function About() {
                                     <h3 className="text-xl font-semibold mb-2">Josh Wilcox</h3>
                                     <p className="text-base text-green font-medium mb-3">Co-Founder</p>
                                     <p className="text-sm text-white/70 leading-relaxed">
-                                        Josh is a multitalented passionate designer and developer who has clear visions and is committed to his work. 
-                                        He brings the creative vision that makes CashCat both beautiful and functional.
+                                        Josh is a multitalented passionate designer and developer.
+                                        He brings the creative vision that makes CashCat both beautiful and functional!
                                     </p>
                                 </div>
                             </div>
