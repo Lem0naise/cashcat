@@ -68,7 +68,7 @@ export const useLineChartConfig = (
           display: true,
           text: shouldShowDistanceFromGoal 
             ? `Category Progress Tracking (${filteredCategoriesWithGoals.length} categories)`
-            : `Account Balance Over Time (${chartData.dataPoints.length} points)`,
+            : `Account Balance Over Time`,
           color: '#ffffff',
           font: {
             size: 16,
