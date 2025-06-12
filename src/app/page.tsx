@@ -27,10 +27,10 @@ export default function Landing() {
                             <Logo></Logo>
                         </h1>
                         <h2 className="text-2xl md:text-4xl font-bold mb-4 text-white">
-                            Take Control of Every Penny
+                            Say Goodbye to Guesswork
                         </h2>
                         <p className="text-md md:text-xl text-white/80 mb-2 md:mb-6 max-w-2xl mx-auto leading-relaxed">
-                            The <span className="text-green font-semibold">free</span> zero-based budgeting app that gives you complete control over your finances, one purchase at a time.
+                            The <span className="text-green font-semibold">free</span> budgeting app that stops you worrying about money, no matter your situation.
                             
                         </p>
                         
@@ -79,11 +79,11 @@ export default function Landing() {
                 {/* Key Features Section */}
                 <div id='features' className="py-16 max-w-6xl mx-auto leading-4.5 md:leading-6">
                     <h3 className="text-3xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
-                        Why Choose CashCat?
+                        Why CashCat?
                     </h3>
                     
                     <div className="grid md:grid-cols-3 md:gap-8 md:mb-16">
-                        <div className="text-center p-3 md:p-6">
+                        <div className="md:text-center p-6">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -91,16 +91,15 @@ export default function Landing() {
                                         <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
                                 </div>
-                                <h4 className="text-xl font-semibold mb-3 text-green">Free Forever</h4>
+                                <h4 className="text-2xl font-semibold mb-3 text-green">Budget For Free</h4>
                             </div>
                             <p className="text-white/70 ">
                                 No hidden fees, no free trial. CashCat is built to be accessible to everyone who wants better financial control.
-                                <span className="text-sm block mt-1 text-white/60">*Core budgeting features always free, small fees may apply to optional external bank integration</span>
-
+                                <span className="text-xs md:text-sm block mt-1 text-white/60">*Core budgeting features always free, small fee may apply to optional bank syncing</span>
                             </p>
                         </div>
 
-                        <div className="text-center p-6">
+                        <div className="md:text-center p-6">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mb-4 mx-auto">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -116,7 +115,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="text-center p-6">
+                        <div className="md:text-center p-6">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -131,9 +130,13 @@ export default function Landing() {
                         </div>
                     </div>
 
+                    <h3 className="text-3xl md:text-4xl font-bold text-center mt-4 md:mt-12 text-white/90">
+                        Say Hello to Control
+                    </h3>
+
                     <div className="grid md:grid-cols-2 md:gap-8 md:mb-16">
                         
-                        <div className="text-center p-6">
+                        <div className="md:text-center p-6">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -141,14 +144,14 @@ export default function Landing() {
                                         <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
                                 </div>
-                                <h4 className="text-xl font-semibold mb-3 text-green">Give Everything a Purpose</h4>
+                                <h4 className="text-xl font-semibold mb-3 text-green">Take Control of Every Penny</h4>
                             </div>
                             <p className="text-white/70">
-                                Assign every penny a purpose before you spend it. Know exactly where your money is going with zero-based budgeting principles.
+                                Assign every penny a purpose before you spend it. You'll know exactly where your money is going with zero-based budgeting principles.
                             </p>
                         </div>
 
-                        <div className="text-center p-6">
+                        <div className="md:text-center p-6">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -171,8 +174,8 @@ export default function Landing() {
                         <p className="text-lg md:text-xl text-white/80 text-center mb-4">
                             <strong className="font-bold text-green">Income - Assigned Money = 0</strong>
                         </p>
-                        <p className="text-md text-white/70 text-center leading-relaxed">
-                            Every penny has a purpose before you spend it - savings, spending, paying off debt. 
+                        <p className="text-md text-white/70 text-center leading-4.5 md:leading-6">
+                            Assign every penny a purpose before you spend it - savings, shopping, bills, paying off debt. 
                             Instead of tracking where your money went, you decide where it's going. Never wonder "where did my money go?" again.
                         </p>
                     </div>
@@ -193,7 +196,7 @@ export default function Landing() {
                                 </h4>
                                 <p className="text-white/70 text-sm">
                                     Traditional budgets fail because they're based on estimates. Zero-based budgeting uses your actual money right now. 
-                                    You're not guessing what you'll spend - you're deciding what each pound will do before you spend it.
+                                    You're not guessing what you'll spend - you're deciding what each penny will do before you spend it.
                                 </p>
                             </div>
 
@@ -222,7 +225,7 @@ export default function Landing() {
                                     "Is CashCat really free? What's the catch?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Yes! With one small exception - automatic syncing with your bank account. Every core budgeting feature is completely free. However, if we want to add automatic bank syncing, we have to pay the banks a lot! We just need to cover our costs - we may implement a small subscription fee for users who wish to use this feature.
+                                    Every core budgeting feature is completely free! Optional bank syncing has a small fee to cover third-party banking costs - we're not trying to profit from this feature, but we need to cover our costs.
                                 </p>
                             </div>
                             
@@ -266,14 +269,7 @@ export default function Landing() {
                         </div>
                         <h4 className="text-2xl font-semibold mb-4 mt-8 md:mt-16 text-green">Coming Soon</h4>
                         <div className="grid gap-4 text-left md:justify-center">
-                            
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-green rounded-full mt-2 flex-shrink-0"></div>
-                                <div>
-                                    <p className="text-white font-medium">Spending Analytics</p>
-                                    <p className="text-white/60 text-sm">Visual charts and spending insights over time</p>
-                                </div>
-                            </div>
+                           
                             <div className="flex items-start gap-3">
                                 <div className="w-2 h-2 bg-green rounded-full mt-2 flex-shrink-0"></div>
                                 <div>
@@ -285,7 +281,7 @@ export default function Landing() {
                                 <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
                                 <div>
                                     <p className="text-white font-medium">Bank Integration</p>
-                                    <p className="text-white/60 text-sm">Optional automatic transaction syncing (for a small subscription fee)</p>
+                                    <p className="text-white/60 text-sm">Optional automatic transaction syncing (for a small fee to cover our costs)</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
@@ -299,7 +295,7 @@ export default function Landing() {
                                 <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
                                 <div>
                                     <p className="text-white font-medium">Native Mobile App</p>
-                                    <p className="text-white/60 text-sm">Budget on-the-go with native iOS and Android apps (don't worry, the webapp works perfectly on mobile!)</p>
+                                    <p className="text-white/60 text-sm">Budget on-the-go with native iOS and Android apps (don't worry, the webapp already works perfectly on mobile!)</p>
                                 </div>
                             </div>
                             
