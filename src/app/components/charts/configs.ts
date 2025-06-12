@@ -90,15 +90,51 @@ export const useLineChartConfig = (
           callbacks: {
             title: (context: TooltipItem<'line'>[]) => {
               const dateStr = context[0].label;
-              try {
-                const date = new Date(dateStr);
-                if (isNaN(date.getTime())) return dateStr;
-                
-                return format(date, 'MMM dd, yyyy');
-              } catch (error) {
-                console.error('Error formatting date in tooltip:', error, dateStr);
-                return dateStr;
+              let date: Date | null = null;
+              // Try ISO first
+              if (!isNaN(Date.parse(dateStr))) {
+                date = new Date(dateStr);
+              } else {
+                // Try parsing as "Apr 9, 2025, 12:00:00 p.m." (en-US)
+                // Remove the "p.m." or "a.m." and replace with AM/PM
+                const fixed = dateStr
+                  .replace('a.m.', 'AM')
+                  .replace('p.m.', 'PM')
+                  .replace('a.m', 'AM')
+                  .replace('p.m', 'PM');
+                date = new Date(fixed);
               }
+              if (date && !isNaN(date.getTime())) {
+                // Determine if time should be shown by checking the interval between data points
+                const dataIndex = context[0].dataIndex;
+                const dataPoints = chartData.dataPoints;
+                let showTime = false;
+                if (dataPoints && dataPoints.length > 1 && dataIndex > 0) {
+                  const prevDate = new Date(dataPoints[dataIndex - 1].x);
+                  const currDate = new Date(dataPoints[dataIndex].x);
+                  const diffMs = Math.abs(currDate.getTime() - prevDate.getTime());
+                  // Less than 24 hours (86,400,000 ms)
+                  if (diffMs < 24 * 60 * 60 * 1000) {
+                    showTime = true;
+                  }
+                }
+                // Also show time if this is the first point and the next point is < 24h away
+                if (dataPoints && dataPoints.length > 1 && dataIndex === 0) {
+                  const nextDate = new Date(dataPoints[1].x);
+                  const currDate = new Date(dataPoints[0].x);
+                  const diffMs = Math.abs(nextDate.getTime() - currDate.getTime());
+                  if (diffMs < 24 * 60 * 60 * 1000) {
+                    showTime = true;
+                  }
+                }
+                if (showTime) {
+                  return format(date, 'MMM d, yyyy, h:mm a');
+                } else {
+                  return format(date, 'MMM d, yyyy');
+                }
+              }
+              // If still invalid, show as "Unrecognized date"
+              return 'Unrecognized date';
             },
             label: (context: TooltipItem<'line'>) => {
               const value = context.parsed.y;
