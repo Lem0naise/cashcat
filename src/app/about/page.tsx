@@ -74,11 +74,11 @@ export default function About() {
                             <div onClick={() => {window.open("https://indigonolan.com"); return false;}} className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
                                 <div className="w-16 h-16 rounded-full bg-green/70 flex items-center justify-center">
                                     <Image
-                                        src="/link.svg"
+                                        src="/indigo.jpg"
                                         alt="Visit Indigo's website"
-                                        width={24}
-                                        height={24}
-                                        className="opacity-90"
+                                        width={100}
+                                        height={100}
+                                        className="opacity-90 rounded-full"
                                     />
                                 </div>
                                 <div>
