@@ -91,7 +91,7 @@ export default function Landing() {
                                         <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
                                 </div>
-                                <h4 className="text-2xl font-semibold mb-3 text-green">Budget For Free</h4>
+                                <h4 className="text-xl font-semibold mb-3 text-green">Budget For Free</h4>
                             </div>
                             <p className="text-white/70 ">
                                 No hidden fees, no free trial. CashCat is built to be accessible to everyone who wants better financial control.
