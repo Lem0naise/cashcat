@@ -96,10 +96,18 @@ export const useDistanceFromGoalData = (
         };
       });
 
-      // Generate distinct colors for each category
+      // Colours for each category
       const colors = [
-        '#bac2ff', '#ff7f7f', '#7fff7f', '#ffff7f', '#ff7fff', 
-        '#7fffff', '#ffa500', '#ff69b4', '#98fb98', '#dda0dd'
+        '#BBC2FF',
+        '#84D684',
+        '#f2602f',
+        '#FFB3BA',
+        '#BAFFC9',
+        '#BAE1FF',
+        '#FFFFBA',
+        '#E6BAFF',
+        '#FFD1BA',
+        '#C9FFBA',
       ];
       const color = colors[index % colors.length];
 
@@ -115,11 +123,11 @@ export const useDistanceFromGoalData = (
         backgroundColor: `${color}20`,
         fill: false,
         tension: 0.2,
-        pointRadius: dataPoints.length > 50 ? 2 : dataPoints.length > 30 ? 4 : 6,
-        pointHoverRadius: dataPoints.length > 50 ? 4 : dataPoints.length > 30 ? 6 : 10,
+        pointRadius: 3,
+        pointHoverRadius: 6,
         pointBackgroundColor: color,
         pointBorderColor: '#0a0a0a',
-        pointBorderWidth: 1,
+        pointBorderWidth: 0,
       };
     });
 
