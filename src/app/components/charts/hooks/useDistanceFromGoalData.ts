@@ -122,7 +122,7 @@ export const useDistanceFromGoalData = (
         borderColor: color,
         backgroundColor: `${color}20`,
         fill: false,
-        tension: 0.2,
+        tension: 0.4,
         pointRadius: 3,
         pointHoverRadius: 6,
         pointBackgroundColor: color,
