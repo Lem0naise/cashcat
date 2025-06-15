@@ -78,8 +78,12 @@ export const useLineChartConfig = (
         legend: {
           display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
           labels: {
-            color: '#ffffff'
-          }
+            usePointStyle: true,
+            pointStyle: "rectRounded",
+            color: '#ffffff',
+            padding: 20
+          },
+          onClick: () => {}
         },
         tooltip: {
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -87,6 +91,8 @@ export const useLineChartConfig = (
           bodyColor: '#ffffff',
           borderColor: '#bac2ff',
           borderWidth: 1,
+          caretSize: 8,
+          caretPadding: 100,
           callbacks: {
             title: (context: TooltipItem<'line'>[]) => {
               const dateStr = context[0].label;
