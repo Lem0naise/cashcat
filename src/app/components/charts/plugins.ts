@@ -151,7 +151,7 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         const endLabel = format(rightDate, 'MMM dd');
         
         // Set up text styling
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 12px Gabarito, system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'center';
         
         // Calculate text dimensions for background
