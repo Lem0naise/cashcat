@@ -58,6 +58,9 @@ ChartJS.register(
   comparisonSelectionPlugin
 );
 
+// Set Chart.js global font defaults
+ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
+
 export default function BudgetAssignmentChart({
   assignments,
   categories,

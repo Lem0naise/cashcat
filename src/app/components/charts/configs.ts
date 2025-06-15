@@ -72,7 +72,8 @@ export const useLineChartConfig = (
           color: '#ffffff',
           font: {
             size: 16,
-            weight: 'bold' as const
+            weight: 'bold' as const,
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
           }
         },
         legend: {
@@ -85,6 +86,9 @@ export const useLineChartConfig = (
             boxWidth: 12,
             boxHeight: 12,
             textAlign: 'left' as const,
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
             generateLabels: function(chart: any) {
               const labels = chart.data.datasets.map((dataset: any, index: number) => ({
                 text: `  ${dataset.label}`, // Spaces to push text further from point
@@ -108,6 +112,15 @@ export const useLineChartConfig = (
           borderWidth: 1,
           caretSize: 8,
           caretPadding: 100,
+          titleFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          bodyFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          footerFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
           callbacks: {
             title: (context: TooltipItem<'line'>[]) => {
               const dateStr = context[0].label;
@@ -260,6 +273,9 @@ export const useLineChartConfig = (
           ticks: {
             color: '#ffffff',
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            }
           }
         },
         y: {
@@ -268,6 +284,9 @@ export const useLineChartConfig = (
           },
           ticks: {
             color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
             callback: function(value: any) {
               if (shouldShowDistanceFromGoal) {
                 const numValue = Number(value);
@@ -343,13 +362,17 @@ export const useVolumeChartConfig = (
           color: '#ffffff',
           font: {
             size: 14,
-            weight: 'bold' as const
+            weight: 'bold' as const,
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
           }
         },
         legend: {
           display: true,
           labels: {
-            color: '#ffffff'
+            color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            }
           }
         },
         tooltip: {
@@ -358,6 +381,15 @@ export const useVolumeChartConfig = (
           bodyColor: '#ffffff',
           borderColor: '#bac2ff',
           borderWidth: 1,
+          titleFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          bodyFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          footerFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
           callbacks: {
             title: (context: TooltipItem<'bar'>[]) => {
               const dateStr = context[0].label;
@@ -429,6 +461,9 @@ export const useVolumeChartConfig = (
           ticks: {
             color: '#ffffff',
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            }
           },
           // @ts-ignore
           barPercentage: 1.0,
@@ -443,6 +478,9 @@ export const useVolumeChartConfig = (
           },
           ticks: {
             color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
             callback: function(value: any) {
               return formatCurrency(Math.abs(Number(value)));
             }
