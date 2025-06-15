@@ -81,7 +81,22 @@ export const useLineChartConfig = (
             usePointStyle: true,
             pointStyle: "circle",
             color: '#ffffff',
-            padding: 20
+            padding: 20,
+            boxWidth: 12,
+            boxHeight: 12,
+            textAlign: 'left' as const,
+            generateLabels: function(chart: any) {
+              const labels = chart.data.datasets.map((dataset: any, index: number) => ({
+                text: `  ${dataset.label}`, // Spaces to push text further from point
+                fillStyle: dataset.borderColor,
+                strokeStyle: dataset.borderColor,
+                fontColor: '#ffffff',
+                lineWidth: 0,
+                pointStyle: 'circle',
+                datasetIndex: index
+              }));
+              return labels;
+            }
           },
           onClick: () => {}
         },
