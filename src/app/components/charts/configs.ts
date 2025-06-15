@@ -79,7 +79,7 @@ export const useLineChartConfig = (
           display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
           labels: {
             usePointStyle: true,
-            pointStyle: "rectRounded",
+            pointStyle: "circle",
             color: '#ffffff',
             padding: 20
           },
