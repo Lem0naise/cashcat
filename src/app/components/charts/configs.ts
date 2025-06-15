@@ -35,7 +35,7 @@ export const useLineChartConfig = (
           borderColor: '#bac2ff',
           backgroundColor: 'rgba(186, 194, 255, 0.1)',
           fill: true,
-          tension: 0.2,
+          tension: 0.4,
           pointRadius: chartData.dataPoints.length > 50 ? 2 : chartData.dataPoints.length > 30 ? 4 : 6,
           pointHoverRadius: chartData.dataPoints.length > 50 ? 4 : chartData.dataPoints.length > 30 ? 6 : 10,
           pointBackgroundColor: '#bac2ff',
