@@ -225,5 +225,26 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       
       ctx.restore();
     }
+    
+    // --- Draw horizontal zero line for clarity ---
+    if (scales.y) {
+      const yScale = scales.y;
+      // Only draw if zero is within the visible y range
+      if (yScale.min < 0 && yScale.max > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(left, yScale.getPixelForValue(0));
+        ctx.lineTo(right, yScale.getPixelForValue(0));
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.setLineDash([8, 10]);
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+    }
+    // --- End horizontal zero line ---
   }
 };
