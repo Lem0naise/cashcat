@@ -157,14 +157,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of {' '}
-                            {Math.round(rollover * 100) != 0 ? (
-                                <>
-                                    <span className="text-white/70 font-medium">{formatCurrency(rollover)}</span>
-                                    {assigned != 0 && (<span className="text-white/50"> {assigned > 0 ? '+' : ' minus '} </span>)}
-                                </>
-                            ) : null}
-                            {assigned != 0 && (<span className="text-green font-medium">{formatCurrency(assigned)}</span>)}
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned+rollover)}</span>
                         </span>
                         <span>
                             {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
@@ -182,19 +175,28 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                     }`}
                 >
                     <div className={`pb-10 flex items-center justify-between mt-0.5 md:mt-2.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
-                        <div className="flex items-center gap-1 xl:gap-2">
-                            <div className="w-16 lg:w-18">
+                        <div className="flex items-center gap-1 xl:gap-1">
+
+                            {Math.round(rollover * 100) != 0 ? (
+                                <>
+                                    <span className="text-white/70 text-sm xl:text-md font-medium">{formatCurrency(rollover)}</span>
+                                    {assigned != 0 && (<span className="text-white/50 text-sm xl:text-md font-medium">+£</span>)}
+                                </>
+                            ) : null}
+                         
+
+                            <div className="w-14 lg:w-16">
                                 <MoneyInput
                                     inputRef={inputRef}
                                     value={hideBudgetValues ? '****' : editedAmount}
                                     onChange={handleInputChange}
-                                    className="bg-white/10 px-2 md:px-3 py-1 md:py-2 xl:text-lg focus:outline-none focus:ring-1 focus:ring-primary p-1 !text-sm"
+                                    className="bg-white/10 px-1 md:px-2 py-1 md:py-1 xl:text-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
                                     placeholder="0.00"
                                     dataCategoryId={forceFlipMassAssign ? name : undefined}
                                     canBeNegative={true}
                                 />
                             </div>
-                            <span className="text-white/50 text-sm md:text-base">/</span>
+                            <span className="text-white/50 text-sm md:text-base">of</span>
                             <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
                         </div>
                         <div className={`flex gap-1 md:gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
