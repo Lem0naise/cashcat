@@ -61,7 +61,12 @@ export const calculateAllTimeRange = (assignments: Assignment[], transactions: T
   return { allTimeStart, allTimeEnd };
 };
 
-export const getGranularityKey = (date: Date, diffInDays: number) => {
+export const getGranularityKey = (date: Date, diffInDays: number, forceDaily: boolean = false) => {
+  // Force daily granularity for line charts - never aggregate by week or month
+  if (forceDaily) {
+    return format(date, 'yyyy-MM-dd 12:00:00');
+  }
+  
   // For up to 3 months, use daily
   if (diffInDays <= 90) {
     return format(date, 'yyyy-MM-dd 12:00:00');
@@ -84,7 +89,12 @@ export const getGranularityKey = (date: Date, diffInDays: number) => {
   }
 };
 
-export const determineTimeUnit = (diffInDays: number): 'day' | 'week' | 'month' => {
+export const determineTimeUnit = (diffInDays: number, forceDaily: boolean = false): 'day' | 'week' | 'month' => {
+  // Force daily unit for line charts - never use week or month
+  if (forceDaily) {
+    return 'day';
+  }
+  
   if (diffInDays <= 90) return 'day';
   else if (diffInDays <= 365) return 'week';
   else return 'month';

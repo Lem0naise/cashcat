@@ -265,15 +265,8 @@ export const useVolumeChartConfig = (
                 const date = new Date(dateStr);
                 if (isNaN(date.getTime())) return dateStr;
                 
-                const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-                
-                if (diffInDays <= 7) {
-                  return format(date, 'MMM dd, yyyy');
-                } else if (diffInDays <= 90) {
-                  return format(date, 'MMM dd, yyyy');
-                } else {
-                  return format(date, 'MMM yyyy');
-                }
+                // Always use daily formatting since we force daily granularity for line charts
+                return format(date, 'MMM dd, yyyy');
               } catch (error) {
                 console.error('Error formatting date in volume tooltip:', error, dateStr);
                 return dateStr;
