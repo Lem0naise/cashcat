@@ -179,7 +179,7 @@ export const useChartData = (
           return acc;
         }
         
-        const key = getGranularityKey(transactionDate, diffInDays);
+        const key = getGranularityKey(transactionDate, diffInDays, true); // Force daily for line charts
         
         if (!acc[key]) {
           acc[key] = [];

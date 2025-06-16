@@ -255,7 +255,7 @@ export default function BudgetAssignmentChart({
   
   // Find the correct time unit for the current range
   const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-  const xUnit = determineTimeUnit(diffInDays);
+  const xUnit = determineTimeUnit(diffInDays, true); // Force daily for line charts
 
   // Determine if we should show filtered title
   // hasActiveFilters already defined above
