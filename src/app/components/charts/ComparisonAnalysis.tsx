@@ -85,9 +85,12 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                             : (!isNaN(categoryData.absoluteChange) && categoryData.absoluteChange >= 0 ? 'text-green' : 'text-orange-400')
                         }`}>
                           {isSinglePoint ? 
-                            // For single point, show the current value
-                            (shouldShowDistanceFromGoal && categoryData.startValue < 0 
-                              ? `${formatCurrency(Math.abs(categoryData.startValue))} over budget`
+                            // For single point, show the current value with clear labels
+                            (shouldShowDistanceFromGoal 
+                              ? (categoryData.startValue < 0 
+                                  ? `${formatCurrency(Math.abs(categoryData.startValue))} overspent`
+                                  : `${formatCurrency(categoryData.startValue)} remaining`
+                                )
                               : formatCurrency(categoryData.startValue)
                             )
                             :
@@ -134,9 +137,12 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                     : (!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy')
                 }`}>
                   {isSinglePoint ?
-                    // For single point, show the current overall value
-                    (shouldShowDistanceFromGoal && currentData.startValue < 0 
-                      ? `${formatCurrency(Math.abs(currentData.startValue))} over budget`
+                    // For single point, show the current overall value with clear labels
+                    (shouldShowDistanceFromGoal 
+                      ? (currentData.startValue < 0 
+                          ? `${formatCurrency(Math.abs(currentData.startValue))} overspent`
+                          : `${formatCurrency(currentData.startValue)} remaining`
+                        )
                       : formatCurrency(currentData.startValue)
                     )
                     :
@@ -191,9 +197,12 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                 : (!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy')
             }`}>
               {isSinglePoint ?
-                // For single point, show current value
-                (shouldShowDistanceFromGoal && currentData.startValue < 0 
-                  ? `${formatCurrency(Math.abs(currentData.startValue))} over budget`
+                // For single point, show current value with clear labels
+                (shouldShowDistanceFromGoal 
+                  ? (currentData.startValue < 0 
+                      ? `${formatCurrency(Math.abs(currentData.startValue))} overspent`
+                      : `${formatCurrency(currentData.startValue)} remaining`
+                    )
                   : formatCurrency(currentData.startValue)
                 )
                 :
