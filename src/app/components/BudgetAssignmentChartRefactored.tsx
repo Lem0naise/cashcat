@@ -232,17 +232,21 @@ export default function BudgetAssignmentChart({
     isDragging,
     dragStartDataIndex,
     dragEndDataIndex,
+    hoverDataIndex,
     comparisonData,
     defaultComparisonData,
     setComparisonData,
     setDefaultComparisonData,
     calculateComparisonData,
+    calculateSinglePointData,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleHover,
+    handleHoverLeave,
     clearSelection
   } = useComparisonAnalysis(
     comparisonCategoryIds, 
@@ -272,6 +276,7 @@ export default function BudgetAssignmentChart({
     isDragging,
     dragStartDataIndex,
     dragEndDataIndex,
+    hoverDataIndex,
     shouldShowDistanceFromGoal,
     distanceFromGoalData,
     filteredCategoriesWithGoals,
@@ -279,7 +284,9 @@ export default function BudgetAssignmentChart({
     xUnit,
     comparisonData,
     handleRealTimeUpdate,
-    calculateComparisonData
+    calculateComparisonData,
+    handleHover,
+    handleHoverLeave
   );
 
   const volumeChartConfig = useVolumeChartConfig(
@@ -297,9 +304,16 @@ export default function BudgetAssignmentChart({
       
       // Mouse event handlers
       const onMouseDown = (e: MouseEvent) => handleMouseDown(e, chart);
-      const onMouseMove = (e: MouseEvent) => handleMouseMove(e, chart);
+      const onMouseMove = (e: MouseEvent) => {
+        if (isDragging) {
+          handleMouseMove(e, chart);
+        } else {
+          handleHover(e, chart);
+        }
+      };
       const onMouseUp = (e: MouseEvent) => handleMouseUp(e, chart);
       const onMouseLeave = (e: MouseEvent) => {
+        handleHoverLeave(chart);
         if (isDragging) {
           setComparisonData(null);
         }
@@ -341,7 +355,7 @@ export default function BudgetAssignmentChart({
         canvas.removeEventListener('touchcancel', onTouchCancel);
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd, isDragging]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd, handleHover, handleHoverLeave, isDragging]);
 
   // Memoize expensive calculations to prevent unnecessary re-renders
   const chartDataLength = chartData?.dataPoints?.length || 0;
@@ -373,6 +387,52 @@ export default function BudgetAssignmentChart({
     }
   }, [defaultComparisonDataMemo, dragStartDataIndex, dragEndDataIndex]);
 
+  // Track if user has made a drag selection
+  const hasDragSelection = dragStartDataIndex !== null && dragEndDataIndex !== null;
+
+  // Effect to update comparison data when hover changes (for single point display)
+  useEffect(() => {
+    if (hoverDataIndex !== null && !isDragging && chartData?.dataPoints) {
+      const dataToUse = chartData.dataPoints;
+      const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
+      
+      if (dataToUse && dataToUse.length > 0) {
+        const singlePointData = calculateSinglePointData(
+          hoverDataIndex,
+          dataToUse,
+          datasetsToUse
+        );
+        
+        if (singlePointData) {
+          setComparisonData(singlePointData);
+        }
+      }
+    } else if (hoverDataIndex === null && !isDragging) {
+      // When not hovering, restore the appropriate data
+      if (hasDragSelection) {
+        // If user has made a drag selection, restore that selection's data
+        const dataToUse = chartData.dataPoints;
+        const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
+        
+        if (dataToUse && dataToUse.length > 0) {
+          const dragSelectionData = calculateComparisonData(
+            dragStartDataIndex,
+            dragEndDataIndex,
+            dataToUse,
+            datasetsToUse
+          );
+          
+          if (dragSelectionData) {
+            setComparisonData(dragSelectionData);
+          }
+        }
+      } else {
+        // If no drag selection, use default comparison data
+        setComparisonData(defaultComparisonData);
+      }
+    }
+  }, [hoverDataIndex, isDragging, hasDragSelection, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, chartDataLength, calculateSinglePointData, calculateComparisonData, defaultComparisonData, dragStartDataIndex, dragEndDataIndex]);
+
   // Effect to update comparison data when drag selection changes
   useEffect(() => {
     if (dragStartDataIndex !== null && dragEndDataIndex !== null && !isDragging && chartData?.dataPoints) {
@@ -403,6 +463,7 @@ export default function BudgetAssignmentChart({
         defaultComparisonData={defaultComparisonData}
         shouldShowDistanceFromGoal={shouldShowDistanceFromGoal}
         onClearSelection={clearSelection}
+        isHovering={hoverDataIndex !== null && !hasDragSelection}
       />
 
       {/* Show helpful message when no data */}
