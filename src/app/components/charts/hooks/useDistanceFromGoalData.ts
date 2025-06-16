@@ -124,9 +124,9 @@ export const useDistanceFromGoalData = (
         fill: false,
         tension: 0.4,
         pointRadius: 3,
-        pointHoverRadius: 6,
+        pointHoverRadius: 3,
         pointBackgroundColor: color,
-        pointBorderColor: '#0a0a0a',
+        pointBorderColor: `${color}`,
         pointBorderWidth: 0,
       };
     });

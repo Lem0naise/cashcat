@@ -42,9 +42,9 @@ export const useLineChartConfig = (
           fill: true,
           tension: 0.4,
           pointRadius: 3,
-          pointHoverRadius: 6,
+          pointHoverRadius: 3,
           pointBackgroundColor: '#bac2ff',
-          pointBorderColor: '#0a0a0a',
+          pointBorderColor: '#bac2ff',
           pointBorderWidth: 0,
         }
       ]
