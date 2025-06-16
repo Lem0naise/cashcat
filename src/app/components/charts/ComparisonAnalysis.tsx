@@ -246,7 +246,7 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
           onClick={onClearSelection}
           className="mt-3 text-xs text-white/50 hover:text-white/70 transition-colors"
         >
-          Clear selection (show full period)
+          Clear selection
         </button>
       )}
       
