@@ -146,8 +146,9 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Draw shaded area only if not multiple categories
-      const shouldDrawShadedArea = selectedCategories.length <= 1;
+      // Draw shaded area - now works for both single and multiple categories
+      // Since we calculate overall change correctly, we can always show the visual feedback
+      const shouldDrawShadedArea = true;
       
       if (shouldDrawShadedArea) {      // Use the same logic as the ComparisonAnalysis component for color determination
       let isPositiveChange = false;
