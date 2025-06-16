@@ -23,7 +23,9 @@ export const useLineChartConfig = (
   filteredCategoriesWithGoals: Category[],
   selectedCategories: string[],
   xUnit: 'day' | 'week' | 'month',
-  comparisonData: any // Add comparison data parameter
+  comparisonData: any, // Add comparison data parameter
+  onRealTimeUpdate?: (data: any) => void, // Add real-time update callback
+  calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any // Add calculation function
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -61,7 +63,9 @@ export const useLineChartConfig = (
             selectedCategories,
             shouldShowDistanceFromGoal,
             distanceFromGoalData,
-            comparisonData
+            comparisonData,
+            onRealTimeUpdate,
+            calculateComparisonData
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {
@@ -309,7 +313,9 @@ export const useLineChartConfig = (
     distanceFromGoalData.datasets.length, 
     filteredCategoriesWithGoals.length,
     selectedCategories.length,
-    xUnit
+    xUnit,
+    onRealTimeUpdate,
+    calculateComparisonData
   ]);
 };
 

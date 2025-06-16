@@ -2,8 +2,61 @@
 import { Plugin } from 'chart.js';
 import { format } from 'date-fns';
 
+// Throttle function to limit the frequency of real-time updates
+let lastUpdateTime = 0;
+const THROTTLE_DELAY = 50; // 50ms throttle to prevent excessive updates
+
 export const comparisonSelectionPlugin: Plugin<'line'> = {
   id: 'comparisonSelection',
+  beforeDraw: (chart, args, options) => {
+    const { selectionState } = options as any;
+    
+    if (!selectionState) return;
+    
+    const { 
+      dragStartDataIndex, 
+      dragEndDataIndex, 
+      chartData, 
+      selectedCategories,
+      shouldShowDistanceFromGoal,
+      distanceFromGoalData,
+      onRealTimeUpdate,
+      calculateComparisonData
+    } = selectionState;
+    
+    // Trigger real-time comparison data update during dragging (with throttling)
+    if (onRealTimeUpdate && calculateComparisonData && 
+        dragStartDataIndex !== null && dragEndDataIndex !== null &&
+        chartData && chartData.dataPoints && chartData.dataPoints.length > 0) {
+      
+      const now = Date.now();
+      if (now - lastUpdateTime < THROTTLE_DELAY) {
+        return; // Skip update if throttle period hasn't passed
+      }
+      lastUpdateTime = now;
+      
+      try {
+        // Use the main chart data points for dates/structure
+        const dataToUse = chartData.dataPoints;
+        const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
+        
+        // Calculate comparison data for the current selection
+        const comparisonData = calculateComparisonData(
+          dragStartDataIndex, 
+          dragEndDataIndex, 
+          dataToUse, 
+          datasetsToUse
+        );
+        
+        // Update the comparison data in real-time
+        if (comparisonData) {
+          onRealTimeUpdate(comparisonData);
+        }
+      } catch (error) {
+        console.error('Error calculating real-time comparison data:', error);
+      }
+    }
+  },
   afterDraw: (chart, args, options) => {
     const { ctx, chartArea, scales } = chart;
     const { left, right, top, bottom } = chartArea;
@@ -96,20 +149,39 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       // Draw shaded area only if not multiple categories
       const shouldDrawShadedArea = selectedCategories.length <= 1;
       
-      if (shouldDrawShadedArea) {
-        // Use the same logic as the ComparisonAnalysis component for color determination
-        let isPositiveChange = false;
+      if (shouldDrawShadedArea) {      // Use the same logic as the ComparisonAnalysis component for color determination
+      let isPositiveChange = false;
+      
+      try {
+        // Calculate color directly from data points for immediate and accurate feedback
+        // Ensure we always compare chronologically (earlier date vs later date)
         
-        try {
-          // Calculate color directly from data points for immediate and accurate feedback
-          // Ensure we always compare chronologically (earlier date vs later date)
-          
-          // Round fractional indices for data access
-          const chronoStartIdx = Math.min(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
-          const chronoEndIdx = Math.max(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
-          
-          if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
-            // For goal tracking, use the first dataset's values
+        // Round fractional indices for data access
+        const chronoStartIdx = Math.min(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+        const chronoEndIdx = Math.max(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+        
+        if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
+          // For multiple categories, calculate overall change (sum of all category changes)
+          if (distanceFromGoalData.datasets.length > 1) {
+            let overallAbsoluteChange = 0;
+            let validDatasetsCount = 0;
+            
+            // Sum up the changes across all datasets (categories)
+            distanceFromGoalData.datasets.forEach((dataset: any) => {
+              const chronoStartValue = dataset.data[chronoStartIdx]?.y;
+              const chronoEndValue = dataset.data[chronoEndIdx]?.y;
+              if (chronoStartValue !== undefined && chronoEndValue !== undefined) {
+                overallAbsoluteChange += chronoEndValue - chronoStartValue;
+                validDatasetsCount++;
+              }
+            });
+            
+            // Only use the overall change if we have valid data from multiple datasets
+            if (validDatasetsCount > 0) {
+              isPositiveChange = overallAbsoluteChange >= 0;
+            }
+          } else {
+            // For single category, use the dataset values directly
             const dataset = distanceFromGoalData.datasets[0];
             const chronoStartValue = dataset.data[chronoStartIdx]?.y;
             const chronoEndValue = dataset.data[chronoEndIdx]?.y;
@@ -120,17 +192,18 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
               const absoluteChange = chronoEndValue - chronoStartValue;
               isPositiveChange = absoluteChange >= 0;
             }
-          } else {
-            // For balance tracking, use the chart data points
-            const chronoStartPoint = chartData.dataPoints[chronoStartIdx];
-            const chronoEndPoint = chartData.dataPoints[chronoEndIdx];
-            if (chronoStartPoint && chronoEndPoint) {
-              // For balance: positive change = balance increased from earlier to later date (green)
-              // absoluteChange = endValue - startValue, so positive when balance increases (good)
-              const absoluteChange = chronoEndPoint.y - chronoStartPoint.y;
-              isPositiveChange = absoluteChange >= 0;
-            }
           }
+        } else {
+          // For balance tracking, use the chart data points
+          const chronoStartPoint = chartData.dataPoints[chronoStartIdx];
+          const chronoEndPoint = chartData.dataPoints[chronoEndIdx];
+          if (chronoStartPoint && chronoEndPoint) {
+            // For balance: positive change = balance increased from earlier to later date (green)
+            // absoluteChange = endValue - startValue, so positive when balance increases (good)
+            const absoluteChange = chronoEndPoint.y - chronoStartPoint.y;
+            isPositiveChange = absoluteChange >= 0;
+          }
+        }
         } catch (error) {
           // If there's an error, default to positive
           isPositiveChange = true;

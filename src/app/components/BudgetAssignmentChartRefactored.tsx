@@ -1,7 +1,7 @@
 // Refactored Budget Assignment Chart - Main Component
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
 import { format } from 'date-fns';
 import {
@@ -257,6 +257,14 @@ export default function BudgetAssignmentChart({
   // hasActiveFilters already defined above
 
   // Chart configurations with stable dependencies
+  // Real-time update callback for comparison data during dragging
+  const handleRealTimeUpdate = useCallback((newComparisonData: any) => {
+    // Only update if we're actively dragging to avoid unnecessary re-renders
+    if (isDragging) {
+      setComparisonData(newComparisonData);
+    }
+  }, [isDragging, setComparisonData]);
+
   const lineChartConfig = useLineChartConfig(
     chartData,
     categories,
@@ -269,7 +277,9 @@ export default function BudgetAssignmentChart({
     filteredCategoriesWithGoals,
     selectedCategories,
     xUnit,
-    comparisonData
+    comparisonData,
+    handleRealTimeUpdate,
+    calculateComparisonData
   );
 
   const volumeChartConfig = useVolumeChartConfig(
