@@ -249,8 +249,8 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
         </div>
       )}
       
-      {/* Show clear button only for custom selections */}
-      {isCustomSelection && (
+      {/* Show clear button only for custom drag selections, not for hover */}
+      {isCustomSelection && !isHovering && !isSinglePoint && (
         <button
           onClick={onClearSelection}
           className="mt-3 text-xs text-white/50 hover:text-white/70 transition-colors"
