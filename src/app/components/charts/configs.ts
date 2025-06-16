@@ -18,6 +18,7 @@ export const useLineChartConfig = (
   isDragging: boolean,
   dragStartDataIndex: number | null,
   dragEndDataIndex: number | null,
+  hoverDataIndex: number | null,
   shouldShowDistanceFromGoal: boolean,
   distanceFromGoalData: DistanceFromGoalData,
   filteredCategoriesWithGoals: Category[],
@@ -25,7 +26,9 @@ export const useLineChartConfig = (
   xUnit: 'day' | 'week' | 'month',
   comparisonData: any, // Add comparison data parameter
   onRealTimeUpdate?: (data: any) => void, // Add real-time update callback
-  calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any // Add calculation function
+  calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any, // Add calculation function
+  onHover?: (event: any, chart: any) => void, // Add hover handler
+  onHoverLeave?: (chart: any) => void // Add hover leave handler
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -59,6 +62,7 @@ export const useLineChartConfig = (
           selectionState: {
             dragStartDataIndex,
             dragEndDataIndex,
+            hoverDataIndex,
             chartData,
             selectedCategories,
             shouldShowDistanceFromGoal,
@@ -99,153 +103,7 @@ export const useLineChartConfig = (
   onClick: () => {}
 },
         tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          titleColor: '#ffffff',
-          bodyColor: '#ffffff',
-          borderColor: '#bac2ff',
-          borderWidth: 1,
-          caretSize: 8,
-          caretPadding: 100,
-          titleFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          bodyFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          footerFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          callbacks: {
-            title: (context: TooltipItem<'line'>[]) => {
-              const dateStr = context[0].label;
-              let date: Date | null = null;
-              // Try ISO first
-              if (!isNaN(Date.parse(dateStr))) {
-                date = new Date(dateStr);
-              } else {
-                // Try parsing as "Apr 9, 2025, 12:00:00 p.m." (en-US)
-                // Remove the "p.m." or "a.m." and replace with AM/PM
-                const fixed = dateStr
-                  .replace('a.m.', 'AM')
-                  .replace('p.m.', 'PM')
-                  .replace('a.m', 'AM')
-                  .replace('p.m', 'PM');
-                date = new Date(fixed);
-              }
-              if (date && !isNaN(date.getTime())) {
-                // Determine if time should be shown by checking the interval between data points
-                const dataIndex = context[0].dataIndex;
-                const dataPoints = chartData.dataPoints;
-                let showTime = false;
-                if (dataPoints && dataPoints.length > 1 && dataIndex > 0) {
-                  const prevDate = new Date(dataPoints[dataIndex - 1].x);
-                  const currDate = new Date(dataPoints[dataIndex].x);
-                  const diffMs = Math.abs(currDate.getTime() - prevDate.getTime());
-                  // Less than 24 hours (86,400,000 ms)
-                  if (diffMs < 24 * 60 * 60 * 1000) {
-                    showTime = true;
-                  }
-                }
-                // Also show time if this is the first point and the next point is < 24h away
-                if (dataPoints && dataPoints.length > 1 && dataIndex === 0) {
-                  const nextDate = new Date(dataPoints[1].x);
-                  const currDate = new Date(dataPoints[0].x);
-                  const diffMs = Math.abs(nextDate.getTime() - currDate.getTime());
-                  if (diffMs < 24 * 60 * 60 * 1000) {
-                    showTime = true;
-                  }
-                }
-                if (showTime) {
-                  return format(date, 'MMM d, yyyy, h:mm a');
-                } else {
-                  return format(date, 'MMM d, yyyy');
-                }
-              }
-              // If still invalid, show as "Unrecognized date"
-              return 'Unrecognized date';
-            },
-            label: (context: TooltipItem<'line'>) => {
-              const value = context.parsed.y;
-              const datasetIndex = context.datasetIndex;
-              const category = filteredCategoriesWithGoals[datasetIndex];
-              
-              if (!category) {
-                return shouldShowDistanceFromGoal ? `${formatCurrency(value)} remaining` : `Balance: ${formatCurrency(value)}`;
-              }
-              
-              if (shouldShowDistanceFromGoal) {
-                if (category.goal === null || category.goal === undefined) {
-                  // Savings category
-                  if (value >= 0) {
-                    return `${category.name}: ${formatCurrency(value)} accumulated`;
-                  } else {
-                    return `${category.name}: ${formatCurrency(Math.abs(value))} spent from savings`;
-                  }
-                } else {
-                  // Regular spending category with goal
-                  if (value >= 0) {
-                    return `${category.name}: ${formatCurrency(value)} remaining`;
-                  } else {
-                    return `${category.name}: ${formatCurrency(Math.abs(value))} over budget`;
-                  }
-                }
-              } else {
-                return `Balance: ${formatCurrency(value)}`;
-              }
-            },
-            afterBody: (context: TooltipItem<'line'>[]) => {
-              if (shouldShowDistanceFromGoal) {
-                // Show additional goal information for distance from goal view
-                const datasetIndex = context[0].datasetIndex;
-                const category = filteredCategoriesWithGoals[datasetIndex];
-                if (category) {
-                  const currentValue = context[0].parsed.y;
-                  
-                  if (category.goal === null || category.goal === undefined) {
-                    // Savings category without goal
-                    const spentAmount = Math.max(0, -currentValue); // If negative, show how much was spent
-                    return [
-                      '',
-                      `Category Type: Savings/No Goal`,
-                      currentValue >= 0 
-                        ? `Value accumulated this month: ${formatCurrency(currentValue)}`
-                        : `Spent from savings this month: ${formatCurrency(spentAmount)}`
-                    ];
-                  } else {
-                    // Regular spending category with goal
-                    const goalAmount = category.goal;
-                    const spentAmount = goalAmount - currentValue;
-                    return [
-                      '',
-                      `Monthly Goal: ${formatCurrency(goalAmount)}`,
-                      `Month-to-date Spent: ${formatCurrency(Math.max(0, spentAmount))}`,
-                      currentValue >= 0 
-                        ? `Remaining this month: ${formatCurrency(currentValue)}`
-                        : `Over budget this month: ${formatCurrency(Math.abs(currentValue))}`
-                    ];
-                  }
-                }
-                return [];
-              } else {
-                // Show assignment breakdown for account balance view
-                const dataPoint = chartData.dataPoints[context[0].dataIndex];
-                if (dataPoint?.assignmentBreakdown) {
-                  const breakdown = Object.entries(dataPoint.assignmentBreakdown)
-                    .filter(([_, amount]) => Math.abs(amount as number) > 0)
-                    .sort(([,a], [,b]) => Math.abs(b as number) - Math.abs(a as number))
-                    .slice(0, 8)
-                    .map(([categoryId, amount]) => {
-                      const category = categories.find(c => c.id === categoryId);
-                      const amountNum = amount as number;
-                      const sign = amountNum >= 0 ? '+' : '-';
-                      return `${category?.name || 'Unknown'}: ${sign}${formatCurrency(Math.abs(amountNum))}`;
-                    });
-                  return breakdown.length > 0 ? ['', 'This Period:', ...breakdown] : [];
-                }
-                return [];
-              }
-            }
-          }
+          enabled: false // Disable tooltips in favor of hover lines and comparison analysis
         }
       },
       scales: {
@@ -296,9 +154,20 @@ export const useLineChartConfig = (
           }
         }
       },
-      onHover: (event: any, activeElements: any[]) => {
+      onHover: (event: any, activeElements: any[], chart: any) => {
         if (event.native && event.native.target) {
           (event.native.target as HTMLElement).style.cursor = isDragging ? 'grabbing' : 'crosshair';
+        }
+        
+        // Call custom hover handler if provided
+        if (onHover && event.native) {
+          onHover(event.native, chart);
+        }
+      },
+      onLeave: (event: any, activeElements: any[], chart: any) => {
+        // Call custom hover leave handler if provided
+        if (onHoverLeave) {
+          onHoverLeave(chart);
         }
       },
     }
@@ -309,14 +178,17 @@ export const useLineChartConfig = (
     dateRange.end.getTime(), 
     isDragging, 
     dragStartDataIndex, 
-    dragEndDataIndex, 
+    dragEndDataIndex,
+    hoverDataIndex,
     shouldShowDistanceFromGoal, 
     distanceFromGoalData.datasets.length, 
     filteredCategoriesWithGoals.length,
     selectedCategories.length,
     xUnit,
     onRealTimeUpdate,
-    calculateComparisonData
+    calculateComparisonData,
+    onHover,
+    onHoverLeave
   ]);
 };
 

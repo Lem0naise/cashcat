@@ -67,6 +67,7 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
     const { 
       dragStartDataIndex, 
       dragEndDataIndex, 
+      hoverDataIndex,
       chartData, 
       selectedCategories,
       shouldShowDistanceFromGoal,
@@ -74,12 +75,93 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       isDragging
     } = selectionState;
     
+    // Draw hover line if hovering (and not dragging and no active drag selection)
+    const hasDragSelection = dragStartDataIndex !== null && dragEndDataIndex !== null;
+    if (hoverDataIndex !== null && !isDragging && !hasDragSelection) {
+      ctx.save();
+      
+      if (!chartData.dataPoints || chartData.dataPoints.length === 0) {
+        ctx.restore();
+        return;
+      }
+      
+      const clampedIndex = Math.max(0, Math.min(hoverDataIndex, chartData.dataPoints.length - 1));
+      const roundedIndex = Math.round(clampedIndex);
+      const point = chartData.dataPoints[roundedIndex];
+      
+      if (point) {
+        const date = new Date(point.x);
+        const x = scales.x.getPixelForValue(date.getTime());
+        
+        if (!isNaN(x)) {
+          // Draw vertical hover line
+          ctx.beginPath();
+          ctx.setLineDash([3, 3]);
+          ctx.strokeStyle = 'rgba(186, 194, 255, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.moveTo(x, top);
+          ctx.lineTo(x, bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Draw date label
+          try {
+            const dateLabel = format(date, 'MMM dd');
+            ctx.font = 'bold 12px Gabarito, system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            
+            const textWidth = ctx.measureText(dateLabel).width;
+            const textHeight = 16;
+            const padding = 8;
+            const labelY = bottom + 20;
+            
+            // Draw background for date label
+            ctx.fillStyle = 'rgba(186, 194, 255, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(x + 4, labelY - textHeight/2 - padding/2);
+            ctx.lineTo(x + textWidth/2 + padding, labelY - textHeight/2 - padding/2);
+            ctx.quadraticCurveTo(x + textWidth/2 + padding, labelY - textHeight/2 - padding/2, x + textWidth/2 + padding, labelY - textHeight/2 - padding/2 + 4);
+            ctx.lineTo(x + textWidth/2 + padding, labelY + textHeight/2 + padding/2 - 4);
+            ctx.quadraticCurveTo(x + textWidth/2 + padding, labelY + textHeight/2 + padding/2, x + textWidth/2 + padding - 4, labelY + textHeight/2 + padding/2);
+            ctx.lineTo(x - textWidth/2 - padding + 4, labelY + textHeight/2 + padding/2);
+            ctx.quadraticCurveTo(x - textWidth/2 - padding, labelY + textHeight/2 + padding/2, x - textWidth/2 - padding, labelY + textHeight/2 + padding/2 - 4);
+            ctx.lineTo(x - textWidth/2 - padding, labelY - textHeight/2 - padding/2 + 4);
+            ctx.quadraticCurveTo(x - textWidth/2 - padding, labelY - textHeight/2 - padding/2, x - textWidth/2 - padding + 4, labelY - textHeight/2 - padding/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = '#bac2ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw text
+            ctx.fillStyle = '#0a0a0a';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.shadowBlur = 1;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 1;
+            ctx.fillText(dateLabel, x, labelY + 2);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+          } catch (error) {
+            console.error('Error formatting hover date label:', error);
+          }
+        }
+      }
+      
+      ctx.restore();
+    }
+    
     // Only draw selection lines if we have valid selection
     if (dragStartDataIndex !== null && dragEndDataIndex !== null) {
       ctx.save();
       
       // Always use the main chart data points for x-axis positions
-      // The time periods are the same regardless of whether we show distance from goal
       if (!chartData.dataPoints || chartData.dataPoints.length === 0) {
         ctx.restore();
         return;
