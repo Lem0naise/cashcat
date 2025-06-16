@@ -77,33 +77,22 @@ export const useLineChartConfig = (
           }
         },
         legend: {
-          display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
-          labels: {
-            usePointStyle: true,
-            pointStyle: "circle",
-            color: '#ffffff',
-            padding: 20,
-            boxWidth: 12,
-            boxHeight: 12,
-            textAlign: 'left' as const,
-            font: {
-              family: 'Gabarito, system-ui, -apple-system, sans-serif'
-            },
-            generateLabels: function(chart: any) {
-              const labels = chart.data.datasets.map((dataset: any, index: number) => ({
-                text: `  ${dataset.label}`, // Spaces to push text further from point
-                fillStyle: dataset.borderColor,
-                strokeStyle: dataset.borderColor,
-                fontColor: '#ffffff',
-                lineWidth: 0,
-                pointStyle: 'circle',
-                datasetIndex: index
-              }));
-              return labels;
-            }
-          },
-          onClick: () => {}
-        },
+  display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
+  labels: {
+    usePointStyle: true,
+    pointStyle: "circle",
+    color: '#ffffff',
+    padding: 20,
+    boxWidth: 10,
+    boxHeight: 8,
+    textAlign: 'left' as const,
+    font: {
+      family: 'Gabarito, system-ui, -apple-system, sans-serif',
+      size: 15 // Match your legend font size
+    }
+  },
+  onClick: () => {}
+},
         tooltip: {
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           titleColor: '#ffffff',
