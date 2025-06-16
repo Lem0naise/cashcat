@@ -70,7 +70,8 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       chartData, 
       selectedCategories,
       shouldShowDistanceFromGoal,
-      distanceFromGoalData 
+      distanceFromGoalData,
+      isDragging
     } = selectionState;
     
     // Only draw selection lines if we have valid selection
@@ -84,9 +85,23 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         return;
       }
       
-      // Helper function to get interpolated x position and date for fractional indices
-      const getInterpolatedPosition = (fractionalIndex: number) => {
+      // Helper function to get position and date - snaps to actual data points when not dragging
+      const getPosition = (fractionalIndex: number, isDragging: boolean) => {
         const clampedIndex = Math.max(0, Math.min(fractionalIndex, chartData.dataPoints.length - 1));
+        
+        // If not currently dragging, snap to the nearest data point
+        if (!isDragging) {
+          const snappedIndex = Math.round(clampedIndex);
+          const point = chartData.dataPoints[snappedIndex];
+          const date = new Date(point.x);
+          return {
+            x: scales.x.getPixelForValue(date.getTime()),
+            date: date,
+            snappedIndex: snappedIndex
+          };
+        }
+        
+        // During dragging, use interpolated positions for smooth interaction
         const lowerIndex = Math.floor(clampedIndex);
         const upperIndex = Math.min(Math.ceil(clampedIndex), chartData.dataPoints.length - 1);
         
@@ -96,11 +111,12 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
           const date = new Date(point.x);
           return {
             x: scales.x.getPixelForValue(date.getTime()),
-            date: date
+            date: date,
+            snappedIndex: lowerIndex
           };
         }
         
-        // Interpolate between two data points
+        // Interpolate between two data points during dragging
         const ratio = clampedIndex - lowerIndex;
         const lowerPoint = chartData.dataPoints[lowerIndex];
         const upperPoint = chartData.dataPoints[upperIndex];
@@ -111,12 +127,13 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         
         return {
           x: scales.x.getPixelForValue(interpolatedTime),
-          date: new Date(interpolatedTime)
+          date: new Date(interpolatedTime),
+          snappedIndex: Math.round(clampedIndex)
         };
       };
       
-      const startPos = getInterpolatedPosition(dragStartDataIndex);
-      const endPos = getInterpolatedPosition(dragEndDataIndex);
+      const startPos = getPosition(dragStartDataIndex, isDragging || false);
+      const endPos = getPosition(dragEndDataIndex, isDragging || false);
       
       // Check if we got valid pixel positions
       if (isNaN(startPos.x) || isNaN(endPos.x)) {
@@ -155,11 +172,18 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       
       try {
         // Calculate color directly from data points for immediate and accurate feedback
-        // Ensure we always compare chronologically (earlier date vs later date)
+        // Use snapped indices when not dragging for precise alignment
         
-        // Round fractional indices for data access
-        const chronoStartIdx = Math.min(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
-        const chronoEndIdx = Math.max(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+        let chronoStartIdx, chronoEndIdx;
+        if (isDragging) {
+          // During dragging, use rounded fractional indices
+          chronoStartIdx = Math.min(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+          chronoEndIdx = Math.max(Math.round(dragStartDataIndex), Math.round(dragEndDataIndex));
+        } else {
+          // When not dragging, use the snapped indices for precise data point alignment
+          chronoStartIdx = Math.min(startPos.snappedIndex, endPos.snappedIndex);
+          chronoEndIdx = Math.max(startPos.snappedIndex, endPos.snappedIndex);
+        }
         
         if (shouldShowDistanceFromGoal && distanceFromGoalData.datasets.length > 0) {
           // For multiple categories, calculate overall change (sum of all category changes)

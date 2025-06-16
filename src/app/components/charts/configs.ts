@@ -65,7 +65,8 @@ export const useLineChartConfig = (
             distanceFromGoalData,
             comparisonData,
             onRealTimeUpdate,
-            calculateComparisonData
+            calculateComparisonData,
+            isDragging
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {
