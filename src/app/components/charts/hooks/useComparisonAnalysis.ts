@@ -462,6 +462,17 @@ export const useComparisonAnalysis = (
     // Don't show hover if we're dragging
     if (isDragging) return;
     
+    // Don't show hover on touch devices to prevent unwanted hover activation
+    // Check if this is a touch device by looking for touch support
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      return;
+    }
+    
+    // Also check if the event was triggered by a touch event
+    if ((event as any).sourceCapabilities && (event as any).sourceCapabilities.firesTouchEvents) {
+      return;
+    }
+    
     const clientX = getClientX(event);
     const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
     
