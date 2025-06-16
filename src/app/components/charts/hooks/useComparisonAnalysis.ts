@@ -467,15 +467,21 @@ export const useComparisonAnalysis = (
     
     // If we have a recent drag selection, check distance threshold before allowing hover
     if (lastDragEndPosition && dragStartDataIndex !== null && dragEndDataIndex !== null) {
-      const DISTANCE_THRESHOLD = 50; // pixels
-      const DATA_INDEX_THRESHOLD = 2; // data points
+      const DISTANCE_THRESHOLD = 250;
+      const DATA_INDEX_THRESHOLD = 100;
       
       const pixelDistance = Math.abs(clientX - lastDragEndPosition.x);
       const dataDistance = dataIndex !== null ? Math.abs(dataIndex - lastDragEndPosition.dataIndex) : 0;
       
-      // Only allow hover if we're far enough away from the drag end position
-      if (pixelDistance < DISTANCE_THRESHOLD && dataDistance < DATA_INDEX_THRESHOLD) {
-        return; // Don't activate hover - too close to drag selection
+      // If we're far enough away, clear the drag selection and allow hover
+      if (pixelDistance >= DISTANCE_THRESHOLD || dataDistance >= DATA_INDEX_THRESHOLD) {
+        // User moved beyond threshold - clear the drag selection
+        setDragStartDataIndex(null);
+        setDragEndDataIndex(null);
+        setLastDragEndPosition(null);
+        setComparisonData(null); // This will reset to default comparison data
+      } else {
+        return; // Don't activate hover - still too close to drag selection
       }
     }
     
