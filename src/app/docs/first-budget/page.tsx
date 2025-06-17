@@ -11,12 +11,19 @@ export default function FirstBudget() {
             <div className="mb-6 md:mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4">Create Your First Budget</h1>
                 <p className="text-white/70 text-base md:text-lg">
-                    Learn how to create a zero-based budget that gives every dollar a purpose. This step-by-step guide will help you build your first budget in CashCat.
+                    Learn how to create a zero-based budget that gives every penny a purpose. This step-by-step guide will help you build your first budget in CashCat.
                 </p>
             </div>
 
+            <Link
+                href="/learn"
+                className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
+            >
+                View a sample category card
+            </Link>
+
             {/* Steps */}
-            <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
+            <div className="space-y-4 md:space-y-6 mb-8 md:mb-12 mt-8">
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <div className="flex items-start gap-3 md:gap-4">
                         <div className="w-6 h-6 md:w-8 md:h-8 bg-green text-black rounded-full flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0">

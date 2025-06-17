@@ -19,7 +19,7 @@ export default function CategoriesGroups() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Understanding Categories</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What are Categories?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Categories are specific spending buckets where you allocate money for different purposes. 
@@ -30,7 +30,7 @@ export default function CategoriesGroups() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What are Groups?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Groups are collections of related categories that help you organize your budget. 

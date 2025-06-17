@@ -20,7 +20,7 @@ export default function AccountSettings() {
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Data Management</h2>
                 
                 <div className="p-4 md:p-6 glass-card rounded-lg">
-                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Data Export</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Data Export - Coming Soon</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Export your financial data for backup purposes or to use with other tools. 
                         Download your transactions, budgets, and account information in various formats.

@@ -30,7 +30,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What if I don't have much money to budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Budgeting is even more important when money is tight! Start by tracking where every dollar goes, 
@@ -41,7 +41,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Do I need to track every single purchase?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Yes, for the best results. Small purchases add up quickly and can derail your budget. 
@@ -57,7 +57,7 @@ export default function CommonQuestions() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Budgeting Process</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What happens if I overspend in a category?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Don't panic! Move money from another category to cover the overspending. The key is keeping 
@@ -68,7 +68,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">How often should I update my budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Review your budget monthly and make adjustments based on what you learned. 
@@ -79,7 +79,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Should I budget money that I'm saving?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Absolutely! Savings goals should be treated as expenses in your budget. This includes 
@@ -95,7 +95,7 @@ export default function CommonQuestions() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Using CashCat</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Can I connect my bank accounts automatically?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Currently, CashCat requires manual transaction entry. 
@@ -106,7 +106,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">How do I handle shared expenses with roommates or partners?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         For shared expenses, record your portion in the appropriate category. For example, if you split 
@@ -117,7 +117,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What about cash transactions?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         It depends. If you withdraw it after you started CashCat, you can either record it as a transaction whenever you withdraw cash from an ATM. 
@@ -131,7 +131,7 @@ export default function CommonQuestions() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Common Challenges</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">I keep forgetting to track my purchases. What can I do?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Try setting a phone reminder every evening to check your bank app.
@@ -142,7 +142,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">My income varies each month. How do I budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Budget based on your lowest expected monthly income. Use higher-income months to build up 
@@ -153,7 +153,7 @@ export default function CommonQuestions() {
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Budgeting feels restrictive. How can I make it more enjoyable?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Remember that budgeting gives you permission to spend, not restrictions. Include "fun money" 

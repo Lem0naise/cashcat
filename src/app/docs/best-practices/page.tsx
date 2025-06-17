@@ -19,7 +19,7 @@ export default function BestPractices() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Foundation Practices</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Start with Reality, Not Dreams</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Base your first budget on actual spending history, not what you wish you spent. 
@@ -30,7 +30,7 @@ export default function BestPractices() {
                     </div>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Pay Yourself First</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Budget for savings and debt payments before discretionary spending. Treat these as 
@@ -43,7 +43,7 @@ export default function BestPractices() {
                     </ul>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Build in Flexibility</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Life happens. Include buffer categories for unexpected expenses and don't make your 
@@ -61,7 +61,7 @@ export default function BestPractices() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Building Good Habits</h2>
                 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Track Spending Immediately</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Record transactions as soon as possible after making them. The longer you wait, 
@@ -72,7 +72,7 @@ export default function BestPractices() {
                     </div>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Weekly Check-ins</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Schedule a weekly 15-minute budget review. Check your progress, catch any missed 
@@ -86,7 +86,7 @@ export default function BestPractices() {
                     </ul>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Use the Envelope Method</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
                         Think of each budget category as an envelope with cash. When the envelope is empty, 
