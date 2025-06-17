@@ -203,9 +203,24 @@ export default function Account() {
                             </button>
                         </div>
 
+    
+                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold">Docs & Knowledgebase</h2>
+                            </div>
+                            <p className="text-sm text-white/70 mb-4">The docs contain quickstart guides, explanations of how to budget, and common questions.</p>
+                            <Link
+                                href='/docs'
+                                className="w-full block text-center px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
+                            
+                            >
+                                Documentation
+                            </Link>
+                        </div>
+
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <h2 className="text-lg font-semibold mb-4">Help & Resources</h2>
+                            <h2 className="text-lg font-semibold mb-4">Other Resources</h2>
                             <ul className="text-sm text-white/70 list-disc list-inside mb-4">
                                 <li>To manage your budget settings, click the Manage button on the Budget page.</li>
                                 <li>To manage your bank accounts, click the account selector on on the Transactions page.</li>
@@ -213,16 +228,10 @@ export default function Account() {
                      
                             <div className="flex flex-col gap-4">
                                 <Link
-                                    href="/docs"
-                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
-                                >
-                                    Docs & Knowledgebase
-                                </Link>
-                                <Link
                                     href="/learn"
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >
-                                    Learn to Budget
+                                    An Example Budget
                                 </Link>
                                 <Link
                                     href="/about"
@@ -268,9 +277,10 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.6.1</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.7</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
+                                    <li>A brand new documentation knowledgebase</li>
                                     <li>A brand new statistics screen</li>
                                     <li>Support for multiple bank accounts!</li>
                                     <li>A large collection of UI adjustments</li>
