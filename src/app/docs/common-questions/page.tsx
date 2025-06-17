@@ -33,7 +33,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What if I don't have much money to budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Budgeting is even more important when money is tight! Start by tracking where every dollar goes, 
+                        Budgeting is even more important when money is tight! Start by tracking where every penny goes, 
                         then look for small areas to cut back. Even budgeting $50 is better than not budgeting at all.
                     </p>
                     <p className="text-white/60 text-sm">

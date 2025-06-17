@@ -71,7 +71,7 @@ export default function GettingStarted() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Create Your First Budget</h3>
                             <p className="text-white/70 text-sm md:text-base mb-3 md:mb-4">
-                                Follow our step-by-step guide to create your first zero-based budget and assign every dollar a purpose.
+                                Follow our step-by-step guide to create your first zero-based budget and assign every penny a purpose.
                             </p>
                             <Link
                                 href="/docs/first-budget"
