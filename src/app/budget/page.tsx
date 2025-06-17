@@ -977,7 +977,7 @@ export default function Budget() {
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                     <Link
-                                        href="/learn"
+                                        href="/docs"
                                         className="bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
                                     >
                                         Learn the Basics First

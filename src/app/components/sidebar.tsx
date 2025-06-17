@@ -102,6 +102,21 @@ export default function Sidebar() {
                     />
                     <span className="text-sm hidden lg:inline">Account</span>
                 </a>
+                <a
+                    className="flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group  
+                     hover:bg-white/[.05]"
+                    href="/docs"
+                >
+                    <Image
+                        aria-hidden
+                        src="/docs.svg"
+                        alt="Documentation icon"
+                        width={16}
+                        height={16}
+                        className="image-black transition-opacity opacity-70 group-hover:opacity-100"
+                    />
+                    <span className="text-sm hidden lg:inline">Documentation</span>
+                </a>
             </div>
         </aside>
     );

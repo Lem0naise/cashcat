@@ -195,17 +195,18 @@ export default function Landing() {
                                     "I've tried budgeting before and failed. How is this different?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Traditional budgets fail because they're based on estimates. Zero-based budgeting uses your actual money right now. 
+                                    Traditional budgets fail because they're based on estimates. Zero-based budgeting uses the money in your accounts right now. 
                                     You're not guessing what you'll spend - you're deciding what each penny will do before you spend it.
                                 </p>
                             </div>
 
-                            <div className="left-envelope-card">
+
+                             <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
-                                    "Can I really track multiple bank accounts in one place?"
+                                    "What if I don't have much money to budget?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Absolutely! Add as many accounts as you need - checking, savings, credit cards, cash. See your complete financial picture and track spending across all accounts from one dashboard.
+                                     Budgeting is even more important when money is tight! Start by tracking where every penny goes, then look for small areas to cut back. Even budgeting £50 is better than not budgeting at all. 
                                 </p>
                             </div>
                             
@@ -231,11 +232,20 @@ export default function Landing() {
                             
                             <div className="left-envelope-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
+                                    "Can I really track multiple bank accounts in one place?"
+                                </h4>
+                                <p className="text-white/70 text-sm">
+                                    Absolutely! Add as many accounts as you need - current, savings, credit cards, cash. See your complete financial picture and track spending across all accounts from one dashboard.
+                                </p>
+                            </div>
+
+                            <div className="left-envelope-card">
+                                <h4 className="text-lg font-semibold mb-2 text-green">
                                     "What if I have irregular income?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
                                     CashCat is perfect for irregular income! Budget only the money you have right now. 
-                                    When new money comes in, assign it then. No more stress about traditional monthly budgets that don't fit your reality.
+                                    When new money comes in, assign it immediately. No more stress about traditional monthly budgets that don't fit your reality.
                                 </p>
                             </div>
                         </div>
@@ -324,7 +334,13 @@ export default function Landing() {
                             href="/learn"
                             className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
                         >
-                            A More Detailed How-To
+                            Demo & Sample Category
+                        </Link>
+                        <Link
+                            href="/docs"
+                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
+                        >
+                            Documentation
                         </Link>
                     </div>
                 </div>
