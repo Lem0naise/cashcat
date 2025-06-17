@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Define arrays of public and protected paths
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/learn', '/about', '/terms'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/learn', '/about', '/terms', '/docs'];
 const PROTECTED_PATHS = ['/budget', '/stats', '/account'];
 const AUTH_PATHS = ['/login', '/signup'];
 
