@@ -213,6 +213,12 @@ export default function Account() {
                      
                             <div className="flex flex-col gap-4">
                                 <Link
+                                    href="/docs"
+                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
+                                >
+                                    Docs & Knowledgebase
+                                </Link>
+                                <Link
                                     href="/learn"
                                     className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white text-left"
                                 >

@@ -48,11 +48,10 @@ export default function DocsLayout({
 }) {
 	const pathname = usePathname()
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
 	return (
 		<div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
 			{/* Header */}
-			<header className="border-b border-white/10 bg-white/[.02]">
+			<header className="sticky top-0 z-30 border-b border-white/10 bg-gray-950">
 				<div className="container min-w-screen px-4 md:pl-4 md:pr-20 py-4">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
@@ -176,10 +175,10 @@ export default function DocsLayout({
 				</div>
 			</div>
 
-			<div className=" px-6 py-8">
+			<div className="">
 				<div className="flex gap-8">
 					{/* Desktop Sidebar */}
-					<aside className="w-64 flex-shrink-0 hidden md:block">
+					<aside className="pl-6 pr-4 py-8 w-64 flex-shrink-0 hidden md:block bg-[#131313]">
 						<div className="sticky top-8">
 							<nav className="space-y-6">
 								{docsSections.map((section) => (
@@ -226,7 +225,7 @@ export default function DocsLayout({
 					</aside>
 
 					{/* Main content */}
-					<main className="flex-1 min-w-0">
+					<main className="flex-1 min-w-0 py-8 px-3">
 						<div className="">{children}</div>
 					</main>
 				</div>
