@@ -119,7 +119,7 @@ export const useLineChartConfig = (
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
-            alignToPixels: false,
+            alignToPixels: true,
             offset: false
           },
           ticks: {
@@ -127,8 +127,12 @@ export const useLineChartConfig = (
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
             font: {
               family: 'Gabarito, system-ui, -apple-system, sans-serif'
-            }
-          }
+            },
+            source: 'data' as const,
+            align: 'center' as const
+          },
+          bounds: 'data' as const,
+          offset: false
         },
         y: {
           grid: {
@@ -316,7 +320,7 @@ export const useVolumeChartConfig = (
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
-            alignToPixels: false,
+            alignToPixels: true,
             offset: false
           },
           ticks: {
@@ -324,14 +328,16 @@ export const useVolumeChartConfig = (
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
             font: {
               family: 'Gabarito, system-ui, -apple-system, sans-serif'
-            }
+            },
+            source: 'data' as const,
+            align: 'center' as const
           },
+          bounds: 'data' as const,
+          offset: false,
           // @ts-ignore
           barPercentage: 1.0,
           // @ts-ignore
           categoryPercentage: 1.0,
-          // @ts-ignore
-          offset: false,
         },
         y: {
           grid: {
