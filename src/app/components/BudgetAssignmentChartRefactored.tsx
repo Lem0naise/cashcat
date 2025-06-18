@@ -1,7 +1,7 @@
 // Refactored Budget Assignment Chart - Main Component
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
 import { format } from 'date-fns';
 import {
@@ -58,6 +58,9 @@ ChartJS.register(
   comparisonSelectionPlugin
 );
 
+// Set Chart.js global font defaults
+ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
+
 export default function BudgetAssignmentChart({
   assignments,
   categories,
@@ -100,7 +103,7 @@ export default function BudgetAssignmentChart({
     [selectedCategories.length, selectedGroups.length]
   );
   
-  const chartData = useChartData(transactions, categories, dateRange);
+  const chartData = useChartData(transactions, categories, dateRange, timeRange);
 
   // Get filtered categories for distance calculation - memoized with stable dependencies
   const filteredCategoriesWithGoals = useMemo(() => {
@@ -229,17 +232,21 @@ export default function BudgetAssignmentChart({
     isDragging,
     dragStartDataIndex,
     dragEndDataIndex,
+    hoverDataIndex,
     comparisonData,
     defaultComparisonData,
     setComparisonData,
     setDefaultComparisonData,
     calculateComparisonData,
+    calculateSinglePointData,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleHover,
+    handleHoverLeave,
     clearSelection
   } = useComparisonAnalysis(
     comparisonCategoryIds, 
@@ -248,12 +255,20 @@ export default function BudgetAssignmentChart({
   
   // Find the correct time unit for the current range
   const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-  const xUnit = determineTimeUnit(diffInDays);
+  const xUnit = determineTimeUnit(diffInDays, true); // Force daily for line charts
 
   // Determine if we should show filtered title
   // hasActiveFilters already defined above
 
   // Chart configurations with stable dependencies
+  // Real-time update callback for comparison data during dragging
+  const handleRealTimeUpdate = useCallback((newComparisonData: any) => {
+    // Only update if we're actively dragging to avoid unnecessary re-renders
+    if (isDragging) {
+      setComparisonData(newComparisonData);
+    }
+  }, [isDragging, setComparisonData]);
+
   const lineChartConfig = useLineChartConfig(
     chartData,
     categories,
@@ -261,12 +276,17 @@ export default function BudgetAssignmentChart({
     isDragging,
     dragStartDataIndex,
     dragEndDataIndex,
+    hoverDataIndex,
     shouldShowDistanceFromGoal,
     distanceFromGoalData,
     filteredCategoriesWithGoals,
     selectedCategories,
     xUnit,
-    comparisonData
+    comparisonData,
+    handleRealTimeUpdate,
+    calculateComparisonData,
+    handleHover,
+    handleHoverLeave
   );
 
   const volumeChartConfig = useVolumeChartConfig(
@@ -284,9 +304,16 @@ export default function BudgetAssignmentChart({
       
       // Mouse event handlers
       const onMouseDown = (e: MouseEvent) => handleMouseDown(e, chart);
-      const onMouseMove = (e: MouseEvent) => handleMouseMove(e, chart);
+      const onMouseMove = (e: MouseEvent) => {
+        if (isDragging) {
+          handleMouseMove(e, chart);
+        } else {
+          handleHover(e, chart);
+        }
+      };
       const onMouseUp = (e: MouseEvent) => handleMouseUp(e, chart);
       const onMouseLeave = (e: MouseEvent) => {
+        handleHoverLeave(chart);
         if (isDragging) {
           setComparisonData(null);
         }
@@ -328,7 +355,7 @@ export default function BudgetAssignmentChart({
         canvas.removeEventListener('touchcancel', onTouchCancel);
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd, isDragging]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd, handleHover, handleHoverLeave, isDragging]);
 
   // Memoize expensive calculations to prevent unnecessary re-renders
   const chartDataLength = chartData?.dataPoints?.length || 0;
@@ -360,6 +387,52 @@ export default function BudgetAssignmentChart({
     }
   }, [defaultComparisonDataMemo, dragStartDataIndex, dragEndDataIndex]);
 
+  // Track if user has made a drag selection
+  const hasDragSelection = dragStartDataIndex !== null && dragEndDataIndex !== null;
+
+  // Effect to update comparison data when hover changes (for single point display)
+  useEffect(() => {
+    if (hoverDataIndex !== null && !isDragging && chartData?.dataPoints) {
+      const dataToUse = chartData.dataPoints;
+      const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
+      
+      if (dataToUse && dataToUse.length > 0) {
+        const singlePointData = calculateSinglePointData(
+          hoverDataIndex,
+          dataToUse,
+          datasetsToUse
+        );
+        
+        if (singlePointData) {
+          setComparisonData(singlePointData);
+        }
+      }
+    } else if (hoverDataIndex === null && !isDragging) {
+      // When not hovering, restore the appropriate data
+      if (hasDragSelection) {
+        // If user has made a drag selection, restore that selection's data
+        const dataToUse = chartData.dataPoints;
+        const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
+        
+        if (dataToUse && dataToUse.length > 0) {
+          const dragSelectionData = calculateComparisonData(
+            dragStartDataIndex,
+            dragEndDataIndex,
+            dataToUse,
+            datasetsToUse
+          );
+          
+          if (dragSelectionData) {
+            setComparisonData(dragSelectionData);
+          }
+        }
+      } else {
+        // If no drag selection, use default comparison data
+        setComparisonData(defaultComparisonData);
+      }
+    }
+  }, [hoverDataIndex, isDragging, hasDragSelection, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, chartDataLength, calculateSinglePointData, calculateComparisonData, defaultComparisonData, dragStartDataIndex, dragEndDataIndex]);
+
   // Effect to update comparison data when drag selection changes
   useEffect(() => {
     if (dragStartDataIndex !== null && dragEndDataIndex !== null && !isDragging && chartData?.dataPoints) {
@@ -390,6 +463,7 @@ export default function BudgetAssignmentChart({
         defaultComparisonData={defaultComparisonData}
         shouldShowDistanceFromGoal={shouldShowDistanceFromGoal}
         onClearSelection={clearSelection}
+        isHovering={hoverDataIndex !== null && !hasDragSelection}
       />
 
       {/* Show helpful message when no data */}

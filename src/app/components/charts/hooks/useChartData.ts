@@ -1,6 +1,6 @@
 // Data processing hooks for budget assignment chart
 import { useMemo } from 'react';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
+import { format, startOfWeek, startOfMonth, addDays, isBefore, isEqual } from 'date-fns';
 import { 
   Transaction, 
   Category, 
@@ -56,7 +56,8 @@ export const useFilteredTransactions = (
 export const useChartData = (
   transactions: Transaction[],
   categories: Category[],
-  dateRange: { start: Date; end: Date }
+  dateRange: { start: Date; end: Date },
+  timeRange?: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom'
 ) => {
   return useMemo(() => {
     // Check if transactions is actually an array and validate inputs
@@ -75,41 +76,96 @@ export const useChartData = (
     const allSorted = [...validTransactions]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Show starting balance calculation
-    const startingTransaction = allTransactions.find(t => t && t.type === 'starting');
-    let startingBalance = startingTransaction?.amount || 0;
+    // Calculate the actual starting balance for the chart
+    // This should be: sum of all starting balances (one per account) + all transactions before the date range
+    const startingTransactions = allTransactions.filter(t => t && t.type === 'starting');
+    let chartStartingBalance = startingTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     
+    // Add all transactions that occurred before the date range to get the correct starting point
+    const transactionsBeforeRange = allSorted.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return !isNaN(transactionDate.getTime()) && 
+             transactionDate < dateRange.start &&
+             transaction.type !== 'starting'; // Don't double-count starting balance
+    });
+
+    // Calculate balance up to the start of the date range
+    transactionsBeforeRange.forEach(transaction => {
+      if (transaction.type === 'income') {
+        chartStartingBalance += transaction.amount;
+      } else if (transaction.type === 'payment') {
+        chartStartingBalance -= Math.abs(transaction.amount);
+      }
+    });
+
     // Validate starting balance
-    if (isNaN(startingBalance) || !isFinite(startingBalance)) {
-      startingBalance = 0;
+    if (isNaN(chartStartingBalance) || !isFinite(chartStartingBalance)) {
+      chartStartingBalance = 0;
     }
 
-    // Filter transactions within date range
+    // Get transactions within date range for display purposes
     const transactionsInRange = allSorted.filter(transaction => {
       const transactionDate = new Date(transaction.date);
       const inRange = !isNaN(transactionDate.getTime()) && 
              transactionDate >= dateRange.start && 
-             transactionDate <= dateRange.end;
+             transactionDate <= dateRange.end &&
+             transaction.type !== 'starting'; // Starting balance is already included
       return inRange;
     });
 
-    // If no transactions in range, create a simple starting point
+    // Find the user's first transaction date (including starting balance)
+    const allTransactionDates = (Array.isArray(transactions) ? transactions : [])
+      .filter(t => t && t.date)
+      .map(t => new Date(t.date))
+      .filter(d => !isNaN(d.getTime()));
+    const firstTransactionDate = allTransactionDates.length > 0 ? new Date(Math.min(...allTransactionDates.map(d => d.getTime()))) : null;
+
+    // Clamp the chart's start date to the user's first transaction date
+    let clampedStart = dateRange.start;
+    if (firstTransactionDate && firstTransactionDate > dateRange.start) {
+      clampedStart = firstTransactionDate;
+    }
+    // If the clamped start is after the end, return empty data
+    if (clampedStart > dateRange.end) {
+      return { dataPoints: [], volumePoints: [] };
+    }
+    // If the selected range is 'All Time', force the end date to today
+    let effectiveEnd = dateRange.end;
+    if (timeRange === 'all') {
+      effectiveEnd = new Date();
+      effectiveEnd.setHours(12, 0, 0, 0);
+    }
+    // --- Generate all period keys between clampedStart and effectiveEnd, even if no transactions ---
+    const allPeriodKeys: string[] = [];
+    let current = new Date(clampedStart);
+    const end = new Date(effectiveEnd);
+    while (isBefore(current, end) || isEqual(current, end)) {
+      allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
+      current = addDays(current, 1);
+    }
+    // Filter out any period keys that are before the first transaction date
+    const filteredPeriodKeys = firstTransactionDate
+      ? allPeriodKeys.filter(key => new Date(key) >= firstTransactionDate)
+      : allPeriodKeys;
+
+    // If no transactions in range, create a flat line for the whole period
     if (transactionsInRange.length === 0) {
-      const todayKey = format(new Date(), 'yyyy-MM-dd 12:00:00');
+      const flatDataPoints = filteredPeriodKeys.map(periodKey => ({
+        x: periodKey,
+        y: chartStartingBalance,
+        assignmentBreakdown: {}
+      }));
+      const flatVolumePoints = filteredPeriodKeys.map(periodKey => ({
+        x: periodKey,
+        assigned: 0,
+        removed: 0,
+        net: 0,
+        categories: [],
+        vendors: []
+      }));
       return {
-        dataPoints: [{
-          x: todayKey,
-          y: startingBalance,
-          assignmentBreakdown: {}
-        }],
-        volumePoints: [{
-          x: todayKey,
-          assigned: 0,
-          removed: 0,
-          net: 0,
-          categories: [],
-          vendors: []
-        }]
+        dataPoints: flatDataPoints,
+        volumePoints: flatVolumePoints
       };
     }
 
@@ -160,7 +216,7 @@ export const useChartData = (
           return acc;
         }
         
-        const key = getGranularityKey(transactionDate, diffInDays);
+        const key = getGranularityKey(transactionDate, diffInDays, true); // Force daily for line charts
         
         if (!acc[key]) {
           acc[key] = [];
@@ -173,11 +229,11 @@ export const useChartData = (
     const dataPoints: ChartDataPoint[] = [];
     const volumePoints: VolumeDataPoint[] = [];
     
-    let cumulativeBalance = startingBalance;
+    let cumulativeBalance = chartStartingBalance;
 
     // Calculate running balance for each period
     const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
-    
+
     // Add starting point if we have transactions and it makes sense
     if (sortedPeriodKeys.length > 0) {
       const firstTransactionDate = new Date(sortedPeriodKeys[0]);
@@ -192,7 +248,7 @@ export const useChartData = (
           const startingKey = format(dayBefore, 'yyyy-MM-dd 12:00:00');
           dataPoints.push({
             x: startingKey,
-            y: startingBalance,
+            y: chartStartingBalance,
             assignmentBreakdown: {}
           });
           
@@ -276,22 +332,22 @@ export const useChartData = (
 
     // X-Axis Alignment Fix: Force all period keys to be present in both dataPoints and volumePoints
     // 1. Get all unique period keys (dates) from groupedByPeriod and include the startingKey if present
-    let allPeriodKeys = [...sortedPeriodKeys];
-    if (dataPoints.length > 0 && !allPeriodKeys.includes(dataPoints[0].x)) {
-      allPeriodKeys = [dataPoints[0].x, ...allPeriodKeys];
-    }
+    // let allPeriodKeys = [...sortedPeriodKeys];
+    // if (dataPoints.length > 0 && !allPeriodKeys.includes(dataPoints[0].x)) {
+    //   allPeriodKeys = [dataPoints[0].x, ...allPeriodKeys];
+    // }
 
     // 2. Build a map for quick lookup
     const dataPointMap = Object.fromEntries(dataPoints.map(dp => [dp.x, dp]));
     const volumePointMap = Object.fromEntries(volumePoints.map(vp => [vp.x, vp]));
 
     // 3. For each period key, ensure both dataPoints and volumePoints have an entry (pad with previous value or zero)
-    let lastBalance = startingBalance;
+    let lastBalance = chartStartingBalance;
     let lastBreakdown = {};
     const alignedDataPoints: ChartDataPoint[] = [];
     const alignedVolumePoints: VolumeDataPoint[] = [];
     
-    allPeriodKeys.forEach(periodKey => {
+    filteredPeriodKeys.forEach(periodKey => {
       // Data point
       if (dataPointMap[periodKey]) {
         alignedDataPoints.push(dataPointMap[periodKey]);
@@ -309,5 +365,5 @@ export const useChartData = (
     });
 
     return { dataPoints: alignedDataPoints, volumePoints: alignedVolumePoints };
-  }, [transactions, categories, dateRange]);
+  }, [transactions, categories, dateRange, timeRange]);
 };

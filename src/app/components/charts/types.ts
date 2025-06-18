@@ -65,6 +65,7 @@ export interface DistanceFromGoalData {
     backgroundColor: string;
     fill: boolean;
     tension: number;
+    cubicInterpolationMode: 'monotone' | 'default';
     pointRadius: number;
     pointHoverRadius: number;
     pointBackgroundColor: string;

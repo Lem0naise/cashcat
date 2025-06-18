@@ -9,6 +9,8 @@ export const useComparisonAnalysis = (
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartDataIndex, setDragStartDataIndex] = useState<number | null>(null);
   const [dragEndDataIndex, setDragEndDataIndex] = useState<number | null>(null);
+  const [hoverDataIndex, setHoverDataIndex] = useState<number | null>(null);
+  const [lastDragEndPosition, setLastDragEndPosition] = useState<{ x: number; dataIndex: number } | null>(null);
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [defaultComparisonData, setDefaultComparisonData] = useState<ComparisonData | null>(null);
 
@@ -236,6 +238,94 @@ export const useComparisonAnalysis = (
     }
   }, [selectedCategories, categoriesMap]);
 
+  // Helper function to calculate single-point data for hover
+  const calculateSinglePointData = useCallback((
+    dataIndex: number,
+    dataToUse: any[],
+    datasets?: any[]
+  ): ComparisonData | null => {
+    if (!dataToUse || dataToUse.length === 0) {
+      return null;
+    }
+    
+    const roundedIndex = Math.round(dataIndex);
+    
+    // Ensure index is within bounds
+    if (roundedIndex < 0 || roundedIndex >= dataToUse.length) {
+      return null;
+    }
+    
+    const point = dataToUse[roundedIndex];
+    if (!point) return null;
+    
+    const pointDate = point.x;
+    
+    try {
+      // For single point data, we show the current values rather than changes
+      let value: number;
+      let categoryBreakdown: Array<{
+        categoryId: string;
+        name: string;
+        startValue: number;
+        endValue: number;
+        absoluteChange: number;
+        percentageChange: number;
+      }> | undefined;
+      
+      // Handle category analysis when we have distance-from-goal datasets
+      if (datasets && datasets.length > 0) {
+        categoryBreakdown = [];
+        value = datasets[0].data[roundedIndex]?.y || 0;
+        
+        // Calculate breakdown for each category
+        datasets.forEach((dataset, index) => {
+          if (index < selectedCategories.length && categoryBreakdown) {
+            const categoryId = selectedCategories[index];
+            const category = categoriesMap.get(categoryId);
+            
+            if (category && dataset.data[roundedIndex]) {
+              const catValue = dataset.data[roundedIndex].y || 0;
+              
+              categoryBreakdown.push({
+                categoryId,
+                name: category.name,
+                startValue: catValue, // For single point, start and end are the same
+                endValue: catValue,
+                absoluteChange: 0, // No change for single point
+                percentageChange: 0 // No change for single point
+              });
+            }
+          }
+        });
+        
+        // For multiple categories, sum the values
+        if (selectedCategories.length > 1 && categoryBreakdown.length > 1) {
+          value = categoryBreakdown.reduce((sum, cat) => sum + cat.startValue, 0);
+        }
+      } else {
+        // Single account balance analysis
+        value = point.y || 0;
+      }
+      
+      // Validate value
+      if (isNaN(value) || !isFinite(value)) value = 0;
+      
+      return {
+        startDate: pointDate,
+        endDate: pointDate, // Same date for single point
+        startValue: value,
+        endValue: value,
+        absoluteChange: 0, // No change for single point
+        percentageChange: 0, // No change for single point
+        timeSpan: 0, // No time span for single point
+        categoryBreakdown
+      };
+    } catch (error) {
+      console.error('Error calculating single point data:', error);
+      return null;
+    }
+  }, [selectedCategories, categoriesMap]);
+
   // Helper function to convert pointer position to data index with smooth interpolation (no snapping)
   const getDataIndexFromPointerPosition = useCallback((clientX: number, chart: any): number | null => {
     const rect = chart.canvas.getBoundingClientRect();
@@ -283,6 +373,9 @@ export const useComparisonAnalysis = (
     const clientX = getClientX(event);
     const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
     if (dataIndex !== null) {
+      // Clear hover state and previous drag position when starting a new drag selection
+      setHoverDataIndex(null);
+      setLastDragEndPosition(null);
       // Keep fractional index for smooth positioning - no rounding!
       setDragStartDataIndex(dataIndex);
       setDragEndDataIndex(dataIndex);
@@ -318,6 +411,9 @@ export const useComparisonAnalysis = (
       // Keep fractional index for smooth positioning - final selection can be fractional
       setDragEndDataIndex(dataIndex);
       setIsDragging(false);
+      
+      // Store the last drag end position for distance threshold checking
+      setLastDragEndPosition({ x: clientX, dataIndex });
     }
   }, [isDragging, dragStartDataIndex, getDataIndexFromPointerPosition, getClientX]);
 
@@ -357,13 +453,70 @@ export const useComparisonAnalysis = (
     setComparisonData(defaultComparisonData);
     setDragStartDataIndex(null);
     setDragEndDataIndex(null);
+    setHoverDataIndex(null);
+    setLastDragEndPosition(null);
   }, [defaultComparisonData]);
+
+  // Hover event handlers for single-point display
+  const handleHover = useCallback((event: MouseEvent, chart: any) => {
+    // Don't show hover if we're dragging
+    if (isDragging) return;
+    
+    // Don't show hover on touch devices to prevent unwanted hover activation
+    // Check if this is a touch device by looking for touch support
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      return;
+    }
+    
+    // Also check if the event was triggered by a touch event
+    if ((event as any).sourceCapabilities && (event as any).sourceCapabilities.firesTouchEvents) {
+      return;
+    }
+    
+    const clientX = getClientX(event);
+    const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
+    
+    // If we have a recent drag selection, check distance threshold before allowing hover
+    if (lastDragEndPosition && dragStartDataIndex !== null && dragEndDataIndex !== null) {
+      const DISTANCE_THRESHOLD = 250;
+      const DATA_INDEX_THRESHOLD = 100;
+      
+      const pixelDistance = Math.abs(clientX - lastDragEndPosition.x);
+      const dataDistance = dataIndex !== null ? Math.abs(dataIndex - lastDragEndPosition.dataIndex) : 0;
+      
+      // If we're far enough away, clear the drag selection and allow hover
+      if (pixelDistance >= DISTANCE_THRESHOLD || dataDistance >= DATA_INDEX_THRESHOLD) {
+        // User moved beyond threshold - clear the drag selection
+        setDragStartDataIndex(null);
+        setDragEndDataIndex(null);
+        setLastDragEndPosition(null);
+        setComparisonData(null); // This will reset to default comparison data
+      } else {
+        return; // Don't activate hover - still too close to drag selection
+      }
+    }
+    
+    // Only update if the hover index changed significantly
+    const threshold = 0.1;
+    if (dataIndex !== null && (hoverDataIndex === null || Math.abs(hoverDataIndex - dataIndex) > threshold)) {
+      setHoverDataIndex(dataIndex);
+      chart.update('none');
+    }
+  }, [isDragging, hoverDataIndex, lastDragEndPosition, dragStartDataIndex, dragEndDataIndex, getDataIndexFromPointerPosition, getClientX]);
+
+  const handleHoverLeave = useCallback((chart: any) => {
+    if (hoverDataIndex !== null) {
+      setHoverDataIndex(null);
+      chart.update('none');
+    }
+  }, [hoverDataIndex]);
 
   return {
     // State
     isDragging,
     dragStartDataIndex,
     dragEndDataIndex,
+    hoverDataIndex,
     comparisonData,
     defaultComparisonData,
     
@@ -373,6 +526,11 @@ export const useComparisonAnalysis = (
     
     // Functions
     calculateComparisonData,
+    calculateSinglePointData,
+    
+    // Hover event handlers
+    handleHover,
+    handleHoverLeave,
     
     // Mouse event handlers (legacy)
     handleMouseDown,

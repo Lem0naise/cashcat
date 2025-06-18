@@ -9,24 +9,29 @@ interface ComparisonAnalysisProps {
   defaultComparisonData: ComparisonData | null;
   shouldShowDistanceFromGoal: boolean;
   onClearSelection: () => void;
+  isHovering?: boolean; // Add prop to indicate if currently showing hover data
 }
 
 export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(({
   comparisonData,
   defaultComparisonData,
   shouldShowDistanceFromGoal,
-  onClearSelection
+  onClearSelection,
+  isHovering = false
 }) => {
   const currentData = comparisonData || defaultComparisonData;
   
   if (!currentData) return null;
 
   const isCustomSelection = comparisonData && comparisonData !== defaultComparisonData;
+  const isSinglePoint = currentData.timeSpan === 0; // Single point data has timeSpan of 0
 
   return (
     <div className="bg-white/[.05] rounded-lg p-4 border border-green/20">
       <h4 className="font-medium text-green mb-2">
-        {isCustomSelection ? 'Selected Range Analysis' : 'Full Period Analysis'}
+        {isHovering && isSinglePoint ? 'Hovered Point Analysis' : 
+         isSinglePoint ? 'Selected Point Analysis' : 
+         isCustomSelection ? 'Selected Range Analysis' : 'Full Period Analysis'}
         {shouldShowDistanceFromGoal && (
           <span className="text-xs text-white/60 ml-2 font-normal">
             (Distance from Goal)
@@ -39,13 +44,17 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
         <div className="space-y-3">
           {/* Period header */}
           <div className="text-sm text-white/70 border-b border-white/10 pb-2">
-            Comparison: {(() => {
+            {isSinglePoint ? 'Point: ' : 'Comparison: '}{(() => {
               try {
                 const start = new Date(currentData.startDate);
                 const end = new Date(currentData.endDate);
-                return `${format(start, 'MMM dd')} → ${format(end, 'MMM dd')}`;
+                if (isSinglePoint) {
+                  return format(start, 'MMM dd');
+                } else {
+                  return `${format(start, 'MMM dd')} → ${format(end, 'MMM dd')}`;
+                }
               } catch (error) {
-                return 'Invalid date range';
+                return isSinglePoint ? 'Invalid date' : 'Invalid date range';
               }
             })()}
             {shouldShowDistanceFromGoal && (
@@ -67,18 +76,39 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                   <div className="text-right">
                     {hasData ? (
                       <>
-                        <span className={`font-medium ${!isNaN(categoryData.absoluteChange) && categoryData.absoluteChange >= 0 ? 'text-green' : 'text-orange-400'}`}>
-                          {!categoryData.absoluteChange || isNaN(categoryData.absoluteChange) || !isFinite(categoryData.absoluteChange)
-                            ? '£0.00'
-                            : `${categoryData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(categoryData.absoluteChange)}`
+                        <span className={`font-medium ${
+                          isSinglePoint 
+                            ? (shouldShowDistanceFromGoal 
+                                ? (categoryData.startValue >= 0 ? 'text-green' : 'text-orange-400')
+                                : 'text-green'
+                              )
+                            : (!isNaN(categoryData.absoluteChange) && categoryData.absoluteChange >= 0 ? 'text-green' : 'text-orange-400')
+                        }`}>
+                          {isSinglePoint ? 
+                            // For single point, show the current value with clear labels
+                            (shouldShowDistanceFromGoal 
+                              ? (categoryData.startValue < 0 
+                                  ? `${formatCurrency(Math.abs(categoryData.startValue))} overspent`
+                                  : `${formatCurrency(categoryData.startValue)} remaining`
+                                )
+                              : formatCurrency(categoryData.startValue)
+                            )
+                            :
+                            // For range, show the change
+                            (!categoryData.absoluteChange || isNaN(categoryData.absoluteChange) || !isFinite(categoryData.absoluteChange)
+                              ? '£0.00'
+                              : `${categoryData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(categoryData.absoluteChange)}`
+                            )
                           }
                         </span>
-                        <span className={`ml-2 text-xs ${!isNaN(categoryData.percentageChange) && categoryData.percentageChange >= 0 ? 'text-green' : 'text-orange-400'}`}>
-                          {!categoryData.percentageChange || isNaN(categoryData.percentageChange) || !isFinite(categoryData.percentageChange)
-                            ? '(0.0%)'
-                            : `(${categoryData.percentageChange >= 0 ? '+' : ''}${categoryData.percentageChange.toFixed(1)}%)`
-                          }
-                        </span>
+                        {!isSinglePoint && (
+                          <span className={`ml-2 text-xs ${!isNaN(categoryData.percentageChange) && categoryData.percentageChange >= 0 ? 'text-green' : 'text-orange-400'}`}>
+                            {!categoryData.percentageChange || isNaN(categoryData.percentageChange) || !isFinite(categoryData.percentageChange)
+                              ? '(0.0%)'
+                              : `(${categoryData.percentageChange >= 0 ? '+' : ''}${categoryData.percentageChange.toFixed(1)}%)`
+                            }
+                          </span>
+                        )}
                       </>
                     ) : (
                       <span className="text-white/50 text-xs">
@@ -94,20 +124,43 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
           {/* Show overall change for context when we have category breakdown */}
           <div className="border-t border-white/10 pt-2 mt-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-white/60">Overall Change:</span>
+              <span className="text-white/60">
+                {isSinglePoint ? 'Overall Value:' : 'Overall Change:'}
+              </span>
               <div className="text-right">
-                <span className={`font-medium ${!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy'}`}>
-                  {!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
-                    ? '£0.00'
-                    : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
+                <span className={`font-medium ${
+                  isSinglePoint 
+                    ? (shouldShowDistanceFromGoal 
+                        ? (currentData.startValue >= 0 ? 'text-green' : 'text-reddy')
+                        : 'text-green'
+                      )
+                    : (!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy')
+                }`}>
+                  {isSinglePoint ?
+                    // For single point, show the current overall value with clear labels
+                    (shouldShowDistanceFromGoal 
+                      ? (currentData.startValue < 0 
+                          ? `${formatCurrency(Math.abs(currentData.startValue))} overspent`
+                          : `${formatCurrency(currentData.startValue)} remaining`
+                        )
+                      : formatCurrency(currentData.startValue)
+                    )
+                    :
+                    // For range, show the change
+                    (!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
+                      ? '£0.00'
+                      : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
+                    )
                   }
                 </span>
-                <span className={`ml-2 text-xs ${!isNaN(currentData.percentageChange) && currentData.percentageChange >= 0 ? 'text-green' : 'text-reddy'}`}>
-                  {!currentData.percentageChange || isNaN(currentData.percentageChange) || !isFinite(currentData.percentageChange)
-                    ? '(0.0%)'
-                    : `(${currentData.percentageChange >= 0 ? '+' : ''}${currentData.percentageChange.toFixed(1)}%)`
-                  }
-                </span>
+                {!isSinglePoint && (
+                  <span className={`ml-2 text-xs ${!isNaN(currentData.percentageChange) && currentData.percentageChange >= 0 ? 'text-green' : 'text-reddy'}`}>
+                    {!currentData.percentageChange || isNaN(currentData.percentageChange) || !isFinite(currentData.percentageChange)
+                      ? '(0.0%)'
+                      : `(${currentData.percentageChange >= 0 ? '+' : ''}${currentData.percentageChange.toFixed(1)}%)`
+                    }
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -118,34 +171,60 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
           <div>
             <span className="text-white/50">Time Span</span>
             <p className="font-medium">
-              {!currentData.timeSpan || isNaN(currentData.timeSpan) || !isFinite(currentData.timeSpan)
-                ? 'Unknown'
-                : currentData.timeSpan < 1 
-                  ? `${Math.round(currentData.timeSpan * 24)} hour${Math.round(currentData.timeSpan * 24) !== 1 ? 's' : ''}`
-                  : `${Math.round(currentData.timeSpan)} day${Math.round(currentData.timeSpan) !== 1 ? 's' : ''}`
+              {isSinglePoint ? 'Single Point' :
+                (!currentData.timeSpan || isNaN(currentData.timeSpan) || !isFinite(currentData.timeSpan)
+                  ? 'Unknown'
+                  : currentData.timeSpan < 1 
+                    ? `${Math.round(currentData.timeSpan * 24)} hour${Math.round(currentData.timeSpan * 24) !== 1 ? 's' : ''}`
+                    : `${Math.round(currentData.timeSpan)} day${Math.round(currentData.timeSpan) !== 1 ? 's' : ''}`
+                )
               }
             </p>
           </div>
           <div>
             <span className="text-white/50">
-              {shouldShowDistanceFromGoal ? 'Goal Progress' : 'Balance Change'}
+              {isSinglePoint 
+                ? (shouldShowDistanceFromGoal ? 'Current Status' : 'Current Balance')
+                : (shouldShowDistanceFromGoal ? 'Goal Progress' : 'Balance Change')
+              }
             </span>
-            <p className={`font-medium ${!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy'}`}>
-              {!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
-                ? '£0.00'
-                : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
+            <p className={`font-medium ${
+              isSinglePoint 
+                ? (shouldShowDistanceFromGoal 
+                    ? (currentData.startValue >= 0 ? 'text-green' : 'text-reddy')
+                    : 'text-green'
+                  )
+                : (!isNaN(currentData.absoluteChange) && currentData.absoluteChange >= 0 ? 'text-green' : 'text-reddy')
+            }`}>
+              {isSinglePoint ?
+                // For single point, show current value with clear labels
+                (shouldShowDistanceFromGoal 
+                  ? (currentData.startValue < 0 
+                      ? `${formatCurrency(Math.abs(currentData.startValue))} overspent`
+                      : `${formatCurrency(currentData.startValue)} remaining`
+                    )
+                  : formatCurrency(currentData.startValue)
+                )
+                :
+                // For range, show change
+                (!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
+                  ? '£0.00'
+                  : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
+                )
               }
             </p>
           </div>
-          <div>
-            <span className="text-white/50">Percentage Change</span>
-            <p className={`font-medium ${!isNaN(currentData.percentageChange) && currentData.percentageChange >= 0 ? 'text-green' : 'text-reddy'}`}>
-              {!currentData.percentageChange || isNaN(currentData.percentageChange) || !isFinite(currentData.percentageChange)
-                ? '0.0%'
-                : `${currentData.percentageChange >= 0 ? '+' : ''}${currentData.percentageChange.toFixed(1)}%`
-              }
-            </p>
-          </div>
+          {!isSinglePoint && (
+            <div>
+              <span className="text-white/50">Percentage Change</span>
+              <p className={`font-medium ${!isNaN(currentData.percentageChange) && currentData.percentageChange >= 0 ? 'text-green' : 'text-reddy'}`}>
+                {!currentData.percentageChange || isNaN(currentData.percentageChange) || !isFinite(currentData.percentageChange)
+                  ? '0.0%'
+                  : `${currentData.percentageChange >= 0 ? '+' : ''}${currentData.percentageChange.toFixed(1)}%`
+                }
+              </p>
+            </div>
+          )}
           <div>
             <span className="text-white/50">Period</span>
             <p className="font-medium text-xs">
@@ -156,7 +235,11 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
                     return 'Invalid dates';
                   }
-                  return `${format(start, 'MMM dd')} → ${format(end, 'MMM dd')}`;
+                  if (isSinglePoint) {
+                    return format(start, 'MMM dd, yyyy');
+                  } else {
+                    return `${format(start, 'MMM dd')} → ${format(end, 'MMM dd')}`;
+                  }
                 } catch (error) {
                   return 'Error formatting dates';
                 }
@@ -166,13 +249,13 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
         </div>
       )}
       
-      {/* Show clear button only for custom selections */}
-      {isCustomSelection && (
+      {/* Show clear button only for custom drag selections, not for hover */}
+      {isCustomSelection && !isHovering && (
         <button
           onClick={onClearSelection}
           className="mt-3 text-xs text-white/50 hover:text-white/70 transition-colors"
         >
-          Clear selection (show full period)
+          Clear selection
         </button>
       )}
       

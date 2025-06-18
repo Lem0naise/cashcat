@@ -18,12 +18,17 @@ export const useLineChartConfig = (
   isDragging: boolean,
   dragStartDataIndex: number | null,
   dragEndDataIndex: number | null,
+  hoverDataIndex: number | null,
   shouldShowDistanceFromGoal: boolean,
   distanceFromGoalData: DistanceFromGoalData,
   filteredCategoriesWithGoals: Category[],
   selectedCategories: string[],
   xUnit: 'day' | 'week' | 'month',
-  comparisonData: any // Add comparison data parameter
+  comparisonData: any, // Add comparison data parameter
+  onRealTimeUpdate?: (data: any) => void, // Add real-time update callback
+  calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any, // Add calculation function
+  onHover?: (event: any, chart: any) => void, // Add hover handler
+  onHoverLeave?: (chart: any) => void // Add hover leave handler
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -35,12 +40,13 @@ export const useLineChartConfig = (
           borderColor: '#bac2ff',
           backgroundColor: 'rgba(186, 194, 255, 0.1)',
           fill: true,
-          tension: 0.2,
-          pointRadius: chartData.dataPoints.length > 50 ? 2 : chartData.dataPoints.length > 30 ? 4 : 6,
-          pointHoverRadius: chartData.dataPoints.length > 50 ? 4 : chartData.dataPoints.length > 30 ? 6 : 10,
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone' as const,
+          pointRadius: 3,
+          pointHoverRadius: 3,
           pointBackgroundColor: '#bac2ff',
-          pointBorderColor: '#0a0a0a',
-          pointBorderWidth: 1,
+          pointBorderColor: '#bac2ff',
+          pointBorderWidth: 0,
         }
       ]
     },
@@ -57,131 +63,48 @@ export const useLineChartConfig = (
           selectionState: {
             dragStartDataIndex,
             dragEndDataIndex,
+            hoverDataIndex,
             chartData,
             selectedCategories,
             shouldShowDistanceFromGoal,
             distanceFromGoalData,
-            comparisonData
+            comparisonData,
+            onRealTimeUpdate,
+            calculateComparisonData,
+            isDragging
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {
           display: true,
           text: shouldShowDistanceFromGoal 
             ? `Category Progress Tracking (${filteredCategoriesWithGoals.length} categories)`
-            : `Account Balance Over Time (${chartData.dataPoints.length} points)`,
+            : `Account Balance Over Time`,
           color: '#ffffff',
           font: {
             size: 16,
-            weight: 'bold' as const
+            weight: 'bold' as const,
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
           }
         },
         legend: {
-          display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
-          labels: {
-            color: '#ffffff'
-          }
-        },
+  display: shouldShowDistanceFromGoal && filteredCategoriesWithGoals.length > 1,
+  labels: {
+    usePointStyle: true,
+    pointStyle: "circle",
+    color: '#ffffff',
+    padding: 20,
+    boxWidth: 10,
+    boxHeight: 8,
+    textAlign: 'left' as const,
+    font: {
+      family: 'Gabarito, system-ui, -apple-system, sans-serif',
+      size: 15 // Match your legend font size
+    }
+  },
+  onClick: () => {}
+},
         tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          titleColor: '#ffffff',
-          bodyColor: '#ffffff',
-          borderColor: '#bac2ff',
-          borderWidth: 1,
-          callbacks: {
-            title: (context: TooltipItem<'line'>[]) => {
-              const dateStr = context[0].label;
-              try {
-                const date = new Date(dateStr);
-                if (isNaN(date.getTime())) return dateStr;
-                
-                return format(date, 'MMM dd, yyyy');
-              } catch (error) {
-                console.error('Error formatting date in tooltip:', error, dateStr);
-                return dateStr;
-              }
-            },
-            label: (context: TooltipItem<'line'>) => {
-              const value = context.parsed.y;
-              const datasetIndex = context.datasetIndex;
-              const category = filteredCategoriesWithGoals[datasetIndex];
-              
-              if (!category) {
-                return shouldShowDistanceFromGoal ? `${formatCurrency(value)} remaining` : `Balance: ${formatCurrency(value)}`;
-              }
-              
-              if (shouldShowDistanceFromGoal) {
-                if (category.goal === null || category.goal === undefined) {
-                  // Savings category
-                  if (value >= 0) {
-                    return `${category.name}: ${formatCurrency(value)} accumulated`;
-                  } else {
-                    return `${category.name}: ${formatCurrency(Math.abs(value))} spent from savings`;
-                  }
-                } else {
-                  // Regular spending category with goal
-                  if (value >= 0) {
-                    return `${category.name}: ${formatCurrency(value)} remaining`;
-                  } else {
-                    return `${category.name}: ${formatCurrency(Math.abs(value))} over budget`;
-                  }
-                }
-              } else {
-                return `Balance: ${formatCurrency(value)}`;
-              }
-            },
-            afterBody: (context: TooltipItem<'line'>[]) => {
-              if (shouldShowDistanceFromGoal) {
-                // Show additional goal information for distance from goal view
-                const datasetIndex = context[0].datasetIndex;
-                const category = filteredCategoriesWithGoals[datasetIndex];
-                if (category) {
-                  const currentValue = context[0].parsed.y;
-                  
-                  if (category.goal === null || category.goal === undefined) {
-                    // Savings category without goal
-                    const spentAmount = Math.max(0, -currentValue); // If negative, show how much was spent
-                    return [
-                      '',
-                      `Category Type: Savings/No Goal`,
-                      currentValue >= 0 
-                        ? `Value accumulated this month: ${formatCurrency(currentValue)}`
-                        : `Spent from savings this month: ${formatCurrency(spentAmount)}`
-                    ];
-                  } else {
-                    // Regular spending category with goal
-                    const goalAmount = category.goal;
-                    const spentAmount = goalAmount - currentValue;
-                    return [
-                      '',
-                      `Monthly Goal: ${formatCurrency(goalAmount)}`,
-                      `Month-to-date Spent: ${formatCurrency(Math.max(0, spentAmount))}`,
-                      currentValue >= 0 
-                        ? `Remaining this month: ${formatCurrency(currentValue)}`
-                        : `Over budget this month: ${formatCurrency(Math.abs(currentValue))}`
-                    ];
-                  }
-                }
-                return [];
-              } else {
-                // Show assignment breakdown for account balance view
-                const dataPoint = chartData.dataPoints[context[0].dataIndex];
-                if (dataPoint?.assignmentBreakdown) {
-                  const breakdown = Object.entries(dataPoint.assignmentBreakdown)
-                    .filter(([_, amount]) => Math.abs(amount as number) > 0)
-                    .sort(([,a], [,b]) => Math.abs(b as number) - Math.abs(a as number))
-                    .slice(0, 8)
-                    .map(([categoryId, amount]) => {
-                      const category = categories.find(c => c.id === categoryId);
-                      const amountNum = amount as number;
-                      const sign = amountNum >= 0 ? '+' : '-';
-                      return `${category?.name || 'Unknown'}: ${sign}${formatCurrency(Math.abs(amountNum))}`;
-                    });
-                  return breakdown.length > 0 ? ['', 'This Period:', ...breakdown] : [];
-                }
-                return [];
-              }
-            }
-          }
+          enabled: false // Disable tooltips in favor of hover lines and comparison analysis
         }
       },
       scales: {
@@ -197,13 +120,20 @@ export const useLineChartConfig = (
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
-            alignToPixels: false,
+            alignToPixels: true,
             offset: false
           },
           ticks: {
             color: '#ffffff',
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
-          }
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
+            source: 'data' as const,
+            align: 'center' as const
+          },
+          bounds: 'data' as const,
+          offset: false
         },
         y: {
           grid: {
@@ -211,6 +141,9 @@ export const useLineChartConfig = (
           },
           ticks: {
             color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
             callback: function(value: any) {
               if (shouldShowDistanceFromGoal) {
                 const numValue = Number(value);
@@ -226,9 +159,20 @@ export const useLineChartConfig = (
           }
         }
       },
-      onHover: (event: any, activeElements: any[]) => {
+      onHover: (event: any, activeElements: any[], chart: any) => {
         if (event.native && event.native.target) {
           (event.native.target as HTMLElement).style.cursor = isDragging ? 'grabbing' : 'crosshair';
+        }
+        
+        // Call custom hover handler if provided
+        if (onHover && event.native) {
+          onHover(event.native, chart);
+        }
+      },
+      onLeave: (event: any, activeElements: any[], chart: any) => {
+        // Call custom hover leave handler if provided
+        if (onHoverLeave) {
+          onHoverLeave(chart);
         }
       },
     }
@@ -239,12 +183,17 @@ export const useLineChartConfig = (
     dateRange.end.getTime(), 
     isDragging, 
     dragStartDataIndex, 
-    dragEndDataIndex, 
+    dragEndDataIndex,
+    hoverDataIndex,
     shouldShowDistanceFromGoal, 
     distanceFromGoalData.datasets.length, 
     filteredCategoriesWithGoals.length,
     selectedCategories.length,
-    xUnit
+    xUnit,
+    onRealTimeUpdate,
+    calculateComparisonData,
+    onHover,
+    onHoverLeave
   ]);
 };
 
@@ -286,13 +235,17 @@ export const useVolumeChartConfig = (
           color: '#ffffff',
           font: {
             size: 14,
-            weight: 'bold' as const
+            weight: 'bold' as const,
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
           }
         },
         legend: {
           display: true,
           labels: {
-            color: '#ffffff'
+            color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            }
           }
         },
         tooltip: {
@@ -301,6 +254,15 @@ export const useVolumeChartConfig = (
           bodyColor: '#ffffff',
           borderColor: '#bac2ff',
           borderWidth: 1,
+          titleFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          bodyFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
+          footerFont: {
+            family: 'Gabarito, system-ui, -apple-system, sans-serif'
+          },
           callbacks: {
             title: (context: TooltipItem<'bar'>[]) => {
               const dateStr = context[0].label;
@@ -308,15 +270,8 @@ export const useVolumeChartConfig = (
                 const date = new Date(dateStr);
                 if (isNaN(date.getTime())) return dateStr;
                 
-                const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-                
-                if (diffInDays <= 7) {
-                  return format(date, 'MMM dd, yyyy');
-                } else if (diffInDays <= 90) {
-                  return format(date, 'MMM dd, yyyy');
-                } else {
-                  return format(date, 'MMM yyyy');
-                }
+                // Always use daily formatting since we force daily granularity for line charts
+                return format(date, 'MMM dd, yyyy');
               } catch (error) {
                 console.error('Error formatting date in volume tooltip:', error, dateStr);
                 return dateStr;
@@ -366,19 +321,24 @@ export const useVolumeChartConfig = (
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
-            alignToPixels: false,
+            alignToPixels: true,
             offset: false
           },
           ticks: {
             color: '#ffffff',
             maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
+            source: 'data' as const,
+            align: 'center' as const
           },
+          bounds: 'data' as const,
+          offset: false,
           // @ts-ignore
           barPercentage: 1.0,
           // @ts-ignore
           categoryPercentage: 1.0,
-          // @ts-ignore
-          offset: false,
         },
         y: {
           grid: {
@@ -386,6 +346,9 @@ export const useVolumeChartConfig = (
           },
           ticks: {
             color: '#ffffff',
+            font: {
+              family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            },
             callback: function(value: any) {
               return formatCurrency(Math.abs(Number(value)));
             }
