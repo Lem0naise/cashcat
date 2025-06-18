@@ -368,7 +368,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                                     className="w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-green focus:outline-none"
                                 >
-                                    <option value="checking">Checking</option>
+                                    <option value="checking">Current</option>
                                     <option value="savings">Savings</option>
                                     <option value="credit">Credit Card</option>
                                     <option value="investment">Investment</option>
