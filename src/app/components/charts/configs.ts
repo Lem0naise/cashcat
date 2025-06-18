@@ -41,7 +41,7 @@ export const useLineChartConfig = (
           backgroundColor: 'rgba(186, 194, 255, 0.1)',
           fill: true,
           tension: 0.4,
-          cubicInterpolationMode: 'monotone',
+          cubicInterpolationMode: 'monotone' as const,
           pointRadius: 3,
           pointHoverRadius: 3,
           pointBackgroundColor: '#bac2ff',

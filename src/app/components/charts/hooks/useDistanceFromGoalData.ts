@@ -123,7 +123,7 @@ export const useDistanceFromGoalData = (
         backgroundColor: `${color}20`,
         fill: false,
         tension: 0.4,
-        cubicInterpolationMode: 'monotone',
+        cubicInterpolationMode: 'monotone' as const,
         pointRadius: 3,
         pointHoverRadius: 3,
         pointBackgroundColor: color,
