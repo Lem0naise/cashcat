@@ -197,16 +197,34 @@ export const useChartData = (
     // Calculate running balance for each period
     const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
     
-    // --- NEW: Generate all period keys between start and end, even if no transactions ---
-    // We'll use daily granularity for now (can be adjusted for week/month if needed)
-    const allPeriodKeys: string[] = [];
-    let current = new Date(dateRange.start);
+    // Find the user's first transaction date (including starting balance)
+    const allTransactionDates = (Array.isArray(transactions) ? transactions : [])
+      .filter(t => t && t.date)
+      .map(t => new Date(t.date))
+      .filter(d => !isNaN(d.getTime()));
+    const firstTransactionDate = allTransactionDates.length > 0 ? new Date(Math.min(...allTransactionDates.map(d => d.getTime()))) : null;
+
+    // Clamp the chart's start date to the user's first transaction date
+    let clampedStart = dateRange.start;
+    if (firstTransactionDate && firstTransactionDate > dateRange.start) {
+      clampedStart = firstTransactionDate;
+    }
+    // If the clamped start is after the end, return empty data
+    if (clampedStart > dateRange.end) {
+      return { dataPoints: [], volumePoints: [] };
+    }
+    // --- Generate all period keys between clampedStart and end, even if no transactions ---
+    const allPeriodKeys = [];
+    let current = new Date(clampedStart);
     const end = new Date(dateRange.end);
     while (isBefore(current, end) || isEqual(current, end)) {
       allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
       current = addDays(current, 1);
     }
-    // --- END NEW ---
+    // Filter out any period keys that are before the first transaction date
+    const filteredPeriodKeys = firstTransactionDate
+      ? allPeriodKeys.filter(key => new Date(key) >= firstTransactionDate)
+      : allPeriodKeys;
 
     // Add starting point if we have transactions and it makes sense
     if (sortedPeriodKeys.length > 0) {
@@ -321,7 +339,7 @@ export const useChartData = (
     const alignedDataPoints: ChartDataPoint[] = [];
     const alignedVolumePoints: VolumeDataPoint[] = [];
     
-    allPeriodKeys.forEach(periodKey => {
+    filteredPeriodKeys.forEach(periodKey => {
       // Data point
       if (dataPointMap[periodKey]) {
         alignedDataPoints.push(dataPointMap[periodKey]);
