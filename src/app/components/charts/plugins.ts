@@ -130,22 +130,36 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
             
             // Draw background for date label
             ctx.fillStyle = 'rgba(186, 194, 255, 0.9)';
-            ctx.beginPath();
-            ctx.moveTo(labelX + 4, labelY - textHeight/2 - padding/2);
-            ctx.lineTo(labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2);
-            ctx.quadraticCurveTo(labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2, labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2 + 4);
-            ctx.lineTo(labelX + textWidth/2 + padding, labelY + textHeight/2 + padding/2 - 4);
-            ctx.quadraticCurveTo(labelX + textWidth/2 + padding, labelY + textHeight/2 + padding/2, labelX + textWidth/2 + padding - 4, labelY + textHeight/2 + padding/2);
-            ctx.lineTo(labelX - textWidth/2 - padding + 4, labelY + textHeight/2 + padding/2);
-            ctx.quadraticCurveTo(labelX - textWidth/2 - padding, labelY + textHeight/2 + padding/2, labelX - textWidth/2 - padding, labelY + textHeight/2 + padding/2 - 4);
-            ctx.lineTo(labelX - textWidth/2 - padding, labelY - textHeight/2 - padding/2 + 4);
-            ctx.quadraticCurveTo(labelX - textWidth/2 - padding, labelY - textHeight/2 - padding/2, labelX - textWidth/2 - padding + 4, labelY - textHeight/2 - padding/2);
-            ctx.closePath();
+            
+            // Helper function to draw a proper rounded rectangle
+            const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+              ctx.beginPath();
+              ctx.moveTo(x + radius, y);
+              ctx.lineTo(x + width - radius, y);
+              ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+              ctx.lineTo(x + width, y + height - radius);
+              ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+              ctx.lineTo(x + radius, y + height);
+              ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+              ctx.lineTo(x, y + radius);
+              ctx.quadraticCurveTo(x, y, x + radius, y);
+              ctx.closePath();
+            };
+            
+            // Draw rounded background
+            const rectX = labelX - textWidth/2 - padding;
+            const rectY = labelY - textHeight/2 - padding/2;
+            const rectWidth = textWidth + padding * 2;
+            const rectHeight = textHeight + padding;
+            const radius = 6;
+            
+            drawRoundedRect(rectX, rectY, rectWidth, rectHeight, radius);
             ctx.fill();
             
-            // Draw border
+            // Draw border with same rounded rectangle
             ctx.strokeStyle = '#bac2ff';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1;
+            drawRoundedRect(rectX, rectY, rectWidth, rectHeight, radius);
             ctx.stroke();
             
             // Draw text
