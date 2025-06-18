@@ -56,7 +56,8 @@ export const useFilteredTransactions = (
 export const useChartData = (
   transactions: Transaction[],
   categories: Category[],
-  dateRange: { start: Date; end: Date }
+  dateRange: { start: Date; end: Date },
+  timeRange?: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom'
 ) => {
   return useMemo(() => {
     // Check if transactions is actually an array and validate inputs
@@ -128,10 +129,16 @@ export const useChartData = (
     if (clampedStart > dateRange.end) {
       return { dataPoints: [], volumePoints: [] };
     }
-    // --- Generate all period keys between clampedStart and end, even if no transactions ---
+    // If the selected range is 'All Time', force the end date to today
+    let effectiveEnd = dateRange.end;
+    if (timeRange === 'all') {
+      effectiveEnd = new Date();
+      effectiveEnd.setHours(12, 0, 0, 0);
+    }
+    // --- Generate all period keys between clampedStart and effectiveEnd, even if no transactions ---
     const allPeriodKeys: string[] = [];
     let current = new Date(clampedStart);
-    const end = new Date(dateRange.end);
+    const end = new Date(effectiveEnd);
     while (isBefore(current, end) || isEqual(current, end)) {
       allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
       current = addDays(current, 1);
@@ -358,5 +365,5 @@ export const useChartData = (
     });
 
     return { dataPoints: alignedDataPoints, volumePoints: alignedVolumePoints };
-  }, [transactions, categories, dateRange]);
+  }, [transactions, categories, dateRange, timeRange]);
 };
