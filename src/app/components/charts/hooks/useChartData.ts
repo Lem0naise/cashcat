@@ -112,23 +112,53 @@ export const useChartData = (
       return inRange;
     });
 
-    // If no transactions in range, create a simple starting point with the correct balance
+    // Find the user's first transaction date (including starting balance)
+    const allTransactionDates = (Array.isArray(transactions) ? transactions : [])
+      .filter(t => t && t.date)
+      .map(t => new Date(t.date))
+      .filter(d => !isNaN(d.getTime()));
+    const firstTransactionDate = allTransactionDates.length > 0 ? new Date(Math.min(...allTransactionDates.map(d => d.getTime()))) : null;
+
+    // Clamp the chart's start date to the user's first transaction date
+    let clampedStart = dateRange.start;
+    if (firstTransactionDate && firstTransactionDate > dateRange.start) {
+      clampedStart = firstTransactionDate;
+    }
+    // If the clamped start is after the end, return empty data
+    if (clampedStart > dateRange.end) {
+      return { dataPoints: [], volumePoints: [] };
+    }
+    // --- Generate all period keys between clampedStart and end, even if no transactions ---
+    const allPeriodKeys: string[] = [];
+    let current = new Date(clampedStart);
+    const end = new Date(dateRange.end);
+    while (isBefore(current, end) || isEqual(current, end)) {
+      allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
+      current = addDays(current, 1);
+    }
+    // Filter out any period keys that are before the first transaction date
+    const filteredPeriodKeys = firstTransactionDate
+      ? allPeriodKeys.filter(key => new Date(key) >= firstTransactionDate)
+      : allPeriodKeys;
+
+    // If no transactions in range, create a flat line for the whole period
     if (transactionsInRange.length === 0) {
-      const todayKey = format(new Date(), 'yyyy-MM-dd 12:00:00');
+      const flatDataPoints = filteredPeriodKeys.map(periodKey => ({
+        x: periodKey,
+        y: chartStartingBalance,
+        assignmentBreakdown: {}
+      }));
+      const flatVolumePoints = filteredPeriodKeys.map(periodKey => ({
+        x: periodKey,
+        assigned: 0,
+        removed: 0,
+        net: 0,
+        categories: [],
+        vendors: []
+      }));
       return {
-        dataPoints: [{
-          x: todayKey,
-          y: chartStartingBalance,
-          assignmentBreakdown: {}
-        }],
-        volumePoints: [{
-          x: todayKey,
-          assigned: 0,
-          removed: 0,
-          net: 0,
-          categories: [],
-          vendors: []
-        }]
+        dataPoints: flatDataPoints,
+        volumePoints: flatVolumePoints
       };
     }
 
@@ -196,35 +226,6 @@ export const useChartData = (
 
     // Calculate running balance for each period
     const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
-    
-    // Find the user's first transaction date (including starting balance)
-    const allTransactionDates = (Array.isArray(transactions) ? transactions : [])
-      .filter(t => t && t.date)
-      .map(t => new Date(t.date))
-      .filter(d => !isNaN(d.getTime()));
-    const firstTransactionDate = allTransactionDates.length > 0 ? new Date(Math.min(...allTransactionDates.map(d => d.getTime()))) : null;
-
-    // Clamp the chart's start date to the user's first transaction date
-    let clampedStart = dateRange.start;
-    if (firstTransactionDate && firstTransactionDate > dateRange.start) {
-      clampedStart = firstTransactionDate;
-    }
-    // If the clamped start is after the end, return empty data
-    if (clampedStart > dateRange.end) {
-      return { dataPoints: [], volumePoints: [] };
-    }
-    // --- Generate all period keys between clampedStart and end, even if no transactions ---
-    const allPeriodKeys = [];
-    let current = new Date(clampedStart);
-    const end = new Date(dateRange.end);
-    while (isBefore(current, end) || isEqual(current, end)) {
-      allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
-      current = addDays(current, 1);
-    }
-    // Filter out any period keys that are before the first transaction date
-    const filteredPeriodKeys = firstTransactionDate
-      ? allPeriodKeys.filter(key => new Date(key) >= firstTransactionDate)
-      : allPeriodKeys;
 
     // Add starting point if we have transactions and it makes sense
     if (sortedPeriodKeys.length > 0) {
