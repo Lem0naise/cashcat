@@ -77,9 +77,9 @@ export const useChartData = (
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Calculate the actual starting balance for the chart
-    // This should be: starting balance + all transactions before the date range
-    const startingTransaction = allTransactions.find(t => t && t.type === 'starting');
-    let chartStartingBalance = startingTransaction?.amount || 0;
+    // This should be: sum of all starting balances (one per account) + all transactions before the date range
+    const startingTransactions = allTransactions.filter(t => t && t.type === 'starting');
+    let chartStartingBalance = startingTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     
     // Add all transactions that occurred before the date range to get the correct starting point
     const transactionsBeforeRange = allSorted.filter(transaction => {
