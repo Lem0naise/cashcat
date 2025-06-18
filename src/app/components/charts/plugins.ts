@@ -115,18 +115,31 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
             const padding = 8;
             const labelY = bottom + 20;
             
+            // Adjust label position to keep it within chart bounds
+            let labelX = x;
+            const labelWidth = textWidth + padding * 2;
+            
+            // If label would extend past right edge, move it left
+            if (labelX + labelWidth/2 > right) {
+              labelX = right - labelWidth/2;
+            }
+            // If label would extend past left edge, move it right
+            if (labelX - labelWidth/2 < left) {
+              labelX = left + labelWidth/2;
+            }
+            
             // Draw background for date label
             ctx.fillStyle = 'rgba(186, 194, 255, 0.9)';
             ctx.beginPath();
-            ctx.moveTo(x + 4, labelY - textHeight/2 - padding/2);
-            ctx.lineTo(x + textWidth/2 + padding, labelY - textHeight/2 - padding/2);
-            ctx.quadraticCurveTo(x + textWidth/2 + padding, labelY - textHeight/2 - padding/2, x + textWidth/2 + padding, labelY - textHeight/2 - padding/2 + 4);
-            ctx.lineTo(x + textWidth/2 + padding, labelY + textHeight/2 + padding/2 - 4);
-            ctx.quadraticCurveTo(x + textWidth/2 + padding, labelY + textHeight/2 + padding/2, x + textWidth/2 + padding - 4, labelY + textHeight/2 + padding/2);
-            ctx.lineTo(x - textWidth/2 - padding + 4, labelY + textHeight/2 + padding/2);
-            ctx.quadraticCurveTo(x - textWidth/2 - padding, labelY + textHeight/2 + padding/2, x - textWidth/2 - padding, labelY + textHeight/2 + padding/2 - 4);
-            ctx.lineTo(x - textWidth/2 - padding, labelY - textHeight/2 - padding/2 + 4);
-            ctx.quadraticCurveTo(x - textWidth/2 - padding, labelY - textHeight/2 - padding/2, x - textWidth/2 - padding + 4, labelY - textHeight/2 - padding/2);
+            ctx.moveTo(labelX + 4, labelY - textHeight/2 - padding/2);
+            ctx.lineTo(labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2);
+            ctx.quadraticCurveTo(labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2, labelX + textWidth/2 + padding, labelY - textHeight/2 - padding/2 + 4);
+            ctx.lineTo(labelX + textWidth/2 + padding, labelY + textHeight/2 + padding/2 - 4);
+            ctx.quadraticCurveTo(labelX + textWidth/2 + padding, labelY + textHeight/2 + padding/2, labelX + textWidth/2 + padding - 4, labelY + textHeight/2 + padding/2);
+            ctx.lineTo(labelX - textWidth/2 - padding + 4, labelY + textHeight/2 + padding/2);
+            ctx.quadraticCurveTo(labelX - textWidth/2 - padding, labelY + textHeight/2 + padding/2, labelX - textWidth/2 - padding, labelY + textHeight/2 + padding/2 - 4);
+            ctx.lineTo(labelX - textWidth/2 - padding, labelY - textHeight/2 - padding/2 + 4);
+            ctx.quadraticCurveTo(labelX - textWidth/2 - padding, labelY - textHeight/2 - padding/2, labelX - textWidth/2 - padding + 4, labelY - textHeight/2 - padding/2);
             ctx.closePath();
             ctx.fill();
             
@@ -141,7 +154,7 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
             ctx.shadowBlur = 1;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 1;
-            ctx.fillText(dateLabel, x, labelY + 2);
+            ctx.fillText(dateLabel, labelX, labelY + 2);
             
             // Reset shadow
             ctx.shadowColor = 'transparent';
