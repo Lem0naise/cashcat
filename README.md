@@ -46,9 +46,6 @@ Pull requests, issues, and feature suggestions are very welcome!
 
 ## 🧑‍⚖️ Legal & Attribution
 
-<small>This project is **not affiliated with or endorsed by YNAB**.
-"YNAB" is a registered trademark of YouNeedABudget.com.
-
 This source code is provided on GitHub for the purposes of transparency. CashCat retains all rights with respect to the CashCat software, including copyright where applicable.
 Cashcat is independently developed and **inspired by budgeting best practices**.</small>
 
