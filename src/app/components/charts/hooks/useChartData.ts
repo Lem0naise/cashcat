@@ -1,6 +1,6 @@
 // Data processing hooks for budget assignment chart
 import { useMemo } from 'react';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
+import { format, startOfWeek, startOfMonth, addDays, isBefore, isEqual } from 'date-fns';
 import { 
   Transaction, 
   Category, 
@@ -197,6 +197,17 @@ export const useChartData = (
     // Calculate running balance for each period
     const sortedPeriodKeys = Object.keys(groupedByPeriod).sort();
     
+    // --- NEW: Generate all period keys between start and end, even if no transactions ---
+    // We'll use daily granularity for now (can be adjusted for week/month if needed)
+    const allPeriodKeys: string[] = [];
+    let current = new Date(dateRange.start);
+    const end = new Date(dateRange.end);
+    while (isBefore(current, end) || isEqual(current, end)) {
+      allPeriodKeys.push(format(current, 'yyyy-MM-dd 12:00:00'));
+      current = addDays(current, 1);
+    }
+    // --- END NEW ---
+
     // Add starting point if we have transactions and it makes sense
     if (sortedPeriodKeys.length > 0) {
       const firstTransactionDate = new Date(sortedPeriodKeys[0]);
@@ -295,10 +306,10 @@ export const useChartData = (
 
     // X-Axis Alignment Fix: Force all period keys to be present in both dataPoints and volumePoints
     // 1. Get all unique period keys (dates) from groupedByPeriod and include the startingKey if present
-    let allPeriodKeys = [...sortedPeriodKeys];
-    if (dataPoints.length > 0 && !allPeriodKeys.includes(dataPoints[0].x)) {
-      allPeriodKeys = [dataPoints[0].x, ...allPeriodKeys];
-    }
+    // let allPeriodKeys = [...sortedPeriodKeys];
+    // if (dataPoints.length > 0 && !allPeriodKeys.includes(dataPoints[0].x)) {
+    //   allPeriodKeys = [dataPoints[0].x, ...allPeriodKeys];
+    // }
 
     // 2. Build a map for quick lookup
     const dataPointMap = Object.fromEntries(dataPoints.map(dp => [dp.x, dp]));
