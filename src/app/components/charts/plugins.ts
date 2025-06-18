@@ -371,6 +371,31 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         // This creates a dedicated vertical space for selection labels
         const labelY = bottom + 20;
         
+        // Adjust label positions to keep them within chart bounds
+        let adjustedLeftX = leftX;
+        let adjustedRightX = rightX;
+        
+        const startLabelWidth = startTextWidth + padding * 2;
+        const endLabelWidth = endTextWidth + padding * 2;
+        
+        // If start label would extend past left edge, move it right
+        if (adjustedLeftX - startLabelWidth/2 < left) {
+          adjustedLeftX = left + startLabelWidth/2;
+        }
+        // If start label would extend past right edge, move it left
+        if (adjustedLeftX + startLabelWidth/2 > right) {
+          adjustedLeftX = right - startLabelWidth/2;
+        }
+        
+        // If end label would extend past right edge, move it left
+        if (adjustedRightX + endLabelWidth/2 > right) {
+          adjustedRightX = right - endLabelWidth/2;
+        }
+        // If end label would extend past left edge, move it right
+        if (adjustedRightX - endLabelWidth/2 < left) {
+          adjustedRightX = left + endLabelWidth/2;
+        }
+        
         // Draw background rectangles for labels with rounded corners
         ctx.fillStyle = 'rgba(186, 194, 255, 0.9)'; // Light blue background
         
@@ -390,12 +415,12 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         };
         
         // Draw rounded background for start label
-        drawRoundedRect(leftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+        drawRoundedRect(adjustedLeftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
                        startTextWidth + padding*2, textHeight + padding, 4);
         ctx.fill();
         
         // Draw rounded background for end label
-        drawRoundedRect(rightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+        drawRoundedRect(adjustedRightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
                        endTextWidth + padding*2, textHeight + padding, 4);
         ctx.fill();
         
@@ -403,11 +428,11 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         ctx.strokeStyle = '#bac2ff';
         ctx.lineWidth = 2;
         
-        drawRoundedRect(leftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+        drawRoundedRect(adjustedLeftX - startTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
                        startTextWidth + padding*2, textHeight + padding, 4);
         ctx.stroke();
         
-        drawRoundedRect(rightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
+        drawRoundedRect(adjustedRightX - endTextWidth/2 - padding, labelY - textHeight/2 - padding/2, 
                        endTextWidth + padding*2, textHeight + padding, 4);
         ctx.stroke();
         
@@ -418,8 +443,8 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 1;
         
-        ctx.fillText(startLabel, leftX, labelY + 2);
-        ctx.fillText(endLabel, rightX, labelY + 2);
+        ctx.fillText(startLabel, adjustedLeftX, labelY + 2);
+        ctx.fillText(endLabel, adjustedRightX, labelY + 2);
         
         // Reset shadow
         ctx.shadowColor = 'transparent';
