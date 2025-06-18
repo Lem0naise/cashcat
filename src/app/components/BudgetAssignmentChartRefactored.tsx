@@ -103,7 +103,7 @@ export default function BudgetAssignmentChart({
     [selectedCategories.length, selectedGroups.length]
   );
   
-  const chartData = useChartData(transactions, categories, dateRange);
+  const chartData = useChartData(transactions, categories, dateRange, timeRange);
 
   // Get filtered categories for distance calculation - memoized with stable dependencies
   const filteredCategoriesWithGoals = useMemo(() => {
