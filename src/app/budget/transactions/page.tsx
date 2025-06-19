@@ -66,7 +66,7 @@ export default function Transactions() {
         // Search filter
         if (!searchQuery.trim()) return true;
         
-        const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase().trim();
         const amount = Math.abs(transaction.amount).toString();
         const date = new Date(transaction.date).toLocaleDateString('en-GB', {
             day: 'numeric',
@@ -78,6 +78,7 @@ export default function Transactions() {
             transaction.vendor.toLowerCase().includes(query) ||
             transaction.description?.toLowerCase().includes(query) ||
             transaction.categories?.name.toLowerCase().includes(query) ||
+            transaction.type.toLowerCase().includes(query) ||
             amount.includes(query) ||
             date.toLowerCase().includes(query)
         );

@@ -264,19 +264,6 @@ export const useVolumeChartConfig = (
             family: 'Gabarito, system-ui, -apple-system, sans-serif'
           },
           callbacks: {
-            title: (context: TooltipItem<'bar'>[]) => {
-              const dateStr = context[0].label;
-              try {
-                const date = new Date(dateStr);
-                if (isNaN(date.getTime())) return dateStr;
-                
-                // Always use daily formatting since we force daily granularity for line charts
-                return format(date, 'MMM dd, yyyy');
-              } catch (error) {
-                console.error('Error formatting date in volume tooltip:', error, dateStr);
-                return dateStr;
-              }
-            },
             label: (context: TooltipItem<'bar'>) => {
               const dataIndex = context.dataIndex;
               const volumePoint = filteredVolumeData[dataIndex];
@@ -290,13 +277,13 @@ export const useVolumeChartConfig = (
               
               // Show vendors when filters are active, otherwise show categories
               if (hasActiveFilters && volumePoint.vendors.length > 0) {
-                lines.push('', 'Vendors:');
+                lines.push('');
                 lines.push(...volumePoint.vendors.slice(0, 5));
                 if (volumePoint.vendors.length > 5) {
                   lines.push(`... and ${volumePoint.vendors.length - 5} more`);
                 }
               } else if (volumePoint.categories.length > 0) {
-                lines.push('', 'Categories:');
+                lines.push('');
                 lines.push(...volumePoint.categories.slice(0, 5));
                 if (volumePoint.categories.length > 5) {
                   lines.push(`... and ${volumePoint.categories.length - 5} more`);
@@ -317,7 +304,9 @@ export const useVolumeChartConfig = (
               day: 'MMM dd',
               week: 'MMM dd',
               month: 'MMM yyyy'
-            }
+            },
+            tooltipFormat: 'EEE dd MMM, yyyy',
+            round: 'day' as const
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
