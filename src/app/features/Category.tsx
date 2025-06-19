@@ -175,17 +175,18 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                     }`}
                 >
                     <div className={`pb-10 flex items-center justify-between mt-0.5 md:mt-2.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
-                        <div className="flex items-center gap-1 xl:gap-1">
+                        <div className="flex items-center gap-1">
 
                             {Math.round(rollover * 100) != 0 ? (
                                 <>
                                     <span className="text-white/70 text-sm xl:text-md font-medium">{formatCurrency(rollover)}</span>
-                                    {assigned != 0 && (<span className="text-white/50 text-sm xl:text-md font-medium">+£</span>)}
+                                    <span className="text-white/50 text-sm xl:text-md font-medium">+</span>
                                 </>
                             ) : null}
                          
 
-                            <div className="w-14 lg:w-16">
+                            <div className="w-14 lg:w-16 flex items-center gap-1">
+                                <span className="text-white/70 text-sm xl:text-md font-medium inline">£</span>
                                 <MoneyInput
                                     inputRef={inputRef}
                                     value={hideBudgetValues ? '****' : editedAmount}
@@ -196,8 +197,13 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                     canBeNegative={true}
                                 />
                             </div>
-                            <span className="text-white/50 text-sm md:text-base">of</span>
-                            <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
+                            {goal != 0 && (
+                                <>
+                                <span className="text-white/50 text-sm md:text-base">of</span>
+                                <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
+                            </>)
+                            }
+                            
                         </div>
                         <div className={`flex gap-1 md:gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
                             <button
