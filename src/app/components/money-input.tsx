@@ -216,7 +216,7 @@ export default function MoneyInput({
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, fontFamily:'var(--font-suse'}}
                 >
                     <div 
-                        className="iphone-padding bg-black/[.90] border-t border-white/[.15] p-3 rounded-t-xl"
+                        className="iphone-padding bg-black border-t border-white/[.15] p-3 rounded-t-xl"
                         style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
                     >
                         {/* Display */}
