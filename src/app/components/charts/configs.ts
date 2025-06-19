@@ -306,7 +306,7 @@ export const useVolumeChartConfig = (
               month: 'MMM yyyy'
             },
             tooltipFormat: 'EEE dd MMM, yyyy',
-            round: 'day'
+            round: 'day' as const
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
