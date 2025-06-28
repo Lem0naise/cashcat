@@ -1,22 +1,25 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import Logo from './components/logo';
-import { useSupabase } from './contexts/supabase-provider';
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'CashCat - Say Goodbye to Financial Worries',
+  description: 'Say goodbye to financial guesswork - manage your money for free with CashCat.',
+  keywords: [
+    'budgeting app',
+    'zero-based budgeting', 
+    'free budget tracker',
+    'personal finance',
+    'money management',
+    'financial planning',
+    'expense tracker',
+    'budget planner'
+  ],
+  authors: [{ name: 'Indigo Nolan' },{ name: 'Josh Wilcox' }],
+  creator: 'CashCat',
+  publisher: 'CashCat',
+};
+
 export default function Landing() {
-    const router = useRouter();
-    const { user, loading } = useSupabase();
-
-
-    useEffect(() => {
-        if ((!loading && user)) {
-            router.push('/budget');
-        }
-    }, [user, loading, router]);
-
     return (
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
             <main className="container mx-auto px-6">
@@ -66,12 +69,12 @@ export default function Landing() {
                             >
                                 Start Budgeting Free
                             </Link>
-                            <button
-                                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                            <Link
+                                href="#features"
                                 className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20"
                             >
                                 See How It Works
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -361,3 +364,4 @@ export default function Landing() {
         </div>
     );
 }
+                         

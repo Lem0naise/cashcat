@@ -1,24 +1,20 @@
-'use client';
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import Logo from "../components/logo";
 import Link from 'next/link';
 
 
-export default function About() {
-    const router = useRouter();
-    const [isAnimatingAway, setIsAnimatingAway] = useState(false);
+export const metadata = {
+  title: 'CashCat - About',
+  description: 'Meet the team behind CashCat: Indigo Nolan and Josh Wilcox!',
+};
 
-    const handleClick = () => {
-        router.back();
-    };
+export default function About() {
 
     return (
         <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen px-4 md:px-8 pb-8 gap-4 font-[family-name:var(--font-suse)]">
-            <main className={`${isAnimatingAway ? "fade-out " : ""} transition-all flex flex-col gap-2 row-start-2 items-center max-w-4xl w-full fade-in`}>
+            <main className={`transition-all flex flex-col gap-2 row-start-2 items-center max-w-4xl w-full fade-in`}>
                 <div className="scale-75 sm:scale-100 text-center mb-4">
-                    {Logo()}
+                    <Logo/>
                 </div>
                 
                 <div className="space-y-6 sm:space-y-8 text-base sm:text-lg w-full">
@@ -31,7 +27,9 @@ export default function About() {
                         <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Meet the CashCat Team</h2>
                         
                         <div className="grid sm:grid-cols-2 gap-4">
-                            <div onClick={() => {window.open("https://indigonolan.com"); return false;}} className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
+                            <Link 
+                             href="https://indigonolan.com">
+                            <div className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
                                 <div className="w-16 h-16 rounded-full bg-green/70 flex items-center justify-center">
                                     <Image
                                         src="/indigo.jpg"
@@ -50,8 +48,12 @@ export default function About() {
                                     </p>
                                 </div>
                             </div>
+                            </Link>
+                            
 
-                            <div onClick={() => {window.open("https://github.com/Joshua-Wilcox"); return false;}} className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
+                            <Link 
+                             href="https://github.com/Joshua-Wilcox">
+                            <div className="flex flex-col items-center text-center space-y-3 p-6 rounded-xl bg-white/[.05] transition-all duration-200 cursor-pointer hover:bg-white/[.1] hover:scale-[1.02]">
                                 <div className="w-16 h-16 rounded-full bg-green/70 flex items-center justify-center">
                                     <Image
                                         src="https://avatars.githubusercontent.com/u/86571733?v=4"
@@ -70,7 +72,9 @@ export default function About() {
                                     </p>
                                 </div>
                             </div>
+                            </Link>
                         </div>
+ 
 
                         <div className="mt-6 p-6 rounded-xl bg-white/[.05] text-center">
                             <h3 className="text-lg sm:text-xl font-semibold mb-3">Our Story</h3>
@@ -135,12 +139,12 @@ export default function About() {
                         >
                             Learn How CashCat Works
                         </Link>
-                        <button
-                            onClick={handleClick}
+                        <Link
+                            href="/budget"
                             className="px-6 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-base"
                         >
                             Back to Budget
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </main>
