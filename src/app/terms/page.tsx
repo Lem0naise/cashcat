@@ -1,9 +1,13 @@
-'use client';
-import { useRouter } from 'next/navigation';
 import Logo from "../components/logo";
+import Link from 'next/link';
+
+
+export const metadata = {
+  title: 'Terms - CashCat',
+  description: 'View the legal terms and privacy policy of CashCat.',
+};
 
 export default function Terms() {
-    const router = useRouter();
 
     return (
         <div className="min-h-screen bg-background font-[family-name:var(--font-suse)] p-0 md:p-6">
@@ -155,12 +159,12 @@ export default function Terms() {
                 </div>
 
                 <div className="text-center mt-8 mb-8">
-                    <button
-                        onClick={() => router.back()}
+                    <Link
+                        href="/"
                         className="px-6 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
                     >
-                        Back
-                    </button>
+                        Home
+                    </Link>
                 </div>
             </main>
         </div>
