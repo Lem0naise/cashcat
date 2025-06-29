@@ -19,12 +19,12 @@ const nextConfig = {
     return [
       {
         source: '/:path*', // Matches any path (e.g., /, /terms, /learn, etc.)
-        destination: 'https://www.cashcat.app/:path*', // Redirects to the www version, preserving the path
+        destination: 'https://cashcat.app/:path*', // Redirects to the www version, preserving the path
         permanent: true, // IMPORTANT: This is crucial for SEO (301 redirect)
         has: [ // Condition to ensure this redirect only fires for the non-www host
           {
             type: 'host',
-            value: 'cashcat.app', // The host to redirect FROM (the non-www)
+            value: 'www.cashcat.app', // The host to redirect FROM (the non-www)
           },
         ],
       },
