@@ -17,6 +17,35 @@ export const metadata = {
   authors: [{ name: 'Indigo Nolan' },{ name: 'Josh Wilcox' }],
   creator: 'CashCat',
   publisher: 'CashCat',
+  openGraph: {
+    title: 'CashCat - Free Zero-Based Budgeting App',
+    description: 'Say goodbye to financial guesswork. The free budgeting app that stops you worrying about money, no matter your situation.',
+    url: 'https://cashcat.app',
+    siteName: 'CashCat',
+    images: [
+      {
+        url: 'https://cashcat.app/media/og.png',
+        width: 1464,
+        height: 828,
+        alt: 'CashCat - Free Budgeting App Dashboard',
+      },
+    ],
+    locale: 'en_GB',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CashCat - Free Zero-Based Budgeting App',
+    description: 'The free budgeting app that stops you worrying about money.',
+    images: [
+      {
+        url: 'https://cashcat.app/media/og.png',
+        width: 1464,
+        height: 828,
+        alt: 'CashCat - Free Budgeting App Dashboard',
+      },
+    ],
+  },
 };
 
 export default function Landing() {

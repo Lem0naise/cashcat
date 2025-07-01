@@ -16,6 +16,35 @@ export const metadata: Metadata = {
   title: "CashCat",
   description: "Manage your money with free budgeting",
   manifest: "/manifest.json",
+  openGraph: {
+    title: 'CashCat',
+    description: 'Manage your money with free budgeting',
+    url: 'https://cashcat.app',
+    siteName: 'CashCat',
+    images: [
+      {
+        url: 'https://cashcat.app/media/og.png',
+        width: 1464,
+        height: 828,
+        alt: 'CashCat - Free Budgeting App Dashboard',
+      },
+    ],
+    locale: 'en_GB',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CashCat',
+    description: 'Manage your money with free budgeting',
+     images: [
+      {
+        url: 'https://cashcat.app/media/og.png',
+        width: 1464,
+        height: 828,
+        alt: 'CashCat - Free Budgeting App Dashboard',
+      },
+    ],
+  },
 };
 
 export function generateViewport() {
