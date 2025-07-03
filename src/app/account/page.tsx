@@ -188,19 +188,19 @@ export default function Account() {
                         )}
                         
 
-                        {/* Bank Integration (Previously Premium) */}
+                        {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Bank Account Integration</h2>
-                                <span className="px-2 py-1 bg-green/20 text-green text-xs rounded-full">Coming Soon</span>
+                                <h2 className="text-lg font-semibold">Join Our Discord</h2>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">A small subscription fee may apply to bank integration, to cover our costs. This will support CashCat's development.</p>
-                            <button
-                                className="w-full px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
-                                disabled
+                            <p className="text-sm text-white/70 mb-4">Join CashCat's Discord for easy access to our community and developers.</p>
+                            <Link
+                                href="https://discord.gg/C9mYnEdAQA"
+                                target="_blank"
+                                className="w-full block text-center px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
                             >
-                                Connect Account
-                            </button>
+                                Join Our Discord
+                            </Link>
                         </div>
 
     
