@@ -153,7 +153,10 @@ export default function ChartControls({
               <h4 className="text-sm font-medium mb-2">Budget Groups</h4>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => onGroupsChange([])}
+                  onClick={() => {
+                    onGroupsChange([]);
+                    onCategoriesChange([]);
+                  }}
                   className={`px-3 py-1 text-sm rounded-lg transition-all ${
                     selectedGroups.length === 0
                       ? 'bg-green text-black'
