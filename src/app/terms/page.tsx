@@ -23,7 +23,7 @@ export default function Terms() {
                 {/* Add this summary section */}
                 <div className="bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-6 mb-6 text-white/90">
                     <h2 className="text-xl font-semibold text-green">Quick Summary</h2>
-                    <span className="text-xs text-white/60 mb-3">Effective: June 7, 2025</span>
+                    <span className="text-xs text-white/60 mb-3">Effective: June 7, 2025, v1.0</span>
                     <ul className="space-y-2 text-sm list-disc list-inside">
                         <li>CashCat is a budgeting tool only - we don't handle your real money in any way</li>
                         <li>We only collect your email and any budget data you enter - we don't track you</li>
