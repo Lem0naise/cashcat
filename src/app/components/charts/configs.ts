@@ -242,7 +242,13 @@ export const useVolumeChartConfig = (
         legend: {
           display: true,
           labels: {
+            usePointStyle: true,
+            pointStyle: "circle",
             color: '#ffffff',
+            padding: 20,
+            boxWidth: 10,
+            boxHeight: 8,
+            textAlign: 'left' as const,
             font: {
               family: 'Gabarito, system-ui, -apple-system, sans-serif'
             }
