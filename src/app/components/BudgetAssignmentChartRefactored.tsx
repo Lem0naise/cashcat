@@ -102,8 +102,16 @@ export default function BudgetAssignmentChart({
     selectedCategories.length > 0 || selectedGroups.length > 0,
     [selectedCategories.length, selectedGroups.length]
   );
-  
-  const chartData = useChartData(transactions, categories, dateRange, timeRange);
+
+  // Map timeRange to supported values for useChartData hook
+  const mappedTimeRange = useMemo(() => {
+    if (timeRange === 'mtd' || timeRange === 'ytd') {
+      return 'custom'; // Use custom range for mtd/ytd with calculated dateRange
+    }
+    return timeRange;
+  }, [timeRange]);
+
+  const chartData = useChartData(transactions, categories, dateRange, mappedTimeRange);
 
   // Get filtered categories for distance calculation - memoized with stable dependencies
   const filteredCategoriesWithGoals = useMemo(() => {
