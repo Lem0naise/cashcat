@@ -213,6 +213,8 @@ export const useVolumeChartConfig = (
           backgroundColor: 'rgba(186, 194, 255, 0.6)',
           borderColor: '#bac2ff',
           borderWidth: 1,
+          stack: 'stack0',
+          maxBarThickness: 80,
         },
         {
           label: 'Spending',
@@ -220,12 +222,29 @@ export const useVolumeChartConfig = (
           backgroundColor: 'rgba(239, 68, 68, 0.6)',
           borderColor: '#ef4444',
           borderWidth: 1,
+          stack: 'stack0',
+          maxBarThickness: 80,
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      // Bar chart specific options for full width bars
+      barPercentage: 1.0,
+      categoryPercentage: 1.0,
+      elements: {
+        bar: {
+          borderWidth: 1,
+          borderSkipped: false,
+          borderRadius: {
+            topLeft: 3,
+            topRight: 3,
+            bottomLeft: 3,
+            bottomRight: 3
+          }
+        }
+      },
       plugins: {
         title: {
           display: true,
@@ -310,9 +329,7 @@ export const useVolumeChartConfig = (
               day: 'MMM dd',
               week: 'MMM dd',
               month: 'MMM yyyy'
-            },
-            tooltipFormat: 'EEE dd MMM, yyyy',
-            round: 'day' as const
+            }
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)',
@@ -329,13 +346,10 @@ export const useVolumeChartConfig = (
             align: 'center' as const
           },
           bounds: 'data' as const,
-          offset: false,
-          // @ts-ignore
-          barPercentage: 1.0,
-          // @ts-ignore
-          categoryPercentage: 1.0,
+          offset: true
         },
         y: {
+          stacked: false,
           grid: {
             color: 'rgba(255, 255, 255, 0.1)'
           },
