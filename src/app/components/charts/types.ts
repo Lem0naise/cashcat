@@ -5,6 +5,21 @@ export type Assignment = Database['public']['Tables']['assignments']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type Transaction = Database['public']['Tables']['transactions']['Row'];
 
+// Extended types for segmented bars
+export interface SegmentInfo {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
+export interface SegmentedBarData {
+  x: string;
+  y: number;
+  segments?: SegmentInfo[];
+  total?: number;
+  segmentType?: 'category' | 'vendor' | 'group';
+}
+
 export interface BudgetAssignmentChartProps {
   assignments: Assignment[];
   categories: Category[];

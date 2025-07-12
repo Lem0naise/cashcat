@@ -1,7 +1,7 @@
 // Refactored Budget Assignment Chart - Main Component
 'use client';
 
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
 import { format } from 'date-fns';
 import {
@@ -31,6 +31,7 @@ import {
   formatCurrency 
 } from './charts/utils';
 import { comparisonSelectionPlugin } from './charts/plugins';
+import { segmentedBarsPlugin } from './charts/plugins/segmentedBars';
 import { 
   useFilteredTransactions, 
   useChartData 
@@ -38,6 +39,7 @@ import {
 import { useComparisonAnalysis } from './charts/hooks/useComparisonAnalysis';
 import { useDistanceFromGoalData } from './charts/hooks/useDistanceFromGoalData';
 import { ComparisonAnalysis } from './charts/ComparisonAnalysis';
+import { SegmentAnalysis, SegmentHoverInfo } from './charts/SegmentAnalysis';
 import { 
   useLineChartConfig, 
   useVolumeChartConfig 
@@ -55,7 +57,8 @@ ChartJS.register(
   TimeScale,
   Filler,
   BarElement,
-  comparisonSelectionPlugin
+  comparisonSelectionPlugin,
+  segmentedBarsPlugin
 );
 
 // Set Chart.js global font defaults
@@ -75,6 +78,17 @@ export default function BudgetAssignmentChart({
 }: BudgetAssignmentChartProps) {
   const lineChartRef = useRef<any>(null);
   const volumeChartRef = useRef<any>(null);
+  
+  // Add state for segment hover information and visibility control
+  const [segmentHoverInfo, setSegmentHoverInfo] = useState<SegmentHoverInfo | null>(null);
+  const [lastValidSegmentInfo, setLastValidSegmentInfo] = useState<SegmentHoverInfo | null>(null);
+  const [showSegmentDetails, setShowSegmentDetails] = useState<boolean>(false);
+
+  // Handler to close segment details
+  const handleCloseSegmentDetails = useCallback(() => {
+    setShowSegmentDetails(false);
+    // Keep the last valid segment info in case user wants to see it again
+  }, []);
 
   // Calculate date ranges with memoization for better performance
   const { allTimeStart, allTimeEnd } = useMemo(() => 
@@ -301,7 +315,11 @@ export default function BudgetAssignmentChart({
     filteredVolumeData,
     dateRange,
     xUnit,
-    hasActiveFilters
+    hasActiveFilters,
+    categories,
+    selectedCategories,
+    selectedGroups,
+    transactions // Pass transactions to enable accurate segment calculations
   );
 
   // Effect to set up canvas event listeners for drag functionality
@@ -394,6 +412,40 @@ export default function BudgetAssignmentChart({
       }
     }
   }, [defaultComparisonDataMemo, dragStartDataIndex, dragEndDataIndex]);
+  
+  // Effect to set up segment hover event listener
+  useEffect(() => {
+    const chart = volumeChartRef.current;
+    if (chart && chart.canvas) {
+      const canvas = chart.canvas;
+      
+      // Event handler for segment hover
+      const handleSegmentHover = (e: Event) => {
+        if (e instanceof CustomEvent && e.detail) {
+          // Update current hover info
+          setSegmentHoverInfo(e.detail);
+          
+          // Save the last valid hover info for persistent display
+          setLastValidSegmentInfo(e.detail);
+          
+          // Always show segment details when we have valid data
+          setShowSegmentDetails(true);
+          
+          // Note: The plugin never dispatches events for null/empty hover states
+          // So this handler will only receive events with valid segment data
+          // The details will stay visible until explicitly closed via the close button
+        }
+      };
+      
+      // Add event listener for segment hover
+      canvas.addEventListener('segmentHover', handleSegmentHover);
+      
+      // Cleanup
+      return () => {
+        canvas.removeEventListener('segmentHover', handleSegmentHover);
+      };
+    }
+  }, []);
 
   // Track if user has made a drag selection
   const hasDragSelection = dragStartDataIndex !== null && dragEndDataIndex !== null;
@@ -501,6 +553,14 @@ export default function BudgetAssignmentChart({
           <div className="bg-white/[.02] rounded-lg p-4 h-96">
             <Bar ref={volumeChartRef} {...volumeChartConfig} />
           </div>
+
+          {/* Segment Analysis - Persistent details box with close button (appears below bar chart) */}
+          {showSegmentDetails && lastValidSegmentInfo && (
+            <SegmentAnalysis 
+              hoverInfo={segmentHoverInfo || lastValidSegmentInfo}
+              onClose={handleCloseSegmentDetails}
+            />
+          )}
         </>
       )}
     </div>
