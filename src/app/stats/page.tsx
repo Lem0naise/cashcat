@@ -23,7 +23,7 @@ export default function Stats() {
     const [loading, setLoading] = useState(true);
     
     // Chart state
-    const [timeRange, setTimeRange] = useState<'7d' | '30d' | '3m' | '12m' | 'all' | 'custom'>('3m');
+    const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('3m');
     const [customStartDate, setCustomStartDate] = useState<Date>();
     const [customEndDate, setCustomEndDate] = useState<Date>();
     const [selectedGroups, setSelectedGroups] = useState<string[]>([]);

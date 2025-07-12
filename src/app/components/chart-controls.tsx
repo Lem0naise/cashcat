@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 interface ChartControlsProps {
-  timeRange: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom';
-  onTimeRangeChange: (range: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom') => void;
+  timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
+  onTimeRangeChange: (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => void;
   customStartDate?: Date;
   customEndDate?: Date;
   onCustomDateChange: (start: Date, end: Date) => void;
@@ -37,7 +37,9 @@ export default function ChartControls({
   const timeRangeOptions = [
     { value: '7d', label: 'Last 7 Days' },
     { value: '30d', label: 'Last 30 Days' },
+    { value: 'mtd', label: 'Month to Date' },
     { value: '3m', label: 'Last 3 Months' },
+    { value: 'ytd', label: 'Year to Date' },
     { value: '12m', label: 'Last 12 Months' },
     { value: 'all', label: 'All Time' },
     { value: 'custom', label: 'Custom Range' }
