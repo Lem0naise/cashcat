@@ -1,5 +1,5 @@
 // Utility functions for budget assignment chart
-import { addDays, format, startOfDay, endOfDay } from 'date-fns';
+import { addDays, format, startOfDay, endOfDay, startOfMonth, startOfYear } from 'date-fns';
 import { Assignment, Transaction } from './types';
 
 export const formatCurrency = (amount: number) => {
@@ -12,7 +12,7 @@ export const formatCurrency = (amount: number) => {
 };
 
 export const calculateDateRange = (
-  timeRange: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom',
+  timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom',
   customStartDate?: Date,
   customEndDate?: Date,
   allTimeStart?: Date,
@@ -29,8 +29,14 @@ export const calculateDateRange = (
     case '30d':
       start = addDays(now, -30);
       break;
+    case 'mtd':
+      start = startOfMonth(now);
+      break;
     case '3m':
       start = addDays(now, -90);
+      break;
+    case 'ytd':
+      start = startOfYear(now);
       break;
     case '12m':
       start = addDays(now, -365);

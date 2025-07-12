@@ -9,7 +9,7 @@ export interface BudgetAssignmentChartProps {
   assignments: Assignment[];
   categories: Category[];
   transactions: Transaction[];
-  timeRange: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom';
+  timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
   customStartDate?: Date;
   customEndDate?: Date;
   selectedGroups: string[];
