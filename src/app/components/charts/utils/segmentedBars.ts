@@ -25,25 +25,43 @@ export const generateColorShades = (baseColor: string, count: number) => {
     r = 100; g = 100; b = 100;
   }
   
-  // Generate a range of shades
+  // Generate a range of shades with enhanced variation
   const shades: string[] = [];
   
-  // For a single item, just return the base color
-  if (count <= 1) return [baseColor];
+  // For a single item, just return the base color with good opacity
+  if (count <= 1) return [`rgba(${r}, ${g}, ${b}, 0.85)`];
   
-  // Generate unique shades for multiple items
+  // Generate highly distinguishable shades for multiple items
   for (let i = 0; i < count; i++) {
-    // Adjust brightness and saturation with more variation between shades
-    const factor = 0.75 + (0.5 * (i / (count - 1))); // Range from 75% to 125% of original color
+    // Use a more dramatic range with better color separation
+    const position = i / (count - 1);
     
-    // Ensure we don't go out of bounds (0-255)
-    const adjustedR = Math.min(255, Math.max(0, Math.round(r * factor)));
-    const adjustedG = Math.min(255, Math.max(0, Math.round(g * factor)));
-    const adjustedB = Math.min(255, Math.max(0, Math.round(b * factor)));
+    // Create more pronounced variations by using different algorithms for different positions
+    let adjustedR, adjustedG, adjustedB;
     
-    // Create new color with adjusted values
-    // Use higher base opacity for better visibility but still allow bar outline to show through
-    const alpha = Math.min(0.85, 0.65 + (0.2 * (i / (count - 1))));
+    if (count <= 3) {
+      // For small counts, use simple but effective variations
+      const factors = [0.6, 1.0, 1.4];
+      const factor = factors[i] || 1.0;
+      adjustedR = Math.min(255, Math.max(0, Math.round(r * factor)));
+      adjustedG = Math.min(255, Math.max(0, Math.round(g * factor)));
+      adjustedB = Math.min(255, Math.max(0, Math.round(b * factor)));
+    } else {
+      // For larger counts, use more sophisticated color variations
+      // Combine brightness and hue shifts for maximum distinction
+      const brightnessRange = 0.8; // From 40% to 120% brightness
+      const brightnessFactor = 0.4 + (brightnessRange * position);
+      
+      // Add subtle hue shifts to enhance distinction
+      const hueShift = (position - 0.5) * 0.3; // Shift up to ±30% in color channels
+      
+      adjustedR = Math.min(255, Math.max(0, Math.round(r * brightnessFactor * (1 + hueShift * 0.5))));
+      adjustedG = Math.min(255, Math.max(0, Math.round(g * brightnessFactor)));
+      adjustedB = Math.min(255, Math.max(0, Math.round(b * brightnessFactor * (1 - hueShift * 0.3))));
+    }
+    
+    // Use consistent high opacity for better visibility
+    const alpha = 0.85;
     shades.push(`rgba(${adjustedR}, ${adjustedG}, ${adjustedB}, ${alpha})`);
   }
   

@@ -9,6 +9,7 @@ declare module 'chart.js' {
     hoveredSegmentInfo?: SegmentInfo | null;
     _lastHoveredSegmentId?: string | null;
     _hoveredSegmentPosition?: SegmentPosition | null;
+    _lastHoveredDate?: string | null;
   }
 }
 
@@ -119,8 +120,6 @@ function getHoverData(chart: any, hoveredSegment: SegmentPosition): SegmentHover
   // Extract sub-segment data using our helper function
   const subSegmentData = extractSubSegmentData(chart, volumePointData, segmentInfo, isIncome);
   
-  console.log('Sub-segment data extracted:', subSegmentData);
-  
   if (subSegmentData && subSegmentData.items && subSegmentData.items.length > 0) {
     // Calculate percentages and format for display
     const items = subSegmentData.items.map((item: any) => ({
@@ -223,6 +222,10 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
       chart.hoveredSegmentInfo = hoveredSegment?.segment || null;
       chart._hoveredSegmentPosition = hoveredSegment;
       
+      // Store the date of the hovered segment for precise matching
+      const volumePointData = chart.data.datasets[hoveredSegment.datasetIndex]?.data[hoveredSegment.index] as unknown as SegmentedBarData;
+      chart._lastHoveredDate = volumePointData?.x || null;
+      
       // Use cached hover data for better performance
       const hoverInfo = getHoverData(chart, hoveredSegment);
       
@@ -235,8 +238,8 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
       // When hovering over empty space, ONLY clear the visual highlight
       // but DO NOT send any events that would clear the segment details box
       chart._hoveredSegmentPosition = null;
-      // Important: We do NOT set chart.hoveredSegmentInfo to null here
-      // And we do NOT dispatch any events to keep the segment details visible
+      // Important: We do not set chart.hoveredSegmentInfo to null here
+      // And we do not dispatch any events to keep the segment details visible
     }
     // Note: We never dispatch null events, only valid segment hover events
     // This ensures the segment details box remains visible until manually closed
@@ -308,8 +311,8 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
           // Save the context state before drawing
           ctx.save();
           
-          // Step 1: Draw the background/fill of the entire bar first (with reduced opacity)
-          ctx.fillStyle = `${baseColor}20`; // Use 20% opacity for base color
+          // Step 1: Draw the background/fill of the entire bar first (subtle background)
+          ctx.fillStyle = `${baseColor}15`; // Use 15% opacity for a very subtle base color
           
           // Create rounded rectangle for the background
           drawRoundedRect(
@@ -343,14 +346,23 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
               ? barTop + currentHeight 
               : barBottom - currentHeight - segmentHeight;
             
-            // Check if this segment is currently being hovered
-            const isHovered = chart._hoveredSegmentPosition && 
+            // Check if this segment is currently being hovered OR if segment details are showing
+            // (this makes the border persistent when the segment analysis box is open)
+            const isCurrentlyHovered = chart._hoveredSegmentPosition && 
               chart._hoveredSegmentPosition.datasetIndex === datasetIndex &&
               chart._hoveredSegmentPosition.index === barIndex &&
               chart._hoveredSegmentPosition.segmentIndex === segmentIndex;
             
-            // Apply visual enhancements for hover state (minimal changes for performance)
-            const highlightWidth = isHovered ? Math.max(2, Math.floor(adjustedWidth * 0.05)) : 0;
+            const isPersistentHighlight = chart.hoveredSegmentInfo && 
+              chart.hoveredSegmentInfo.name === segment.name &&
+              chart.hoveredSegmentInfo.value === segment.value &&
+              barData?.x === chart._lastHoveredDate; // Ensure same date for precise matching
+            
+            const isHighlighted = isCurrentlyHovered || isPersistentHighlight;
+            
+            // Apply visual enhancements for hover state with dynamic sizing based on bar width
+            const dynamicHighlightScale = Math.min(0.12, Math.max(0.04, adjustedWidth / 100)); // Scale between 4% and 12% based on width
+            const highlightWidth = isHighlighted ? Math.max(1, Math.floor(adjustedWidth * dynamicHighlightScale)) : 0;
             
             // Save segment position for hover detection (only when positions need updating)
             if (shouldUpdatePositions) {
@@ -387,8 +399,8 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
             }
             
             // Use appropriate opacity based on hover state
-            // Higher opacity for hovered segment
-            const opacity = isHovered ? 0.9 : 0.7;
+            // Higher opacity for highlighted segment with better contrast
+            const opacity = isHighlighted ? 0.95 : 0.8;
             ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
             
             // Draw segment based on position (without rounded corners for internal segments)
@@ -396,8 +408,8 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
             const isLastSegment = segmentIndex === segments.length - 1;
             
             // Adjust drawing position and dimensions for highlighted segment
-            const drawX = isHovered ? startX - highlightWidth/2 : startX;
-            const drawWidth = isHovered ? adjustedWidth + highlightWidth : adjustedWidth;
+            const drawX = isHighlighted ? startX - highlightWidth/2 : startX;
+            const drawWidth = isHighlighted ? adjustedWidth + highlightWidth : adjustedWidth;
             // We don't need to adjust Y because the scaling happens from the center
             
             if (segments.length === 1) {
@@ -437,11 +449,11 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
                 // Middle segments are plain rectangles
                 ctx.fillRect(drawX, segmentY, drawWidth, segmentHeight);
                 
-                // Draw a subtle separator line
+                // Draw a subtle separator line with better visibility
                 if (!isLastSegment) {
                   ctx.save();
-                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                  ctx.lineWidth = 0.5;
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                  ctx.lineWidth = 1;
                   ctx.beginPath();
                   ctx.moveTo(drawX, segmentY + segmentHeight);
                   ctx.lineTo(drawX + drawWidth, segmentY + segmentHeight);
@@ -475,11 +487,11 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
                 // Middle segments are plain rectangles
                 ctx.fillRect(drawX, segmentY, drawWidth, segmentHeight);
                 
-                // Draw a subtle separator line
+                // Draw a subtle separator line with better visibility
                 if (!isLastSegment) {
                   ctx.save();
-                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                  ctx.lineWidth = 0.5;
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                  ctx.lineWidth = 1;
                   ctx.beginPath();
                   ctx.moveTo(drawX, segmentY + segmentHeight);
                   ctx.lineTo(drawX + drawWidth, segmentY + segmentHeight);
@@ -487,75 +499,6 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
                   ctx.restore();
                 }
               }
-            }
-            
-            // If this segment is hovered, draw a highlight border around it
-            if (isHovered) {
-              ctx.save();
-              // Use a bright white highlight border
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 2;
-              
-              // Draw the border with the same rounded corners as the segment
-              if (segments.length === 1) {
-                drawRoundedRect(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius, true);
-              } else if (isUpwardBar) {
-                if (isFirstSegment) {
-                  // Draw top-rounded border
-                  ctx.beginPath();
-                  const radius = Math.min(cornerRadius, drawWidth/2, segmentHeight/2);
-                  ctx.moveTo(drawX, segmentY + segmentHeight);
-                  ctx.lineTo(drawX, segmentY + radius);
-                  ctx.arcTo(drawX, segmentY, drawX + radius, segmentY, radius);
-                  ctx.lineTo(drawX + drawWidth - radius, segmentY);
-                  ctx.arcTo(drawX + drawWidth, segmentY, drawX + drawWidth, segmentY + radius, radius);
-                  ctx.lineTo(drawX + drawWidth, segmentY + segmentHeight);
-                  ctx.stroke();
-                } else if (isLastSegment) {
-                  // Draw bottom-rounded border
-                  ctx.beginPath();
-                  const radius = Math.min(cornerRadius, drawWidth/2, segmentHeight/2);
-                  ctx.moveTo(drawX, segmentY);
-                  ctx.lineTo(drawX, segmentY + segmentHeight - radius);
-                  ctx.arcTo(drawX, segmentY + segmentHeight, drawX + radius, segmentY + segmentHeight, radius);
-                  ctx.lineTo(drawX + drawWidth - radius, segmentY + segmentHeight);
-                  ctx.arcTo(drawX + drawWidth, segmentY + segmentHeight, drawX + drawWidth, segmentY + segmentHeight - radius, radius);
-                  ctx.lineTo(drawX + drawWidth, segmentY);
-                  ctx.stroke();
-                } else {
-                  // Draw rectangle border for middle segments
-                  ctx.strokeRect(drawX, segmentY, drawWidth, segmentHeight);
-                }
-              } else {
-                // Similar logic for downward bars
-                if (isFirstSegment) {
-                  // Draw bottom-rounded border
-                  ctx.beginPath();
-                  const radius = Math.min(cornerRadius, drawWidth/2, segmentHeight/2);
-                  ctx.moveTo(drawX, segmentY);
-                  ctx.lineTo(drawX, segmentY + segmentHeight - radius);
-                  ctx.arcTo(drawX, segmentY + segmentHeight, drawX + radius, segmentY + segmentHeight, radius);
-                  ctx.lineTo(drawX + drawWidth - radius, segmentY + segmentHeight);
-                  ctx.arcTo(drawX + drawWidth, segmentY + segmentHeight, drawX + drawWidth, segmentY + segmentHeight - radius, radius);
-                  ctx.lineTo(drawX + drawWidth, segmentY);
-                  ctx.stroke();
-                } else if (isLastSegment) {
-                  // Draw top-rounded border
-                  ctx.beginPath();
-                  const radius = Math.min(cornerRadius, drawWidth/2, segmentHeight/2);
-                  ctx.moveTo(drawX, segmentY + segmentHeight);
-                  ctx.lineTo(drawX, segmentY + radius);
-                  ctx.arcTo(drawX, segmentY, drawX + radius, segmentY, radius);
-                  ctx.lineTo(drawX + drawWidth - radius, segmentY);
-                  ctx.arcTo(drawX + drawWidth, segmentY, drawX + drawWidth, segmentY + radius, radius);
-                  ctx.lineTo(drawX + drawWidth, segmentY + segmentHeight);
-                  ctx.stroke();
-                } else {
-                  // Draw rectangle border for middle segments
-                  ctx.strokeRect(drawX, segmentY, drawWidth, segmentHeight);
-                }
-              }
-              ctx.restore();
             }
             
             // Move to the next segment position
@@ -581,6 +524,142 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
           );
           
           ctx.restore();
+          
+          
+          ctx.restore();
+        }
+      });
+    });
+    
+    // Step 5: Draw ALL highlighted segment borders in a final pass (ensures they're always on top)
+    // This is done AFTER all bars and segments are drawn to guarantee borders are never overlapped
+    ctx.save();
+    
+    datasets.forEach((dataset, datasetIndex) => {
+      // Skip if dataset doesn't use segmented bars
+      if (!dataset?.useSegmentedBars) return;
+      
+      const meta = chart.getDatasetMeta(datasetIndex);
+      
+      // Skip if meta is not available or hidden
+      if (!meta || !meta.data || meta.hidden) return;
+      
+      // Get border properties
+      const borderWidth = dataset.borderWidth || 1;
+      
+      // Process each bar in the dataset for border drawing
+      meta.data.forEach((barElement, barIndex) => {
+        const barData = dataset.data[barIndex] as unknown as SegmentedBarData;
+        
+        // Skip if no segment data is available
+        if (!barData?.segments || barData.segments.length === 0) return;
+        
+        // Get the position and dimensions of the original bar
+        const { x, y, width, height, base } = barElement.getProps(['x', 'y', 'width', 'height', 'base'], true);
+        
+        // Skip very narrow bars to avoid visual artifacts
+        if (width < 1) return;
+        
+        // Determine if this is an upward or downward bar
+        const isUpwardBar = y < base;
+        const barTop = isUpwardBar ? y : base;
+        const barBottom = isUpwardBar ? base : y;
+        const totalHeight = Math.abs(y - base);
+        
+        // Get corner radius
+        const cornerRadius = typeof dataset.borderRadius === 'number' 
+          ? dataset.borderRadius 
+          : 3;
+        
+        // Draw the segments borders
+        const segments = barData.segments || [];
+        const adjustedWidth = width - borderWidth; // Account for border width
+        const startX = x - width/2 + borderWidth/2;
+        
+        // Draw borders only if we have valid segments
+        if (segments.length > 0) {
+          let currentHeight = 0;
+          
+          segments.forEach((segment, segmentIndex) => {
+            const segmentPercentage = segment.percentage / 100;
+            const segmentHeight = Math.max(1, totalHeight * segmentPercentage);
+            
+            if (segmentHeight < 1) {
+              currentHeight += segmentHeight;
+              return;
+            }
+            
+            const segmentY = isUpwardBar 
+              ? barTop + currentHeight 
+              : barBottom - currentHeight - segmentHeight;
+            
+            // Check if this segment should be highlighted with precise date matching
+            const isCurrentlyHovered = chart._hoveredSegmentPosition && 
+              chart._hoveredSegmentPosition.datasetIndex === datasetIndex &&
+              chart._hoveredSegmentPosition.index === barIndex &&
+              chart._hoveredSegmentPosition.segmentIndex === segmentIndex;
+            
+            const isPersistentHighlight = chart.hoveredSegmentInfo && 
+              chart.hoveredSegmentInfo.name === segment.name &&
+              chart.hoveredSegmentInfo.value === segment.value &&
+              barData?.x === chart._lastHoveredDate; // Ensure same date for precise matching
+            
+            const isHighlighted = isCurrentlyHovered || isPersistentHighlight;
+            
+            // Draw prominent highlight border for highlighted segments with dynamic sizing
+            if (isHighlighted) {
+              const dynamicHighlightScale = Math.min(0.12, Math.max(0.04, adjustedWidth / 100)); // Scale between 4% and 12%
+              const highlightWidth = Math.max(1, Math.floor(adjustedWidth * dynamicHighlightScale));
+              const drawX = startX - highlightWidth/2;
+              const drawWidth = adjustedWidth + highlightWidth;
+              
+              // Use dynamic border width and glow based on bar size
+              const dynamicBorderWidth = Math.min(3, Math.max(1, adjustedWidth / 20)); // 1-3px based on width
+              const dynamicGlowIntensity = Math.min(6, Math.max(2, adjustedWidth / 15)); // 2-6px glow based on width
+              
+              // Use a bright, prominent border with controlled glow effect
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = dynamicBorderWidth;
+              ctx.shadowColor = '#ffffff';
+              ctx.shadowBlur = dynamicGlowIntensity;
+              ctx.shadowOffsetX = 0;
+              ctx.shadowOffsetY = 0;
+              
+              // Draw the border with proper rounded corners based on segment position
+              if (segments.length === 1) {
+                drawRoundedRect(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius, true);
+              } else if (isUpwardBar) {
+                if (segmentIndex === 0) {
+                  // Top segment - top rounded corners
+                  drawTopRoundedBorder(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius);
+                } else if (segmentIndex === segments.length - 1) {
+                  // Bottom segment - bottom rounded corners
+                  drawBottomRoundedBorder(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius);
+                } else {
+                  // Middle segment - straight border
+                  ctx.strokeRect(drawX, segmentY, drawWidth, segmentHeight);
+                }
+              } else {
+                // Downward bar logic
+                if (segmentIndex === 0) {
+                  // Bottom segment - bottom rounded corners
+                  drawBottomRoundedBorder(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius);
+                } else if (segmentIndex === segments.length - 1) {
+                  // Top segment - top rounded corners
+                  drawTopRoundedBorder(ctx, drawX, segmentY, drawWidth, segmentHeight, cornerRadius);
+                } else {
+                  // Middle segment - straight border
+                  ctx.strokeRect(drawX, segmentY, drawWidth, segmentHeight);
+                }
+              }
+              
+              // Reset shadow for next draws
+              ctx.shadowColor = 'transparent';
+              ctx.shadowBlur = 0;
+            }
+            
+            currentHeight += segmentHeight;
+          });
         }
       });
     });
@@ -681,7 +760,7 @@ function drawBottomRoundedRect(
   ctx.moveTo(x, y);
   ctx.lineTo(x + width, y);
   
-  // Right edge and bottom-right corner
+  // Right edge to bottom-right corner
   ctx.lineTo(x + width, y + height - effectiveRadius);
   ctx.arcTo(x + width, y + height, x + width - effectiveRadius, y + height, effectiveRadius);
   
@@ -696,27 +775,76 @@ function drawBottomRoundedRect(
   ctx.fill();
 }
 
+// Helper function to draw a border with rounded top corners only
+function drawTopRoundedBorder(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const effectiveRadius = Math.min(radius, width / 2, height / 2);
+  
+  ctx.beginPath();
+  
+  // Start from bottom left
+  ctx.moveTo(x, y + height);
+  
+  // Left edge to top-left corner
+  ctx.lineTo(x, y + effectiveRadius);
+  ctx.arcTo(x, y, x + effectiveRadius, y, effectiveRadius);
+  
+  // Top edge and top-right corner
+  ctx.lineTo(x + width - effectiveRadius, y);
+  ctx.arcTo(x + width, y, x + width, y + effectiveRadius, effectiveRadius);
+  
+  // Right edge to bottom
+  ctx.lineTo(x + width, y + height);
+  
+  ctx.stroke();
+}
+
+// Helper function to draw a border with rounded bottom corners only
+function drawBottomRoundedBorder(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const effectiveRadius = Math.min(radius, width / 2, height / 2);
+  
+  ctx.beginPath();
+  
+  // Start from top left
+  ctx.moveTo(x, y);
+  
+  // Right edge to bottom-right corner
+  ctx.lineTo(x + width, y);
+  ctx.lineTo(x + width, y + height - effectiveRadius);
+  ctx.arcTo(x + width, y + height, x + width - effectiveRadius, y + height, effectiveRadius);
+  
+  // Bottom edge and bottom-left corner
+  ctx.lineTo(x + effectiveRadius, y + height);
+  ctx.arcTo(x, y + height, x, y + height - effectiveRadius, effectiveRadius);
+  
+  // Left edge back to start
+  ctx.lineTo(x, y);
+  
+  ctx.stroke();
+}
+
 // Helper function to extract sub-segment data from transactions
 function extractSubSegmentData(chart: any, volumePoint: any, segmentInfo: any, isIncome: boolean): any {
-  // Debug logging
-  console.log('extractSubSegmentData called with:', {
-    volumePoint,
-    segmentInfo,
-    isIncome,
-    hasTransactions: !!chart.options?._transactions,
-    transactionCount: chart.options?._transactions?.length || 0
-  });
-  
   // Early return if we don't have segment data or transactions
   if (!volumePoint || !chart.options?._transactions) {
-    console.log('Early return: no volumePoint or transactions');
     return null;
   }
   
   const transactions = chart.options._transactions;
   const segmentType = volumePoint.segmentType;
-  
-  console.log('Processing segment type:', segmentType);
   
   // Skip if we don't have transactions or segment type
   if (!Array.isArray(transactions) || !segmentType) {
@@ -740,40 +868,14 @@ function extractSubSegmentData(chart: any, volumePoint: any, segmentInfo: any, i
     return txDateString === volumeDateString;
   });
   
-  console.log('Date transactions found:', {
-    dateKey,
-    transactionCount: dateTransactions.length,
-    sampleTransaction: dateTransactions[0],
-    // Add detailed transaction structure logging
-    sampleTxStructure: dateTransactions[0] ? {
-      type: dateTransactions[0].type,
-      amount: dateTransactions[0].amount,
-      vendor: dateTransactions[0].vendor,
-      category: dateTransactions[0].category,
-      categoryId: dateTransactions[0].category_id
-    } : null
-  });
-  
   if (segmentType === 'group') {
     // For a group segment, extract categories in this group
     const groupName = segmentInfo.name;
     const categories = chart.options._categories || [];
     
-    console.log('Looking for group:', groupName);
-    console.log('Available categories:', categories.length);
-    
     // Create a map of category ID to category info for quick lookup
     const categoryMap = new Map();
     categories.forEach((cat: any) => {
-      // For debugging, let's see what group data is available
-      console.log('Category processing:', {
-        id: cat.id,
-        name: cat.name,
-        group: cat.group,
-        groupsObject: cat.groups,
-        fullCategory: cat
-      });
-      
       const catGroupName = cat.groups?.name || cat.group || 'Uncategorized';
       categoryMap.set(cat.id, {
         name: cat.name,
@@ -789,26 +891,8 @@ function extractSubSegmentData(chart: any, volumePoint: any, segmentInfo: any, i
       const matchesGroup = txGroup === groupName;
       const matchesType = (isIncome && tx.type === 'income') || (!isIncome && tx.type === 'payment');
       
-      // Debug each transaction
-      if (dateTransactions.length < 10) { // Only log if few transactions to avoid spam
-        console.log('Transaction check:', {
-          txId: tx.id,
-          categoryId: tx.category_id,
-          categoryInfo,
-          txGroup,
-          expectedGroup: groupName,
-          matchesGroup,
-          txType: tx.type,
-          expectedType: isIncome ? 'income' : 'payment',
-          matchesType,
-          finalMatch: matchesGroup && matchesType
-        });
-      }
-      
       return matchesGroup && matchesType;
     });
-    
-    console.log('Categories in group found:', categoriesInGroup.length);
     
     // Aggregate by category
     const categoryAggregateMap = new Map();
@@ -841,8 +925,6 @@ function extractSubSegmentData(chart: any, volumePoint: any, segmentInfo: any, i
     const categoryName = segmentInfo.name;
     const categories = chart.options._categories || [];
     
-    console.log('Looking for category vendors:', categoryName);
-    
     // Create a map of category ID to category info for quick lookup
     const categoryMap = new Map();
     categories.forEach((cat: any) => {
@@ -859,17 +941,6 @@ function extractSubSegmentData(chart: any, volumePoint: any, segmentInfo: any, i
       const txCategoryName = categoryInfo?.name || 'Uncategorized';
       const matchesCategory = txCategoryName === categoryName;
       const matchesType = (isIncome && tx.type === 'income') || (!isIncome && tx.type === 'payment');
-      
-      console.log('Category vendor check:', {
-        txId: tx.id,
-        categoryId: tx.category_id,
-        txCategoryName,
-        expectedCategory: categoryName,
-        matchesCategory,
-        txType: tx.type,
-        matchesType,
-        finalMatch: matchesCategory && matchesType
-      });
       
       return matchesCategory && matchesType;
     });
