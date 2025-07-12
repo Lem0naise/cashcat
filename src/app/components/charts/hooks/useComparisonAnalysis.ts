@@ -328,6 +328,9 @@ export const useComparisonAnalysis = (
 
   // Helper function to convert pointer position to data index with smooth interpolation (no snapping)
   const getDataIndexFromPointerPosition = useCallback((clientX: number, chart: any): number | null => {
+    // Add null checks for chart and canvas
+    if (!chart || !chart.canvas) return null;
+    
     const rect = chart.canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     
