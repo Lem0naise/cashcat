@@ -6,6 +6,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
 import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
 import ChartControls from '../components/chart-controls';
+import PieChart from '../components/charts/PieChart';
+import PieSegmentInsights from '../components/charts/PieSegmentInsights';
+import { PieSegment } from '../components/charts/types';
+import { calculateDateRange, calculateAllTimeRange } from '../components/charts/utils';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
@@ -30,6 +34,9 @@ export default function Stats() {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [showGoals, setShowGoals] = useState(false);
     const [showRollover, setShowRollover] = useState(false);
+    
+    // Pie chart state
+    const [selectedPieSegment, setSelectedPieSegment] = useState<PieSegment | null>(null);
 
     // Fetch data from Supabase
     const fetchData = useCallback(async () => {
@@ -106,6 +113,68 @@ export default function Stats() {
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
+        // Close insights panel when filters change
+        setSelectedPieSegment(null);
+    };
+
+    // Filter change handlers that also close insights panel
+    const handleGroupsChange = (groups: string[]) => {
+        setSelectedGroups(groups);
+        setSelectedPieSegment(null);
+    };
+
+    const handleCategoriesChange = (categories: string[]) => {
+        setSelectedCategories(categories);
+        setSelectedPieSegment(null);
+    };
+
+    const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
+        setTimeRange(range);
+        setSelectedPieSegment(null);
+    };
+
+    // Pie chart handlers
+    const handlePieSegmentClick = (segment: PieSegment) => {
+        setSelectedPieSegment(segment);
+    };
+
+    const handleClosePieInsights = () => {
+        setSelectedPieSegment(null);
+    };
+
+    const handleFilterBySegment = (segment: PieSegment) => {
+        // Clear existing filters first
+        setSelectedGroups([]);
+        setSelectedCategories([]);
+        
+        // Apply filters based on segment type
+        if (segment.type === 'group') {
+            setSelectedGroups([segment.id]);
+        } else if (segment.type === 'category') {
+            // Find the group this category belongs to and set both group and category filters
+            const category = categories.find(cat => cat.id === segment.id);
+            if (category) {
+                const groupName = (category as any).groups?.name || category.group || 'Uncategorized';
+                setSelectedGroups([groupName]);
+                setSelectedCategories([segment.id]);
+            }
+        } else if (segment.type === 'vendor') {
+            // For vendor, we need to keep the current category selection that led to this vendor view
+            // The vendor view only appears when categories from the same group are selected
+            // So we don't need to change the filters, just close the insights panel
+        }
+        
+        // Close the insights panel
+        setSelectedPieSegment(null);
+    };
+
+    const handleSetComparisonPeriod = (start: Date, end: Date) => {
+        // Set time range to custom and update the custom dates
+        setTimeRange('custom');
+        setCustomStartDate(start);
+        setCustomEndDate(end);
+        // Close insights panel when changing time range
+        setSelectedPieSegment(null);
     };
 
     if (loading) {
@@ -191,18 +260,60 @@ export default function Stats() {
                                 {/* Chart Controls */}
                                 <ChartControls
                                     timeRange={timeRange}
-                                    onTimeRangeChange={setTimeRange}
+                                    onTimeRangeChange={handleTimeRangeChange}
                                     customStartDate={customStartDate}
                                     customEndDate={customEndDate}
                                     onCustomDateChange={handleCustomDateChange}
                                     availableGroups={availableGroups}
                                     selectedGroups={selectedGroups}
-                                    onGroupsChange={setSelectedGroups}
+                                    onGroupsChange={handleGroupsChange}
                                     availableCategories={availableCategories}
                                     selectedCategories={selectedCategories}
-                                    onCategoriesChange={setSelectedCategories}
+                                    onCategoriesChange={handleCategoriesChange}
                                     // Removed showGoals, onShowGoalsChange, showRollover, onShowRolloverChange
                                 />
+
+                                {/* Pie Chart Section */}
+                                {(() => {
+                                    // Calculate date ranges for pie chart
+                                    const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
+                                    const dateRange = calculateDateRange(
+                                        timeRange, 
+                                        customStartDate, 
+                                        customEndDate, 
+                                        allTimeStart, 
+                                        allTimeEnd
+                                    );
+
+                                    return (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                            <div className="lg:col-span-2">
+                                                <PieChart
+                                                    transactions={transactions}
+                                                    categories={categories}
+                                                    dateRange={dateRange}
+                                                    selectedGroups={selectedGroups}
+                                                    selectedCategories={selectedCategories}
+                                                    onSegmentClick={handlePieSegmentClick}
+                                                    showTooltip={!selectedPieSegment}
+                                                />
+                                            </div>
+                                            {selectedPieSegment && (
+                                                <div className="lg:col-span-1">
+                                                    <PieSegmentInsights
+                                                        segment={selectedPieSegment}
+                                                        transactions={transactions}
+                                                        categories={categories}
+                                                        dateRange={dateRange}
+                                                        onClose={handleClosePieInsights}
+                                                        onFilterBySegment={handleFilterBySegment}
+                                                        onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Budget Assignment Chart - NOW WITH TRANSACTIONS! */}
                                 <BudgetAssignmentChart

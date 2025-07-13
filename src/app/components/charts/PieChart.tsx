@@ -1,0 +1,335 @@
+'use client';
+
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  ChartEvent,
+  ActiveElement
+} from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { Doughnut } from 'react-chartjs-2';
+import { Transaction, Category } from './types';
+import { formatCurrency } from './utils';
+
+// Register Chart.js components (without ChartDataLabels globally)
+ChartJS.register(ArcElement, Tooltip, Legend, Title);
+
+// Set Chart.js global font defaults
+ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
+
+interface PieSegment {
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+  id: string; // group id, category id, or vendor name
+  type: 'group' | 'category' | 'vendor';
+}
+
+interface PieChartProps {
+  transactions: Transaction[];
+  categories: Category[];
+  dateRange: { start: Date; end: Date };
+  selectedGroups: string[];
+  selectedCategories: string[];
+  onSegmentClick: (segment: PieSegment) => void;
+  showTooltip?: boolean;
+}
+
+export default function PieChart({
+  transactions,
+  categories,
+  dateRange,
+  selectedGroups,
+  selectedCategories,
+  onSegmentClick,
+  showTooltip = true
+}: PieChartProps) {
+  const chartRef = useRef<any>(null);
+  const [hoveredSegment, setHoveredSegment] = useState<PieSegment | null>(null);
+  
+  // Determine chart mode based on filters
+  const chartMode = useMemo(() => {
+    if (selectedCategories.length > 0) {
+      // Check if all selected categories are from the same group
+      const categoryGroups = categories
+        .filter(cat => selectedCategories.includes(cat.id))
+        .map(cat => (cat as any).groups?.name || cat.group || 'Uncategorized');
+      
+      const uniqueGroups = new Set(categoryGroups);
+      if (uniqueGroups.size === 1) {
+        return 'vendor'; // All categories from same group - show vendors
+      } else {
+        return 'category'; // Multiple groups - show categories
+      }
+    } else if (selectedGroups.length > 0) {
+      return 'category'; // Groups selected - show categories within those groups
+    } else {
+      return 'group'; // No filters - show groups
+    }
+  }, [selectedGroups, selectedCategories, categories]);
+
+  // Process transactions and create pie chart data
+  const pieChartData = useMemo(() => {
+    // Filter transactions by date range and type (only payments for spending)
+    const filteredTransactions = transactions.filter(transaction => {
+      if (!transaction || transaction.type !== 'payment') return false;
+      
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= dateRange.start && transactionDate <= dateRange.end;
+    });
+
+    // Create category map for lookups
+    const categoryMap = new Map(categories.map(c => [c.id, c]));
+    
+    let segmentData: { [key: string]: { value: number; label: string; type: 'group' | 'category' | 'vendor' } } = {};
+    
+    if (chartMode === 'group') {
+      // Group by spending groups
+      filteredTransactions.forEach(transaction => {
+        if (!transaction.category_id) return;
+        
+        const category = categoryMap.get(transaction.category_id);
+        if (!category) return;
+        
+        const groupName = (category as any).groups?.name || category.group || 'Uncategorized';
+        const amount = Math.abs(transaction.amount);
+        
+        if (!segmentData[groupName]) {
+          segmentData[groupName] = { value: 0, label: groupName, type: 'group' };
+        }
+        segmentData[groupName].value += amount;
+      });
+    } else if (chartMode === 'category') {
+      // Group by categories (within selected groups if any)
+      const targetCategories = selectedGroups.length > 0 
+        ? categories.filter(cat => {
+            const categoryGroup = (cat as any).groups?.name || cat.group || 'Uncategorized';
+            return selectedGroups.includes(categoryGroup);
+          })
+        : categories;
+      
+      filteredTransactions.forEach(transaction => {
+        if (!transaction.category_id) return;
+        
+        const category = categoryMap.get(transaction.category_id);
+        if (!category) return;
+        
+        // Only include if category is in our target list
+        if (!targetCategories.find(cat => cat.id === category.id)) return;
+        
+        const amount = Math.abs(transaction.amount);
+        
+        if (!segmentData[category.id]) {
+          segmentData[category.id] = { value: 0, label: category.name, type: 'category' };
+        }
+        segmentData[category.id].value += amount;
+      });
+    } else if (chartMode === 'vendor') {
+      // Group by vendors (within selected categories)
+      filteredTransactions.forEach(transaction => {
+        if (!transaction.category_id || !selectedCategories.includes(transaction.category_id)) return;
+        if (!transaction.vendor) return;
+        
+        const amount = Math.abs(transaction.amount);
+        
+        if (!segmentData[transaction.vendor]) {
+          segmentData[transaction.vendor] = { value: 0, label: transaction.vendor, type: 'vendor' };
+        }
+        segmentData[transaction.vendor].value += amount;
+      });
+    }
+
+    // Convert to array and sort by value
+    const segments = Object.entries(segmentData)
+      .map(([key, data]) => ({ id: key, ...data }))
+      .sort((a, b) => b.value - a.value)
+      .filter(segment => segment.value > 0);
+
+    // Calculate total and percentages
+    const total = segments.reduce((sum, segment) => sum + segment.value, 0);
+    
+    // Create colors for segments
+    const colors = [
+      '#5B73FF', // Primary blue
+      '#84D684', // Green
+      '#f2602f', // Orange
+      '#FFB3BA', // Light pink
+      '#BAFFC9', // Light green
+      '#BAE1FF', // Light blue
+      '#FFFFBA', // Light yellow
+      '#E6BAFF', // Light purple
+      '#FFD1BA', // Light orange
+      '#C9FFBA', // Very light green
+      '#FFBABA', // Light red
+      '#BAD1FF', // Another light blue
+    ];
+
+    const pieSegments: PieSegment[] = segments.map((segment, index) => ({
+      label: segment.label,
+      value: segment.value,
+      percentage: total > 0 ? (segment.value / total) * 100 : 0,
+      color: colors[index % colors.length],
+      id: segment.id,
+      type: segment.type
+    }));
+
+    return {
+      segments: pieSegments,
+      total,
+      labels: pieSegments.map(s => s.label),
+      data: pieSegments.map(s => s.value),
+      backgroundColor: pieSegments.map(s => s.color),
+      borderColor: pieSegments.map(s => s.color),
+    };
+  }, [transactions, categories, dateRange, selectedGroups, selectedCategories, chartMode]);
+
+  // Chart.js configuration
+  const chartData = {
+    labels: pieChartData.labels,
+    datasets: [
+      {
+        data: pieChartData.data,
+        backgroundColor: pieChartData.backgroundColor,
+        borderColor: 'rgba(30, 30, 30, 1)', // Dark background color for gaps
+        borderWidth: 4, // Larger border for bigger gaps
+        borderRadius: 6, // Consistent border radius
+        borderSkipped: false, // Ensure all borders get rounded corners
+        spacing: 0, // Remove linear spacing, use border for gaps instead
+        hoverBorderWidth: 4, // Keep same border width on hover
+        hoverOffset: 15,
+        hoverBorderRadius: 6, // Keep same border radius on hover
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: 80, // Increase padding to give more room for labels outside the chart
+    },
+    plugins: {
+      legend: {
+        display: false, // We'll create a custom legend
+      },
+      tooltip: {
+        enabled: false, // Disable default tooltip
+      },
+      datalabels: {
+        display: function(context: any) {
+          const segment = pieChartData.segments[context.dataIndex];
+          return segment && segment.percentage >= 5; // Show labels for segments >= 5%
+        },
+        color: '#fff',
+        font: {
+          weight: 'bold' as const,
+          size: 14, // Reduce font size to minimize space taken
+        },
+        formatter: function(value: number, context: any) {
+          const segment = pieChartData.segments[context.dataIndex];
+          return segment ? segment.label : ''; // Remove currency from labels to save space
+        },
+        anchor: 'end' as const,
+        align: 'end' as const,
+        offset: 10, // Reduce offset to keep labels closer
+        padding: 4,
+        textStrokeColor: 'rgba(0,0,0,0.8)',
+        textStrokeWidth: 1,
+      },
+    },
+    cutout: '50%', // Reduce cutout to make the chart appear larger
+    onHover: (event: ChartEvent, activeElements: ActiveElement[]) => {
+      if (chartRef.current?.canvas) {
+        chartRef.current.canvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+      }
+      
+      // Update hovered segment for center display
+      if (activeElements.length > 0) {
+        const index = activeElements[0].index;
+        const segment = pieChartData.segments[index];
+        setHoveredSegment(segment || null);
+      } else {
+        setHoveredSegment(null);
+      }
+    },
+    onClick: (event: ChartEvent, activeElements: ActiveElement[]) => {
+      if (activeElements.length > 0) {
+        const index = activeElements[0].index;
+        const segment = pieChartData.segments[index];
+        if (segment) {
+          onSegmentClick(segment);
+        }
+      }
+    },
+  };
+
+  if (pieChartData.segments.length === 0) {
+    return (
+      <div className="bg-white/[.03] rounded-lg p-6 h-80 flex items-center justify-center">
+        <div className="text-center text-white/60">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h3 className="font-medium mb-2">No Spending Data</h3>
+          <p className="text-sm">No spending transactions found for the selected time period.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white/[.03] rounded-lg p-6">
+      {/* Maximized chart container */}
+      <div className="w-full flex items-center justify-center">
+        {/* Chart Section with minimal padding but maximum chart space */}
+        <div className="flex items-center justify-center w-full" style={{ overflow: 'visible' }}>
+          <div className="relative w-full max-w-4xl" style={{ height: '500px', overflow: 'visible' }}>
+            <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }}>
+              <Doughnut ref={chartRef} data={chartData} options={chartOptions} plugins={[ChartDataLabels]} />
+            </div>
+            {/* Center Total or Hovered Segment */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                {hoveredSegment ? (
+                  <>
+                    <div className="text-sm text-white/50 mb-1">{hoveredSegment.label}</div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatCurrency(hoveredSegment.value)}
+                    </div>
+                    <div className="text-xs text-white/40 mt-1">
+                      {hoveredSegment.percentage.toFixed(1)}% of total
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm text-white/50 mb-1">Total Spending</div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatCurrency(pieChartData.total)}
+                    </div>
+                    <div className="text-xs text-white/40 mt-1">
+                      {chartMode === 'group' && 'All Groups'}
+                      {chartMode === 'category' && (selectedGroups.length > 0 ? `${selectedGroups.length} Group${selectedGroups.length > 1 ? 's' : ''}` : 'All Categories')}
+                      {chartMode === 'vendor' && 'Selected Categories'}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Chart label explainer */}
+      <div className="text-center mt-2 text-sm text-white/50">
+        <p>Hover over segments for details. Click for in-depth analysis.</p>
+      </div>
+    </div>
+  );
+}

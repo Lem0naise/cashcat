@@ -1,6 +1,8 @@
 // Chart components index - easy imports
 export { default as BudgetAssignmentChart } from '../BudgetAssignmentChartRefactored';
 export { ComparisonAnalysis } from './ComparisonAnalysis';
+export { default as PieChart } from './PieChart';
+export { default as PieSegmentInsights } from './PieSegmentInsights';
 export { comparisonSelectionPlugin } from './plugins';
 export { segmentedBarsPlugin } from './plugins/segmentedBars';
 

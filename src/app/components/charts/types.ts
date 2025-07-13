@@ -88,3 +88,40 @@ export interface DistanceFromGoalData {
     pointBorderWidth: number;
   }>;
 }
+
+export interface PieSegment {
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+  id: string; // group id, category id, or vendor name
+  type: 'group' | 'category' | 'vendor';
+}
+
+export interface PieChartData {
+  segments: PieSegment[];
+  total: number;
+  labels: string[];
+  data: number[];
+  backgroundColor: string[];
+  borderColor: string[];
+}
+
+export interface SegmentHoverInfo {
+  isIncome: boolean;
+  segment: SegmentInfo;
+  date: string;
+  volumePoint: any;
+  datasetIndex: number;
+  index: number;
+  segmentIndex: number;
+  // Additional properties for detailed breakdown
+  subSegments?: {
+    type: 'category' | 'vendor';
+    items: Array<{
+      name: string;
+      value: number;
+      percentage: number;
+    }>;
+  };
+}
