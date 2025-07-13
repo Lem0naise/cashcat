@@ -31,7 +31,6 @@ export default function ChartControls({
   selectedCategories,
   onCategoriesChange
 }: ChartControlsProps) {
-  const [showFilters, setShowFilters] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(false);
 
   const timeRangeOptions = [
@@ -132,92 +131,78 @@ export default function ChartControls({
         )}
       </div>
 
-      {/* Filters */}
+      {/* Filters - Always Open */}
       <div className="bg-white/[.03] rounded-lg p-4">
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center justify-between w-full"
-        >
-          <h3 className="font-medium">Filters</h3>
-          <Image
-            src="/chevron-right.svg"
-            alt="Toggle filters"
-            width={16}
-            height={16}
-            className={`opacity-70 transition-transform ${showFilters ? 'rotate-90' : ''}`}
-          />
-        </button>
-
-        {showFilters && (
-          <div className="mt-4 space-y-4">
-            {/* Group Filters */}
-            <div>
-              <h4 className="text-sm font-medium mb-2">Budget Groups</h4>
-              <div className="flex flex-wrap gap-2">
+        <h3 className="font-medium mb-4">Filters</h3>
+        
+        <div className="space-y-4">
+          {/* Group Filters */}
+          <div>
+            <h4 className="text-sm font-medium mb-2">Budget Groups</h4>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  onGroupsChange([]);
+                  onCategoriesChange([]);
+                }}
+                className={`px-3 py-1 text-sm rounded-lg transition-all ${
+                  selectedGroups.length === 0
+                    ? 'bg-green text-black'
+                    : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
+                }`}
+              >
+                All Groups
+              </button>
+              {availableGroups.map(group => (
                 <button
-                  onClick={() => {
-                    onGroupsChange([]);
-                    onCategoriesChange([]);
-                  }}
+                  key={group}
+                  onClick={() => handleGroupToggle(group)}
                   className={`px-3 py-1 text-sm rounded-lg transition-all ${
-                    selectedGroups.length === 0
+                    selectedGroups.includes(group)
                       ? 'bg-green text-black'
                       : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
                   }`}
                 >
-                  All Groups
+                  {group}
                 </button>
-                {availableGroups.map(group => (
-                  <button
-                    key={group}
-                    onClick={() => handleGroupToggle(group)}
-                    className={`px-3 py-1 text-sm rounded-lg transition-all ${
-                      selectedGroups.includes(group)
-                        ? 'bg-green text-black'
-                        : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
-                    }`}
-                  >
-                    {group}
-                  </button>
-                ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Category Filters */}
+          {selectedGroups.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2">Categories</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => onCategoriesChange([])}
+                  className={`px-3 py-1 text-sm rounded-lg transition-all ${
+                    selectedCategories.length === 0
+                      ? 'bg-green text-black'
+                      : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
+                  }`}
+                >
+                  All Categories
+                </button>
+                {availableCategories
+                  .filter(cat => selectedGroups.includes(cat.group))
+                  .map(category => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategoryToggle(category.id)}
+                      className={`px-3 py-1 text-sm rounded-lg transition-all ${
+                        selectedCategories.includes(category.id)
+                          ? 'bg-green text-black'
+                          : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
               </div>
             </div>
-
-            {/* Category Filters */}
-            {selectedGroups.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">Categories</h4>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => onCategoriesChange([])}
-                    className={`px-3 py-1 text-sm rounded-lg transition-all ${
-                      selectedCategories.length === 0
-                        ? 'bg-green text-black'
-                        : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
-                    }`}
-                  >
-                    All Categories
-                  </button>
-                  {availableCategories
-                    .filter(cat => selectedGroups.includes(cat.group))
-                    .map(category => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategoryToggle(category.id)}
-                        className={`px-3 py-1 text-sm rounded-lg transition-all ${
-                          selectedCategories.includes(category.id)
-                            ? 'bg-green text-black'
-                            : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
