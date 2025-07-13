@@ -38,6 +38,7 @@ interface PieChartProps {
   selectedCategories: string[];
   onSegmentClick: (segment: PieSegment) => void;
   showTooltip?: boolean;
+  matchHeight?: boolean;
 }
 
 export default function PieChart({
@@ -47,7 +48,8 @@ export default function PieChart({
   selectedGroups,
   selectedCategories,
   onSegmentClick,
-  showTooltip = true
+  showTooltip = true,
+  matchHeight = false
 }: PieChartProps) {
   const chartRef = useRef<any>(null);
   const [hoveredSegment, setHoveredSegment] = useState<PieSegment | null>(null);
@@ -211,7 +213,7 @@ export default function PieChart({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: 80, // Increase padding to give more room for labels outside the chart
+      padding: matchHeight ? 100 : 70, // Increase padding significantly to give more room for labels
     },
     plugins: {
       legend: {
@@ -228,7 +230,7 @@ export default function PieChart({
         color: '#fff',
         font: {
           weight: 'bold' as const,
-          size: 14, // Reduce font size to minimize space taken
+          size: matchHeight ? 14 : 14, // Keep consistent font size
         },
         formatter: function(value: number, context: any) {
           const segment = pieChartData.segments[context.dataIndex];
@@ -236,13 +238,13 @@ export default function PieChart({
         },
         anchor: 'end' as const,
         align: 'end' as const,
-        offset: 10, // Reduce offset to keep labels closer
+        offset: matchHeight ? 12 : 8, // More offset to ensure labels are visible
         padding: 4,
         textStrokeColor: 'rgba(0,0,0,0.8)',
         textStrokeWidth: 1,
       },
     },
-    cutout: '50%', // Reduce cutout to make the chart appear larger
+    cutout: matchHeight ? '45%' : '45%', // Keep consistent cutout
     onHover: (event: ChartEvent, activeElements: ActiveElement[]) => {
       if (chartRef.current?.canvas) {
         chartRef.current.canvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
@@ -270,7 +272,7 @@ export default function PieChart({
 
   if (pieChartData.segments.length === 0) {
     return (
-      <div className="bg-white/[.03] rounded-lg p-6 h-80 flex items-center justify-center">
+      <div className={`bg-white/[.03] rounded-lg p-4 flex items-center justify-center ${matchHeight ? 'h-full min-h-[600px]' : 'h-[550px]'}`}>
         <div className="text-center text-white/60">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
@@ -286,12 +288,18 @@ export default function PieChart({
   }
 
   return (
-    <div className="bg-white/[.03] rounded-lg p-6">
+    <div className={`bg-white/[.03] rounded-lg p-4 ${matchHeight ? 'h-full flex flex-col' : ''}`} style={matchHeight ? { minHeight: '600px', overflow: 'visible' } : { overflow: 'visible' }}>
       {/* Maximized chart container */}
-      <div className="w-full flex items-center justify-center">
+      <div className={`w-full flex items-center justify-center ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}
-        <div className="flex items-center justify-center w-full" style={{ overflow: 'visible' }}>
-          <div className="relative w-full max-w-4xl" style={{ height: '500px', overflow: 'visible' }}>
+        <div className="flex items-center justify-center w-full h-full" style={{ overflow: 'visible' }}>
+          <div className="relative w-full" style={{ 
+            height: matchHeight ? '100%' : '550px', 
+            minHeight: matchHeight ? '500px' : '550px',
+            maxHeight: matchHeight ? 'none' : '550px',
+            maxWidth: matchHeight ? '600px' : '700px', // Reduce max width to give more space for labels
+            overflow: 'visible' 
+          }}>
             <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }}>
               <Doughnut ref={chartRef} data={chartData} options={chartOptions} plugins={[ChartDataLabels]} />
             </div>
@@ -326,8 +334,8 @@ export default function PieChart({
           </div>
         </div>
       </div>
-      {/* Chart label explainer */}
-      <div className="text-center mt-2 text-sm text-white/50">
+      {/* Chart label explainer - Always positioned at bottom */}
+      <div className="text-center text-sm text-white/50 mt-3 flex-shrink-0">
         <p>Hover over segments for details. Click for in-depth analysis.</p>
       </div>
     </div>

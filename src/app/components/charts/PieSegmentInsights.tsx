@@ -251,7 +251,7 @@ export default function PieSegmentInsights({
   if (!segment || !insights) return null;
 
   return (
-    <div className="bg-white/[.05] rounded-lg p-6 border border-green/20">
+    <div className="bg-white/[.05] rounded-lg p-6 border border-green/20 h-full flex flex-col" style={{ minHeight: '600px' }}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div
@@ -273,9 +273,9 @@ export default function PieSegmentInsights({
         </button>
       </div>
 
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="flex-1 flex flex-col">
+        {/* Main Stats */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-white/[.03] rounded-lg p-3">
           <div className="text-sm text-white/50 mb-1">Total Spending</div>
           <div className="text-xl font-bold text-white">{formatCurrency(insights.currentSpending)}</div>
@@ -459,7 +459,8 @@ export default function PieSegmentInsights({
           </div>
         </div>
       )}
-    {/* Filter Action - Only show for groups and categories, not vendors */}
+
+      {/* Filter Action - Only show for groups and categories, not vendors */}
       {segment.type !== 'vendor' && (
         <button
           onClick={() => {
@@ -474,6 +475,7 @@ export default function PieSegmentInsights({
           Show in-depth stats for "{segment.label}"
         </button>
       )}
+      </div>
     </div>
   );
 }
