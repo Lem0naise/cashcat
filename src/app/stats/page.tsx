@@ -285,9 +285,10 @@ export default function Stats() {
                                         allTimeEnd
                                     );
 
-                                    return (
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                            <div className="lg:col-span-2">
+                                    return selectedPieSegment ? (
+                                        // Layout with insights panel - pie chart takes 2/3 width
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                                            <div className="lg:col-span-2 flex flex-col">
                                                 <PieChart
                                                     transactions={transactions}
                                                     categories={categories}
@@ -296,21 +297,34 @@ export default function Stats() {
                                                     selectedCategories={selectedCategories}
                                                     onSegmentClick={handlePieSegmentClick}
                                                     showTooltip={!selectedPieSegment}
+                                                    matchHeight={!!selectedPieSegment}
                                                 />
                                             </div>
-                                            {selectedPieSegment && (
-                                                <div className="lg:col-span-1">
-                                                    <PieSegmentInsights
-                                                        segment={selectedPieSegment}
-                                                        transactions={transactions}
-                                                        categories={categories}
-                                                        dateRange={dateRange}
-                                                        onClose={handleClosePieInsights}
-                                                        onFilterBySegment={handleFilterBySegment}
-                                                        onSetComparisonPeriod={handleSetComparisonPeriod}
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="lg:col-span-1 flex flex-col">
+                                                <PieSegmentInsights
+                                                    segment={selectedPieSegment}
+                                                    transactions={transactions}
+                                                    categories={categories}
+                                                    dateRange={dateRange}
+                                                    onClose={handleClosePieInsights}
+                                                    onFilterBySegment={handleFilterBySegment}
+                                                    onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // Full width layout when no insights panel
+                                        <div className="w-full">
+                                            <PieChart
+                                                transactions={transactions}
+                                                categories={categories}
+                                                dateRange={dateRange}
+                                                selectedGroups={selectedGroups}
+                                                selectedCategories={selectedCategories}
+                                                onSegmentClick={handlePieSegmentClick}
+                                                showTooltip={!selectedPieSegment}
+                                                matchHeight={!!selectedPieSegment}
+                                            />
                                         </div>
                                     );
                                 })()}
