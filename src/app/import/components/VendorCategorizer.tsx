@@ -27,6 +27,7 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
     const [categorizations, setCategorizations] = useState<VendorCategorization[]>(
         vendors.map(v => ({ vendor: v.vendor, category_id: '', transactionCount: v.count }))
     );
+    const [skippedVendors, setSkippedVendors] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const supabase = createClientComponentClient<Database>();
@@ -81,6 +82,34 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                     : cat
             )
         );
+        // Remove from skipped if categorized
+        if (categoryId) {
+            setSkippedVendors(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(vendor);
+                return newSet;
+            });
+        }
+    };
+
+    const toggleSkipVendor = (vendor: string) => {
+        setSkippedVendors(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(vendor)) {
+                newSet.delete(vendor);
+            } else {
+                newSet.add(vendor);
+                // Clear categorization if skipped
+                setCategorizations(prevCat =>
+                    prevCat.map(cat =>
+                        cat.vendor === vendor
+                            ? { ...cat, category_id: '' }
+                            : cat
+                    )
+                );
+            }
+            return newSet;
+        });
     };
 
     const handleComplete = () => {
@@ -99,6 +128,8 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
     };
 
     const categorizedCount = categorizations.filter(cat => cat.category_id).length;
+    const skippedCount = skippedVendors.size;
+    const processedCount = categorizedCount + skippedCount;
     const totalTransactions = categorizations
         .filter(cat => cat.category_id)
         .reduce((sum, cat) => sum + cat.transactionCount, 0);
@@ -128,18 +159,19 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Progress</span>
                     <span className="text-sm text-white/70">
-                        {categorizedCount} of {vendors.length} vendors
+                        {processedCount} of {vendors.length} vendors processed
                     </span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
                     <div 
                         className="bg-green h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(categorizedCount / vendors.length) * 100}%` }}
+                        style={{ width: `${(processedCount / vendors.length) * 100}%` }}
                     ></div>
                 </div>
-                <p className="text-xs text-white/60 mt-2">
-                    {totalTransactions} transactions will be categorized
-                </p>
+                <div className="flex justify-between text-xs text-white/60 mt-2">
+                    <span>{categorizedCount} categorized • {skippedCount} skipped</span>
+                    <span>{totalTransactions} transactions will be categorized</span>
+                </div>
             </div>
 
             {/* Search */}
@@ -160,26 +192,53 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
             <div className="space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 500px)' }}>
                 {filteredVendors.map((vendor) => {
                     const categorization = categorizations.find(cat => cat.vendor === vendor.vendor);
+                    const isSkipped = skippedVendors.has(vendor.vendor);
                     return (
-                        <div key={vendor.vendor} className="bg-white/[.03] rounded-lg p-4">
+                        <div key={vendor.vendor} className={`bg-white/[.03] rounded-lg p-4 ${isSkipped ? 'opacity-60' : ''}`}>
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium truncate">{vendor.vendor}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-medium truncate">{vendor.vendor}</h3>
+                                        {isSkipped && (
+                                            <span className="px-2 py-1 text-xs bg-white/10 text-white/60 rounded">
+                                                Skipped
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-sm text-white/60">
                                         {vendor.count} transaction{vendor.count !== 1 ? 's' : ''}
                                     </p>
                                 </div>
                                 
-                                <div className="flex-shrink-0 w-64">
-                                    <CategoryDropdown
-                                        value={categorization?.category_id || ''}
-                                        onChange={(categoryId) => updateCategorization(vendor.vendor, categoryId)}
-                                        placeholder="Select category..."
-                                        className="w-full"
-                                        categories={categories}
-                                        groups={groups}
-                                        onNewCategoryCreated={fetchCategoriesAndGroups}
-                                    />
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => toggleSkipVendor(vendor.vendor)}
+                                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                            isSkipped
+                                                ? 'bg-white/10 text-white hover:bg-white/20'
+                                                : 'border border-white/20 text-white/70 hover:text-white hover:border-white/40'
+                                        }`}
+                                    >
+                                        {isSkipped ? 'Unskip' : 'Skip'}
+                                    </button>
+                                    
+                                    <div className="flex-shrink-0 w-64">
+                                        {isSkipped ? (
+                                            <div className="w-full p-3 rounded-lg bg-white/[.02] border border-white/[.05] text-white/40 text-center">
+                                                Skipped - Select category...
+                                            </div>
+                                        ) : (
+                                            <CategoryDropdown
+                                                value={categorization?.category_id || ''}
+                                                onChange={(categoryId) => updateCategorization(vendor.vendor, categoryId)}
+                                                placeholder="Select category..."
+                                                className="w-full"
+                                                categories={categories}
+                                                groups={groups}
+                                                onNewCategoryCreated={fetchCategoriesAndGroups}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -204,15 +263,18 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
 
                 <div className="text-center">
                     <p className="text-sm text-white/60 mb-2">
-                        Skip unassigned vendors - you can categorize those transactions later
+                        {skippedCount > 0 
+                            ? `${skippedCount} vendor${skippedCount !== 1 ? 's' : ''} skipped - their transactions will be uncategorized`
+                            : 'Skip unassigned vendors - you can categorize those transactions later'
+                        }
                     </p>
                 </div>
 
                 <button
                     onClick={handleComplete}
-                    disabled={categorizedCount === 0}
+                    disabled={processedCount === 0}
                     className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-                        categorizedCount > 0
+                        processedCount > 0
                             ? 'bg-green text-black hover:bg-green-dark'
                             : 'bg-white/10 text-white/40 cursor-not-allowed'
                     }`}
