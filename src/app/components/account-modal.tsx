@@ -28,7 +28,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [otherAccountsAvailable, setOtherAccountsAvailable] = useState(false);
     const [showForm, setShowForm] = useState(false);
-    const [startingBalance, setStartingBalance] = useState('');
+    const [startingBalance, setStartingBalance] = useState('0.00');
     const [formData, setFormData] = useState({
         name: '',
         type: 'checking',
