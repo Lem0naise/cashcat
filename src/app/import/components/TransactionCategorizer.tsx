@@ -30,6 +30,7 @@ export default function TransactionCategorizer({
     const [categories, setCategories] = useState<Category[]>([]);
     const [groups, setGroups] = useState<Group[]>([]);
     const [categorizedTransactions, setCategorizedTransactions] = useState<ParsedTransaction[]>(transactions);
+    const [skippedTransactions, setSkippedTransactions] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
@@ -87,6 +88,34 @@ export default function TransactionCategorizer({
                     : transaction
             )
         );
+        // Remove from skipped if categorized
+        if (categoryId) {
+            setSkippedTransactions(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(index);
+                return newSet;
+            });
+        }
+    };
+
+    const toggleSkipTransaction = (index: number) => {
+        setSkippedTransactions(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(index)) {
+                newSet.delete(index);
+            } else {
+                newSet.add(index);
+                // Clear categorization if skipped
+                setCategorizedTransactions(prevTrans =>
+                    prevTrans.map((transaction, i) =>
+                        i === index
+                            ? { ...transaction, category_id: undefined }
+                            : transaction
+                    )
+                );
+            }
+            return newSet;
+        });
     };
 
     const bulkAssignCategory = () => {
@@ -124,6 +153,10 @@ export default function TransactionCategorizer({
 
     const categorizedCount = categorizedTransactions.filter(t => t.category_id && t.type === 'payment').length;
     const paymentTransactions = categorizedTransactions.filter(t => t.type === 'payment');
+    const skippedPaymentCount = [...skippedTransactions].filter(index => 
+        categorizedTransactions[index]?.type === 'payment'
+    ).length;
+    const processedPaymentCount = categorizedCount + skippedPaymentCount;
 
     const handleComplete = () => {
         onComplete(categorizedTransactions);
@@ -154,18 +187,19 @@ export default function TransactionCategorizer({
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Progress</span>
                     <span className="text-sm text-white/70">
-                        {categorizedCount} of {paymentTransactions.length} payment transactions categorized
+                        {processedPaymentCount} of {paymentTransactions.length} payment transactions processed
                     </span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
                     <div 
                         className="bg-green h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${paymentTransactions.length > 0 ? (categorizedCount / paymentTransactions.length) * 100 : 0}%` }}
+                        style={{ width: `${paymentTransactions.length > 0 ? (processedPaymentCount / paymentTransactions.length) * 100 : 0}%` }}
                     ></div>
                 </div>
-                <p className="text-xs text-white/60 mt-2">
-                    Income transactions don't require categories
-                </p>
+                <div className="flex justify-between text-xs text-white/60 mt-2">
+                    <span>{categorizedCount} categorized • {skippedPaymentCount} skipped</span>
+                    <span>Income transactions don't require categories</span>
+                </div>
             </div>
 
             {/* Search and Bulk Actions */}
@@ -213,57 +247,84 @@ export default function TransactionCategorizer({
 
             {/* Transaction List */}
             <div className="space-y-2">
-                {paginatedTransactions.map((transaction) => (
-                    <div key={transaction.originalIndex} className="bg-white/[.03] rounded-lg p-4">
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                        transaction.type === 'income' 
-                                            ? 'bg-green/20 text-green' 
-                                            : 'bg-red-500/20 text-red-400'
-                                    }`}>
-                                        {transaction.type === 'income' ? 'Income' : 'Payment'}
-                                    </span>
-                                    <span className="text-sm text-white/60">
-                                        {format(new Date(transaction.date), 'MMM dd, yyyy')}
-                                    </span>
+                {paginatedTransactions.map((transaction) => {
+                    const isSkipped = skippedTransactions.has(transaction.originalIndex);
+                    return (
+                        <div key={transaction.originalIndex} className={`bg-white/[.03] rounded-lg p-4 ${isSkipped ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                            transaction.type === 'income' 
+                                                ? 'bg-green/20 text-green' 
+                                                : 'bg-red-500/20 text-red-400'
+                                        }`}>
+                                            {transaction.type === 'income' ? 'Income' : 'Payment'}
+                                        </span>
+                                        {isSkipped && (
+                                            <span className="px-2 py-1 text-xs bg-white/10 text-white/60 rounded">
+                                                Skipped
+                                            </span>
+                                        )}
+                                        <span className="text-sm text-white/60">
+                                            {format(new Date(transaction.date), 'MMM dd, yyyy')}
+                                        </span>
+                                    </div>
+                                    
+                                    <h3 className="font-medium truncate">{transaction.vendor}</h3>
+                                    {transaction.description && (
+                                        <p className="text-sm text-white/60 truncate">{transaction.description}</p>
+                                    )}
                                 </div>
                                 
-                                <h3 className="font-medium truncate">{transaction.vendor}</h3>
-                                {transaction.description && (
-                                    <p className="text-sm text-white/60 truncate">{transaction.description}</p>
+                                <div className="text-right flex-shrink-0">
+                                    <p className={`font-medium ${
+                                        transaction.amount > 0 ? 'text-green' : 'text-red-400'
+                                    }`}>
+                                        {transaction.amount > 0 ? '+' : ''}£{Math.abs(transaction.amount).toFixed(2)}
+                                    </p>
+                                </div>
+
+                                {transaction.type === 'payment' && (
+                                    <button
+                                        onClick={() => toggleSkipTransaction(transaction.originalIndex)}
+                                        className={`px-3 py-2 rounded text-sm font-medium transition-colors flex-shrink-0 ${
+                                            isSkipped
+                                                ? 'bg-white/10 text-white hover:bg-white/20'
+                                                : 'border border-white/20 text-white/70 hover:text-white hover:border-white/40'
+                                        }`}
+                                    >
+                                        {isSkipped ? 'Unskip' : 'Skip'}
+                                    </button>
                                 )}
-                            </div>
-                            
-                            <div className="text-right flex-shrink-0">
-                                <p className={`font-medium ${
-                                    transaction.amount > 0 ? 'text-green' : 'text-red-400'
-                                }`}>
-                                    {transaction.amount > 0 ? '+' : ''}£{Math.abs(transaction.amount).toFixed(2)}
-                                </p>
-                            </div>
-                            
-                            <div className="flex-shrink-0 w-48">
-                                {transaction.type === 'payment' ? (
-                                    <CategoryDropdown
-                                        value={transaction.category_id || ''}
-                                        onChange={(categoryId) => updateTransactionCategory(transaction.originalIndex, categoryId)}
-                                        placeholder="Select category..."
-                                        className="w-full"
-                                        categories={categories}
-                                        groups={groups}
-                                        onNewCategoryCreated={fetchCategoriesAndGroups}
-                                    />
-                                ) : (
-                                    <div className="text-center text-sm text-white/60 p-2">
-                                        No category needed
-                                    </div>
-                                )}
+                                
+                                <div className="flex-shrink-0 w-48">
+                                    {transaction.type === 'payment' ? (
+                                        isSkipped ? (
+                                            <div className="w-full p-3 rounded-lg bg-white/[.02] border border-white/[.05] text-white/40 text-center">
+                                                Skipped
+                                            </div>
+                                        ) : (
+                                            <CategoryDropdown
+                                                value={transaction.category_id || ''}
+                                                onChange={(categoryId) => updateTransactionCategory(transaction.originalIndex, categoryId)}
+                                                placeholder="Select category..."
+                                                className="w-full"
+                                                categories={categories}
+                                                groups={groups}
+                                                onNewCategoryCreated={fetchCategoriesAndGroups}
+                                            />
+                                        )
+                                    ) : (
+                                        <div className="text-center text-sm text-white/60 p-2">
+                                            No category needed
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Pagination */}
@@ -308,7 +369,10 @@ export default function TransactionCategorizer({
 
                 <div className="text-center">
                     <p className="text-sm text-white/60 mb-2">
-                        Uncategorized payments can be assigned later in your budget
+                        {skippedPaymentCount > 0 
+                            ? `${skippedPaymentCount} payment transaction${skippedPaymentCount !== 1 ? 's' : ''} skipped - can be categorized later in your budget`
+                            : 'Uncategorized payments can be assigned later in your budget'
+                        }
                     </p>
                 </div>
 
