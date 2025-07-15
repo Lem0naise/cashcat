@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { VendorCategorization } from '@/lib/import-presets/types';
 import { Database } from '@/types/supabase';
+import CategoryDropdown from './CategoryDropdown';
 
 interface VendorCategorizerProps {
     vendors: { vendor: string; count: number }[];
@@ -11,10 +12,18 @@ interface VendorCategorizerProps {
     onBack: () => void;
 }
 
-type Category = Database['public']['Tables']['categories']['Row'];
+type Category = Database['public']['Tables']['categories']['Row'] & {
+    groups?: {
+        id: string;
+        name: string;
+    } | null;
+};
+
+type Group = Database['public']['Tables']['groups']['Row'];
 
 export default function VendorCategorizer({ vendors, onComplete, onBack }: VendorCategorizerProps) {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
     const [categorizations, setCategorizations] = useState<VendorCategorization[]>(
         vendors.map(v => ({ vendor: v.vendor, category_id: '', transactionCount: v.count }))
     );
@@ -23,24 +32,42 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
     const supabase = createClientComponentClient<Database>();
 
     useEffect(() => {
-        fetchCategories();
+        fetchCategoriesAndGroups();
     }, []);
 
-    const fetchCategories = async () => {
+    const fetchCategoriesAndGroups = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { data, error } = await supabase
+            // Fetch categories with groups
+            const { data: categoriesData, error: categoriesError } = await supabase
                 .from('categories')
+                .select(`
+                    *,
+                    groups (
+                        id,
+                        name
+                    )
+                `)
+                .eq('user_id', user.id)
+                .order('name');
+
+            if (categoriesError) throw categoriesError;
+
+            // Fetch groups
+            const { data: groupsData, error: groupsError } = await supabase
+                .from('groups')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('name');
 
-            if (error) throw error;
-            setCategories(data || []);
+            if (groupsError) throw groupsError;
+
+            setCategories(categoriesData || []);
+            setGroups(groupsData || []);
         } catch (error) {
-            console.error('Error fetching categories:', error);
+            console.error('Error fetching categories and groups:', error);
         } finally {
             setLoading(false);
         }
@@ -97,7 +124,7 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
             </div>
 
             {/* Progress */}
-            <div className="glass-card rounded-lg p-4">
+            <div className="bg-white/[.03] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Progress</span>
                     <span className="text-sm text-white/70">
@@ -122,7 +149,7 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                     placeholder="Search vendors..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 pl-10 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
+                    className="w-full p-3 pl-10 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                 />
                 <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -130,11 +157,11 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
             </div>
 
             {/* Vendor List */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 500px)' }}>
                 {filteredVendors.map((vendor) => {
                     const categorization = categorizations.find(cat => cat.vendor === vendor.vendor);
                     return (
-                        <div key={vendor.vendor} className="glass-card rounded-lg p-4">
+                        <div key={vendor.vendor} className="bg-white/[.03] rounded-lg p-4">
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-medium truncate">{vendor.vendor}</h3>
@@ -144,18 +171,15 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                                 </div>
                                 
                                 <div className="flex-shrink-0 w-64">
-                                    <select
+                                    <CategoryDropdown
                                         value={categorization?.category_id || ''}
-                                        onChange={(e) => updateCategorization(vendor.vendor, e.target.value)}
-                                        className="w-full p-2 rounded bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors text-sm"
-                                    >
-                                        <option value="">Select category...</option>
-                                        {categories.map(category => (
-                                            <option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onChange={(categoryId) => updateCategorization(vendor.vendor, categoryId)}
+                                        placeholder="Select category..."
+                                        className="w-full"
+                                        categories={categories}
+                                        groups={groups}
+                                        onNewCategoryCreated={fetchCategoriesAndGroups}
+                                    />
                                 </div>
                             </div>
                         </div>
