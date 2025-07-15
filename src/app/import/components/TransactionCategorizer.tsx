@@ -1,0 +1,303 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { ParsedTransaction } from '@/lib/import-presets/types';
+import { Database } from '@/types/supabase';
+import { format } from 'date-fns';
+
+interface TransactionCategorizerProps {
+    transactions: ParsedTransaction[];
+    onComplete: (transactions: ParsedTransaction[]) => void;
+    onBack: () => void;
+}
+
+type Category = Database['public']['Tables']['categories']['Row'];
+
+export default function TransactionCategorizer({ 
+    transactions, 
+    onComplete, 
+    onBack 
+}: TransactionCategorizerProps) {
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [categorizedTransactions, setCategorizedTransactions] = useState<ParsedTransaction[]>(transactions);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const itemsPerPage = 20;
+    const supabase = createClientComponentClient<Database>();
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase
+                .from('categories')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('name');
+
+            if (error) throw error;
+            setCategories(data || []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateTransactionCategory = (index: number, categoryId: string) => {
+        setCategorizedTransactions(prev =>
+            prev.map((transaction, i) =>
+                i === index
+                    ? { ...transaction, category_id: categoryId }
+                    : transaction
+            )
+        );
+    };
+
+    const bulkAssignCategory = () => {
+        if (!selectedCategory) return;
+        
+        const filteredIndices = getFilteredTransactions().map(item => item.originalIndex);
+        setCategorizedTransactions(prev =>
+            prev.map((transaction, i) =>
+                filteredIndices.includes(i) && transaction.type === 'payment'
+                    ? { ...transaction, category_id: selectedCategory }
+                    : transaction
+            )
+        );
+        setSelectedCategory('');
+    };
+
+    const getFilteredTransactions = () => {
+        return categorizedTransactions
+            .map((transaction, index) => ({ ...transaction, originalIndex: index }))
+            .filter(transaction =>
+                transaction.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+    };
+
+    const filteredTransactions = getFilteredTransactions();
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
+    const getCategoryName = (categoryId: string) => {
+        const category = categories.find(cat => cat.id === categoryId);
+        return category?.name || '';
+    };
+
+    const categorizedCount = categorizedTransactions.filter(t => t.category_id && t.type === 'payment').length;
+    const paymentTransactions = categorizedTransactions.filter(t => t.type === 'payment');
+
+    const handleComplete = () => {
+        onComplete(categorizedTransactions);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin"></div>
+                    <span>Loading categories...</span>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <h2 className="text-2xl font-semibold mb-4">Categorize Transactions</h2>
+                <p className="text-white/70">
+                    Review and assign categories to each transaction for precise tracking.
+                </p>
+            </div>
+
+            {/* Progress */}
+            <div className="glass-card rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Progress</span>
+                    <span className="text-sm text-white/70">
+                        {categorizedCount} of {paymentTransactions.length} payment transactions categorized
+                    </span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2">
+                    <div 
+                        className="bg-green h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${paymentTransactions.length > 0 ? (categorizedCount / paymentTransactions.length) * 100 : 0}%` }}
+                    ></div>
+                </div>
+                <p className="text-xs text-white/60 mt-2">
+                    Income transactions don't require categories
+                </p>
+            </div>
+
+            {/* Search and Bulk Actions */}
+            <div className="flex gap-4">
+                <div className="flex-1 relative">
+                    <input
+                        type="text"
+                        placeholder="Search transactions..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="w-full p-3 pl-10 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
+                    />
+                    <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                
+                <div className="flex gap-2">
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="p-3 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
+                    >
+                        <option value="">Select category for bulk assign...</option>
+                        {categories.map(category => (
+                            <option key={category.id} value={category.id}>
+                                {category.name}
+                            </option>
+                        ))}
+                    </select>
+                    
+                    <button
+                        onClick={bulkAssignCategory}
+                        disabled={!selectedCategory}
+                        className={`px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                            selectedCategory
+                                ? 'bg-green text-black hover:bg-green-dark'
+                                : 'bg-white/10 text-white/40 cursor-not-allowed'
+                        }`}
+                    >
+                        Bulk Assign
+                    </button>
+                </div>
+            </div>
+
+            {/* Transaction List */}
+            <div className="space-y-2">
+                {paginatedTransactions.map((transaction) => (
+                    <div key={transaction.originalIndex} className="glass-card rounded-lg p-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                        transaction.type === 'income' 
+                                            ? 'bg-green/20 text-green' 
+                                            : 'bg-red-500/20 text-red-400'
+                                    }`}>
+                                        {transaction.type === 'income' ? 'Income' : 'Payment'}
+                                    </span>
+                                    <span className="text-sm text-white/60">
+                                        {format(new Date(transaction.date), 'MMM dd, yyyy')}
+                                    </span>
+                                </div>
+                                
+                                <h3 className="font-medium truncate">{transaction.vendor}</h3>
+                                {transaction.description && (
+                                    <p className="text-sm text-white/60 truncate">{transaction.description}</p>
+                                )}
+                            </div>
+                            
+                            <div className="text-right flex-shrink-0">
+                                <p className={`font-medium ${
+                                    transaction.amount > 0 ? 'text-green' : 'text-red-400'
+                                }`}>
+                                    {transaction.amount > 0 ? '+' : ''}£{Math.abs(transaction.amount).toFixed(2)}
+                                </p>
+                            </div>
+                            
+                            <div className="flex-shrink-0 w-48">
+                                {transaction.type === 'payment' ? (
+                                    <select
+                                        value={transaction.category_id || ''}
+                                        onChange={(e) => updateTransactionCategory(transaction.originalIndex, e.target.value)}
+                                        className="w-full p-2 rounded bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors text-sm"
+                                    >
+                                        <option value="">Select category...</option>
+                                        {categories.map(category => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="text-center text-sm text-white/60 p-2">
+                                        No category needed
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 rounded border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed hover:border-white/40 transition-colors"
+                    >
+                        Previous
+                    </button>
+                    
+                    <span className="text-sm text-white/70">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 rounded border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed hover:border-white/40 transition-colors"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
+
+            {filteredTransactions.length === 0 && searchTerm && (
+                <div className="text-center py-8 text-white/60">
+                    No transactions found matching "{searchTerm}"
+                </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-between items-center pt-4">
+                <button
+                    onClick={onBack}
+                    className="px-6 py-3 rounded-lg border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
+                >
+                    ← Back
+                </button>
+
+                <div className="text-center">
+                    <p className="text-sm text-white/60 mb-2">
+                        Uncategorized payments can be assigned later in your budget
+                    </p>
+                </div>
+
+                <button
+                    onClick={handleComplete}
+                    className="px-8 py-3 rounded-lg font-medium bg-green text-black hover:bg-green-dark transition-colors"
+                >
+                    Continue to Summary →
+                </button>
+            </div>
+        </div>
+    );
+}
