@@ -216,19 +216,29 @@ export default function ImportPage() {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-gray-900 text-white font-[family-name:var(--font-suse)]">
+            <div className="min-h-screen bg-background text-white font-[family-name:var(--font-suse)]">
                 <Navbar />
                 <Sidebar />
                 <MobileNav />
                 
-                <div className="md:ml-64 p-4 md:p-6">
+                <main className="pt-16 pb-28 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                     <div className="max-w-4xl mx-auto">
-                        {/* Header */}
-                        <div className="mb-8">
-                            <h1 className="text-3xl font-bold mb-4">Import Transactions</h1>
-                            <p className="text-white/70 text-lg">
+                        {/* Mobile header */}
+                        <div className="md:hidden mb-6">
+                            <h1 className="text-2xl font-bold tracking-[-.01em]">Import Transactions</h1>
+                            <p className="text-white/70">
                                 Import your transaction history from CSV files exported by banks and financial services.
                             </p>
+                        </div>
+
+                        {/* Desktop header */}
+                        <div className="hidden md:flex items-center justify-between mb-8 md:mt-8">
+                            <div>
+                                <h1 className="text-3xl font-bold mb-4">Import Transactions</h1>
+                                <p className="text-white/70 text-lg">
+                                    Import your transaction history from CSV files exported by banks and financial services.
+                                </p>
+                            </div>
                         </div>
 
                         {/* Progress Indicator */}
@@ -295,7 +305,7 @@ export default function ImportPage() {
                         {/* Main Content */}
                         {renderCurrentStep()}
                     </div>
-                </div>
+                </main>
                 
                 <Toaster position="top-right" />
             </div>
