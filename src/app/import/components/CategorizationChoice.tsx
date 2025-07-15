@@ -27,7 +27,7 @@ export default function CategorizationChoice({
                 {/* Vendor Categorization */}
                 <div 
                     onClick={() => onChoice('vendor')}
-                    className="bg-white/[.03] rounded-lg p-6 cursor-pointer hover:bg-white/[.05] transition-all border border-transparent hover:border-green/30 group"
+                    className="glass-card rounded-lg p-6 cursor-pointer hover:bg-white/[.05] transition-all border border-transparent hover:border-green/30 group"
                 >
                     <div className="text-center space-y-4">
                         <div className="w-16 h-16 mx-auto rounded-full bg-green/20 flex items-center justify-center group-hover:bg-green/30 transition-colors">
@@ -56,17 +56,17 @@ export default function CategorizationChoice({
                 {/* Transaction Categorization */}
                 <div 
                     onClick={() => onChoice('transaction')}
-                    className="bg-white/[.03] rounded-lg p-6 cursor-pointer hover:bg-white/[.05] transition-all border border-transparent hover:border-green/30 group"
+                    className="glass-card rounded-lg p-6 cursor-pointer hover:bg-white/[.05] transition-all border border-transparent hover:border-green/30 group"
                 >
                     <div className="text-center space-y-4">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-green/20 flex items-center justify-center group-hover:bg-green/30 transition-colors">
-                            <svg className="w-8 h-8 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-16 h-16 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
                         
                         <div>
-                            <h3 className="text-xl font-semibold text-green mb-2">Categorize Each Transaction</h3>
+                            <h3 className="text-xl font-semibold text-blue-400 mb-2">Categorize Each Transaction</h3>
                             <p className="text-sm text-white/60 mb-3">The Precise Way</p>
                             <p className="text-white/70">
                                 Review and categorize each of the {transactionCount} individual transactions 
@@ -74,8 +74,8 @@ export default function CategorizationChoice({
                             </p>
                         </div>
 
-                        <div className="bg-green/10 rounded-lg p-3">
-                            <p className="text-sm text-green font-medium">
+                        <div className="bg-blue-500/10 rounded-lg p-3">
+                            <p className="text-sm text-blue-400 font-medium">
                                 🎯 Perfect for detailed tracking
                             </p>
                         </div>
@@ -84,7 +84,7 @@ export default function CategorizationChoice({
             </div>
 
             {/* Comparison */}
-            <div className="bg-white/[.03] rounded-lg p-6">
+            <div className="glass-card-blue rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Which Should You Choose?</h3>
                 <div className="grid md:grid-cols-2 gap-6 text-sm">
                     <div>
@@ -97,7 +97,7 @@ export default function CategorizationChoice({
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-medium text-green mb-2">Transaction Categorization is better for:</h4>
+                        <h4 className="font-medium text-blue-400 mb-2">Transaction Categorization is better for:</h4>
                         <ul className="text-white/70 space-y-1">
                             <li>• Smaller files or when you want maximum control</li>
                             <li>• When the same vendor serves multiple categories</li>

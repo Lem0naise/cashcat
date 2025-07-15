@@ -56,7 +56,7 @@ export default function FileUploadStep({ onFileUpload, loading }: FileUploadStep
     return (
         <div className="space-y-8">
             {/* File Upload */}
-            <div className="bg-white/[.03] rounded-lg p-6">
+            <div className="glass-card rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4">Upload CSV File</h2>
                 
                 <div 
@@ -113,7 +113,7 @@ export default function FileUploadStep({ onFileUpload, loading }: FileUploadStep
             </div>
 
             {/* Preset Selection */}
-            <div className="bg-white/[.03] rounded-lg p-6">
+            <div className="glass-card rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4">Select Bank/Service Preset</h2>
                 <p className="text-white/70 mb-4">
                     Choose your bank or financial service to automatically map CSV columns to CashCat fields.
@@ -122,7 +122,7 @@ export default function FileUploadStep({ onFileUpload, loading }: FileUploadStep
                 <select
                     value={selectedPreset}
                     onChange={(e) => setSelectedPreset(e.target.value)}
-                    className="w-full p-4 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                    className="w-full p-4 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
                 >
                     <option value="">Select your bank or service...</option>
                     {importPresets.map(preset => (
@@ -156,7 +156,7 @@ export default function FileUploadStep({ onFileUpload, loading }: FileUploadStep
             </div>
 
             {/* Help Text */}
-            <div className="bg-white/[.03] rounded-lg p-4">
+            <div className="glass-card-blue rounded-lg p-4">
                 <h3 className="font-semibold text-green mb-2">💡 Tips for CSV Import</h3>
                 <ul className="text-sm text-white/70 space-y-1">
                     <li>• Make sure your CSV file includes headers (first row with column names)</li>

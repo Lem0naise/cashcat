@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { VendorCategorization } from '@/lib/import-presets/types';
 import { Database } from '@/types/supabase';
-import CategoryDropdown from './CategoryDropdown';
 
 interface VendorCategorizerProps {
     vendors: { vendor: string; count: number }[];
@@ -12,64 +11,36 @@ interface VendorCategorizerProps {
     onBack: () => void;
 }
 
-type Category = Database['public']['Tables']['categories']['Row'] & {
-    groups?: {
-        id: string;
-        name: string;
-    } | null;
-};
-
-type Group = Database['public']['Tables']['groups']['Row'];
+type Category = Database['public']['Tables']['categories']['Row'];
 
 export default function VendorCategorizer({ vendors, onComplete, onBack }: VendorCategorizerProps) {
     const [categories, setCategories] = useState<Category[]>([]);
-    const [groups, setGroups] = useState<Group[]>([]);
     const [categorizations, setCategorizations] = useState<VendorCategorization[]>(
         vendors.map(v => ({ vendor: v.vendor, category_id: '', transactionCount: v.count }))
     );
-    const [skippedVendors, setSkippedVendors] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
     const supabase = createClientComponentClient<Database>();
 
     useEffect(() => {
-        fetchCategoriesAndGroups();
+        fetchCategories();
     }, []);
 
-    const fetchCategoriesAndGroups = async () => {
+    const fetchCategories = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            // Fetch categories with groups
-            const { data: categoriesData, error: categoriesError } = await supabase
+            const { data, error } = await supabase
                 .from('categories')
-                .select(`
-                    *,
-                    groups (
-                        id,
-                        name
-                    )
-                `)
-                .eq('user_id', user.id)
-                .order('name');
-
-            if (categoriesError) throw categoriesError;
-
-            // Fetch groups
-            const { data: groupsData, error: groupsError } = await supabase
-                .from('groups')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('name');
 
-            if (groupsError) throw groupsError;
-
-            setCategories(categoriesData || []);
-            setGroups(groupsData || []);
+            if (error) throw error;
+            setCategories(data || []);
         } catch (error) {
-            console.error('Error fetching categories and groups:', error);
+            console.error('Error fetching categories:', error);
         } finally {
             setLoading(false);
         }
@@ -83,51 +54,6 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                     : cat
             )
         );
-        // Remove from skipped if categorized
-        if (categoryId) {
-            setSkippedVendors(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(vendor);
-                return newSet;
-            });
-        }
-    };
-
-    const toggleSkipVendor = (vendor: string) => {
-        setSkippedVendors(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(vendor)) {
-                newSet.delete(vendor);
-            } else {
-                newSet.add(vendor);
-                // Clear categorization if skipped
-                setCategorizations(prevCat =>
-                    prevCat.map(cat =>
-                        cat.vendor === vendor
-                            ? { ...cat, category_id: '' }
-                            : cat
-                    )
-                );
-            }
-            return newSet;
-        });
-    };
-
-    const bulkAssignCategory = () => {
-        if (!selectedCategory) return;
-        
-        // Apply to all filtered vendors that are not skipped
-        setCategorizations(prev =>
-            prev.map(cat => {
-                const isInFilteredResults = filteredVendors.some(v => v.vendor === cat.vendor);
-                const isNotSkipped = !skippedVendors.has(cat.vendor);
-                
-                return isInFilteredResults && isNotSkipped
-                    ? { ...cat, category_id: selectedCategory }
-                    : cat;
-            })
-        );
-        setSelectedCategory('');
     };
 
     const handleComplete = () => {
@@ -146,8 +72,6 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
     };
 
     const categorizedCount = categorizations.filter(cat => cat.category_id).length;
-    const skippedCount = skippedVendors.size;
-    const processedCount = categorizedCount + skippedCount;
     const totalTransactions = categorizations
         .filter(cat => cat.category_id)
         .reduce((sum, cat) => sum + cat.transactionCount, 0);
@@ -173,118 +97,65 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
             </div>
 
             {/* Progress */}
-            <div className="bg-white/[.03] rounded-lg p-4">
+            <div className="glass-card rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Progress</span>
                     <span className="text-sm text-white/70">
-                        {processedCount} of {vendors.length} vendors processed
+                        {categorizedCount} of {vendors.length} vendors
                     </span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
                     <div 
                         className="bg-green h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(processedCount / vendors.length) * 100}%` }}
+                        style={{ width: `${(categorizedCount / vendors.length) * 100}%` }}
                     ></div>
                 </div>
-                <div className="flex justify-between text-xs text-white/60 mt-2">
-                    <span>{categorizedCount} categorized • {skippedCount} skipped</span>
-                    <span>{totalTransactions} transactions will be categorized</span>
-                </div>
+                <p className="text-xs text-white/60 mt-2">
+                    {totalTransactions} transactions will be categorized
+                </p>
             </div>
 
-            {/* Search and Bulk Actions */}
-            <div className="flex gap-4">
-                <div className="flex-1 relative">
-                    <input
-                        type="text"
-                        placeholder="Search vendors..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-3 pl-10 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                    />
-                    <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                
-                {searchTerm && (
-                    <div className="flex gap-2">
-                        <CategoryDropdown
-                            value={selectedCategory}
-                            onChange={setSelectedCategory}
-                            placeholder="Select category for bulk assign..."
-                            className="min-w-64"
-                            categories={categories}
-                            groups={groups}
-                            onNewCategoryCreated={fetchCategoriesAndGroups}
-                        />
-                        
-                        <button
-                            onClick={bulkAssignCategory}
-                            disabled={!selectedCategory}
-                            className={`px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                                selectedCategory
-                                    ? 'bg-green text-black hover:bg-green-dark'
-                                    : 'bg-white/10 text-white/40 cursor-not-allowed'
-                            }`}
-                        >
-                            Bulk Assign
-                        </button>
-                    </div>
-                )}
+            {/* Search */}
+            <div className="relative">
+                <input
+                    type="text"
+                    placeholder="Search vendors..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full p-3 pl-10 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
+                />
+                <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
 
             {/* Vendor List */}
-            <div className="space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 500px)' }}>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
                 {filteredVendors.map((vendor) => {
                     const categorization = categorizations.find(cat => cat.vendor === vendor.vendor);
-                    const isSkipped = skippedVendors.has(vendor.vendor);
                     return (
-                        <div key={vendor.vendor} className={`bg-white/[.03] rounded-lg p-4 ${isSkipped ? 'opacity-60' : ''}`}>
+                        <div key={vendor.vendor} className="glass-card rounded-lg p-4">
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-medium truncate">{vendor.vendor}</h3>
-                                        {isSkipped && (
-                                            <span className="px-2 py-1 text-xs bg-white/10 text-white/60 rounded">
-                                                Skipped
-                                            </span>
-                                        )}
-                                    </div>
+                                    <h3 className="font-medium truncate">{vendor.vendor}</h3>
                                     <p className="text-sm text-white/60">
                                         {vendor.count} transaction{vendor.count !== 1 ? 's' : ''}
                                     </p>
                                 </div>
                                 
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => toggleSkipVendor(vendor.vendor)}
-                                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                                            isSkipped
-                                                ? 'bg-white/10 text-white hover:bg-white/20'
-                                                : 'border border-white/20 text-white/70 hover:text-white hover:border-white/40'
-                                        }`}
+                                <div className="flex-shrink-0 w-64">
+                                    <select
+                                        value={categorization?.category_id || ''}
+                                        onChange={(e) => updateCategorization(vendor.vendor, e.target.value)}
+                                        className="w-full p-2 rounded bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors text-sm"
                                     >
-                                        {isSkipped ? 'Unskip' : 'Skip'}
-                                    </button>
-                                    
-                                    <div className="flex-shrink-0 w-64">
-                                        {isSkipped ? (
-                                            <div className="w-full p-3 rounded-lg bg-white/[.02] border border-white/[.05] text-white/40 text-center">
-                                                Skipped - Select category...
-                                            </div>
-                                        ) : (
-                                            <CategoryDropdown
-                                                value={categorization?.category_id || ''}
-                                                onChange={(categoryId) => updateCategorization(vendor.vendor, categoryId)}
-                                                placeholder="Select category..."
-                                                className="w-full"
-                                                categories={categories}
-                                                groups={groups}
-                                                onNewCategoryCreated={fetchCategoriesAndGroups}
-                                            />
-                                        )}
-                                    </div>
+                                        <option value="">Select category...</option>
+                                        {categories.map(category => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -309,18 +180,15 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
 
                 <div className="text-center">
                     <p className="text-sm text-white/60 mb-2">
-                        {skippedCount > 0 
-                            ? `${skippedCount} vendor${skippedCount !== 1 ? 's' : ''} skipped - their transactions will be uncategorized`
-                            : 'Skip unassigned vendors - you can categorize those transactions later'
-                        }
+                        Skip unassigned vendors - you can categorize those transactions later
                     </p>
                 </div>
 
                 <button
                     onClick={handleComplete}
-                    disabled={processedCount === 0}
+                    disabled={categorizedCount === 0}
                     className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-                        processedCount > 0
+                        categorizedCount > 0
                             ? 'bg-green text-black hover:bg-green-dark'
                             : 'bg-white/10 text-white/40 cursor-not-allowed'
                     }`}

@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { ImportPreset, ParsedTransaction, SourceAccount, SourceCategoryGroup, SourceCategory } from './import-presets/types';
+import { ImportPreset, ParsedTransaction } from './import-presets/types';
 import { format, parse } from 'date-fns';
 
 export class CSVParser {
@@ -131,19 +131,7 @@ export class CSVParser {
 
     private normalizeDate(dateString: string): string {
         try {
-            // Try the preset's specified date format first
-            if (this.preset.dateFormat) {
-                try {
-                    const parsed = parse(dateString, this.preset.dateFormat, new Date());
-                    if (!isNaN(parsed.getTime())) {
-                        return format(parsed, 'yyyy-MM-dd');
-                    }
-                } catch (e) {
-                    console.warn(`Failed to parse date with preset format ${this.preset.dateFormat}:`, dateString);
-                }
-            }
-
-            // Fallback to common date formats
+            // Common date formats to try
             const formats = [
                 'MM/dd/yyyy',
                 'dd/MM/yyyy', 
@@ -188,50 +176,5 @@ export class CSVParser {
         return Array.from(vendorCounts.entries())
             .map(([vendor, count]) => ({ vendor, count }))
             .sort((a, b) => b.count - a.count);
-    }
-
-    // Enhanced service methods
-    static extractSourceAccounts(transactions: ParsedTransaction[]): SourceAccount[] {
-        const accountCounts = new Map<string, number>();
-        
-        for (const transaction of transactions) {
-            if (transaction.sourceAccount) {
-                const current = accountCounts.get(transaction.sourceAccount) || 0;
-                accountCounts.set(transaction.sourceAccount, current + 1);
-            }
-        }
-
-        const result = Array.from(accountCounts.entries())
-            .map(([name, transactionCount]) => ({ name, transactionCount }))
-            .sort((a, b) => b.transactionCount - a.transactionCount);
-            
-        return result;
-    }
-
-    static extractSourceCategoryGroups(transactions: ParsedTransaction[]): SourceCategoryGroup[] {
-        const groupCategories = new Map<string, Map<string, number>>();
-        
-        for (const transaction of transactions) {
-            if (transaction.sourceCategoryGroup && transaction.sourceCategory) {
-                if (!groupCategories.has(transaction.sourceCategoryGroup)) {
-                    groupCategories.set(transaction.sourceCategoryGroup, new Map());
-                }
-                
-                const categoryMap = groupCategories.get(transaction.sourceCategoryGroup)!;
-                const current = categoryMap.get(transaction.sourceCategory) || 0;
-                categoryMap.set(transaction.sourceCategory, current + 1);
-            }
-        }
-
-        const result = Array.from(groupCategories.entries()).map(([groupName, categoryMap]) => ({
-            name: groupName,
-            categories: Array.from(categoryMap.entries()).map(([categoryName, transactionCount]) => ({
-                name: categoryName,
-                groupName,
-                transactionCount
-            })).sort((a, b) => b.transactionCount - a.transactionCount)
-        })).sort((a, b) => a.name.localeCompare(b.name));
-        
-        return result;
     }
 }

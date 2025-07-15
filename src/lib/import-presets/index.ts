@@ -1,12 +1,12 @@
 import { ImportPreset } from './types';
 import { nationwidePreset } from './nationwide';
 import { trading212Preset } from './trading212';
-import { ynabPreset } from './ynab';
+import { genericPreset } from './generic';
 
 export const importPresets: ImportPreset[] = [
     nationwidePreset,
     trading212Preset,
-    ynabPreset,
+    genericPreset
 ];
 
 export function getPresetByName(name: string): ImportPreset | undefined {
@@ -14,4 +14,4 @@ export function getPresetByName(name: string): ImportPreset | undefined {
 }
 
 export * from './types';
-export { nationwidePreset, trading212Preset, ynabPreset };
+export { nationwidePreset, trading212Preset, genericPreset };

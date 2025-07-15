@@ -173,6 +173,7 @@ import { myBankPreset } from './my-bank';
 export const importPresets: ImportPreset[] = [
     // ... existing presets
     myBankPreset,
+    genericPreset  // Keep generic last as fallback
 ];
 
 export { myBankPreset };
@@ -247,3 +248,4 @@ When contributing new presets:
 - **Tesco Bank**: UK bank format
 - **Nationwide**: Building society with metadata rows
 - **Trading 212**: Investment platform with multiple transaction types
+- **Generic CSV**: Fallback for manual column mapping
