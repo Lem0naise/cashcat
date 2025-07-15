@@ -30,6 +30,7 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
     const [skippedVendors, setSkippedVendors] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
     const supabase = createClientComponentClient<Database>();
 
     useEffect(() => {
@@ -112,6 +113,23 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
         });
     };
 
+    const bulkAssignCategory = () => {
+        if (!selectedCategory) return;
+        
+        // Apply to all filtered vendors that are not skipped
+        setCategorizations(prev =>
+            prev.map(cat => {
+                const isInFilteredResults = filteredVendors.some(v => v.vendor === cat.vendor);
+                const isNotSkipped = !skippedVendors.has(cat.vendor);
+                
+                return isInFilteredResults && isNotSkipped
+                    ? { ...cat, category_id: selectedCategory }
+                    : cat;
+            })
+        );
+        setSelectedCategory('');
+    };
+
     const handleComplete = () => {
         // Only include categorizations that have a category selected
         const validCategorizations = categorizations.filter(cat => cat.category_id);
@@ -174,18 +192,46 @@ export default function VendorCategorizer({ vendors, onComplete, onBack }: Vendo
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-                <input
-                    type="text"
-                    placeholder="Search vendors..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 pl-10 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                />
-                <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            {/* Search and Bulk Actions */}
+            <div className="flex gap-4">
+                <div className="flex-1 relative">
+                    <input
+                        type="text"
+                        placeholder="Search vendors..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full p-3 pl-10 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                    />
+                    <svg className="w-5 h-5 text-white/40 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                
+                {searchTerm && (
+                    <div className="flex gap-2">
+                        <CategoryDropdown
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            placeholder="Select category for bulk assign..."
+                            className="min-w-64"
+                            categories={categories}
+                            groups={groups}
+                            onNewCategoryCreated={fetchCategoriesAndGroups}
+                        />
+                        
+                        <button
+                            onClick={bulkAssignCategory}
+                            disabled={!selectedCategory}
+                            className={`px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                                selectedCategory
+                                    ? 'bg-green text-black hover:bg-green-dark'
+                                    : 'bg-white/10 text-white/40 cursor-not-allowed'
+                            }`}
+                        >
+                            Bulk Assign
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Vendor List */}
