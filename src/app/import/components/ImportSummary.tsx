@@ -118,24 +118,24 @@ export default function ImportSummary({
 
             {/* Overview Stats */}
             <div className="grid md:grid-cols-3 gap-4">
-                <div className="glass-card rounded-lg p-4 text-center">
+                <div className="bg-white/[.03] rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-green mb-1">{transactions.length}</div>
                     <div className="text-sm text-white/70">Total Transactions</div>
                 </div>
                 
-                <div className="glass-card rounded-lg p-4 text-center">
+                <div className="bg-white/[.03] rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-green mb-1">£{totalIncome.toFixed(2)}</div>
                     <div className="text-sm text-white/70">Total Income</div>
                 </div>
                 
-                <div className="glass-card rounded-lg p-4 text-center">
+                <div className="bg-white/[.03] rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-red-400 mb-1">£{totalExpenses.toFixed(2)}</div>
                     <div className="text-sm text-white/70">Total Expenses</div>
                 </div>
             </div>
 
             {/* Categorization Breakdown */}
-            <div className="glass-card rounded-lg p-6">
+            <div className="bg-white/[.03] rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Categorization Breakdown</h3>
                 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -158,11 +158,11 @@ export default function ImportSummary({
                     </div>
                     
                     <div>
-                        <h4 className="font-medium text-blue-400 mb-3">Income Transactions</h4>
+                        <h4 className="font-medium text-green mb-3">Income Transactions</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span>Income (no category needed):</span>
-                                <span className="text-blue-400">{incomeTransactions.length}</span>
+                                <span className="text-green">{incomeTransactions.length}</span>
                             </div>
                         </div>
                     </div>
@@ -179,7 +179,7 @@ export default function ImportSummary({
             </div>
 
             {/* Account Selection */}
-            <div className="glass-card rounded-lg p-6">
+            <div className="bg-white/[.03] rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Select Account</h3>
                 <p className="text-white/70 mb-4">
                     Choose which account these transactions belong to:
@@ -188,7 +188,7 @@ export default function ImportSummary({
                 <select
                     value={selectedAccountId}
                     onChange={(e) => setSelectedAccountId(e.target.value)}
-                    className="w-full p-4 rounded-lg bg-white/5 border border-white/15 focus:border-green focus:outline-none transition-colors"
+                    className="w-full p-4 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                 >
                     <option value="">Select an account...</option>
                     {accounts.map(account => (
@@ -200,7 +200,7 @@ export default function ImportSummary({
             </div>
 
             {/* Date Range */}
-            <div className="glass-card rounded-lg p-6">
+            <div className="bg-white/[.03] rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Date Range</h3>
                 <div className="flex justify-between text-sm">
                     <div>
@@ -219,7 +219,7 @@ export default function ImportSummary({
             </div>
 
             {/* Preview */}
-            <div className="glass-card rounded-lg p-6">
+            <div className="bg-white/[.03] rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Transaction Preview</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                     {transactions.slice(0, 5).map((transaction, index) => (
@@ -273,7 +273,7 @@ export default function ImportSummary({
             </div>
 
             {/* Final Warning */}
-            <div className="glass-card-blue rounded-lg p-4">
+            <div className="bg-white/[.03] rounded-lg p-4">
                 <h3 className="font-semibold text-green mb-2">🚀 Ready to Import</h3>
                 <p className="text-sm text-white/70">
                     This will add {transactions.length} transactions to your selected account. 
