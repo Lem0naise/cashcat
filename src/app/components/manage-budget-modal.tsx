@@ -34,6 +34,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const [showAddGroup, setShowAddGroup] = useState(false);
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [editingGoalAsString, setEditingGoalAsString] = useState('');
+    const [showAddCategoryForGroup, setShowAddCategoryForGroup] = useState<string | null>(null);
+    const [newGroupCategoryData, setNewGroupCategoryData] = useState({
+        name: '',
+        goal: '',
+        timeframe: 'monthly' as const
+    });
     // Load settings from localStorage on component mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -209,6 +215,39 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
         }
     };
 
+    const createCategoryForGroup = async (groupId: string, categoryData: typeof newGroupCategoryData) => {
+        try {
+            const promise = (async () => {
+                const {error} = await supabase
+                .from('categories')
+                .insert({
+                    name: categoryData.name,
+                    group: groupId,
+                    goal: categoryData.goal ? parseFloat(categoryData.goal) : null,
+                    timeframe: { type: 'monthly' as const }
+                })
+                if (error) throw error;
+            })();
+            
+            await toast.promise(promise, {
+                loading: 'Creating category...',
+                success: 'Category created successfully!',
+                error: 'Failed to create category'
+            });
+            
+            await fetchCategories();
+            setNewGroupCategoryData({
+                name: '',
+                goal: '',
+                timeframe: 'monthly' as const
+            });
+            setShowAddCategoryForGroup(null);
+        } catch (error) {
+            console.error('Error creating category:', error);
+            setError('Failed to create category');
+        }
+    };
+
     const updateCategory = async (id: string, categoryData: Partial<Category>) => {
         try {
             const promise = (async () => {
@@ -302,6 +341,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             });
             setShowAddGroup(false);
             setShowAddCategory(false);
+            setShowAddCategoryForGroup(null);
+            setNewGroupCategoryData({
+                name: '',
+                goal: '',
+                timeframe: 'monthly' as const
+            });
         }, 200);
     };
 
@@ -622,6 +667,73 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
                                                     {/* Categories in this group */}
                                                     <div className="space-y-2">
+                                                        {/* Add category button for this group */}
+                                                        <div className="mb-3">
+                                                            {showAddCategoryForGroup === group.id ? (
+                                                                <div className="p-3 rounded-lg bg-white/[.03] border border-white/[.1]">
+                                                                    <form onSubmit={(e) => {
+                                                                        e.preventDefault();
+                                                                        createCategoryForGroup(group.id, newGroupCategoryData);
+                                                                    }} className="space-y-3">
+                                                                        <div>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={newGroupCategoryData.name}
+                                                                                onChange={(e) => setNewGroupCategoryData({...newGroupCategoryData, name: e.target.value})}
+                                                                                placeholder="Category name"
+                                                                                className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                autoFocus
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="block text-sm text-white/50 mb-1">Monthly Goal (Optional)</label>
+                                                                            <MoneyInput
+                                                                                value={newGroupCategoryData.goal}
+                                                                                onChange={(value) => setNewGroupCategoryData({...newGroupCategoryData, goal: value})}
+                                                                                placeholder="0.00"
+                                                                                currencySymbol={true}
+                                                                                className="text-lg"
+                                                                                inline={true}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setShowAddCategoryForGroup(null);
+                                                                                    setNewGroupCategoryData({name: '', goal: '', timeframe: 'monthly' as const});
+                                                                                }}
+                                                                                className="px-3 py-1 rounded-lg hover:bg-white/[.05] transition-colors text-sm text-white/70"
+                                                                            >
+                                                                                Cancel
+                                                                            </button>
+                                                                            <button
+                                                                                type="submit"
+                                                                                disabled={!newGroupCategoryData.name.trim()}
+                                                                                className="px-3 py-1 rounded-lg bg-green/20 hover:bg-green/30 text-green transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            >
+                                                                                Add Category
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => setShowAddCategoryForGroup(group.id)}
+                                                                    className="w-full p-2 rounded-lg bg-white/[.02] hover:bg-white/[.05] border border-dashed border-white/[.15] transition-colors text-sm text-white/70 hover:text-white flex items-center justify-center gap-2"
+                                                                >
+                                                                    <Image
+                                                                        src="/plus.svg"
+                                                                        alt="Add"
+                                                                        width={12}
+                                                                        height={12}
+                                                                        className="opacity-70 invert"
+                                                                    />
+                                                                    Add category to {group.name}
+                                                                </button>
+                                                            )}
+                                                        </div>
+
                                                         {groupCategories.length === 0 ? (
                                                             <p className="text-white/40 text-sm italic">No categories in this group yet</p>
                                                         ) : (
@@ -660,6 +772,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             </div>
                                                                             <div className="flex gap-4">
                                                                                 <div className="relative flex-1">
+                                                                                    <label className="block text-sm text-white/50 mb-1">Monthly Goal</label>
                                                                                     <MoneyInput
                                                                                         value={editingGoalAsString}
                                                                                         onChange={(value) => setEditingGoalAsString(value)}
