@@ -97,13 +97,19 @@ export default function CategoryDropdown({
 
         setCreatingCategory(true);
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
             const { data, error } = await supabase
                 .from('categories')
                 .insert({
                     name: newCategoryData.name.trim(),
                     group: newCategoryData.group,
                     goal: newCategoryData.goal ? parseFloat(newCategoryData.goal) : null,
-                    timeframe: { type: 'monthly' }
+                    goal_type: 'monthly', // Consistent with main app
+                    rollover_enabled: false, // Default for new categories
+                    timeframe: { type: 'monthly' }, // Consistent with main app default
+                    user_id: user.id
                 })
                 .select(`
                     *,
