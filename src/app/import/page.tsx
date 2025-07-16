@@ -12,12 +12,24 @@ import CategorizationChoice from './components/CategorizationChoice';
 import VendorCategorizer from './components/VendorCategorizer';
 import TransactionCategorizer from './components/TransactionCategorizer';
 import ImportSummary from './components/ImportSummary';
+import AccountMappingStep from './components/AccountMappingStep';
+import CategoryMappingStep from './components/CategoryMappingStep';
+import EnhancedImportSummary from './components/EnhancedImportSummary';
 import { importPresets } from '@/lib/import-presets';
 import { CSVParser } from '@/lib/csv-parser';
-import { ParsedTransaction, VendorCategorization } from '@/lib/import-presets/types';
+import { 
+    ParsedTransaction, 
+    VendorCategorization, 
+    SourceAccount, 
+    SourceCategoryGroup,
+    AccountMapping,
+    CategoryMapping,
+    EnhancedImportData
+} from '@/lib/import-presets/types';
 import { submitTransaction } from '@/app/utils/transactions';
 
-type ImportStep = 'upload' | 'choice' | 'vendor-categorize' | 'transaction-categorize' | 'summary';
+type ImportStep = 'upload' | 'choice' | 'vendor-categorize' | 'transaction-categorize' | 'summary' | 
+                  'account-mapping' | 'category-mapping' | 'enhanced-summary';
 
 interface ImportState {
     file: File | null;
@@ -27,6 +39,12 @@ interface ImportState {
     categorizationChoice: 'vendor' | 'transaction' | null;
     vendorCategorizations: VendorCategorization[];
     finalTransactions: ParsedTransaction[];
+    // Enhanced import data
+    isEnhancedService: boolean;
+    sourceAccounts: SourceAccount[];
+    sourceCategoryGroups: SourceCategoryGroup[];
+    accountMappings: AccountMapping[];
+    categoryMappings: CategoryMapping[];
 }
 
 export default function ImportPage() {
@@ -40,7 +58,13 @@ export default function ImportPage() {
         uniqueVendors: [],
         categorizationChoice: null,
         vendorCategorizations: [],
-        finalTransactions: []
+        finalTransactions: [],
+        // Enhanced import data
+        isEnhancedService: false,
+        sourceAccounts: [],
+        sourceCategoryGroups: [],
+        accountMappings: [],
+        categoryMappings: []
     });
 
     const handleFileUpload = useCallback(async (file: File, presetName: string) => {
@@ -53,18 +77,50 @@ export default function ImportPage() {
 
             const parser = new CSVParser(preset);
             const transactions = await parser.parseFile(file);
-            const uniqueVendors = CSVParser.extractUniqueVendors(transactions);
+            
+            console.log('Parsed transactions:', transactions.length);
+            console.log('Sample transaction:', transactions[0]);
+            
+            // Check if this is an enhanced service (like YNAB)
+            const isEnhanced = preset.isEnhancedService || false;
+            
+            console.log('Is enhanced service:', isEnhanced, 'Preset name:', preset.name);
+            
+            if (isEnhanced) {
+                // Extract enhanced data
+                const sourceAccounts = CSVParser.extractSourceAccounts(transactions);
+                const sourceCategoryGroups = CSVParser.extractSourceCategoryGroups(transactions);
+                
+                console.log('Source accounts:', sourceAccounts);
+                console.log('Source category groups:', sourceCategoryGroups);
+                
+                setImportState(prev => ({
+                    ...prev,
+                    file,
+                    presetName,
+                    parsedTransactions: transactions,
+                    isEnhancedService: true,
+                    sourceAccounts,
+                    sourceCategoryGroups
+                }));
 
-            setImportState(prev => ({
-                ...prev,
-                file,
-                presetName,
-                parsedTransactions: transactions,
-                uniqueVendors
-            }));
+                setCurrentStep('account-mapping');
+                toast.success(`Parsed ${transactions.length} transactions from YNAB export`);
+            } else {
+                // Standard flow
+                const uniqueVendors = CSVParser.extractUniqueVendors(transactions);
 
-            setCurrentStep('choice');
-            toast.success(`Parsed ${transactions.length} transactions from your CSV file`);
+                setImportState(prev => ({
+                    ...prev,
+                    file,
+                    presetName,
+                    parsedTransactions: transactions,
+                    uniqueVendors
+                }));
+
+                setCurrentStep('choice');
+                toast.success(`Parsed ${transactions.length} transactions from your CSV file`);
+            }
         } catch (error) {
             console.error('Error parsing CSV:', error);
             toast.error('Failed to parse CSV file. Please check the format and try again.');
@@ -143,6 +199,86 @@ export default function ImportPage() {
         }
     }, [importState.finalTransactions, router]);
 
+    // Enhanced import handlers
+    const handleAccountMappings = useCallback((mappings: AccountMapping[]) => {
+        setImportState(prev => ({
+            ...prev,
+            accountMappings: mappings
+        }));
+        setCurrentStep('category-mapping');
+    }, []);
+
+    const handleCategoryMappings = useCallback((mappings: CategoryMapping[]) => {
+        setImportState(prev => ({
+            ...prev,
+            categoryMappings: mappings
+        }));
+        setCurrentStep('enhanced-summary');
+    }, []);
+
+    const handleEnhancedImport = useCallback(async () => {
+        setLoading(true);
+        try {
+            // Apply account and category mappings to transactions and distribute to appropriate accounts
+            const transactionsWithMappings = importState.parsedTransactions.map(transaction => {
+                // Find the account mapping for this transaction's source account
+                const accountMapping = importState.accountMappings.find(
+                    mapping => mapping.sourceAccount === transaction.sourceAccount
+                );
+
+                // Find the category mapping for this transaction's category
+                const categoryMapping = importState.categoryMappings.find(
+                    mapping => mapping.sourceCategory === transaction.sourceCategory &&
+                               mapping.sourceCategoryGroup === transaction.sourceCategoryGroup
+                );
+
+                if (!accountMapping) {
+                    throw new Error(`No account mapping found for source account: ${transaction.sourceAccount}`);
+                }
+
+                return {
+                    ...transaction,
+                    account_id: accountMapping.targetAccountId,
+                    category_id: categoryMapping?.targetCategoryId || null
+                };
+            });
+
+            console.log(`Importing ${transactionsWithMappings.length} transactions across ${importState.accountMappings.length} accounts`);
+            
+            const importPromises = transactionsWithMappings.map(transaction => 
+                submitTransaction({
+                    amount: transaction.amount,
+                    type: transaction.type,
+                    date: transaction.date,
+                    vendor: transaction.vendor,
+                    account_id: transaction.account_id!,
+                    description: transaction.description,
+                    category_id: transaction.category_id
+                })
+            );
+
+            await Promise.all(importPromises);
+            
+            // Count transactions per account for success message
+            const accountCounts = transactionsWithMappings.reduce((acc, t) => {
+                acc[t.account_id!] = (acc[t.account_id!] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+            
+            const accountCount = Object.keys(accountCounts).length;
+            
+            toast.success(`Successfully imported ${importState.parsedTransactions.length} transactions across ${accountCount} accounts!`);
+            
+            // Navigate to transactions page
+            router.push('/budget/transactions');
+        } catch (error) {
+            console.error('Error importing transactions:', error);
+            toast.error('Failed to import some transactions. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }, [importState.parsedTransactions, importState.accountMappings, importState.categoryMappings, router]);
+
     const handleReset = useCallback(() => {
         setImportState({
             file: null,
@@ -151,7 +287,13 @@ export default function ImportPage() {
             uniqueVendors: [],
             categorizationChoice: null,
             vendorCategorizations: [],
-            finalTransactions: []
+            finalTransactions: [],
+            // Enhanced import data
+            isEnhancedService: false,
+            sourceAccounts: [],
+            sourceCategoryGroups: [],
+            accountMappings: [],
+            categoryMappings: []
         });
         setCurrentStep('upload');
     }, []);
@@ -162,6 +304,36 @@ export default function ImportPage() {
                 return (
                     <FileUploadStep
                         onFileUpload={handleFileUpload}
+                        loading={loading}
+                    />
+                );
+            
+            case 'account-mapping':
+                return (
+                    <AccountMappingStep
+                        sourceAccounts={importState.sourceAccounts}
+                        onComplete={handleAccountMappings}
+                        onBack={handleReset}
+                    />
+                );
+            
+            case 'category-mapping':
+                return (
+                    <CategoryMappingStep
+                        sourceCategoryGroups={importState.sourceCategoryGroups}
+                        onComplete={handleCategoryMappings}
+                        onBack={() => setCurrentStep('account-mapping')}
+                    />
+                );
+            
+            case 'enhanced-summary':
+                return (
+                    <EnhancedImportSummary
+                        transactions={importState.parsedTransactions}
+                        accountMappings={importState.accountMappings}
+                        categoryMappings={importState.categoryMappings}
+                        onImport={handleEnhancedImport}
+                        onBack={() => setCurrentStep('category-mapping')}
                         loading={loading}
                     />
                 );
@@ -243,63 +415,125 @@ export default function ImportPage() {
 
                         {/* Progress Indicator */}
                         <div className="mb-8">
-                            <div className="flex items-center gap-4 text-sm">
-                                <div className={`flex items-center gap-2 ${
-                                    currentStep === 'upload' ? 'text-green' : 
-                                    ['choice', 'vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
-                                }`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        currentStep === 'upload' ? 'bg-green text-black' : 
-                                        ['choice', 'vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                            {importState.isEnhancedService ? (
+                                // Enhanced service progress
+                                <div className="flex items-center gap-2 text-sm overflow-x-auto">
+                                    <div className={`flex items-center gap-2 whitespace-nowrap ${
+                                        currentStep === 'upload' ? 'text-green' : 
+                                        ['account-mapping', 'group-mapping', 'category-mapping', 'enhanced-summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
                                     }`}>
-                                        1
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                            currentStep === 'upload' ? 'bg-green text-black' : 
+                                            ['account-mapping', 'group-mapping', 'category-mapping', 'enhanced-summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            1
+                                        </div>
+                                        <span className="text-xs">Upload</span>
                                     </div>
-                                    <span>Upload</span>
-                                </div>
-                                
-                                <div className="flex-1 h-px bg-white/20"></div>
-                                
-                                <div className={`flex items-center gap-2 ${
-                                    currentStep === 'choice' ? 'text-green' : 
-                                    ['vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
-                                }`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        currentStep === 'choice' ? 'bg-green text-black' : 
-                                        ['vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                                    
+                                    <div className="flex-1 h-px bg-white/20 min-w-4"></div>
+                                    
+                                    <div className={`flex items-center gap-2 whitespace-nowrap ${
+                                        currentStep === 'account-mapping' ? 'text-green' : 
+                                        ['category-mapping', 'enhanced-summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
                                     }`}>
-                                        2
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                            currentStep === 'account-mapping' ? 'bg-green text-black' : 
+                                            ['category-mapping', 'enhanced-summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            2
+                                        </div>
+                                        <span className="text-xs">Accounts</span>
                                     </div>
-                                    <span>Choose Method</span>
-                                </div>
-                                
-                                <div className="flex-1 h-px bg-white/20"></div>
-                                
-                                <div className={`flex items-center gap-2 ${
-                                    ['vendor-categorize', 'transaction-categorize'].includes(currentStep) ? 'text-green' : 
-                                    currentStep === 'summary' ? 'text-green' : 'text-white/40'
-                                }`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        ['vendor-categorize', 'transaction-categorize'].includes(currentStep) ? 'bg-green text-black' : 
-                                        currentStep === 'summary' ? 'bg-green text-black' : 'bg-white/10'
+                                    
+                                    <div className="flex-1 h-px bg-white/20 min-w-4"></div>
+                                    
+                                    <div className={`flex items-center gap-2 whitespace-nowrap ${
+                                        currentStep === 'category-mapping' ? 'text-green' : 
+                                        currentStep === 'enhanced-summary' ? 'text-green' : 'text-white/40'
                                     }`}>
-                                        3
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                            currentStep === 'category-mapping' ? 'bg-green text-black' : 
+                                            currentStep === 'enhanced-summary' ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            3
+                                        </div>
+                                        <span className="text-xs">Categories</span>
                                     </div>
-                                    <span>Categorize</span>
-                                </div>
-                                
-                                <div className="flex-1 h-px bg-white/20"></div>
-                                
-                                <div className={`flex items-center gap-2 ${
-                                    currentStep === 'summary' ? 'text-green' : 'text-white/40'
-                                }`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        currentStep === 'summary' ? 'bg-green text-black' : 'bg-white/10'
+                                    
+                                    <div className="flex-1 h-px bg-white/20 min-w-4"></div>
+                                    
+                                    <div className={`flex items-center gap-2 whitespace-nowrap ${
+                                        currentStep === 'enhanced-summary' ? 'text-green' : 'text-white/40'
                                     }`}>
-                                        4
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                            currentStep === 'enhanced-summary' ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            4
+                                        </div>
+                                        <span className="text-xs">Import</span>
                                     </div>
-                                    <span>Import</span>
                                 </div>
-                            </div>
+                            ) : (
+                                // Standard import progress
+                                <div className="flex items-center gap-4 text-sm">
+                                    <div className={`flex items-center gap-2 ${
+                                        currentStep === 'upload' ? 'text-green' : 
+                                        ['choice', 'vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
+                                    }`}>
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            currentStep === 'upload' ? 'bg-green text-black' : 
+                                            ['choice', 'vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            1
+                                        </div>
+                                        <span>Upload</span>
+                                    </div>
+                                    
+                                    <div className="flex-1 h-px bg-white/20"></div>
+                                    
+                                    <div className={`flex items-center gap-2 ${
+                                        currentStep === 'choice' ? 'text-green' : 
+                                        ['vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'text-green' : 'text-white/40'
+                                    }`}>
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            currentStep === 'choice' ? 'bg-green text-black' : 
+                                            ['vendor-categorize', 'transaction-categorize', 'summary'].includes(currentStep) ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            2
+                                        </div>
+                                        <span>Choose Method</span>
+                                    </div>
+                                    
+                                    <div className="flex-1 h-px bg-white/20"></div>
+                                    
+                                    <div className={`flex items-center gap-2 ${
+                                        ['vendor-categorize', 'transaction-categorize'].includes(currentStep) ? 'text-green' : 
+                                        currentStep === 'summary' ? 'text-green' : 'text-white/40'
+                                    }`}>
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            ['vendor-categorize', 'transaction-categorize'].includes(currentStep) ? 'bg-green text-black' : 
+                                            currentStep === 'summary' ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            3
+                                        </div>
+                                        <span>Categorize</span>
+                                    </div>
+                                    
+                                    <div className="flex-1 h-px bg-white/20"></div>
+                                    
+                                    <div className={`flex items-center gap-2 ${
+                                        currentStep === 'summary' ? 'text-green' : 'text-white/40'
+                                    }`}>
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            currentStep === 'summary' ? 'bg-green text-black' : 'bg-white/10'
+                                        }`}>
+                                            4
+                                        </div>
+                                        <span>Import</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Main Content */}
