@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
+import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group } from '@/types/supabase';
 type ManageBudgetModalProps = {
     isOpen: boolean;
@@ -403,14 +404,16 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                             </div>
                                             <div className="flex  justify-between p-4 bg-white/[.03] rounded-lg flex-col">
                                                 <p className="block font-medium text-white mb-2">Currency</p>
-                                                <select
-                                                    className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm disabled:opacity-50"
+                                                <Dropdown
+                                                    value="GBP"
+                                                    onChange={() => {}}
+                                                    options={[
+                                                        { value: "GBP", label: "£ GBP (Coming Soon)", disabled: true },
+                                                        { value: "USD", label: "$ USD (Coming Soon)", disabled: true },
+                                                        { value: "EUR", label: "€ EUR (Coming Soon)", disabled: true }
+                                                    ]}
                                                     disabled
-                                                >
-                                                    <option value="GBP">£ GBP (Coming Soon)</option>
-                                                    <option value="USD">$ USD (Coming Soon)</option>
-                                                    <option value="EUR">€ EUR (Coming Soon)</option>
-                                                </select>
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -633,16 +636,16 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                         
                                                                                     />
                                                                                 </div>
-                                                                                <select
+                                                                                <Dropdown
                                                                                     value={editingCategory.group || ''}
-                                                                                    onChange={(e) => setEditingCategory({...editingCategory, group: e.target.value})}
-                                                                                    className="w-1/3 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
+                                                                                    onChange={(value) => setEditingCategory({...editingCategory, group: value})}
+                                                                                    options={groups.map((g): DropdownOption => ({
+                                                                                        value: g.id,
+                                                                                        label: g.name,
+                                                                                    }))}
                                                                                     required
-                                                                                >
-                                                                                    {groups.map((g) => (
-                                                                                        <option key={g.id} value={g.id}>{g.name}</option>
-                                                                                    ))}
-                                                                                </select>
+                                                                                    className="w-1/3"
+                                                                                />
                                                                             </div>
                                                                             <div className="flex gap-4">
                                                                                 <div className="relative flex-1">

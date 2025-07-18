@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useSupabaseClient } from '../hooks/useSupabaseClient';
 import MoneyInput from "./money-input";
 import ConfirmationModal from "./confirmation-modal";
+import Dropdown, { DropdownOption } from './dropdown';
 
 type Account = {
     id: string;
@@ -363,18 +364,19 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 <label className="block text-sm font-medium text-white/80 mb-2">
                                     Account Type
                                 </label>
-                                <select
+                                <Dropdown
                                     value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                    className="w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-green focus:outline-none"
-                                >
-                                    <option value="checking">Current</option>
-                                    <option value="savings">Savings</option>
-                                    <option value="credit">Credit Card</option>
-                                    <option value="investment">Investment</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                    onChange={(value) => setFormData({ ...formData, type: value })}
+                                    options={[
+                                        { value: "checking", label: "Current" },
+                                        { value: "savings", label: "Savings" },
+                                        { value: "credit", label: "Credit Card" },
+                                        { value: "investment", label: "Investment" },
+                                        { value: "cash", label: "Cash" },
+                                        { value: "other", label: "Other" }
+                                    ]}
+                                    icon="/bank.svg"
+                                />
                             </div>
 
                             {editingAccount !== null && (

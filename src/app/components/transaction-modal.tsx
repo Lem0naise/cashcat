@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database } from '@/types/supabase';
 import type { Category } from '@/types/supabase';
 import MoneyInput from './money-input';
+import Dropdown, { DropdownOption } from './dropdown';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -503,27 +504,19 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                             <span className="text-xs text-white/50 px-1 py-1">Loading...</span>
                                         )}
                                     </div>
-                                    <select
+                                    <Dropdown
                                         required={type === 'payment'}
                                         value={categoryId}
-                                        onChange={(e) => setCategoryId(e.target.value)}
-                                        className={`w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors
-                                                    ${categoryRemaining && categoryRemaining < 0 
-                                                        ? 'text-reddy'
-                                                        : ''
-                                                    }
-                                            `}
+                                        onChange={setCategoryId}
+                                        options={categories.map((category): DropdownOption => ({
+                                            value: category.id,
+                                            label: category.name,
+                                        }))}
+                                        placeholder={loadingCategories ? 'Loading categories...' : 'Select a category'}
                                         disabled={loadingCategories}
-                                    >
-                                        <option value="" disabled>
-                                            {loadingCategories ? 'Loading categories...' : 'Select a category'}
-                                        </option>
-                                        {categories.map((category) => (
-                                            <option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        loading={loadingCategories}
+                                        className={categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : ''}
+                                    />
                                 </div>
                             )}
 
@@ -542,22 +535,20 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
                             <div>
                                 <label className="block text-sm text-white/50 mb-0.5">Account</label>
-                                <select
+                                <Dropdown
                                     required
                                     value={accountId}
-                                    onChange={(e) => setAccountId(e.target.value)}
-                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                    onChange={setAccountId}
+                                    options={accounts.map((account): DropdownOption => ({
+                                        value: account.id,
+                                        label: account.name,
+                                        subtitle: account.type,
+                                    }))}
+                                    placeholder={loadingAccounts ? 'Loading accounts...' : 'Select an account'}
                                     disabled={loadingAccounts}
-                                >
-                                    <option value="" disabled>
-                                        {loadingAccounts ? 'Loading accounts...' : 'Select an account'}
-                                    </option>
-                                    {accounts.map((account) => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name} ({account.type})
-                                        </option>
-                                    ))}
-                                </select>
+                                    loading={loadingAccounts}
+                                    icon="/bank.svg"
+                                />
                             </div>
 
                             <div>
