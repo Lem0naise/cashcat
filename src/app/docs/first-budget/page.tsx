@@ -127,6 +127,46 @@ export default function FirstBudget() {
                 </ul>
             </div>
 
+            {/* Future planning */}
+            <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
+                <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-blue">Plan for Future Months</h2>
+                <p className="text-white/70 text-sm md:text-base mb-4">
+                    <strong>We highly recommend budgeting for next month and beyond.</strong> Future planning is one of the most powerful ways to take control of your finances and reduce stress.
+                </p>
+                <div className="space-y-3 md:space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-blue mb-2">Why Budget for Future Months?</h4>
+                        <ul className="space-y-2 text-sm md:text-base text-white/70">
+                            <li className="flex items-start gap-2 md:gap-3">
+                                <div className="w-2 h-2 bg-blue rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                                <span><strong>Reduce financial stress:</strong> Know exactly where your money will go before the month starts</span>
+                            </li>
+                            <li className="flex items-start gap-2 md:gap-3">
+                                <div className="w-2 h-2 bg-blue rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                                <span><strong>Plan for irregular expenses:</strong> Christmas gifts, car maintenance, annual subscriptions</span>
+                            </li>
+                            <li className="flex items-start gap-2 md:gap-3">
+                                <div className="w-2 h-2 bg-blue rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                                <span><strong>Make better financial decisions:</strong> See the bigger picture of your financial goals</span>
+                            </li>
+                            <li className="flex items-start gap-2 md:gap-3">
+                                <div className="w-2 h-2 bg-blue rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                                <span><strong>Build savings momentum:</strong> Plan exactly how much you'll save each month</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-blue mb-2">How to Plan Ahead</h4>
+                        <p className="text-sm md:text-base text-white/70 mb-2">
+                            Once you complete your first month's budget, immediately start planning next month. Look at your calendar and identify any special expenses, then adjust your categories accordingly.
+                        </p>
+                        <p className="text-sm md:text-base text-white/70">
+                            <strong>Pro tip:</strong> Set aside time at the end of each month to plan the next month's budget. This 15-minute habit will transform your financial life.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Next steps */}
             <div className="text-center mt-6 md:mt-8">
                 <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Next Steps</h2>

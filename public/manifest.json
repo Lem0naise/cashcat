@@ -7,43 +7,43 @@
   "theme_color": "#0a0a0a",
   "icons": [
     {
-      "src": "/favicons/cashcatpwa72.png",
+      "src": "/favicons/ccpwa72.png",
       "type": "image/png",
       "sizes": "72x72",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa96.png",
+      "src": "/favicons/ccpwa96.png",
       "type": "image/png",
       "sizes": "96x96",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa144.png",
+      "src": "/favicons/ccpwa144.png",
       "type": "image/png",
       "sizes": "144x144",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa192.png",
+      "src": "/favicons/ccpwa192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa256.png",
+      "src": "/favicons/ccpwa256.png",
       "type": "image/png",
       "sizes": "256x256",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa384.png",
+      "src": "/favicons/ccpwa384.png",
       "type": "image/png",
       "sizes": "384x384",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/cashcatpwa512.png",
+      "src": "/favicons/ccpwa512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
