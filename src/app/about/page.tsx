@@ -77,8 +77,8 @@ export default function About() {
  
 
                         <div className="mt-6 p-6 rounded-xl bg-white/[.05] text-center">
-                            <h3 className="text-lg sm:text-xl font-semibold mb-3">Our Story</h3>
-                            <p className="text-white/70 leading-relaxed mb-4">
+                            <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-green">Our Story</h1>
+                            <p className="text-white/70 leading-relaxed mb-4 text-center">
                                 Josh and Indigo are students at the University of Southampton, where we met and discovered our shared interest for building tools 
                                 that solve real problems. CashCat started as a personal project to create the budgeting app we wished existed - 
                                 one that truly puts you in control of your money.
@@ -86,12 +86,9 @@ export default function About() {
                             <p className="text-white/60 text-sm">
                                 We believe that everyone deserves to feel confident about their finances, and CashCat is our contribution to making that happen.
                             </p>
-                        </div>
 
-                        {/* About CashCat Section */}
-                        <div className="p-6 rounded-xl bg-white/[.05] text-center">
-                            <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-green">About CashCat</h1>
-                            <p className="text-white/80 mb-4 leading-relaxed">
+                            <h1 className="mt-8 text-2xl sm:text-3xl font-bold mb-4 text-green">About CashCat</h1>
+                            <p className="text-white/80 mb-4 leading-relaxed text-center">
                                 CashCat is a zero-based budgeting app that gives you complete control over your finances. 
                                 Built on the principle that <strong className="text-green">Income - Assigned Money = 0</strong>, 
                                 CashCat ensures every penny has a purpose before you spend it.
@@ -129,6 +126,8 @@ export default function About() {
                                 </div>
                             </div>
                         </div>
+
+                        
                     </div>
 
                     {/* Action Buttons */}
@@ -141,7 +140,7 @@ export default function About() {
                         </Link>
                         <Link
                             href="/budget"
-                            className="px-6 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-base"
+                            className="text-center px-6 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-base"
                         >
                             Back to Budget
                         </Link>
