@@ -202,7 +202,7 @@ export default function Landing() {
 
                 {/* What is Zero-Based Budgeting */}
                 <div id='intro' className="md:py-4 max-w-6xl mx-auto">
-                    <div className="mb-8 p-6 max-w-4xl mx-auto glass-card-blue">
+                    <div className="p-6 max-w-4xl mx-auto glass-card-blue">
                         <h3 className="font-bold text-2xl md:text-4xl text-center text-green mb-4">What is Zero-Based Budgeting?</h3>
                         <p className="text-lg md:text-xl text-white/80 text-center mb-4">
                             <strong className="font-bold text-green">Income - Assigned Money = 0</strong>
@@ -216,7 +216,7 @@ export default function Landing() {
 
 
                 {/** discord button/ */}
-                <div className="text-center mt-8">
+                <div className="text-center mt-4 mb-8">
                     <Link
                         href="https://discord.gg/C9mYnEdAQA"
                         target="_blank"
