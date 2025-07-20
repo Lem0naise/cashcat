@@ -280,9 +280,10 @@ export default function Account() {
                                     You are on CashCat <span className="text-green font-medium">0.7.4</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
-                                    <li>A brand new documentation knowledgebase</li>
+                                    <li>A brand new Discord server</li>
+                                    <li>A new documentation knowledgebase</li>
                                     <li>Updates to the statistics screen</li>
-                                    <li>Support for multiple bank accounts!</li>
+                                    <li>Support for multiple bank accounts</li>
                                     <li>A large collection of UI adjustments</li>
                                     <li>Routine bug fixes as always</li>
                                 </ul>
