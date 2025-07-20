@@ -1,5 +1,6 @@
 
 import Link from 'next/link';
+import DocsSearch from '../components/docs-search';
 
 export const metadata = {
   title: 'Documentation - CashCat',
@@ -10,6 +11,10 @@ export default function DocsOverview() {
     return (
         <div className="fade-in">
             <div className="">
+                {/* Search Bar */}
+                <div className="mb-8">
+                    <DocsSearch className="max-w-lg" />
+                </div>
 
                 {/* Popular guides */}
                 <div className="mb-12">

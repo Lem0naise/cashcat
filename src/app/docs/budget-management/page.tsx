@@ -86,9 +86,76 @@ export default function BudgetManagement() {
                             <span className="text-white/70">Wants (Entertainment, Dining Out)</span>
                             <span className="text-blue font-medium">≤30%</span>
                         </div>
-                        <div className="flex justify-between bg-purple/10 p-2 rounded">
+                        <div className="flex justify-between bg-reddy/10 p-2 rounded">
                             <span className="text-white/70">Savings & Debt</span>
-                            <span className="text-purple font-medium">≥20%</span>
+                            <span className="text-reddy font-medium">≥20%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Future budgeting */}
+            <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
+                <h2 className="text-xl md:text-2xl font-bold mb-4">Future Month Planning</h2>
+                
+                <div className="p-4 md:p-6 glass-card-blue rounded-lg">
+                    <h3 className="text-lg md:text-xl font-semibold text-blue mb-2 md:mb-3">Why Plan Future Months</h3>
+                    <p className="text-white/70 text-sm md:text-base mb-3">
+                        <strong>Future budgeting is highly recommended</strong> and is one of the most effective ways to gain financial control. 
+                        Planning 1-3 months ahead helps you anticipate expenses, reduce stress, and make better financial decisions.
+                    </p>
+                    <div className="bg-blue/10 p-3 rounded-lg mt-3">
+                        <p className="text-blue text-sm font-medium">Best practice: Plan next month's budget during the last week of the current month</p>
+                    </div>
+                </div>
+
+                <div className="p-4 md:p-6 glass-card rounded-lg">
+                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Multi-Month Planning Strategy</h3>
+                    <p className="text-white/70 text-sm md:text-base mb-3">
+                        Look at your calendar 2-3 months ahead and identify upcoming expenses. This allows you to save gradually 
+                        rather than scrambling when large expenses arrive.
+                    </p>
+                    <ul className="space-y-2 text-sm md:text-base text-white/70 mt-3">
+                        <li className="flex items-start gap-2 md:gap-3">
+                            <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                            <span><strong>Seasonal expenses:</strong> Holiday gifts, summer vacation, back-to-school costs</span>
+                        </li>
+                        <li className="flex items-start gap-2 md:gap-3">
+                            <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                            <span><strong>Annual bills:</strong> Insurance premiums, property taxes, subscription renewals</span>
+                        </li>
+                        <li className="flex items-start gap-2 md:gap-3">
+                            <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                            <span><strong>Irregular income:</strong> Plan for months with lower or variable income</span>
+                        </li>
+                        <li className="flex items-start gap-2 md:gap-3">
+                            <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
+                            <span><strong>Life events:</strong> Birthdays, anniversaries, planned home improvements</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div className="p-4 md:p-6 glass-card rounded-lg">
+                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Monthly Planning Routine</h3>
+                    <p className="text-white/70 text-sm md:text-base mb-3">
+                        Establish a routine for planning future months. This 15-20 minute monthly habit will transform your financial confidence.
+                    </p>
+                    <div className="space-y-2 text-sm md:text-base text-white/70">
+                        <div className="flex items-start gap-3">
+                            <span className="bg-green text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                            <span>Review current month's spending patterns and adjust next month accordingly</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <span className="bg-green text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                            <span>Check your calendar for upcoming events and special expenses</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <span className="bg-green text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                            <span>Adjust category goals based on known changes in income or expenses</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <span className="bg-green text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
+                            <span>Set savings targets for larger future goals or sinking funds</span>
                         </div>
                     </div>
                 </div>
