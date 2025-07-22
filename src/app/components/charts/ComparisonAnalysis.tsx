@@ -10,6 +10,7 @@ interface ComparisonAnalysisProps {
   shouldShowDistanceFromGoal: boolean;
   onClearSelection: () => void;
   isHovering?: boolean; // Add prop to indicate if currently showing hover data
+  hasDragSelection?: boolean; // Add prop to indicate if user has made an actual drag selection
 }
 
 export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(({
@@ -17,13 +18,16 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
   defaultComparisonData,
   shouldShowDistanceFromGoal,
   onClearSelection,
-  isHovering = false
+  isHovering = false,
+  hasDragSelection = false
 }) => {
   const currentData = comparisonData || defaultComparisonData;
   
   if (!currentData) return null;
 
-  const isCustomSelection = comparisonData && comparisonData !== defaultComparisonData;
+  // Only show as custom selection if user actually made a drag selection
+  // Don't treat hover data as a custom selection
+  const isCustomSelection = hasDragSelection && !isHovering;
   const isSinglePoint = currentData.timeSpan === 0; // Single point data has timeSpan of 0
 
   return (

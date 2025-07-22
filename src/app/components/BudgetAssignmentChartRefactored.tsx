@@ -524,6 +524,7 @@ export default function BudgetAssignmentChart({
         shouldShowDistanceFromGoal={shouldShowDistanceFromGoal}
         onClearSelection={clearSelection}
         isHovering={hoverDataIndex !== null && !hasDragSelection}
+        hasDragSelection={hasDragSelection}
       />
 
       {/* Show helpful message when no data */}
