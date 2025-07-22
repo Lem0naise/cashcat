@@ -93,25 +93,57 @@ export default function PieChart({
   
   // Calculate if we should show labels based on available space
   const shouldShowLabels = useMemo(() => {
+    // Use percentage-based thresholds relative to viewport
+    const viewportWidth = window.innerWidth || 1024;
+    const viewportHeight = window.innerHeight || 768;
+    
     // Minimum dimensions needed to show labels comfortably
-    const minWidthForLabels = 500;
-    const minHeightForLabels = 450;
+    // Scale based on viewport size for better responsiveness
+    const minWidthForLabels = Math.max(400, viewportWidth * 0.4);
+    const minHeightForLabels = Math.max(350, viewportHeight * 0.45);
     
     return containerDimensions.width >= minWidthForLabels && containerDimensions.height >= minHeightForLabels;
   }, [containerDimensions]);
   
-  // Calculate minimum center hole size (200px diameter minimum)
+  // Calculate cutout percentage based on container size and available space
   const calculateCutout = useMemo(() => {
-    const minCenterDiameter = 200;
     const containerSize = Math.min(containerDimensions.width, containerDimensions.height);
     
     if (containerSize === 0) return '45%'; // Default while loading
     
-    // Account for padding and label space
-    const availableSpace = shouldShowLabels ? containerSize - 140 : containerSize - 80;
-    const cutoutPercentage = Math.min(65, Math.max(20, (minCenterDiameter / availableSpace) * 100));
+    // Base cutout percentages for different scenarios
+    let baseCutout: number;
     
-    return `${cutoutPercentage}%`;
+    if (shouldShowLabels) {
+      // When labels are showing, use a larger cutout to keep segments from being too thick
+      if (containerSize >= 700) {
+        baseCutout = 60; // Large screens - bigger center hole
+      } else if (containerSize >= 500) {
+        baseCutout = 55; // Medium screens
+      } else {
+        baseCutout = 50; // Smaller screens with labels
+      }
+    } else {
+      // When labels are hidden, we can use a smaller cutout since we have more space
+      if (containerSize >= 400) {
+        baseCutout = 55; // Medium to large screens without labels
+      } else if (containerSize >= 300) {
+        baseCutout = 50; // Small screens
+      } else {
+        baseCutout = 45; // Very small screens - thin segments are ok here
+      }
+    }
+    
+    // Ensure the center hole is always readable (minimum 120px diameter)
+    const minCenterDiameter = 120;
+    const availableSpace = shouldShowLabels ? containerSize - 140 : containerSize - 80;
+    const minCutoutPercentage = (minCenterDiameter / availableSpace) * 100;
+    
+    // Use the larger of our base cutout or minimum required cutout
+    const finalCutout = Math.max(baseCutout, minCutoutPercentage);
+    
+    // Cap at 70% to ensure segments are always visible
+    return `${Math.min(70, finalCutout)}%`;
   }, [containerDimensions.width, containerDimensions.height, shouldShowLabels]);
   
   // Determine chart mode based on filters
@@ -285,7 +317,9 @@ export default function PieChart({
       mode: 'nearest' as const,
     },
     layout: {
-      padding: shouldShowLabels ? (matchHeight ? 100 : 70) : 20, // Reduce padding when labels are hidden
+      padding: shouldShowLabels ? 
+        Math.max(20, Math.min(100, containerDimensions.width * 0.15)) : // Dynamic padding based on container width
+        Math.max(10, containerDimensions.width * 0.05), // Minimal padding when no labels
     },
     plugins: {
       legend: {
@@ -303,7 +337,7 @@ export default function PieChart({
         color: '#fff',
         font: {
           weight: 'bold' as const,
-          size: shouldShowLabels ? (matchHeight ? 14 : 14) : 0, // Hide font when labels are disabled
+          size: shouldShowLabels ? Math.max(12, Math.min(16, containerDimensions.width * 0.025)) : 0, // Responsive font size
         },
         formatter: function(value: number, context: any) {
           if (!shouldShowLabels) return '';
@@ -312,7 +346,7 @@ export default function PieChart({
         },
         anchor: 'end' as const,
         align: 'end' as const,
-        offset: shouldShowLabels ? (matchHeight ? 12 : 8) : 0, // No offset when labels are hidden
+        offset: shouldShowLabels ? Math.max(8, Math.min(15, containerDimensions.width * 0.02)) : 0, // Responsive offset
         padding: 4,
         textStrokeColor: 'rgba(0,0,0,0.8)',
         textStrokeWidth: 1,
