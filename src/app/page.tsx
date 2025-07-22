@@ -58,24 +58,34 @@ export default function Landing() {
                         <h1 className="text-3xl md:text-6xl font-bold mb-6">
                             <Logo></Logo>
                         </h1>
-                        <h2 className="text-2xl md:text-4xl font-bold mb-4 text-white">
+                        <h2 className="text-2xl md:text-4xl font-bold mb-4 text-white animate-fade-in">
                             Say Goodbye to Guesswork
                         </h2>
-                        <p className="text-md md:text-xl text-white/80 mb-2 md:mb-6 max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-md md:text-xl text-white/80 mb-2 md:mb-4 max-w-2xl mx-auto leading-relaxed animate-fade-in-delay">
                             The <span className="text-green font-semibold">free</span> budgeting app that stops you worrying about money, no matter your situation.
-                            
                         </p>
+                        
+                        {/* Privacy highlight */}
+                        <div className="mb-4 animate-fade-in-delay-2">
+                            <div className="inline-flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20 hover-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
+                                    <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
+                                    <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <span className="text-green font-medium text-sm">Your data stays private - we don't sell or track you</span>
+                            </div>
+                        </div>
                         
                         {/* Key highlights */}
                         <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-8 text-xs md:text-base">
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20 hover-lift">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
                                     <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
                                     <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 <span className="text-green font-medium">Budget for Free</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20 hover-lift">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
                                     <path d="M3 7V17C3 18.1 3.9 19 5 19H19C20.1 19 21 18.1 21 17V7C21 5.9 20.1 5 19 5H5C3.9 5 3 5.9 3 7Z" stroke="currentColor" strokeWidth="2"/>
                                     <path d="M16 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -83,7 +93,7 @@ export default function Landing() {
                                 </svg>
                                 <span className="text-green font-medium">Multiple Bank Accounts</span>
                             </div>
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20 hover-lift">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
                                     <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
@@ -94,13 +104,13 @@ export default function Landing() {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                             <Link
                                 href="/signup"
-                                className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
+                                className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg button-glow hover-lift"
                             >
                                 Start Budgeting Free
                             </Link>
                             <Link
                                 href="#features"
-                                className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20"
+                                className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20 hover-lift"
                             >
                                 See How It Works
                             </Link>
@@ -111,11 +121,11 @@ export default function Landing() {
                 {/* Key Features Section */}
                 <div id='features' className="py-16 max-w-6xl mx-auto leading-4.5 md:leading-6">
                     <h3 className="text-3xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
-                        Why CashCat?
+                        Why People Choose CashCat
                     </h3>
                     
                     <div className="grid md:grid-cols-3 md:gap-8 md:mb-16">
-                        <div className="md:text-center p-6 glass-card-blue">
+                        <div className="md:text-center p-6 glass-card-blue hover-lift feature-card">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -126,12 +136,12 @@ export default function Landing() {
                                 <h4 className="text-xl font-semibold mb-3 text-green">Budget For Free</h4>
                             </div>
                             <p className="text-white/70 ">
-                                No hidden fees, no free trial. CashCat is built to be accessible to everyone who wants better financial control.
+                                No hidden fees, no hidden agendas. Built by people who don't think budgeting apps should bankrupt you.
                                 <span className="text-xs md:text-sm block mt-1 text-white/60">*Core budgeting features always free, small fee may apply to optional bank syncing</span>
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6 glass-card-blue">
+                        <div className="md:text-center p-6 glass-card-blue hover-lift feature-card">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mb-4 mx-auto">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -147,7 +157,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6 glass-card-blue">
+                        <div className="md:text-center p-6 glass-card-blue hover-lift feature-card">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -168,7 +178,7 @@ export default function Landing() {
 
                     <div className="grid md:grid-cols-2 md:gap-8 md:mb-16">
                         
-                        <div className="md:text-center p-6 glass-card-blue">
+                        <div className="md:text-center p-6 glass-card-blue hover-lift feature-card">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -183,7 +193,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="md:text-center p-6 glass-card-blue">
+                        <div className="md:text-center p-6 glass-card-blue hover-lift feature-card">
                             <div className="flex text-center justify-center items-center md:block">
                                 <div className="w-16 h-16 bg-green/20 rounded-full hidden md:flex items-center justify-center mx-auto mb-4">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -199,10 +209,53 @@ export default function Landing() {
                     </div>
                 </div>
 
+                {/* Privacy Section */}
+                <div className="py-8 max-w-6xl mx-auto mb-8">
+                    <div className="p-6 max-w-4xl mx-auto glass-card-blue privacy-highlight hover-lift">
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
+                                <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <h3 className="font-bold text-2xl md:text-3xl text-green">Your Privacy Matters</h3>
+                        </div>
+                        <p className="text-lg text-white/80 text-center mb-4">
+                            We're not like those big finance companies. Your financial data is yours.
+                        </p>
+                        <div className="grid md:grid-cols-3 gap-4 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green">
+                                        <path d="M18 8H16C16 5.8 14.2 4 12 4S8 5.8 8 8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9C8.9 6.3 10.3 4.9 12 4.9S15.1 6.3 15.1 8Z" fill="currentColor"/>
+                                    </svg>
+                                </div> 
+                                <p className="text-white/70 text-sm font-medium">No Data Selling</p>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                                        <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" strokeWidth="2"/>
+                                    </svg>
+                                </div>
+                                <p className="text-white/70 text-sm font-medium">No Tracking</p>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green">
+                                        <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <path d="M21 12C21 16.9 17 21 12 21S3 16.9 3 12S7 3 12 3S21 7.1 21 12Z" stroke="currentColor" strokeWidth="2"/>
+                                    </svg>
+                                </div>
+                                <p className="text-white/70 text-sm font-medium">Your Control</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* What is Zero-Based Budgeting */}
                 <div id='intro' className="md:py-4 max-w-6xl mx-auto">
-                    <div className="p-6 max-w-4xl mx-auto glass-card-blue">
+                    <div className="p-6 max-w-4xl mx-auto glass-card-blue hover-lift">
                         <h3 className="font-bold text-2xl md:text-4xl text-center text-green mb-4">What is Zero-Based Budgeting?</h3>
                         <p className="text-lg md:text-xl text-white/80 text-center mb-4">
                             <strong className="font-bold text-green">Income - Assigned Money = 0</strong>
@@ -214,14 +267,13 @@ export default function Landing() {
                     </div>
                 </div>
 
-
                 {/** discord button/ */}
                 <div className="text-center mt-4 mb-8">
                     <Link
                         href="https://discord.gg/C9mYnEdAQA"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-3 px-6 py-3 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all"
+                        className="inline-flex items-center gap-3 px-6 py-3 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all hover-lift discord-glow"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
@@ -230,27 +282,25 @@ export default function Landing() {
                     </Link>
                 </div>
 
-
                 {/* Common Questions */}
-                <div id="common-questions" className="py-16 bg-white/[.02] rounded-2xl max-w-6xl mx-auto mb-16">
+                <div id="common-questions" className="py-16 bg-white/[.02] rounded-2xl max-w-6xl mx-auto mb-16 hover-lift">
                     <div className="md:px-8">
                         <h3 className="text-2xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
-                            Common Questions
+                            Frequently Asked Questions
                         </h3>
                         <div className="space-y-6">
                         
-                            <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "I've tried budgeting before and failed. How is this different?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Traditional budgets fail because they're based on estimates. Zero-based budgeting uses the money in your accounts right now. 
+                                    We get it - we've been there too! Traditional budgets fail because they're based on estimates. Zero-based budgeting uses the money in your accounts right now. 
                                     You're not guessing what you'll spend - you're deciding what each penny will do before you spend it.
                                 </p>
                             </div>
 
-
-                             <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "What if I don't have much money to budget?"
                                 </h4>
@@ -259,8 +309,7 @@ export default function Landing() {
                                 </p>
                             </div>
                             
-                            
-                            <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "This sounds complicated. How much time does it take?"
                                 </h4>
@@ -270,16 +319,16 @@ export default function Landing() {
                                 </p>
                             </div>
 
-                            <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "Is CashCat really free? What's the catch?"
                                 </h4>
                                 <p className="text-white/70 text-sm">
-                                    Every core budgeting feature is completely free! Optional bank syncing has a small fee to cover third-party banking costs - we're not trying to profit from this feature, but we need to cover our costs.
+                                    Every core budgeting feature is completely free! We're not venture-funded or owned by big banks. Optional bank syncing has a small fee to cover third-party costs - we're transparent about this because we respect you.
                                 </p>
                             </div>
                             
-                            <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "Can I really track multiple bank accounts in one place?"
                                 </h4>
@@ -288,7 +337,7 @@ export default function Landing() {
                                 </p>
                             </div>
 
-                            <div className="left-envelope-card">
+                            <div className="left-envelope-card hover-glow question-card">
                                 <h4 className="text-lg font-semibold mb-2 text-green">
                                     "What if I have irregular income?"
                                 </h4>
@@ -301,37 +350,33 @@ export default function Landing() {
                     </div>
                 </div>
 
-
                 {/* Social Proof Section */}
                 <div className="md:py-4 text-center max-w-4xl mx-auto">
                     <h3 className="text-2xl md:text-3xl font-bold mb-8 text-white">
-                        Join Users Taking Control
+                        Join Others Taking Control
                     </h3>
                     <p className="text-lg text-white/80 mb-8">
-                        CashCat is built by people who actually use zero-based budgeting daily. We understand the frustrations with other tools and are building something better.
+                        CashCat is built by real people who use zero-based budgeting daily. We understand the frustrations because we've lived them too.
                     </p>
                     
-                    <div className="left-envelope-card mb-8">
+                    <div className="left-envelope-card mb-8 hover-lift community-card">
                         <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0 pulse-gentle">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-green">
                                     <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </div>
                             <div className="text-left">
-                                <h4 className="text-lg font-medium mb-2 text-green">Early Access Program</h4>
+                                <h4 className="text-lg font-medium mb-2 text-green">Early Access Community</h4>
                                 <p className="text-white/70">
-                                    CashCat is in early access. Core budgeting features work great, with new features being added regularly. 
-                                    Join now to help shape the future of personal finance tools!
+                                    CashCat is in early access - which means you get to help shape something special. Core budgeting features work great, with new features being added based on real user feedback. 
+                                    Join a community of people who believe personal finance tools should be built for people, not profit.
                                 </p>
                             </div>
                         </div>
 
-
-
-                    <h4 className="text-2xl font-semibold mb-4 mt-8 md:mt-8 text-green">Coming Soon</h4>
+                        <h4 className="text-2xl font-semibold mb-4 mt-8 md:mt-8 text-green">Coming Soon</h4>
                         <div className="grid gap-4 text-left md:justify-center">
-                        
                             <div className="flex items-start gap-3">
                                 <div className="w-2 h-2 bg-green rounded-full mt-2 flex-shrink-0"></div>
                                 <div>
@@ -370,7 +415,7 @@ export default function Landing() {
                                 href="https://discord.gg/C9mYnEdAQA"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all text-sm"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all text-sm hover-lift discord-glow"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
@@ -380,29 +425,28 @@ export default function Landing() {
                         </div>
                     </div>
 
-
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
                             href="/signup"
-                            className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
+                            className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg button-glow hover-lift"
                         >
                             Get Started Free
                         </Link>
                         <Link
                             href="/about"
-                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
+                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg hover-lift"
                         >
                             Meet the Team
                         </Link>
                          <Link
                             href="/learn"
-                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
+                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg hover-lift"
                         >
                             Demo & Sample Category
                         </Link>
                         <Link
                             href="/docs"
-                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
+                            className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg hover-lift"
                         >
                             Documentation
                         </Link>
@@ -411,11 +455,11 @@ export default function Landing() {
 
                 {/* Footer */}
                 <div className="py-8 text-center text-white/50 text-sm border-t border-white/10">
-                    <p>Built with ❤️ for people who want to take control of their money</p>
+                    <p>Built with care by people who believe you deserve better financial tools</p>
                     <div className="flex gap-4 mt-2 justify-center">
                             <Link
                                 href="/terms"
-                                className="text-green hover:text-green-dark transition-colors text-sm underline"
+                                className="text-green hover:text-green-dark transition-colors text-sm underline hover-lift"
                             >
                                 Terms of Service & Privacy Policy
                             </Link>
@@ -426,4 +470,3 @@ export default function Landing() {
     );
 }
 
-                
