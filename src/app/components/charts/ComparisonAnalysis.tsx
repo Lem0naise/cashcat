@@ -28,16 +28,28 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
 
   return (
     <div className="bg-white/[.05] rounded-lg p-4 border border-green/20">
-      <h4 className="font-medium text-green mb-2">
-        {isHovering && isSinglePoint ? 'Hovered Point Analysis' : 
-         isSinglePoint ? 'Selected Point Analysis' : 
-         isCustomSelection ? 'Selected Range Analysis' : 'Full Period Analysis'}
-        {shouldShowDistanceFromGoal && (
-          <span className="text-xs text-white/60 ml-2 font-normal">
-            (Distance from Goal)
-          </span>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium text-green">
+          {isHovering && isSinglePoint ? 'Hovered Point Analysis' : 
+           isSinglePoint ? 'Selected Point Analysis' : 
+           isCustomSelection ? 'Selected Range Analysis' : 'Full Period Analysis'}
+          {shouldShowDistanceFromGoal && (
+            <span className="text-xs text-white/60 ml-2 font-normal">
+              (Distance from Goal)
+            </span>
+          )}
+        </h4>
+        
+        {/* Clear button positioned in header to avoid height changes */}
+        {isCustomSelection && !isHovering && (
+          <button
+            onClick={onClearSelection}
+            className="text-xs text-white/50 hover:text-white/70 transition-colors flex-shrink-0"
+          >
+            Clear selection
+          </button>
         )}
-      </h4>
+      </div>
       
       {/* Show category breakdown if multiple categories are selected */}
       {currentData.categoryBreakdown && currentData.categoryBreakdown.length > 0 ? (
@@ -247,16 +259,6 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
             </p>
           </div>
         </div>
-      )}
-      
-      {/* Show clear button only for custom drag selections, not for hover */}
-      {isCustomSelection && !isHovering && (
-        <button
-          onClick={onClearSelection}
-          className="mt-3 text-xs text-white/50 hover:text-white/70 transition-colors"
-        >
-          Clear selection
-        </button>
       )}
       
       {/* Drag instruction */}
