@@ -52,7 +52,47 @@ export default function PieChart({
   matchHeight = false
 }: PieChartProps) {
   const chartRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredSegment, setHoveredSegment] = useState<PieSegment | null>(null);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  
+  // Monitor container size for responsive behavior
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setContainerDimensions({ width, height });
+      }
+    };
+    
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+  
+  // Calculate if we should show labels based on available space
+  const shouldShowLabels = useMemo(() => {
+    // Minimum dimensions needed to show labels comfortably
+    const minWidthForLabels = 500;
+    const minHeightForLabels = 450;
+    
+    return containerDimensions.width >= minWidthForLabels && containerDimensions.height >= minHeightForLabels;
+  }, [containerDimensions]);
+  
+  // Calculate minimum center hole size (200px diameter minimum)
+  const calculateCutout = useMemo(() => {
+    const minCenterDiameter = 200;
+    const containerSize = Math.min(containerDimensions.width, containerDimensions.height);
+    
+    if (containerSize === 0) return '45%'; // Default while loading
+    
+    // Account for padding and label space
+    const availableSpace = shouldShowLabels ? containerSize - 140 : containerSize - 80;
+    const cutoutPercentage = Math.min(65, Math.max(20, (minCenterDiameter / availableSpace) * 100));
+    
+    return `${cutoutPercentage}%`;
+  }, [containerDimensions, shouldShowLabels]);
   
   // Determine chart mode based on filters
   const chartMode = useMemo(() => {
@@ -213,7 +253,7 @@ export default function PieChart({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: matchHeight ? 100 : 70, // Increase padding significantly to give more room for labels
+      padding: shouldShowLabels ? (matchHeight ? 100 : 70) : 20, // Reduce padding when labels are hidden
     },
     plugins: {
       legend: {
@@ -224,27 +264,29 @@ export default function PieChart({
       },
       datalabels: {
         display: function(context: any) {
+          if (!shouldShowLabels) return false; // Hide labels on small screens
           const segment = pieChartData.segments[context.dataIndex];
           return segment && segment.percentage >= 5; // Show labels for segments >= 5%
         },
         color: '#fff',
         font: {
           weight: 'bold' as const,
-          size: matchHeight ? 14 : 14, // Keep consistent font size
+          size: shouldShowLabels ? (matchHeight ? 14 : 14) : 0, // Hide font when labels are disabled
         },
         formatter: function(value: number, context: any) {
+          if (!shouldShowLabels) return '';
           const segment = pieChartData.segments[context.dataIndex];
           return segment ? segment.label : ''; // Remove currency from labels to save space
         },
         anchor: 'end' as const,
         align: 'end' as const,
-        offset: matchHeight ? 12 : 8, // More offset to ensure labels are visible
+        offset: shouldShowLabels ? (matchHeight ? 12 : 8) : 0, // No offset when labels are hidden
         padding: 4,
         textStrokeColor: 'rgba(0,0,0,0.8)',
         textStrokeWidth: 1,
       },
     },
-    cutout: matchHeight ? '45%' : '45%', // Keep consistent cutout
+    cutout: calculateCutout, // Use calculated cutout
     onHover: (event: ChartEvent, activeElements: ActiveElement[]) => {
       if (chartRef.current?.canvas) {
         chartRef.current.canvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
@@ -288,7 +330,11 @@ export default function PieChart({
   }
 
   return (
-    <div className={`bg-white/[.03] rounded-lg p-4 ${matchHeight ? 'h-full flex flex-col' : ''}`} style={matchHeight ? { minHeight: '600px', overflow: 'visible' } : { overflow: 'visible' }}>
+    <div 
+      ref={containerRef}
+      className={`bg-white/[.03] rounded-lg p-4 ${matchHeight ? 'h-full flex flex-col' : ''}`} 
+      style={matchHeight ? { minHeight: '600px', overflow: 'visible' } : { overflow: 'visible' }}
+    >
       {/* Maximized chart container */}
       <div className={`w-full flex items-center justify-center ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}
@@ -297,7 +343,7 @@ export default function PieChart({
             height: matchHeight ? '100%' : '550px', 
             minHeight: matchHeight ? '500px' : '550px',
             maxHeight: matchHeight ? 'none' : '550px',
-            maxWidth: matchHeight ? '600px' : '700px', // Reduce max width to give more space for labels
+            maxWidth: shouldShowLabels ? (matchHeight ? '600px' : '700px') : '100%', // Full width when no labels
             overflow: 'visible' 
           }}>
             <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }}>
@@ -305,24 +351,28 @@ export default function PieChart({
             </div>
             {/* Center Total or Hovered Segment */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
+              <div className="text-center px-2">
                 {hoveredSegment ? (
                   <>
-                    <div className="text-sm text-white/50 mb-1">{hoveredSegment.label}</div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className={`text-white/50 mb-1 ${shouldShowLabels ? 'text-sm' : 'text-xs'}`}>
+                      {hoveredSegment.label}
+                    </div>
+                    <div className={`font-bold text-white ${shouldShowLabels ? 'text-2xl' : 'text-lg'}`}>
                       {formatCurrency(hoveredSegment.value)}
                     </div>
-                    <div className="text-xs text-white/40 mt-1">
+                    <div className={`text-white/40 mt-1 ${shouldShowLabels ? 'text-xs' : 'text-xs'}`}>
                       {hoveredSegment.percentage.toFixed(1)}% of total
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="text-sm text-white/50 mb-1">Total Spending</div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className={`text-white/50 mb-1 ${shouldShowLabels ? 'text-sm' : 'text-xs'}`}>
+                      Total Spending
+                    </div>
+                    <div className={`font-bold text-white ${shouldShowLabels ? 'text-2xl' : 'text-lg'}`}>
                       {formatCurrency(pieChartData.total)}
                     </div>
-                    <div className="text-xs text-white/40 mt-1">
+                    <div className={`text-white/40 mt-1 ${shouldShowLabels ? 'text-xs' : 'text-xs'}`}>
                       {chartMode === 'group' && 'All Groups'}
                       {chartMode === 'category' && (selectedGroups.length > 0 ? `${selectedGroups.length} Group${selectedGroups.length > 1 ? 's' : ''}` : 'All Categories')}
                       {chartMode === 'vendor' && 'Selected Categories'}
@@ -336,7 +386,12 @@ export default function PieChart({
       </div>
       {/* Chart label explainer - Always positioned at bottom */}
       <div className="text-center text-sm text-white/50 mt-3 flex-shrink-0">
-        <p>Hover over segments for details. Click for in-depth analysis.</p>
+        <p>
+          {shouldShowLabels 
+            ? "Hover over segments for details. Click for in-depth analysis."
+            : "Tap segments for details. Segment labels hidden to maximize chart size."
+          }
+        </p>
       </div>
     </div>
   );
