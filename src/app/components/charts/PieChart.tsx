@@ -58,17 +58,37 @@ export default function PieChart({
   
   // Monitor container size for responsive behavior
   useEffect(() => {
+    let resizeObserver: ResizeObserver;
+    
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
-        setContainerDimensions({ width, height });
+        setContainerDimensions(prev => {
+          // Only update if dimensions actually changed significantly
+          if (Math.abs(prev.width - width) > 10 || Math.abs(prev.height - height) > 10) {
+            return { width, height };
+          }
+          return prev;
+        });
       }
     };
     
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
+    if (containerRef.current) {
+      updateDimensions();
+      
+      // Use ResizeObserver for more efficient resize detection
+      resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+      });
+      
+      resizeObserver.observe(containerRef.current);
+    }
     
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
   }, []);
   
   // Calculate if we should show labels based on available space
@@ -92,7 +112,7 @@ export default function PieChart({
     const cutoutPercentage = Math.min(65, Math.max(20, (minCenterDiameter / availableSpace) * 100));
     
     return `${cutoutPercentage}%`;
-  }, [containerDimensions, shouldShowLabels]);
+  }, [containerDimensions.width, containerDimensions.height, shouldShowLabels]);
   
   // Determine chart mode based on filters
   const chartMode = useMemo(() => {
@@ -231,7 +251,7 @@ export default function PieChart({
   }, [transactions, categories, dateRange, selectedGroups, selectedCategories, chartMode]);
 
   // Chart.js configuration
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: pieChartData.labels,
     datasets: [
       {
@@ -247,11 +267,23 @@ export default function PieChart({
         hoverBorderRadius: 6, // Keep same border radius on hover
       },
     ],
-  };
+  }), [pieChartData]);
 
-  const chartOptions = {
+  // Create a stable key based on data structure, not layout changes
+  const chartKey = useMemo(() => {
+    return `chart-${pieChartData.segments.length}-${pieChartData.total}-${chartMode}`;
+  }, [pieChartData.segments.length, pieChartData.total, chartMode]);
+
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 0, // Disable animations to prevent redraw on layout changes
+    },
+    interaction: {
+      intersect: false,
+      mode: 'nearest' as const,
+    },
     layout: {
       padding: shouldShowLabels ? (matchHeight ? 100 : 70) : 20, // Reduce padding when labels are hidden
     },
@@ -310,7 +342,7 @@ export default function PieChart({
         }
       }
     },
-  };
+  }), [shouldShowLabels, matchHeight, calculateCutout, pieChartData.segments, onSegmentClick]);
 
   if (pieChartData.segments.length === 0) {
     return (
@@ -347,7 +379,14 @@ export default function PieChart({
             overflow: 'visible' 
           }}>
             <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }}>
-              <Doughnut ref={chartRef} data={chartData} options={chartOptions} plugins={[ChartDataLabels]} />
+              <Doughnut 
+                key={chartKey}
+                ref={chartRef} 
+                data={chartData} 
+                options={chartOptions} 
+                plugins={[ChartDataLabels]} 
+                redraw={false} // Prevent unnecessary redraws
+              />
             </div>
             {/* Center Total or Hovered Segment */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
