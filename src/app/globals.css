@@ -228,11 +228,6 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
     animation: slideInUp 0.3s ease-out;
   }
   
-  /* Prevent viewport shifting on mobile when large content appears */
-  .mobile-safe-container {
-    contain: layout style; /* CSS containment to prevent layout shifts */
-  }
-  
   /* Slide up animation for mobile insights */
   @keyframes slideInUp {
     from {
@@ -243,5 +238,21 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+/* Smooth transitions for insights panel appearance */
+.insights-panel-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

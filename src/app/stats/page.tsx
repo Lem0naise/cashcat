@@ -145,26 +145,26 @@ export default function Stats() {
     const handlePieSegmentClick = (segment: PieSegment) => {
         setSelectedPieSegment(segment);
         
-        // On mobile, scroll to the insights panel immediately
-        if (!isDesktop) {
-            // Use requestAnimationFrame for immediate but smooth execution
-            requestAnimationFrame(() => {
-                // Find the insights panel by ID and scroll to it
-                const insightsPanel = document.getElementById('mobile-insights-panel');
-                if (insightsPanel) {
-                    // Calculate the position accounting for the fixed header
-                    const headerHeight = 64; // pt-16 = 64px header height
-                    const additionalOffset = 16; // Extra spacing for better visual positioning
-                    const elementPosition = insightsPanel.getBoundingClientRect().top + window.pageYOffset;
-                    const targetPosition = elementPosition - headerHeight - additionalOffset;
-                    
-                    window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        }
+        // Scroll to the insights panel on both mobile and desktop since it's now always below
+        requestAnimationFrame(() => {
+            // Find the appropriate insights panel based on screen size
+            const insightsPanel = isDesktop 
+                ? document.getElementById('desktop-insights-panel')
+                : document.getElementById('mobile-insights-panel');
+                
+            if (insightsPanel) {
+                // Calculate the position accounting for the fixed header
+                const headerHeight = 64; // pt-16 = 64px header height
+                const additionalOffset = 16; // Extra spacing for better visual positioning
+                const elementPosition = insightsPanel.getBoundingClientRect().top + window.pageYOffset;
+                const targetPosition = elementPosition - headerHeight - additionalOffset;
+                
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
     };
 
     const handleClosePieInsights = () => {
@@ -314,11 +314,10 @@ export default function Stats() {
                                         allTimeEnd
                                     );
 
-                                    return selectedPieSegment ? (
-                                        // Mobile-optimized layout with insights panel
-                                        <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8 lg:items-stretch mobile-safe-container">
-                                            {/* Pie Chart Section */}
-                                            <div className="lg:col-span-2 flex flex-col">
+                                    return (
+                                        <div className="w-full space-y-6">
+                                            {/* Pie Chart Section - Always full width */}
+                                            <div className="w-full">
                                                 <PieChart
                                                     transactions={transactions}
                                                     categories={categories}
@@ -327,53 +326,41 @@ export default function Stats() {
                                                     selectedCategories={selectedCategories}
                                                     onSegmentClick={handlePieSegmentClick}
                                                     showTooltip={!selectedPieSegment}
-                                                    matchHeight={isDesktop} // True on desktop for height matching, false on mobile
+                                                    matchHeight={false} // Never match height since insights are below
                                                 />
                                             </div>
                                             
-                                            {/* Insights Panel - Mobile Optimized */}
-                                            <div className="lg:col-span-1 flex flex-col">
-                                                <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
-                                                    {/* Mobile insights with full visibility */}
-                                                    <PieSegmentInsights
-                                                        segment={selectedPieSegment}
-                                                        transactions={transactions}
-                                                        categories={categories}
-                                                        dateRange={dateRange}
-                                                        onClose={handleClosePieInsights}
-                                                        onFilterBySegment={handleFilterBySegment}
-                                                        onSetComparisonPeriod={handleSetComparisonPeriod}
-                                                        isMobileOptimized={true}
-                                                    />
+                                            {/* Insights Panel - Always below pie chart on both mobile and desktop */}
+                                            {selectedPieSegment && (
+                                                <div className="w-full insights-panel-enter">
+                                                    <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
+                                                        {/* Mobile insights */}
+                                                        <PieSegmentInsights
+                                                            segment={selectedPieSegment}
+                                                            transactions={transactions}
+                                                            categories={categories}
+                                                            dateRange={dateRange}
+                                                            onClose={handleClosePieInsights}
+                                                            onFilterBySegment={handleFilterBySegment}
+                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                            isMobileOptimized={true}
+                                                        />
+                                                    </div>
+                                                    <div className="hidden lg:block" id="desktop-insights-panel">
+                                                        {/* Desktop insights - now also below the chart */}
+                                                        <PieSegmentInsights
+                                                            segment={selectedPieSegment}
+                                                            transactions={transactions}
+                                                            categories={categories}
+                                                            dateRange={dateRange}
+                                                            onClose={handleClosePieInsights}
+                                                            onFilterBySegment={handleFilterBySegment}
+                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                            isMobileOptimized={false}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="hidden lg:flex lg:flex-col">
-                                                    {/* Desktop insights with full height matching */}
-                                                    <PieSegmentInsights
-                                                        segment={selectedPieSegment}
-                                                        transactions={transactions}
-                                                        categories={categories}
-                                                        dateRange={dateRange}
-                                                        onClose={handleClosePieInsights}
-                                                        onFilterBySegment={handleFilterBySegment}
-                                                        onSetComparisonPeriod={handleSetComparisonPeriod}
-                                                        isMobileOptimized={false}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        // Full width layout when no insights panel
-                                        <div className="w-full">
-                                            <PieChart
-                                                transactions={transactions}
-                                                categories={categories}
-                                                dateRange={dateRange}
-                                                selectedGroups={selectedGroups}
-                                                selectedCategories={selectedCategories}
-                                                onSegmentClick={handlePieSegmentClick}
-                                                showTooltip={!selectedPieSegment}
-                                                matchHeight={!!selectedPieSegment}
-                                            />
+                                            )}
                                         </div>
                                     );
                                 })()}

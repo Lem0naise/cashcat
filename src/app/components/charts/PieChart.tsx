@@ -295,7 +295,7 @@ export default function PieChart({
         borderSkipped: false, // Ensure all borders get rounded corners
         spacing: 0, // Remove linear spacing, use border for gaps instead
         hoverBorderWidth: 4, // Keep same border width on hover
-        hoverOffset: 15,
+        hoverOffset: 8, // Reduced hover offset for more precise detection
         hoverBorderRadius: 6, // Keep same border radius on hover
       },
     ],
@@ -313,8 +313,9 @@ export default function PieChart({
       duration: 0, // Disable animations to prevent redraw on layout changes
     },
     interaction: {
-      intersect: false,
-      mode: 'nearest' as const,
+      intersect: true, // Only activate segments that the mouse is directly over
+      mode: 'point' as const, // Use point mode for precise detection
+      includeInvisible: false, // Don't include invisible elements
     },
     layout: {
       padding: shouldShowLabels ? 
@@ -361,8 +362,13 @@ export default function PieChart({
       // Update hovered segment for center display
       if (activeElements.length > 0) {
         const index = activeElements[0].index;
-        const segment = pieChartData.segments[index];
-        setHoveredSegment(segment || null);
+        // Validate the index is within bounds
+        if (index >= 0 && index < pieChartData.segments.length) {
+          const segment = pieChartData.segments[index];
+          setHoveredSegment(segment || null);
+        } else {
+          setHoveredSegment(null);
+        }
       } else {
         setHoveredSegment(null);
       }
@@ -370,9 +376,12 @@ export default function PieChart({
     onClick: (event: ChartEvent, activeElements: ActiveElement[]) => {
       if (activeElements.length > 0) {
         const index = activeElements[0].index;
-        const segment = pieChartData.segments[index];
-        if (segment) {
-          onSegmentClick(segment);
+        // Validate the index is within bounds
+        if (index >= 0 && index < pieChartData.segments.length) {
+          const segment = pieChartData.segments[index];
+          if (segment) {
+            onSegmentClick(segment);
+          }
         }
       }
     },
@@ -398,21 +407,21 @@ export default function PieChart({
   return (
     <div 
       ref={containerRef}
-      className={`bg-white/[.03] rounded-lg p-4 ${matchHeight ? 'h-full flex flex-col' : ''}`} 
+      className={`bg-white/[.03] rounded-lg p-4 transition-all duration-300 ease-out ${matchHeight ? 'h-full flex flex-col' : ''}`} 
       style={matchHeight ? { minHeight: '600px', overflow: 'visible' } : { overflow: 'visible' }}
     >
       {/* Maximized chart container */}
-      <div className={`w-full flex items-center justify-center ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
+      <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}
-        <div className="flex items-center justify-center w-full h-full" style={{ overflow: 'visible' }}>
-          <div className="relative w-full" style={{ 
+        <div className="flex items-center justify-center w-full h-full transition-all duration-300 ease-out" style={{ overflow: 'visible' }}>
+          <div className="relative w-full transition-all duration-300 ease-out" style={{ 
             height: matchHeight ? '100%' : '550px', 
             minHeight: matchHeight ? '500px' : '550px',
             maxHeight: matchHeight ? 'none' : '550px',
             maxWidth: shouldShowLabels ? (matchHeight ? '600px' : '700px') : '100%', // Full width when no labels
             overflow: 'visible' 
           }}>
-            <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }}>
+            <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }} className="transition-all duration-300 ease-out">
               <Doughnut 
                 key={chartKey}
                 ref={chartRef} 
