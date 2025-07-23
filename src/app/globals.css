@@ -215,3 +215,33 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* Mobile viewport stability for pie chart insights */
+@media screen and (max-width: 1023px) {
+  .mobile-chart-insights {
+    /* Remove height constraints to show full component */
+    max-height: none !important;
+    min-height: auto !important;
+    /* Ensure enough bottom margin for mobile navbar */
+    margin-bottom: 120px; /* Extra space for mobile navbar */
+    /* Smooth appearance animation */
+    animation: slideInUp 0.3s ease-out;
+  }
+  
+  /* Prevent viewport shifting on mobile when large content appears */
+  .mobile-safe-container {
+    contain: layout style; /* CSS containment to prevent layout shifts */
+  }
+  
+  /* Slide up animation for mobile insights */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -22,6 +22,7 @@ interface PieSegmentInsightsProps {
   onClose: () => void;
   onFilterBySegment: (segment: PieSegment) => void;
   onSetComparisonPeriod: (start: Date, end: Date) => void;
+  isMobileOptimized?: boolean; // New prop for mobile layout optimization
 }
 
 export default function PieSegmentInsights({
@@ -31,7 +32,8 @@ export default function PieSegmentInsights({
   dateRange,
   onClose,
   onFilterBySegment,
-  onSetComparisonPeriod
+  onSetComparisonPeriod,
+  isMobileOptimized = false
 }: PieSegmentInsightsProps) {
   // Calculate insights for the selected segment
   const insights = useMemo(() => {
@@ -251,7 +253,12 @@ export default function PieSegmentInsights({
   if (!segment || !insights) return null;
 
   return (
-    <div className="bg-white/[.05] rounded-lg p-6 border border-green/20 h-full flex flex-col" style={{ minHeight: '600px' }}>
+    <div 
+      className={`bg-white/[.05] rounded-lg p-6 border border-green/20 flex flex-col ${
+        isMobileOptimized ? '' : 'h-full'
+      }`} 
+      style={isMobileOptimized ? {} : { minHeight: '600px' }}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div
