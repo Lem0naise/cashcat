@@ -277,13 +277,12 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.7.6</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.8.0</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
-                                    <li>A brand new Discord server</li>
-                                    <li>A new documentation knowledgebase</li>
-                                    <li>Updates to the statistics screen</li>
-                                    <li>Support for multiple bank accounts</li>
+                                    <li>In-depth statistics and insights</li>
+                                    <li>New graphs and charts</li>
+                                    <li>Our new Discord server</li>
                                     <li>A large collection of UI adjustments</li>
                                     <li>Routine bug fixes as always</li>
                                 </ul>
