@@ -300,12 +300,12 @@ export default function PieSegmentInsights({
         <div className="flex items-center gap-2 mb-3">
           <h4 className="font-medium text-white">Spending Patterns</h4>
           <div className="group relative">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white/40 hover:text-white/60 transition-colors cursor-help">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white/40 hover:text-white/60 transition-colors cursor-help hidden md:block">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white/90 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-              Projections are calculated from your daily average spending in this period
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white/90 text-xs rounded-lg opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity z-10 pointer-events-none hidden md:block">
+              Calculated from your daily average spending
             </div>
           </div>
         </div>

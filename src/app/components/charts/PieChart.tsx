@@ -408,7 +408,7 @@ export default function PieChart({
     <div 
       ref={containerRef}
       className={`bg-white/[.03] rounded-lg p-4 transition-all duration-300 ease-out ${matchHeight ? 'h-full flex flex-col' : ''}`} 
-      style={matchHeight ? { minHeight: '600px', overflow: 'visible' } : { overflow: 'visible' }}
+      style={matchHeight ? { minHeight: '600px'} : { }}
     >
       {/* Maximized chart container */}
       <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
@@ -419,7 +419,6 @@ export default function PieChart({
             minHeight: matchHeight ? '500px' : '550px',
             maxHeight: matchHeight ? 'none' : '550px',
             maxWidth: shouldShowLabels ? (matchHeight ? '600px' : '700px') : '100%', // Full width when no labels
-            overflow: 'visible' 
           }}>
             <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }} className="transition-all duration-300 ease-out">
               <Doughnut 
