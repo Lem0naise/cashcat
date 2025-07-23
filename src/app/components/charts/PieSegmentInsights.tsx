@@ -479,7 +479,7 @@ export default function PieSegmentInsights({
           }}
           className="w-full bg-green hover:bg-green/90 text-black font-medium py-3 px-4 rounded-lg transition-colors mb-6 cursor-pointer active:scale-[0.98]"
         >
-          Show in-depth stats for "{segment.label}"
+          Show in-depth stats for {segment.label}
         </button>
       )}
       </div>
