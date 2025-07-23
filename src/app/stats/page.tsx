@@ -6,10 +6,16 @@ import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
 import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
 import ChartControls from '../components/chart-controls';
+import PieChart from '../components/charts/PieChart';
+import PieSegmentInsights from '../components/charts/PieSegmentInsights';
+import { PieSegment } from '../components/charts/types';
+import { calculateDateRange, calculateAllTimeRange } from '../components/charts/utils';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
+import { useMobileViewportStability } from '../hooks/useMobileViewportStability';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -22,14 +28,23 @@ export default function Stats() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     
+    // Mobile viewport stability hook
+    useMobileViewportStability();
+    
+    // Responsive breakpoint detection
+    const isDesktop = useIsDesktop();
+    
     // Chart state
-    const [timeRange, setTimeRange] = useState<'7d' | '30d' | '3m' | '12m' | 'all' | 'custom'>('3m');
+    const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('3m');
     const [customStartDate, setCustomStartDate] = useState<Date>();
     const [customEndDate, setCustomEndDate] = useState<Date>();
     const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [showGoals, setShowGoals] = useState(false);
     const [showRollover, setShowRollover] = useState(false);
+    
+    // Pie chart state
+    const [selectedPieSegment, setSelectedPieSegment] = useState<PieSegment | null>(null);
 
     // Fetch data from Supabase
     const fetchData = useCallback(async () => {
@@ -106,6 +121,89 @@ export default function Stats() {
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
+        // Close insights panel when filters change
+        setSelectedPieSegment(null);
+    };
+
+    // Filter change handlers that also close insights panel
+    const handleGroupsChange = (groups: string[]) => {
+        setSelectedGroups(groups);
+        setSelectedPieSegment(null);
+    };
+
+    const handleCategoriesChange = (categories: string[]) => {
+        setSelectedCategories(categories);
+        setSelectedPieSegment(null);
+    };
+
+    const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
+        setTimeRange(range);
+        setSelectedPieSegment(null);
+    };
+
+    // Pie chart handlers
+    const handlePieSegmentClick = (segment: PieSegment) => {
+        setSelectedPieSegment(segment);
+        
+        // Scroll to the insights panel on both mobile and desktop since it's now always below
+        requestAnimationFrame(() => {
+            // Find the appropriate insights panel based on screen size
+            const insightsPanel = isDesktop 
+                ? document.getElementById('desktop-insights-panel')
+                : document.getElementById('mobile-insights-panel');
+                
+            if (insightsPanel) {
+                // Calculate the position accounting for the fixed header
+                const headerHeight = 64; // pt-16 = 64px header height
+                const additionalOffset = 16; // Extra spacing for better visual positioning
+                const elementPosition = insightsPanel.getBoundingClientRect().top + window.pageYOffset;
+                const targetPosition = elementPosition - headerHeight - additionalOffset;
+                
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    };
+
+    const handleClosePieInsights = () => {
+        setSelectedPieSegment(null);
+    };
+
+    const handleFilterBySegment = (segment: PieSegment) => {
+        // Clear existing filters first
+        setSelectedGroups([]);
+        setSelectedCategories([]);
+        
+        // Apply filters based on segment type
+        if (segment.type === 'group') {
+            setSelectedGroups([segment.id]);
+        } else if (segment.type === 'category') {
+            // Find the group this category belongs to and set both group and category filters
+            const category = categories.find(cat => cat.id === segment.id);
+            if (category) {
+                const groupName = (category as any).groups?.name || category.group || 'Uncategorized';
+                setSelectedGroups([groupName]);
+                setSelectedCategories([segment.id]);
+            }
+        } else if (segment.type === 'vendor') {
+            // For vendor, we need to keep the current category selection that led to this vendor view
+            // The vendor view only appears when categories from the same group are selected
+            // So we don't need to change the filters, just close the insights panel
+        }
+        
+        // Close the insights panel
+        setSelectedPieSegment(null);
+    };
+
+    const handleSetComparisonPeriod = (start: Date, end: Date) => {
+        // Set time range to custom and update the custom dates
+        setTimeRange('custom');
+        setCustomStartDate(start);
+        setCustomEndDate(end);
+        // Close insights panel when changing time range
+        setSelectedPieSegment(null);
     };
 
     if (loading) {
@@ -116,7 +214,7 @@ export default function Stats() {
                     <Sidebar />
                     <MobileNav />
                     
-                    <main className="pt-16 pb-28 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
+                    <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                         <div className="max-w-7xl mx-auto">
                             <div className="flex items-center justify-center min-h-[400px]">
                                 <div className="w-8 h-8 border-2 border-green border-t-transparent rounded-full animate-spin" />
@@ -159,7 +257,7 @@ export default function Stats() {
                     }}
                 />
                 
-                <main className="pt-16 pb-28 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
+                <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         {/* Mobile header */}
                         <div className="md:hidden mb-6">
@@ -191,18 +289,81 @@ export default function Stats() {
                                 {/* Chart Controls */}
                                 <ChartControls
                                     timeRange={timeRange}
-                                    onTimeRangeChange={setTimeRange}
+                                    onTimeRangeChange={handleTimeRangeChange}
                                     customStartDate={customStartDate}
                                     customEndDate={customEndDate}
                                     onCustomDateChange={handleCustomDateChange}
                                     availableGroups={availableGroups}
                                     selectedGroups={selectedGroups}
-                                    onGroupsChange={setSelectedGroups}
+                                    onGroupsChange={handleGroupsChange}
                                     availableCategories={availableCategories}
                                     selectedCategories={selectedCategories}
-                                    onCategoriesChange={setSelectedCategories}
+                                    onCategoriesChange={handleCategoriesChange}
                                     // Removed showGoals, onShowGoalsChange, showRollover, onShowRolloverChange
                                 />
+
+                                {/* Pie Chart Section */}
+                                {(() => {
+                                    // Calculate date ranges for pie chart
+                                    const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
+                                    const dateRange = calculateDateRange(
+                                        timeRange, 
+                                        customStartDate, 
+                                        customEndDate, 
+                                        allTimeStart, 
+                                        allTimeEnd
+                                    );
+
+                                    return (
+                                        <div className="w-full space-y-6">
+                                            {/* Pie Chart Section - Always full width */}
+                                            <div className="w-full">
+                                                <PieChart
+                                                    transactions={transactions}
+                                                    categories={categories}
+                                                    dateRange={dateRange}
+                                                    selectedGroups={selectedGroups}
+                                                    selectedCategories={selectedCategories}
+                                                    onSegmentClick={handlePieSegmentClick}
+                                                    showTooltip={!selectedPieSegment}
+                                                    matchHeight={false} // Never match height since insights are below
+                                                />
+                                            </div>
+                                            
+                                            {/* Insights Panel - Always below pie chart on both mobile and desktop */}
+                                            {selectedPieSegment && (
+                                                <div className="w-full insights-panel-enter">
+                                                    <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
+                                                        {/* Mobile insights */}
+                                                        <PieSegmentInsights
+                                                            segment={selectedPieSegment}
+                                                            transactions={transactions}
+                                                            categories={categories}
+                                                            dateRange={dateRange}
+                                                            onClose={handleClosePieInsights}
+                                                            onFilterBySegment={handleFilterBySegment}
+                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                            isMobileOptimized={true}
+                                                        />
+                                                    </div>
+                                                    <div className="hidden lg:block" id="desktop-insights-panel">
+                                                        {/* Desktop insights - now also below the chart */}
+                                                        <PieSegmentInsights
+                                                            segment={selectedPieSegment}
+                                                            transactions={transactions}
+                                                            categories={categories}
+                                                            dateRange={dateRange}
+                                                            onClose={handleClosePieInsights}
+                                                            onFilterBySegment={handleFilterBySegment}
+                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
+                                                            isMobileOptimized={false}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Budget Assignment Chart - NOW WITH TRANSACTIONS! */}
                                 <BudgetAssignmentChart

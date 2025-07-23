@@ -5,11 +5,26 @@ export type Assignment = Database['public']['Tables']['assignments']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type Transaction = Database['public']['Tables']['transactions']['Row'];
 
+// Extended types for segmented bars
+export interface SegmentInfo {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
+export interface SegmentedBarData {
+  x: string;
+  y: number;
+  segments?: SegmentInfo[];
+  total?: number;
+  segmentType?: 'category' | 'vendor' | 'group';
+}
+
 export interface BudgetAssignmentChartProps {
   assignments: Assignment[];
   categories: Category[];
   transactions: Transaction[];
-  timeRange: '7d' | '30d' | '3m' | '12m' | 'all' | 'custom';
+  timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
   customStartDate?: Date;
   customEndDate?: Date;
   selectedGroups: string[];
@@ -72,4 +87,41 @@ export interface DistanceFromGoalData {
     pointBorderColor: string;
     pointBorderWidth: number;
   }>;
+}
+
+export interface PieSegment {
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+  id: string; // group id, category id, or vendor name
+  type: 'group' | 'category' | 'vendor';
+}
+
+export interface PieChartData {
+  segments: PieSegment[];
+  total: number;
+  labels: string[];
+  data: number[];
+  backgroundColor: string[];
+  borderColor: string[];
+}
+
+export interface SegmentHoverInfo {
+  isIncome: boolean;
+  segment: SegmentInfo;
+  date: string;
+  volumePoint: any;
+  datasetIndex: number;
+  index: number;
+  segmentIndex: number;
+  // Additional properties for detailed breakdown
+  subSegments?: {
+    type: 'category' | 'vendor';
+    items: Array<{
+      name: string;
+      value: number;
+      percentage: number;
+    }>;
+  };
 }

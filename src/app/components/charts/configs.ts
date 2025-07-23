@@ -6,7 +6,8 @@ import {
   ChartDataPoint, 
   VolumeDataPoint, 
   Category, 
-  DistanceFromGoalData 
+  DistanceFromGoalData,
+  Transaction 
 } from './types';
 import { formatCurrency } from './utils';
 import { comparisonSelectionPlugin } from './plugins';
@@ -201,149 +202,328 @@ export const useVolumeChartConfig = (
   filteredVolumeData: VolumeDataPoint[],
   dateRange: { start: Date; end: Date },
   xUnit: 'day' | 'week' | 'month',
-  hasActiveFilters: boolean
+  hasActiveFilters: boolean,
+  categories: Category[],
+  selectedCategories: string[] = [],
+  selectedGroups: string[] = [],
+  transactions?: Transaction[] // Add optional transactions parameter
 ) => {
-  return useMemo(() => ({
-    type: 'bar' as const,
-    data: {
-      datasets: [
-        {
-          label: 'Income',
-          data: filteredVolumeData.map(point => ({ x: point.x, y: point.assigned })),
-          backgroundColor: 'rgba(186, 194, 255, 0.6)',
-          borderColor: '#bac2ff',
-          borderWidth: 1,
-        },
-        {
-          label: 'Spending',
-          data: filteredVolumeData.map(point => ({ x: point.x, y: -point.removed })),
-          backgroundColor: 'rgba(239, 68, 68, 0.6)',
-          borderColor: '#ef4444',
-          borderWidth: 1,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: hasActiveFilters 
-            ? 'Filtered Income vs Spending Activity' 
-            : 'Income vs Spending Activity',
-          color: '#ffffff',
-          font: {
-            size: 14,
-            weight: 'bold' as const,
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          }
-        },
-        legend: {
-          display: true,
-          labels: {
-            color: '#ffffff',
-            font: {
-              family: 'Gabarito, system-ui, -apple-system, sans-serif'
-            }
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          titleColor: '#ffffff',
-          bodyColor: '#ffffff',
-          borderColor: '#bac2ff',
-          borderWidth: 1,
-          titleFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          bodyFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          footerFont: {
-            family: 'Gabarito, system-ui, -apple-system, sans-serif'
-          },
-          callbacks: {
-            label: (context: TooltipItem<'bar'>) => {
-              const dataIndex = context.dataIndex;
-              const volumePoint = filteredVolumeData[dataIndex];
-              if (!volumePoint) return '';
+  return useMemo(() => {
+    // Import our segmentation utilities
+    const { processSegmentedBarData, generateColorShades, createGradient } = require('./utils/segmentedBars');
+    const { segmentedBarsPlugin } = require('./plugins/segmentedBars');
+    
+    // Process the volume data to generate segments - now with transactions for accurate segment values
+    const segmentedBarData = processSegmentedBarData(
+      filteredVolumeData,
+      categories,
+      selectedCategories,
+      selectedGroups,
+      transactions // Pass transactions to enable accurate segment calculations
+    );
+    
+    // Generate colors for income (purple) and spending (red) segments
+    const incomeBaseColor = '#bac2ff'; // Light purple
+    const spendingBaseColor = '#ef4444'; // Red
+    
+    // Determine the maximum number of segments to generate colors for
+    const maxIncomeSegments = Math.max(
+      ...segmentedBarData.map((point: any) => point.incomeSegments.segments.length),
+      1
+    );
+    const maxSpendingSegments = Math.max(
+      ...segmentedBarData.map((point: any) => point.spendingSegments.segments.length),
+      1
+    );
+    
+    // Generate color arrays for the segments
+    const incomeColors = generateColorShades(incomeBaseColor, maxIncomeSegments);
+    const spendingColors = generateColorShades(spendingBaseColor, maxSpendingSegments);
+
+    return {
+      type: 'bar' as const,
+      plugins: [segmentedBarsPlugin],
+      data: {
+        datasets: [
+          {
+            label: 'Income',
+            data: filteredVolumeData.map((point, index) => {
+              const segments = segmentedBarData[index]?.incomeSegments.segments || [];
+              const segmentType = segmentedBarData[index]?.incomeSegments.segmentType || 'category';
               
-              const lines = [
-                `Income: ${formatCurrency(volumePoint.assigned)}`,
-                `Spending: ${formatCurrency(volumePoint.removed)}`,
-                `Net: ${formatCurrency(volumePoint.net)}`
-              ];
+              return {
+                x: point.x,
+                y: point.assigned,
+                segments: segments,
+                total: point.assigned,
+                segmentType
+              };
+            }),
+            backgroundColor: incomeBaseColor,
+            borderColor: '#bac2ff',
+            borderWidth: 1,
+            stack: 'stack0',
+            maxBarThickness: 80,
+            // Custom properties for segmented bars plugin
+            useSegmentedBars: true,
+            segmentColors: incomeColors
+          },
+          {
+            label: 'Spending',
+            data: filteredVolumeData.map((point, index) => {
+              const segments = segmentedBarData[index]?.spendingSegments.segments || [];
+              const segmentType = segmentedBarData[index]?.spendingSegments.segmentType || 'category';
               
-              // Show vendors when filters are active, otherwise show categories
-              if (hasActiveFilters && volumePoint.vendors.length > 0) {
-                lines.push('');
-                lines.push(...volumePoint.vendors.slice(0, 5));
-                if (volumePoint.vendors.length > 5) {
-                  lines.push(`... and ${volumePoint.vendors.length - 5} more`);
-                }
-              } else if (volumePoint.categories.length > 0) {
-                lines.push('');
-                lines.push(...volumePoint.categories.slice(0, 5));
-                if (volumePoint.categories.length > 5) {
-                  lines.push(`... and ${volumePoint.categories.length - 5} more`);
-                }
-              }
-              
-              return lines;
-            }
+              return {
+                x: point.x,
+                y: -point.removed,
+                segments: segments,
+                total: point.removed,
+                segmentType
+              };
+            }),
+            backgroundColor: spendingBaseColor,
+            borderColor: '#ef4444',
+            borderWidth: 1,
+            stack: 'stack0',
+            maxBarThickness: 80,
+            // Custom properties for segmented bars plugin
+            useSegmentedBars: true,
+            segmentColors: spendingColors
           }
-        }
+        ]
       },
-      scales: {
-        x: {
-          type: 'time' as const,
-          time: {
-            unit: xUnit,
-            displayFormats: {
-              day: 'MMM dd',
-              week: 'MMM dd',
-              month: 'MMM yyyy'
-            },
-            tooltipFormat: 'EEE dd MMM, yyyy',
-            round: 'day' as const
-          },
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)',
-            alignToPixels: true,
-            offset: false
-          },
-          ticks: {
-            color: '#ffffff',
-            maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
-            font: {
-              family: 'Gabarito, system-ui, -apple-system, sans-serif'
-            },
-            source: 'data' as const,
-            align: 'center' as const
-          },
-          bounds: 'data' as const,
-          offset: false,
-          // @ts-ignore
-          barPercentage: 1.0,
-          // @ts-ignore
-          categoryPercentage: 1.0,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuart' as const,
         },
-        y: {
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
-          },
-          ticks: {
+        // Bar chart specific options for full width bars
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        elements: {
+          bar: {
+            borderWidth: 1,
+            borderSkipped: false,
+            borderRadius: 3
+          }
+        },
+        // Store raw transactions in chart options for advanced analysis
+        _transactions: transactions, // Make transactions available to plugins
+        _categories: categories, // Make categories available to plugins
+        plugins: {
+          title: {
+            display: true,
+            text: hasActiveFilters 
+              ? 'Filtered Income vs Spending Activity' 
+              : 'Income vs Spending Activity',
             color: '#ffffff',
             font: {
+              size: 14,
+              weight: 'bold' as const,
               family: 'Gabarito, system-ui, -apple-system, sans-serif'
+            }
+          },
+          legend: {
+            display: true,
+            labels: {
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: '#ffffff',
+              padding: 20,
+              boxWidth: 10,
+              boxHeight: 8,
+              textAlign: 'left' as const,
+              font: {
+                family: 'Gabarito, system-ui, -apple-system, sans-serif'
+              }
+            }
+          },
+          tooltip: {
+            // Disable the standard tooltips since we'll use a fixed info box below the chart
+            enabled: false,
+            callbacks: {
+              // Enhanced tooltip to show segment-specific data
+              beforeLabel: (context: TooltipItem<'bar'>) => {
+                // Check if we have a segment index
+                if (context.datasetIndex === undefined || context.raw === undefined) {
+                  return '';
+                }
+                
+                // Get the dataset and its data
+                const dataset = context.chart.data.datasets[context.datasetIndex];
+                const dataPoint = dataset.data[context.dataIndex];
+                
+                // Skip if not using segmented bars
+                if (!dataPoint) {
+                  return '';
+                }
+                
+                // Determine if we're looking at income or spending
+                const isIncome = context.datasetIndex === 0;
+                
+                // Get the segmented data
+                const volumePoint = filteredVolumeData[context.dataIndex];
+                const segmentData = segmentedBarData[context.dataIndex];
+                
+                if (!volumePoint || !segmentData) {
+                  return '';
+                }
+                
+                // Set up the segment type label
+                const segmentType = isIncome 
+                  ? segmentData.incomeSegments.segmentType 
+                  : segmentData.spendingSegments.segmentType;
+                
+                const segmentTypeLabel = segmentType === 'vendor' 
+                  ? 'Vendors' 
+                  : segmentType === 'category' ? 'Categories' : 'Groups';
+                
+                return `${isIncome ? 'Income' : 'Spending'} Breakdown by ${segmentTypeLabel}:`;
+              },
+              
+              label: (context: TooltipItem<'bar'>) => {
+                const dataIndex = context.dataIndex;
+                const volumePoint = filteredVolumeData[dataIndex];
+                if (!volumePoint) return '';
+                
+                const isIncome = context.datasetIndex === 0;
+                const segmentData = segmentedBarData[dataIndex];
+                
+                // Check if we're hovering over a specific segment
+                const hoveredSegment = context.chart.hoveredSegmentInfo;
+                
+                // If we have a specific segment being hovered, show just that segment's info
+                if (hoveredSegment) {
+                  const name = hoveredSegment.name;
+                  const value = hoveredSegment.value;
+                  const percentage = hoveredSegment.percentage.toFixed(1);
+                  
+                  // Get the segment type for proper attribution
+                  const segmentType = isIncome 
+                    ? segmentData?.incomeSegments?.segmentType 
+                    : segmentData?.spendingSegments?.segmentType;
+                  
+                  const segmentTypeLabel = 
+                    segmentType === 'vendor' ? 'Vendor' : 
+                    segmentType === 'category' ? 'Category' : 'Group';
+                  
+                  // Return segment-specific info
+                  return [
+                    `${segmentTypeLabel}: ${name}`,
+                    `${formatCurrency(value)}`,
+                    `${percentage}% of total ${isIncome ? 'income' : 'spending'}`,
+                    '',
+                    isIncome && volumePoint
+                      ? `From a total income of ${formatCurrency(volumePoint.assigned)}`
+                      : volumePoint
+                        ? `From a total spending of ${formatCurrency(volumePoint.removed)}`
+                        : ''
+                  ];
+                }
+                
+                // Otherwise, show info for all segments
+                // Get segments for the relevant dataset
+                const segments = isIncome 
+                  ? segmentData.incomeSegments.segments 
+                  : segmentData.spendingSegments.segments;
+                
+                // Format segments into tooltip lines
+                const lines = segments.map((segment: any) => {
+                  const percentage = segment.percentage.toFixed(1);
+                  return `${segment.name}: ${formatCurrency(segment.value)} (${percentage}%)`;
+                });
+                
+                // Add totals
+                lines.push('');
+                if (isIncome) {
+                  lines.push(`Total Income: ${formatCurrency(volumePoint.assigned)}`);
+                } else {
+                  lines.push(`Total Spending: ${formatCurrency(volumePoint.removed)}`);
+                }
+                
+                return lines;
+              },
+              
+              afterLabel: (context: TooltipItem<'bar'>) => {
+                const dataIndex = context.dataIndex;
+                if (dataIndex === undefined || dataIndex < 0 || 
+                    dataIndex >= filteredVolumeData.length) return '';
+                
+                const volumePoint = filteredVolumeData[dataIndex];
+                if (!volumePoint) return '';
+                
+                // Check if we're hovering over a specific segment
+                const hoveredSegment = context.chart.hoveredSegmentInfo;
+                
+                // If hovering a specific segment, don't show net amount
+                if (hoveredSegment) {
+                  return [];
+                }
+                
+                // Show net amount for general bar hover
+                return [`Net: ${formatCurrency(volumePoint.net)}`];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'time' as const,
+            time: {
+              unit: xUnit,
+              displayFormats: {
+                day: 'MMM dd',
+                week: 'MMM dd',
+                month: 'MMM yyyy'
+              }
             },
-            callback: function(value: any) {
-              return formatCurrency(Math.abs(Number(value)));
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)',
+              alignToPixels: true,
+              offset: false
+            },
+            ticks: {
+              color: '#ffffff',
+              maxTicksLimit: xUnit === 'day' ? 14 : xUnit === 'week' ? 8 : 12,
+              font: {
+                family: 'Gabarito, system-ui, -apple-system, sans-serif'
+              },
+              source: 'data' as const,
+              align: 'center' as const
+            },
+            bounds: 'data' as const,
+            offset: true
+          },
+          y: {
+            stacked: false,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#ffffff',
+              font: {
+                family: 'Gabarito, system-ui, -apple-system, sans-serif'
+              },
+              callback: function(value: any) {
+                return formatCurrency(Math.abs(Number(value)));
+              }
             }
           }
         }
       }
-    }
-  }), [filteredVolumeData.length, dateRange.start.getTime(), dateRange.end.getTime(), xUnit, hasActiveFilters]);
+    };
+  }, [
+    filteredVolumeData.length,
+    dateRange.start.getTime(),
+    dateRange.end.getTime(),
+    xUnit,
+    hasActiveFilters,
+    categories.length,
+    selectedCategories.join(','),
+    selectedGroups.join(','),
+    transactions // Add transactions to the dependency array
+  ]);
 };
