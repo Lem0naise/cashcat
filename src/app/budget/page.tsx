@@ -194,22 +194,28 @@ export default function Budget() {
         }
         
         if (!startMonth || startMonth >= targetMonth) return 0;
-
         // Generate all months from the earliest data up to (but not including) target month
         const targetDate = new Date(targetMonth + '-01');
         const months: string[] = [];
-        
+
+        // Always normalize to the first of the month
         let currentDate = new Date(startMonth + '-01');
-        while (currentDate < targetDate) {
+        currentDate.setDate(1);
+        
+        while (true) {
             const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            if (monthStr >= targetMonth) break; // Only include months strictly before targetMonth
             months.push(monthStr);
             currentDate.setMonth(currentDate.getMonth() + 1);
+            currentDate.setDate(1);
         }
 
         let rollover = 0;
+
+        
         
         console.log('Rollover calculation for category', categoryId, 'targetMonth:', targetMonth, 'months included:', months);
-        
+
         // Calculate rollover month by month
         for (const month of months) {
             const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
