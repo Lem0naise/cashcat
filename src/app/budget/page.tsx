@@ -366,18 +366,13 @@ export default function Budget() {
             // Calculate categories with assignments and rollovers
             const categoriesWithSpent = categoriesData.map(category => {
                 const assignment = assignmentsByCategory[category.id];
-                const assigned = assignment?.assigned ?? 0;
-                const spent = spentByCategory[category.id] || 0;
-                
-                // Calculate rollover if enabled
-                const rollover =  calculateRolloverForCategory(category.id, queryMonthString, allAssignments || [], allTransactionsData);
-                
-                const available = assigned + rollover - spent;
-                
-                // Calculate daily amount left
+                // Always use numbers and round to 2 decimals
+                const assigned = Math.round((Number(assignment?.assigned ?? 0)) * 100) / 100;
+                const spent = Math.round((Number(spentByCategory[category.id] || 0)) * 100) / 100;
+                const rollover = Math.round((Number(calculateRolloverForCategory(category.id, queryMonthString, allAssignments || [], allTransactionsData))) * 100) / 100;
+                const available = Math.round((assigned + rollover - spent) * 100) / 100;
                 const daysRemaining = getDaysRemainingInMonth();
-                const dailyLeft = daysRemaining > 0 ? available / daysRemaining : 0;
-                
+                const dailyLeft = daysRemaining > 0 ? Math.round((available / daysRemaining) * 100) / 100 : 0;
                 return {
                     id: category.id,
                     name: category.name,
