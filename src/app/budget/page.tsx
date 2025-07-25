@@ -93,6 +93,28 @@ export default function Budget() {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     };
 
+    const goToCurrentMonth = () => {
+        setCurrentMonth(new Date());
+    };
+
+    // Helper function to determine if we're viewing a past, current, or future month
+    const getMonthStatus = () => {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonthNum = today.getMonth();
+        
+        const viewingYear = currentMonth.getFullYear();
+        const viewingMonthNum = currentMonth.getMonth();
+        
+        if (viewingYear < currentYear || (viewingYear === currentYear && viewingMonthNum < currentMonthNum)) {
+            return 'past';
+        } else if (viewingYear > currentYear || (viewingYear === currentYear && viewingMonthNum > currentMonthNum)) {
+            return 'future';
+        } else {
+            return 'current';
+        }
+    };
+
     // Helper function to calculate rollover for a category up to a specific month
     const calculateRolloverForCategory = useCallback((
         categoryId: string, 
@@ -731,9 +753,19 @@ export default function Budget() {
                                     className="opacity-90"
                                 />
                             </button>
-                            <h2 className="text-base font-medium min-w-[120px] text-center">
-                                {formatMonth(currentMonth)}
-                            </h2>
+                            <div className="flex flex-col items-center min-w-[120px]">
+                                <h2 className="text-base font-medium text-center">
+                                    {formatMonth(currentMonth)}
+                                </h2>
+                                {(currentMonth.getMonth() !== new Date().getMonth() || currentMonth.getFullYear() !== new Date().getFullYear()) && (
+                                    <button
+                                        onClick={goToCurrentMonth}
+                                        className="text-xs text-green hover:text-green-dark transition-colors mt-0.5"
+                                    >
+                                        Back to Today
+                                    </button>
+                                )}
+                            </div>
                             <button 
                                 onClick={goToNextMonth}
                                 className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
@@ -811,9 +843,19 @@ export default function Budget() {
                                             className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
-                                    <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
-                                        {formatMonth(currentMonth)}
-                                    </h2>
+                                    <div className="flex flex-col items-center">
+                                        <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
+                                            {formatMonth(currentMonth)}
+                                        </h2>
+                                        {(currentMonth.getMonth() !== new Date().getMonth() || currentMonth.getFullYear() !== new Date().getFullYear()) && (
+                                            <button
+                                                onClick={goToCurrentMonth}
+                                                className="text-xs text-green hover:text-green-dark transition-colors mt-0.5"
+                                            >
+                                                Back to Today
+                                            </button>
+                                        )}
+                                    </div>
                                     <button 
                                         onClick={goToNextMonth}
                                         className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
@@ -1016,16 +1058,69 @@ export default function Budget() {
                             <div className="space-y-1 md:space-y-2">
                                 {/* Monthly Summary */}
                                 <div className="bg-white/[.03] rounded-lg py-1 md:py-3 md:p-4 mb-2">
-                                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
-                                        <div className="text-center">
-                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Assigned</div>
-                                            <div className="font-medium text-green">{formatCurrency(categories.reduce((sum, cat) => sum + cat.assigned, 0))}</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Spent</div>
-                                            <div className="font-medium text-reddy">{formatCurrency(categories.reduce((sum, cat) => sum + cat.spent, 0))}</div>
-                                        </div>
-                                    </div>
+                                    {(() => {
+                                        const monthStatus = getMonthStatus();
+                                        const totalAssigned = categories.reduce((sum, cat) => sum + cat.assigned, 0);
+                                        const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
+                                        
+                                        // If both assigned and spent are 0, show month status indicator
+                                        if (totalAssigned === 0 && totalSpent === 0) {
+                                            return (
+                                                <div className="flex items-center justify-center gap-2 text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        {monthStatus === 'past' && (
+                                                            <>
+                                                                <span className="text-blue-400 font-medium">Past Month</span>
+                                                                <span className="text-white/50">No budget activity</span>
+                                                            </>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <>
+                                                                <span className="text-purple-400 font-medium">Future Month</span>
+                                                                <span className="text-white/50">No budget set yet</span>
+                                                            </>
+                                                        )}
+                                                        {monthStatus === 'current' && (
+                                                            <>
+                                                                <span className="text-green font-medium">Current Month</span>
+                                                                <span className="text-white/50">No budget activity</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        // Show normal assigned/spent with status indicator
+                                        return (
+                                            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Assigned</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-green">{formatCurrency(totalAssigned)}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Spent</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-reddy">{formatCurrency(totalSpent)}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
