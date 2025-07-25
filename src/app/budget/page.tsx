@@ -102,20 +102,41 @@ export default function Budget() {
     ): number => {
         if (!categoryId) return 0;
 
-        // Get all months from category creation up to target month
+        // Get all assignments and transactions for this category to find the earliest date
+        const categoryAssignments = allAssignments.filter(a => a.category_id === categoryId);
+        const categoryTransactions = allTransactions.filter(t => t.category_id === categoryId);
+        
+        if (categoryAssignments.length === 0 && categoryTransactions.length === 0) return 0;
+
+        // Find the earliest month from either assignments or transactions
+        const earliestAssignmentMonth = categoryAssignments.length > 0 
+            ? categoryAssignments.reduce((earliest, a) => a.month < earliest ? a.month : earliest, categoryAssignments[0].month)
+            : null;
+        
+        const earliestTransactionDate = categoryTransactions.length > 0
+            ? categoryTransactions.reduce((earliest, t) => t.date < earliest ? t.date : earliest, categoryTransactions[0].date)
+            : null;
+        
+        const earliestTransactionMonth = earliestTransactionDate 
+            ? earliestTransactionDate.substring(0, 7) // Convert YYYY-MM-DD to YYYY-MM
+            : null;
+
+        // Determine the actual start month (earliest of assignments or transactions)
+        let startMonth = earliestAssignmentMonth;
+        if (earliestTransactionMonth && (!startMonth || earliestTransactionMonth < startMonth)) {
+            startMonth = earliestTransactionMonth;
+        }
+        
+        if (!startMonth || startMonth >= targetMonth) return 0;
+
+        // Generate all months from the earliest data up to (but not including) target month
         const targetDate = new Date(targetMonth + '-01');
         const months: string[] = [];
         
-        // Start from 12 months ago to ensure we capture enough history
-        const startDate = new Date(targetDate);
-        startDate.setMonth(startDate.getMonth() - 12);
-        
-        let currentDate = new Date(startDate);
-        while (currentDate <= targetDate) {
+        let currentDate = new Date(startMonth + '-01');
+        while (currentDate < targetDate) {
             const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-            if (monthStr < targetMonth) { // Only include months before target
-                months.push(monthStr);
-            }
+            months.push(monthStr);
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
 
