@@ -208,10 +208,14 @@ export default function Budget() {
 
         let rollover = 0;
         
+        console.log('Rollover calculation for category', categoryId, 'targetMonth:', targetMonth, 'months included:', months);
+        
         // Calculate rollover month by month
         for (const month of months) {
             const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
             const assigned = assignment?.assigned || 0;
+
+            
             
             // Calculate spending for this month
             const monthStart = month + '-01';
@@ -228,6 +232,8 @@ export default function Budget() {
             
             // Add to rollover: assigned + previous rollover - spent
             rollover = rollover + assigned - monthSpent;
+
+            console.log(`[Rollover] Month: ${month}, Assigned: ${assigned}, Spent: ${monthSpent}, Rollover so far: ${rollover}`);
             
             // Rollover CAN be negative
         }
@@ -480,6 +486,54 @@ export default function Budget() {
                 cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
             ));
             // Refresh data to ensure consistency
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
+            throw error;
+        }
+    };
+
+    // New: balance all overspent categories so their available is 0
+    const balanceOverspentCategories = async () => {
+        try {
+            const overspent = getOverspentCategories();
+            if (overspent.length === 0) return;
+            // For each overspent category, set assigned = spent - rollover
+            const changes = new Map();
+            overspent.forEach(cat => {
+                const newAssigned = cat.spent - cat.rollover;
+                if (newAssigned !== cat.assigned) {
+                    changes.set(cat.id, newAssigned);
+                }
+            });
+            if (changes.size === 0) return;
+            // Update local state for immediate feedback
+            const updatedCategories = categories.map(cat => {
+                const newAmount = changes.get(cat.id);
+                if (newAmount !== undefined) {
+                    const newAvailable = newAmount + cat.rollover - cat.spent;
+                    const daysRemaining = getDaysRemainingInMonth();
+                    const dailyLeft = daysRemaining > 0 ? newAvailable / daysRemaining : 0;
+                    return { ...cat, assigned: newAmount, available: newAvailable, dailyLeft };
+                }
+                return cat;
+            });
+            setCategories(updatedCategories);
+            // Prepare all database updates
+            const updates = Array.from(changes.entries()).map(([categoryId, amount]) =>
+                handleAssignmentUpdate(categoryId, amount, false),
+            );
+            await toast.promise(Promise.all(updates), {
+                loading: 'Balancing overspent categories...',
+                success: `Balanced ${updates.length} categories!`,
+                error: 'Failed to balance some categories'
+            });
+            // Refetch data to ensure consistency
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
+        } catch (error) {
+            console.error('Error balancing overspent categories:', error);
             if (monthString && allTransactionsData) {
                 await fetchBudgetData(monthString, allTransactionsData);
             }
@@ -970,28 +1024,34 @@ export default function Budget() {
                                     </button>
                                 </div>
                                 
-                                <div 
-                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
-                                        showOverspentAlert 
-                                        ? 'opacity-100 transform translate-y-0' 
-                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                                    }`}
-                                >
-                                    <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
-                                        <h4 className="font-medium mb-2">Overspent Categories:</h4>
-                                        <div className="space-y-1 text-sm">
-                                            {getOverspentCategories().map(cat => (
-                                                <div key={cat.id} className="flex justify-between">
-                                                    <span>{cat.name}</span>
-                                                    <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
-                                                </div>
-                                            ))}
+                        <div 
+                            className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
+                                showOverspentAlert 
+                                ? 'opacity-100 transform translate-y-0' 
+                                : 'opacity-0 transform -translate-y-2 pointer-events-none'
+                            }`}
+                        >
+                            <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
+                                <h4 className="font-medium mb-2">Overspent Categories:</h4>
+                                <div className="space-y-1 text-sm">
+                                    {getOverspentCategories().map(cat => (
+                                        <div key={cat.id} className="flex justify-between">
+                                            <span>{cat.name}</span>
+                                            <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
                                         </div>
-                                    </div>
-                                    <div className="text-sm opacity-90">
-                                        <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending.</p>
-                                    </div>
+                                    ))}
                                 </div>
+                                <button
+                                    className="mt-4 w-full bg-green text-background font-semibold py-2 rounded-lg hover:bg-green-dark transition-colors"
+                                    onClick={balanceOverspentCategories}
+                                >
+                                    Balance Overspent
+                                </button>
+                            </div>
+                            <div className="text-sm opacity-90">
+                                <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending. Or, use the button above to automatically balance all overspent categories.</p>
+                            </div>
+                        </div>
                             </div>
                         )}
 
