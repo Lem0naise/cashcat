@@ -824,6 +824,9 @@ export default function Budget() {
         };
     }, [saveTimeout]);
 
+
+    const totalAvailable = categories.reduce((sum, cat) => sum + cat.available, 0);
+    
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -1209,6 +1212,18 @@ export default function Budget() {
                                         // Show normal assigned/spent with status indicator
                                         return (
                                             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Available</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-green">{formatCurrency(totalAvailable)}</div>
+                                                </div>
                                                 <div className="text-center">
                                                     <div className="flex items-center justify-center gap-1.5 mb-1">
                                                         <div className="text-white/60 text-xs uppercase tracking-wide">Assigned</div>
