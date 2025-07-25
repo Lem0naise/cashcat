@@ -31,6 +31,7 @@ type Category = {
     dailyLeft?: number; // Amount available per day for rest of month
 };
 
+
 export default function Budget() {
     const router = useRouter();
     const supabase = createClientComponentClient<Database>();
@@ -52,14 +53,57 @@ export default function Budget() {
     const [reminderText, setReminderText] = useState<string>('');
     const [reminderLoading, setReminderLoading] = useState(false);
     const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+    // Cache all transactions in state
+    const [allTransactionsData, setAllTransactionsData] = useState<any[] | null>(null);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
 
     // Update month string when current month changes
+
+    // On mount, fetch all transactions ONCE (or if user/account changes)
+    useEffect(() => {
+        let isMounted = true;
+        const fetchAllTransactions = async () => {
+            setTransactionsLoading(true);
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError || !user) throw new Error('Not authenticated');
+                let allTx: any[] = [];
+                let from = 0;
+                const batchSize = 1000;
+                let hasMore = true;
+                while (hasMore) {
+                    const response = await supabase
+                        .from('transactions')
+                        .select('amount, category_id, type, date')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: true })
+                        .range(from, from + batchSize - 1);
+                    if (response.error) throw response.error;
+                    const batch = response.data || [];
+                    allTx = [...allTx, ...batch];
+                    hasMore = batch.length === batchSize;
+                    from += batchSize;
+                }
+                if (isMounted) setAllTransactionsData(allTx);
+            } catch (err) {
+                if (isMounted) setError('Failed to load transactions.');
+            } finally {
+                if (isMounted) setTransactionsLoading(false);
+            }
+        };
+        fetchAllTransactions();
+        return () => { isMounted = false; };
+    }, [supabase]);
+
+    // On month change, only fetch assignments, categories, and reminder
     useEffect(() => {
         const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         setMonthString(newMonthString);
-        fetchBudgetData(); // Fetch new data when month changes
+        if (allTransactionsData) {
+            fetchBudgetData(newMonthString, allTransactionsData);
+        }
         // Remove separate fetchReminderData call - now included in fetchBudgetData
-    }, [currentMonth]);
+    }, [currentMonth, allTransactionsData]);
 
     // Listen for hide budget values changes
     useEffect(() => {
@@ -93,6 +137,28 @@ export default function Budget() {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     };
 
+    const goToCurrentMonth = () => {
+        setCurrentMonth(new Date());
+    };
+
+    // Helper function to determine if we're viewing a past, current, or future month
+    const getMonthStatus = () => {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonthNum = today.getMonth();
+        
+        const viewingYear = currentMonth.getFullYear();
+        const viewingMonthNum = currentMonth.getMonth();
+        
+        if (viewingYear < currentYear || (viewingYear === currentYear && viewingMonthNum < currentMonthNum)) {
+            return 'past';
+        } else if (viewingYear > currentYear || (viewingYear === currentYear && viewingMonthNum > currentMonthNum)) {
+            return 'future';
+        } else {
+            return 'current';
+        }
+    };
+
     // Helper function to calculate rollover for a category up to a specific month
     const calculateRolloverForCategory = useCallback((
         categoryId: string, 
@@ -102,29 +168,60 @@ export default function Budget() {
     ): number => {
         if (!categoryId) return 0;
 
-        // Get all months from category creation up to target month
+        // Get all assignments and transactions for this category to find the earliest date
+        const categoryAssignments = allAssignments.filter(a => a.category_id === categoryId);
+        const categoryTransactions = allTransactions.filter(t => t.category_id === categoryId);
+        
+        if (categoryAssignments.length === 0 && categoryTransactions.length === 0) return 0;
+
+        // Find the earliest month from either assignments or transactions
+        const earliestAssignmentMonth = categoryAssignments.length > 0 
+            ? categoryAssignments.reduce((earliest, a) => a.month < earliest ? a.month : earliest, categoryAssignments[0].month)
+            : null;
+        
+        const earliestTransactionDate = categoryTransactions.length > 0
+            ? categoryTransactions.reduce((earliest, t) => t.date < earliest ? t.date : earliest, categoryTransactions[0].date)
+            : null;
+        
+        const earliestTransactionMonth = earliestTransactionDate 
+            ? earliestTransactionDate.substring(0, 7) // Convert YYYY-MM-DD to YYYY-MM
+            : null;
+
+        // Determine the actual start month (earliest of assignments or transactions)
+        let startMonth = earliestAssignmentMonth;
+        if (earliestTransactionMonth && (!startMonth || earliestTransactionMonth < startMonth)) {
+            startMonth = earliestTransactionMonth;
+        }
+        
+        if (!startMonth || startMonth >= targetMonth) return 0;
+        // Generate all months from the earliest data up to (but not including) target month
         const targetDate = new Date(targetMonth + '-01');
         const months: string[] = [];
+
+        // Always normalize to the first of the month
+        let currentDate = new Date(startMonth + '-01');
+        currentDate.setDate(1);
         
-        // Start from 12 months ago to ensure we capture enough history
-        const startDate = new Date(targetDate);
-        startDate.setMonth(startDate.getMonth() - 12);
-        
-        let currentDate = new Date(startDate);
-        while (currentDate <= targetDate) {
+        while (true) {
             const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-            if (monthStr < targetMonth) { // Only include months before target
-                months.push(monthStr);
-            }
+            if (monthStr >= targetMonth) break; // Only include months strictly before targetMonth
+            months.push(monthStr);
             currentDate.setMonth(currentDate.getMonth() + 1);
+            currentDate.setDate(1);
         }
 
         let rollover = 0;
+
         
+        
+        console.log('Rollover calculation for category', categoryId, 'targetMonth:', targetMonth, 'months included:', months);
+
         // Calculate rollover month by month
         for (const month of months) {
             const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
             const assigned = assignment?.assigned || 0;
+
+            
             
             // Calculate spending for this month
             const monthStart = month + '-01';
@@ -141,6 +238,8 @@ export default function Budget() {
             
             // Add to rollover: assigned + previous rollover - spent
             rollover = rollover + assigned - monthSpent;
+
+            console.log(`[Rollover] Month: ${month}, Assigned: ${assigned}, Spent: ${monthSpent}, Rollover so far: ${rollover}`);
             
             // Rollover CAN be negative
         }
@@ -169,8 +268,9 @@ export default function Budget() {
         return Math.max(0, daysRemaining);
     }, [currentMonth]);
 
-    // Memoize fetchBudgetData to prevent unnecessary recreations
-    const fetchBudgetData = useCallback(async () => {
+
+    // Only fetch assignments, categories, and reminder for the current month
+    const fetchBudgetData = useCallback(async (queryMonthString: string, allTransactionsData: any[]) => {
         try {
             setLoading(true);
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -179,17 +279,11 @@ export default function Budget() {
             // Get first and last day of the selected month
             const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
-            // Format dates for database query - use local timezone instead of UTC
             const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
             const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
 
-            // Format current month for assignments query
-            const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-            setMonthString(queryMonthString);
-
-            // Fetch ALL data for rollover calculations and budget pool, including reminder data
-            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
+            // Fetch only categories, assignments, and reminder for this month
+            const [categoriesResponse, transactionsResponse, assignmentsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -213,10 +307,6 @@ export default function Budget() {
                     .eq('user_id', user.id)
                     .eq('month', queryMonthString),
                 supabase
-                    .from('transactions')
-                    .select('amount, category_id, type, date')
-                    .eq('user_id', user.id),
-                supabase
                     .from('assignments')
                     .select('*')
                     .eq('user_id', user.id),
@@ -231,14 +321,12 @@ export default function Budget() {
             if (categoriesResponse.error) throw categoriesResponse.error;
             if (transactionsResponse.error) throw transactionsResponse.error;
             if (assignmentsResponse.error) throw assignmentsResponse.error;
-            if (allTransactionsResponse.error) throw allTransactionsResponse.error;
             if (allAssignmentsResponse.error) throw allAssignmentsResponse.error;
             // Don't throw error for reminder response - it's okay if no reminder exists
 
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
-            const allTransactionsData = allTransactionsResponse.data;
             const allAssignments = allAssignmentsResponse.data;
 
             // Handle reminder data
@@ -252,7 +340,7 @@ export default function Budget() {
             // Calculate spent amounts for each category
             const spentByCategory: { [key: string]: number } = {};
             
-            // Get starting balance and total income from ALL transactions
+            // Get starting balance and total income from ALL transactions (cached)
             allTransactionsData?.forEach(transaction => {
                 if (transaction.type == 'starting') {startingBalance += transaction.amount;}
                 if (transaction.type == 'income') {totalIncome += transaction.amount;}
@@ -278,18 +366,13 @@ export default function Budget() {
             // Calculate categories with assignments and rollovers
             const categoriesWithSpent = categoriesData.map(category => {
                 const assignment = assignmentsByCategory[category.id];
-                const assigned = assignment?.assigned ?? 0;
-                const spent = spentByCategory[category.id] || 0;
-                
-                // Calculate rollover if enabled
-                const rollover =  calculateRolloverForCategory(category.id, queryMonthString, allAssignments || [], allTransactionsData);
-                
-                const available = assigned + rollover - spent;
-                
-                // Calculate daily amount left
+                // Always use numbers and round to 2 decimals
+                const assigned = Math.round((Number(assignment?.assigned ?? 0)) * 100) / 100;
+                const spent = Math.round((Number(spentByCategory[category.id] || 0)) * 100) / 100;
+                const rollover = Math.round((Number(calculateRolloverForCategory(category.id, queryMonthString, allAssignments || [], allTransactionsData))) * 100) / 100;
+                const available = Math.round((assigned + rollover - spent) * 100) / 100;
                 const daysRemaining = getDaysRemainingInMonth();
-                const dailyLeft = daysRemaining > 0 ? available / daysRemaining : 0;
-                
+                const dailyLeft = daysRemaining > 0 ? Math.round((available / daysRemaining) * 100) / 100 : 0;
                 return {
                     id: category.id,
                     name: category.name,
@@ -303,15 +386,30 @@ export default function Budget() {
                 };
             });
             
-            // Calculate total assigned amount across ALL months (for budget pool calculation)
-            const totalAssignedAllTime = allAssignments?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
-            const totalBudgetPoolThisMonth = startingBalance + totalIncome;
-            const totalAssignedCurrentMonth = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
 
-            // Update balance info
+            // DEBUG: Log number of transactions used for budget pool calculation
+            console.log('DEBUG: Number of transactions in allTransactionsData:', allTransactionsData ? allTransactionsData.length : 0);
+            // Calculate total actual money available (same as transactions page total balance)
+            const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
+
+            // Calculate total available in all categories (assigned + rollover - spent)
+            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0);
+
+            // DEBUG: Print each category's available, assigned, rollover, spent
+            console.log('--- DEBUG: Category Balances for Left to Assign / Overspent ---');
+            categoriesWithSpent.forEach((cat, i) => {
+                console.log(`Category[${i}] '${cat.name}': assigned=${cat.assigned}, rollover=${cat.rollover}, spent=${cat.spent}, available=${cat.available}`);
+            });
+
+            // Update balance info - Compare total balance to total available in categories
             setBalanceInfo({
-                budgetPool: totalBudgetPoolThisMonth,
-                assigned: totalAssignedAllTime // Use total assigned across all months
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories
+            });
+            console.log('DEBUG: setBalanceInfo (leftToAssign/overspent):', {
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories,
+                leftToAssign: totalActualMoney - totalAvailableInCategories
             });
             
             setCategories(categoriesWithSpent);
@@ -322,7 +420,7 @@ export default function Budget() {
         } finally {
             setLoading(false);
         }
-    }, [currentMonth, supabase, calculateRolloverForCategory, getDaysRemainingInMonth]);
+    }, [supabase, calculateRolloverForCategory, getDaysRemainingInMonth, currentMonth]);
 
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
@@ -389,7 +487,57 @@ export default function Budget() {
                 cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
             ));
             // Refresh data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
+            throw error;
+        }
+    };
+
+    // New: balance all overspent categories so their available is 0
+    const balanceOverspentCategories = async () => {
+        try {
+            const overspent = getOverspentCategories();
+            if (overspent.length === 0) return;
+            // For each overspent category, set assigned = spent - rollover
+            const changes = new Map();
+            overspent.forEach(cat => {
+                const newAssigned = cat.spent - cat.rollover;
+                if (newAssigned !== cat.assigned) {
+                    changes.set(cat.id, newAssigned);
+                }
+            });
+            if (changes.size === 0) return;
+            // Update local state for immediate feedback
+            const updatedCategories = categories.map(cat => {
+                const newAmount = changes.get(cat.id);
+                if (newAmount !== undefined) {
+                    const newAvailable = newAmount + cat.rollover - cat.spent;
+                    const daysRemaining = getDaysRemainingInMonth();
+                    const dailyLeft = daysRemaining > 0 ? newAvailable / daysRemaining : 0;
+                    return { ...cat, assigned: newAmount, available: newAvailable, dailyLeft };
+                }
+                return cat;
+            });
+            setCategories(updatedCategories);
+            // Prepare all database updates
+            const updates = Array.from(changes.entries()).map(([categoryId, amount]) =>
+                handleAssignmentUpdate(categoryId, amount, false),
+            );
+            await toast.promise(Promise.all(updates), {
+                loading: 'Balancing overspent categories...',
+                success: `Balanced ${updates.length} categories!`,
+                error: 'Failed to balance some categories'
+            });
+            // Refetch data to ensure consistency
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
+        } catch (error) {
+            console.error('Error balancing overspent categories:', error);
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
             throw error;
         }
     };
@@ -490,12 +638,16 @@ export default function Budget() {
             }
 
             // After successful update, refetch data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
 
         } catch (error) {
             console.error('Error updating assignments:', error);
             // On error, refresh data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
             throw error;
         }
     };
@@ -672,6 +824,9 @@ export default function Budget() {
         };
     }, [saveTimeout]);
 
+
+    const totalAvailable = categories.reduce((sum, cat) => sum + cat.available, 0);
+    
     return(
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -710,9 +865,19 @@ export default function Budget() {
                                     className="opacity-90"
                                 />
                             </button>
-                            <h2 className="text-base font-medium min-w-[120px] text-center">
-                                {formatMonth(currentMonth)}
-                            </h2>
+                            <div className="flex flex-col items-center min-w-[120px]">
+                                <h2 className="text-base font-medium text-center">
+                                    {formatMonth(currentMonth)}
+                                </h2>
+                                {(currentMonth.getMonth() !== new Date().getMonth() || currentMonth.getFullYear() !== new Date().getFullYear()) && (
+                                    <button
+                                        onClick={goToCurrentMonth}
+                                        className="text-xs text-green hover:text-green-dark transition-colors mt-0.5"
+                                    >
+                                        Back to Today
+                                    </button>
+                                )}
+                            </div>
                             <button 
                                 onClick={goToNextMonth}
                                 className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
@@ -790,9 +955,19 @@ export default function Budget() {
                                             className="lg:w-9 lg:h-9 opacity-70"
                                         />
                                     </button>
-                                    <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
-                                        {formatMonth(currentMonth)}
-                                    </h2>
+                                    <div className="flex flex-col items-center">
+                                        <h2 className="text-base lg:text-lg font-medium min-w-[100px] lg:min-w-[140px] text-center whitespace-nowrap">
+                                            {formatMonth(currentMonth)}
+                                        </h2>
+                                        {(currentMonth.getMonth() !== new Date().getMonth() || currentMonth.getFullYear() !== new Date().getFullYear()) && (
+                                            <button
+                                                onClick={goToCurrentMonth}
+                                                className="text-xs text-green hover:text-green-dark transition-colors mt-0.5"
+                                            >
+                                                Back to Today
+                                            </button>
+                                        )}
+                                    </div>
                                     <button 
                                         onClick={goToNextMonth}
                                         className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
@@ -853,28 +1028,34 @@ export default function Budget() {
                                     </button>
                                 </div>
                                 
-                                <div 
-                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
-                                        showOverspentAlert 
-                                        ? 'opacity-100 transform translate-y-0' 
-                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                                    }`}
-                                >
-                                    <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
-                                        <h4 className="font-medium mb-2">Overspent Categories:</h4>
-                                        <div className="space-y-1 text-sm">
-                                            {getOverspentCategories().map(cat => (
-                                                <div key={cat.id} className="flex justify-between">
-                                                    <span>{cat.name}</span>
-                                                    <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
-                                                </div>
-                                            ))}
+                        <div 
+                            className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
+                                showOverspentAlert 
+                                ? 'opacity-100 transform translate-y-0' 
+                                : 'opacity-0 transform -translate-y-2 pointer-events-none'
+                            }`}
+                        >
+                            <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
+                                <h4 className="font-medium mb-2">Overspent Categories:</h4>
+                                <div className="space-y-1 text-sm">
+                                    {getOverspentCategories().map(cat => (
+                                        <div key={cat.id} className="flex justify-between">
+                                            <span>{cat.name}</span>
+                                            <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
                                         </div>
-                                    </div>
-                                    <div className="text-sm opacity-90">
-                                        <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending.</p>
-                                    </div>
+                                    ))}
                                 </div>
+                                <button
+                                    className="mt-4 w-full bg-green text-background font-semibold py-2 rounded-lg hover:bg-green-dark transition-colors"
+                                    onClick={balanceOverspentCategories}
+                                >
+                                    Balance Overspent
+                                </button>
+                            </div>
+                            <div className="text-sm opacity-90">
+                                <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending. Or, use the button above to automatically balance all overspent categories.</p>
+                            </div>
+                        </div>
                             </div>
                         )}
 
@@ -885,7 +1066,7 @@ export default function Budget() {
                                     Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
-                                } ${isMassAssigning ? 'h-[128px] md:h-[128px]' : ''}
+                                } ${isMassAssigning ? 'h-[140px] md:h-[140px]' : ''}
                                 `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
@@ -893,10 +1074,18 @@ export default function Budget() {
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left to assign
+                                                {/* Desktop: show disclaimer in title if past month */}
+                                                {getMonthStatus() === 'past' && (
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                )}
                                             </p>
                                         ) : (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
+                                                {/* Desktop: show disclaimer in title if past month */}
+                                                {getMonthStatus() === 'past' && (
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -915,9 +1104,16 @@ export default function Budget() {
                                         : 'opacity-0 transform -translate-y-2 pointer-events-none'
                                     }`}
                                 >
-                                     <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
+                                    {/* Mobile: show disclaimer in body if past month */}
+                                    {getMonthStatus() === 'past' && (
+                                        <div className="md:hidden text-xs text-white/70 mb-2">
+                                            Past month: Don't worry, this rolls over. Focus on the current month!
+                                        </div>
+                                    )}
+                                    {getMonthStatus() !== 'past' && (
+                                    <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
                                         <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
-                                    </div>
+                                    </div>)}
                                     <div className= "flex gap-2">
                                         <button
                                             className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
@@ -995,16 +1191,81 @@ export default function Budget() {
                             <div className="space-y-1 md:space-y-2">
                                 {/* Monthly Summary */}
                                 <div className="bg-white/[.03] rounded-lg py-1 md:py-3 md:p-4 mb-2">
-                                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
-                                        <div className="text-center">
-                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Assigned</div>
-                                            <div className="font-medium text-green">{formatCurrency(categories.reduce((sum, cat) => sum + cat.assigned, 0))}</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-white/60 text-xs uppercase tracking-wide md:mb-1">Spent</div>
-                                            <div className="font-medium text-reddy">{formatCurrency(categories.reduce((sum, cat) => sum + cat.spent, 0))}</div>
-                                        </div>
-                                    </div>
+                                    {(() => {
+                                        const monthStatus = getMonthStatus();
+                                        const totalAssigned = categories.reduce((sum, cat) => sum + cat.assigned, 0);
+                                        const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
+                                        
+                                        // If both assigned and spent are 0, show month status indicator
+                                        if (totalAssigned === 0 && totalSpent === 0) {
+                                            return (
+                                                <div className="flex items-center justify-center gap-2 text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        {monthStatus === 'past' && (
+                                                            <>
+                                                                <span className="text-blue-400 font-medium">Past Month</span>
+                                                                <span className="text-white/50">No budget activity</span>
+                                                            </>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <>
+                                                                <span className="text-purple-400 font-medium">Future Month</span>
+                                                                <span className="text-white/50">No budget set yet</span>
+                                                            </>
+                                                        )}
+                                                        {monthStatus === 'current' && (
+                                                            <>
+                                                                <span className="text-green font-medium">Current Month</span>
+                                                                <span className="text-white/50">No budget activity</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        // Show normal assigned/spent with status indicator
+                                        return (
+                                            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Available</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-green">{formatCurrency(totalAvailable)}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Assigned</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-green">{formatCurrency(totalAssigned)}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                        <div className="text-white/60 text-xs uppercase tracking-wide">Spent</div>
+                                                        {monthStatus === 'past' && (
+                                                            <span className="text-blue-400 text-xs font-medium">past</span>
+                                                        )}
+                                                        {monthStatus === 'future' && (
+                                                            <span className="text-purple-400 text-xs font-medium">future</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-reddy">{formatCurrency(totalSpent)}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
@@ -1109,7 +1370,12 @@ export default function Budget() {
 
                 <ManageBudgetModal
                   isOpen={showManageModal}
-                  onClose={() => (fetchBudgetData(), setShowManageModal(false))}
+                  onClose={() => {
+                    if (monthString && allTransactionsData) {
+                      fetchBudgetData(monthString, allTransactionsData);
+                    }
+                    setShowManageModal(false);
+                  }}
                 />
 
                 <AccountModal

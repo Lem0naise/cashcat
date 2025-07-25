@@ -53,8 +53,8 @@ export default function Stats() {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) throw new Error('Not authenticated');
 
-            // Fetch assignments, categories, and transactions
-            const [assignmentsResponse, categoriesResponse, transactionsResponse] = await Promise.all([
+            // Fetch assignments and categories as before
+            const [assignmentsResponse, categoriesResponse] = await Promise.all([
                 supabase
                     .from('assignments')
                     .select('*')
@@ -71,20 +71,37 @@ export default function Stats() {
                     `)
                     .eq('user_id', user.id)
                     .order('created_at'),
-                supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('date', { ascending: true })
             ]);
 
             if (assignmentsResponse.error) throw assignmentsResponse.error;
             if (categoriesResponse.error) throw categoriesResponse.error;
-            if (transactionsResponse.error) throw transactionsResponse.error;
 
             setAssignments(assignmentsResponse.data || []);
             setCategories(categoriesResponse.data || []);
-            setTransactions(transactionsResponse.data || []);
+
+            // Paginate transactions like in the transactions page
+            let allTransactions: Transaction[] = [];
+            let from = 0;
+            const batchSize = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                const response = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('date', { ascending: true })
+                    .range(from, from + batchSize - 1);
+
+                if (response.error) throw response.error;
+
+                const batch = response.data || [];
+                allTransactions = [...allTransactions, ...batch];
+                hasMore = batch.length === batchSize;
+                from += batchSize;
+            }
+
+            setTransactions(allTransactions);
         } catch (error) {
             console.error('Error fetching stats data:', error);
             toast.error('Failed to load statistics data');

@@ -25,7 +25,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
     const [isUpdating, setIsUpdating] = useState(false);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
-    const displayAvailable = available !== undefined ? available : (assigned + rollover - spent);
+    // Always round to 2 decimals for display
+    const displayAvailable = available !== undefined ? Math.round(available * 100) / 100 : Math.round((assigned + rollover - spent) * 100) / 100;
     const goal = goalAmount || 0;
     const inputRef = useRef<HTMLInputElement>(null);
     
@@ -121,7 +122,9 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     // Helper function to format currency or return asterisks
     const formatCurrency = (amount: number) => {
         if (hideBudgetValues) return '****';
-        return `${amount<0?'-':''}£${Math.abs(amount).toFixed(2)}`;
+        // Always round to 2 decimals before formatting
+        const rounded = Math.round(amount * 100) / 100;
+        return `${rounded < 0 ? '-' : ''}£${Math.abs(rounded).toFixed(2)}`;
     };
 
     return (

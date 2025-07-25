@@ -433,7 +433,7 @@ export default function PieSegmentInsights({
               {insights.trendDirection === 'up' && (
                 <span>
                   💡 Your spending has increased. Consider reviewing your budget for this {segment.type} 
-                  or look for cost-saving opportunities.
+                  {` `}or look for cost-saving opportunities.
                 </span>
               )}
               {insights.trendDirection === 'down' && (
