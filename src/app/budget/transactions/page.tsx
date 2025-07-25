@@ -97,38 +97,62 @@ export default function Transactions() {
 
     const fetchTransactions = async () => {
         try {
-            let response: {
-                data: Transaction[] | null;
-                error: any;
-            };
-
             // In production mode, use real Supabase
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
+
+            let allTransactions: Transaction[] = [];
+            let from = 0;
+            const batchSize = 1000;
+            let hasMore = true;
+
+            console.log('Starting to fetch transactions...');
+
+            while (hasMore) {
+                console.log(`Fetching batch: ${from} to ${from + batchSize - 1}`);
+                
+                const response = await supabase
+                    .from('transactions')
+                    .select(`
+                        *,
+                        categories (
+                            id,
+                            name,
+                            group
+                        ),
+                        vendors (
+                            id,
+                            name
+                        ),
+                        accounts (
+                            id,
+                            name,
+                            type
+                        )
+                    `)
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: true })
+                    .range(from, from + batchSize - 1);
+
+                if (response.error) throw response.error;
+                
+                const batch = response.data || [];
+                allTransactions = [...allTransactions, ...batch];
+                
+                console.log(`Fetched ${batch.length} transactions in this batch`);
+                
+                // If we got less than the batch size, we've reached the end
+                hasMore = batch.length === batchSize;
+                from += batchSize;
+            }
+
+            setTransactions(allTransactions);
+            console.log('All fetched transactions:', allTransactions.length);
             
-            response = await supabase
-                .from('transactions')
-                .select(`
-                    *,
-                    categories (
-                        id,
-                        name,
-                        group
-                    ),
-                    vendors (
-                        id,
-                        name
-                    ),
-                    accounts (
-                        id,
-                        name,
-                        type
-                    )
-                `)
-                .eq('user_id', user.id);
-            
-            if (response.error) throw response.error;
-            setTransactions(response.data || []);
+            const targetTransactionIds = ["91e154ea-5459-4f3e-a72e-52cf24d190e8", "bbfe6d21-4006-476d-8af2-ff8cef8d4bd6"];
+            const foundTargets = allTransactions.filter(t => targetTransactionIds.includes(t.id));
+            console.log('Found target transactions:', foundTargets);
+        
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
@@ -208,6 +232,7 @@ export default function Transactions() {
 
     // Calculate total balance including starting balance
     const calculateTotalBalance = (transactions: Transaction[]) => {
+        console.log('DEBUG: Number of transactions in transactions page:', transactions.length);
         return transactions.reduce((total, transaction) => total + transaction.amount, 0);
     };
 

@@ -31,6 +31,7 @@ type Category = {
     dailyLeft?: number; // Amount available per day for rest of month
 };
 
+
 export default function Budget() {
     const router = useRouter();
     const supabase = createClientComponentClient<Database>();
@@ -52,14 +53,57 @@ export default function Budget() {
     const [reminderText, setReminderText] = useState<string>('');
     const [reminderLoading, setReminderLoading] = useState(false);
     const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+    // Cache all transactions in state
+    const [allTransactionsData, setAllTransactionsData] = useState<any[] | null>(null);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
 
     // Update month string when current month changes
+
+    // On mount, fetch all transactions ONCE (or if user/account changes)
+    useEffect(() => {
+        let isMounted = true;
+        const fetchAllTransactions = async () => {
+            setTransactionsLoading(true);
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError || !user) throw new Error('Not authenticated');
+                let allTx: any[] = [];
+                let from = 0;
+                const batchSize = 1000;
+                let hasMore = true;
+                while (hasMore) {
+                    const response = await supabase
+                        .from('transactions')
+                        .select('amount, category_id, type, date')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: true })
+                        .range(from, from + batchSize - 1);
+                    if (response.error) throw response.error;
+                    const batch = response.data || [];
+                    allTx = [...allTx, ...batch];
+                    hasMore = batch.length === batchSize;
+                    from += batchSize;
+                }
+                if (isMounted) setAllTransactionsData(allTx);
+            } catch (err) {
+                if (isMounted) setError('Failed to load transactions.');
+            } finally {
+                if (isMounted) setTransactionsLoading(false);
+            }
+        };
+        fetchAllTransactions();
+        return () => { isMounted = false; };
+    }, [supabase]);
+
+    // On month change, only fetch assignments, categories, and reminder
     useEffect(() => {
         const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         setMonthString(newMonthString);
-        fetchBudgetData(); // Fetch new data when month changes
+        if (allTransactionsData) {
+            fetchBudgetData(newMonthString, allTransactionsData);
+        }
         // Remove separate fetchReminderData call - now included in fetchBudgetData
-    }, [currentMonth]);
+    }, [currentMonth, allTransactionsData]);
 
     // Listen for hide budget values changes
     useEffect(() => {
@@ -212,8 +256,9 @@ export default function Budget() {
         return Math.max(0, daysRemaining);
     }, [currentMonth]);
 
-    // Memoize fetchBudgetData to prevent unnecessary recreations
-    const fetchBudgetData = useCallback(async () => {
+
+    // Only fetch assignments, categories, and reminder for the current month
+    const fetchBudgetData = useCallback(async (queryMonthString: string, allTransactionsData: any[]) => {
         try {
             setLoading(true);
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -222,17 +267,11 @@ export default function Budget() {
             // Get first and last day of the selected month
             const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
-            // Format dates for database query - use local timezone instead of UTC
             const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
             const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
 
-            // Format current month for assignments query
-            const queryMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-            setMonthString(queryMonthString);
-
-            // Fetch ALL data for rollover calculations and budget pool, including reminder data
-            const [categoriesResponse, transactionsResponse, assignmentsResponse, allTransactionsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
+            // Fetch only categories, assignments, and reminder for this month
+            const [categoriesResponse, transactionsResponse, assignmentsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
                 supabase
                     .from('categories')
                     .select(`
@@ -256,10 +295,6 @@ export default function Budget() {
                     .eq('user_id', user.id)
                     .eq('month', queryMonthString),
                 supabase
-                    .from('transactions')
-                    .select('amount, category_id, type, date')
-                    .eq('user_id', user.id),
-                supabase
                     .from('assignments')
                     .select('*')
                     .eq('user_id', user.id),
@@ -274,14 +309,12 @@ export default function Budget() {
             if (categoriesResponse.error) throw categoriesResponse.error;
             if (transactionsResponse.error) throw transactionsResponse.error;
             if (assignmentsResponse.error) throw assignmentsResponse.error;
-            if (allTransactionsResponse.error) throw allTransactionsResponse.error;
             if (allAssignmentsResponse.error) throw allAssignmentsResponse.error;
             // Don't throw error for reminder response - it's okay if no reminder exists
 
             const categoriesData = categoriesResponse.data;
             const transactionsData = transactionsResponse.data;
             const assignmentsData = assignmentsResponse.data;
-            const allTransactionsData = allTransactionsResponse.data;
             const allAssignments = allAssignmentsResponse.data;
 
             // Handle reminder data
@@ -295,7 +328,7 @@ export default function Budget() {
             // Calculate spent amounts for each category
             const spentByCategory: { [key: string]: number } = {};
             
-            // Get starting balance and total income from ALL transactions
+            // Get starting balance and total income from ALL transactions (cached)
             allTransactionsData?.forEach(transaction => {
                 if (transaction.type == 'starting') {startingBalance += transaction.amount;}
                 if (transaction.type == 'income') {totalIncome += transaction.amount;}
@@ -346,15 +379,30 @@ export default function Budget() {
                 };
             });
             
-            // Calculate total assigned amount across ALL months (for budget pool calculation)
-            const totalAssignedAllTime = allAssignments?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
-            const totalBudgetPoolThisMonth = startingBalance + totalIncome;
-            const totalAssignedCurrentMonth = categoriesWithSpent.reduce((total, cat) => total + cat.assigned, 0);
 
-            // Update balance info
+            // DEBUG: Log number of transactions used for budget pool calculation
+            console.log('DEBUG: Number of transactions in allTransactionsData:', allTransactionsData ? allTransactionsData.length : 0);
+            // Calculate total actual money available (same as transactions page total balance)
+            const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
+
+            // Calculate total available in all categories (assigned + rollover - spent)
+            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0);
+
+            // DEBUG: Print each category's available, assigned, rollover, spent
+            console.log('--- DEBUG: Category Balances for Left to Assign / Overspent ---');
+            categoriesWithSpent.forEach((cat, i) => {
+                console.log(`Category[${i}] '${cat.name}': assigned=${cat.assigned}, rollover=${cat.rollover}, spent=${cat.spent}, available=${cat.available}`);
+            });
+
+            // Update balance info - Compare total balance to total available in categories
             setBalanceInfo({
-                budgetPool: totalBudgetPoolThisMonth,
-                assigned: totalAssignedAllTime // Use total assigned across all months
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories
+            });
+            console.log('DEBUG: setBalanceInfo (leftToAssign/overspent):', {
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories,
+                leftToAssign: totalActualMoney - totalAvailableInCategories
             });
             
             setCategories(categoriesWithSpent);
@@ -365,7 +413,7 @@ export default function Budget() {
         } finally {
             setLoading(false);
         }
-    }, [currentMonth, supabase, calculateRolloverForCategory, getDaysRemainingInMonth]);
+    }, [supabase, calculateRolloverForCategory, getDaysRemainingInMonth, currentMonth]);
 
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
@@ -432,7 +480,9 @@ export default function Budget() {
                 cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
             ));
             // Refresh data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
             throw error;
         }
     };
@@ -533,12 +583,16 @@ export default function Budget() {
             }
 
             // After successful update, refetch data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
 
         } catch (error) {
             console.error('Error updating assignments:', error);
             // On error, refresh data to ensure consistency
-            await fetchBudgetData();
+            if (monthString && allTransactionsData) {
+                await fetchBudgetData(monthString, allTransactionsData);
+            }
             throw error;
         }
     };
@@ -1225,7 +1279,12 @@ export default function Budget() {
 
                 <ManageBudgetModal
                   isOpen={showManageModal}
-                  onClose={() => (fetchBudgetData(), setShowManageModal(false))}
+                  onClose={() => {
+                    if (monthString && allTransactionsData) {
+                      fetchBudgetData(monthString, allTransactionsData);
+                    }
+                    setShowManageModal(false);
+                  }}
                 />
 
                 <AccountModal
