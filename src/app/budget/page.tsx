@@ -1066,7 +1066,7 @@ export default function Budget() {
                                     Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
-                                } ${isMassAssigning ? 'h-[128px] md:h-[128px]' : ''}
+                                } ${isMassAssigning ? 'h-[140px] md:h-[140px]' : ''}
                                 `}
                             onClick={isMassAssigning ? ()=>{} : massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
@@ -1074,10 +1074,18 @@ export default function Budget() {
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left to assign
+                                                {/* Desktop: show disclaimer in title if past month */}
+                                                {getMonthStatus() === 'past' && (
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                )}
                                             </p>
                                         ) : (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
+                                                {/* Desktop: show disclaimer in title if past month */}
+                                                {getMonthStatus() === 'past' && (
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -1096,9 +1104,16 @@ export default function Budget() {
                                         : 'opacity-0 transform -translate-y-2 pointer-events-none'
                                     }`}
                                 >
-                                     <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
+                                    {/* Mobile: show disclaimer in body if past month */}
+                                    {getMonthStatus() === 'past' && (
+                                        <div className="md:hidden text-xs text-white/70 mb-2">
+                                            Past month: Don't worry, this rolls over. Focus on the current month!
+                                        </div>
+                                    )}
+                                    {getMonthStatus() !== 'past' && (
+                                    <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
                                         <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
-                                    </div>
+                                    </div>)}
                                     <div className= "flex gap-2">
                                         <button
                                             className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
