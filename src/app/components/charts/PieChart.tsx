@@ -14,7 +14,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Doughnut } from 'react-chartjs-2';
 import { Transaction, Category } from './types';
 import { formatCurrency } from './utils';
-import { format, differenceInDays, addDays, subDays } from 'date-fns';
+import { format, differenceInDays, addDays, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from 'date-fns';
 
 // Register Chart.js components (without ChartDataLabels globally)
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -70,27 +70,108 @@ export default function PieChart({
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today
     
-    const isAtToday = differenceInDays(today, dateRange.end) <= 1;
-    const isAtStart = allTimeRange ? differenceInDays(dateRange.start, allTimeRange.start) <= 1 : false;
+    // Detect if we're actually in MTD/YTD mode by analyzing the date range
+    // This handles cases where timeRange becomes 'custom' after navigation
+    const isCompleteMonth = dateRange.start.getTime() === startOfMonth(dateRange.start).getTime() &&
+                           dateRange.end.getTime() === endOfMonth(dateRange.start).getTime();
+    const isCompleteYear = dateRange.start.getTime() === startOfYear(dateRange.start).getTime() &&
+                          dateRange.end.getTime() === endOfYear(dateRange.start).getTime();
+    const isCurrentMonth = dateRange.start.getTime() === startOfMonth(today).getTime() &&
+                          dateRange.end.getTime() <= today.getTime() &&
+                          dateRange.end.getTime() >= startOfMonth(today).getTime();
+    const isCurrentYear = dateRange.start.getTime() === startOfYear(today).getTime() &&
+                         dateRange.end.getTime() <= today.getTime() &&
+                         dateRange.end.getTime() >= startOfYear(today).getTime();
+    
+    // Determine the actual navigation mode
+    const actualMode = (timeRange === 'mtd' || isCompleteMonth || isCurrentMonth) ? 'mtd' :
+                      (timeRange === 'ytd' || isCompleteYear || isCurrentYear) ? 'ytd' :
+                      timeRange;
+    
+    // Calculate navigation availability based on actual range type
+    let isAtToday: boolean;
+    let isAtStart: boolean;
+    
+    if (actualMode === 'mtd') {
+      // For MTD, we're at "today" if we're showing the current month
+      const currentMonth = startOfMonth(today);
+      const showingCurrentMonth = dateRange.start.getTime() === currentMonth.getTime();
+      isAtToday = showingCurrentMonth;
+      
+      // We're at start if the previous month would be before transaction history
+      const prevMonth = subMonths(dateRange.start, 1);
+      const prevMonthStart = startOfMonth(prevMonth);
+      isAtStart = allTimeRange ? prevMonthStart < allTimeRange.start : false;
+    } else if (actualMode === 'ytd') {
+      // For YTD, we're at "today" if we're showing the current year
+      const currentYear = startOfYear(today);
+      const showingCurrentYear = dateRange.start.getTime() === currentYear.getTime();
+      isAtToday = showingCurrentYear;
+      
+      // We're at start if there are no transactions in any previous year
+      // Check if the previous year has any overlap with transaction history
+      const prevYear = subYears(dateRange.start, 1);
+      const prevYearStart = startOfYear(prevYear);
+      const prevYearEnd = endOfYear(prevYear);
+      isAtStart = allTimeRange ? 
+        (prevYearEnd < allTimeRange.start || prevYearStart > allTimeRange.end) : 
+        false;
+    } else {
+      // For duration-based ranges, use the existing logic
+      isAtToday = differenceInDays(today, dateRange.end) <= 1;
+      isAtStart = allTimeRange ? differenceInDays(dateRange.start, allTimeRange.start) <= 1 : false;
+    }
     
     // Format the date range text
     let rangeText = '';
-    if (timeRange === 'custom') {
+    let durationText = '';
+    
+    if (actualMode === 'custom') {
       if (durationInDays === 0) {
         rangeText = format(dateRange.start, 'MMM dd, yyyy');
+        durationText = 'Single day';
       } else if (durationInDays < 32) {
         rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+        durationText = `${durationInDays + 1} day${durationInDays === 0 ? '' : 's'}`;
       } else {
         rangeText = `${format(dateRange.start, 'MMM dd, yyyy')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+        durationText = `${durationInDays + 1} day${durationInDays === 0 ? '' : 's'}`;
       }
     } else {
-      // For preset ranges, show a more readable format
+      // For preset ranges, show a more readable format and use the preset name for duration
       if (durationInDays <= 7) {
         rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
       } else if (durationInDays < 32) {
         rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
       } else {
         rangeText = `${format(dateRange.start, 'MMM yyyy')} - ${format(dateRange.end, 'MMM yyyy')}`;
+      }
+      
+      // Use preset-friendly duration text that matches the picker
+      switch (actualMode) {
+        case '7d':
+          durationText = 'Last 7 days';
+          break;
+        case '30d':
+          durationText = 'Last 30 days';
+          break;
+        case 'mtd':
+          durationText = isCurrentMonth ? 'Month to date' : 'Complete month';
+          break;
+        case '3m':
+          durationText = 'Last 3 months';
+          break;
+        case 'ytd':
+          durationText = isCurrentYear ? 'Year to date' : 'Complete year';
+          break;
+        case '12m':
+          durationText = 'Last 12 months';
+          break;
+        case 'all':
+          durationText = 'All time';
+          break;
+        default:
+          durationText = `${durationInDays + 1} day${durationInDays === 0 ? '' : 's'}`;
       }
     }
     
@@ -99,6 +180,8 @@ export default function PieChart({
       isAtToday,
       isAtStart,
       rangeText,
+      durationText,
+      actualMode, // Include the detected mode for use in navigation handlers
       canNavigateNext: !isAtToday,
       canNavigatePrev: !isAtStart && allTimeRange !== undefined
     };
@@ -107,13 +190,43 @@ export default function PieChart({
   const handleNavigatePrev = () => {
     if (!onDateRangeChange || !dateRangeInfo.canNavigatePrev) return;
     
-    const duration = dateRangeInfo.durationInDays;
-    const newEnd = subDays(dateRange.start, 1);
-    const newStart = subDays(newEnd, duration);
+    let newStart: Date;
+    let newEnd: Date;
+    
+    if (dateRangeInfo.actualMode === 'mtd') {
+      // For MTD, go to the previous complete month
+      // Use the start of the current range to determine the previous month
+      const currentMonthStart = startOfMonth(dateRange.start);
+      const prevMonth = subMonths(currentMonthStart, 1);
+      newStart = startOfMonth(prevMonth);
+      newEnd = endOfMonth(prevMonth);
+    } else if (dateRangeInfo.actualMode === 'ytd') {
+      // For YTD, go to the previous complete year
+      const currentYearStart = startOfYear(dateRange.start);
+      const prevYear = subYears(currentYearStart, 1);
+      newStart = startOfYear(prevYear);
+      newEnd = endOfYear(prevYear);
+    } else {
+      // For duration-based ranges, use the existing logic
+      const duration = dateRangeInfo.durationInDays;
+      newEnd = subDays(dateRange.start, 1);
+      newStart = subDays(newEnd, duration);
+    }
     
     // Don't go before the start of transaction history
-    if (allTimeRange && newStart < allTimeRange.start) {
-      return;
+    // Exception: For MTD/YTD navigation, allow going to periods that partially overlap with transaction history
+    if (allTimeRange) {
+      if (dateRangeInfo.actualMode === 'mtd' || dateRangeInfo.actualMode === 'ytd') {
+        // For MTD/YTD, only block if the entire period is before transaction history
+        if (newEnd < allTimeRange.start) {
+          return;
+        }
+      } else {
+        // For duration-based ranges, block if start is before transaction history
+        if (newStart < allTimeRange.start) {
+          return;
+        }
+      }
     }
     
     onDateRangeChange(newStart, newEnd);
@@ -122,17 +235,53 @@ export default function PieChart({
   const handleNavigateNext = () => {
     if (!onDateRangeChange || !dateRangeInfo.canNavigateNext) return;
     
-    const duration = dateRangeInfo.durationInDays;
-    const newStart = addDays(dateRange.end, 1);
-    const newEnd = addDays(newStart, duration);
-    
-    // Don't go beyond today
+    let newStart: Date;
+    let newEnd: Date;
     const today = new Date();
-    if (newEnd > today) {
-      onDateRangeChange(newStart, today);
+    
+    if (dateRangeInfo.actualMode === 'mtd') {
+      // For MTD, go to the next month (but not beyond current month)
+      // Use the start of the current range to determine the next month
+      const currentMonthStart = startOfMonth(dateRange.start);
+      const nextMonth = addDays(endOfMonth(currentMonthStart), 1); // First day of next month
+      newStart = startOfMonth(nextMonth);
+      newEnd = endOfMonth(nextMonth);
+      
+      // If the next month would be in the future, show MTD of current month instead
+      if (newStart > today) {
+        newStart = startOfMonth(today);
+        newEnd = today;
+      } else if (newEnd > today) {
+        newEnd = today;
+      }
+    } else if (dateRangeInfo.actualMode === 'ytd') {
+      // For YTD, go to the next year (but not beyond current year)
+      const currentYearStart = startOfYear(dateRange.start);
+      const nextYear = addDays(endOfYear(currentYearStart), 1); // First day of next year
+      newStart = startOfYear(nextYear);
+      newEnd = endOfYear(nextYear);
+      
+      // If the next year would be in the future, show YTD of current year instead
+      if (newStart > today) {
+        newStart = startOfYear(today);
+        newEnd = today;
+      } else if (newEnd > today) {
+        newEnd = today;
+      }
     } else {
-      onDateRangeChange(newStart, newEnd);
+      // For duration-based ranges, use the existing logic
+      const duration = dateRangeInfo.durationInDays;
+      newStart = addDays(dateRange.end, 1);
+      newEnd = addDays(newStart, duration);
+      
+      // Don't go beyond today
+      if (newEnd > today) {
+        onDateRangeChange(newStart, today);
+        return;
+      }
     }
+    
+    onDateRangeChange(newStart, newEnd);
   };
   
   // Keyboard navigation
@@ -503,7 +652,11 @@ export default function PieChart({
                   ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
                   : 'text-white/20 cursor-not-allowed'
               }`}
-              title="Previous period (← arrow key)"
+              title={
+                dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
+                dateRangeInfo.actualMode === 'ytd' ? 'Previous year (← arrow key)' :
+                'Previous period (← arrow key)'
+              }
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="rotate-180">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -513,10 +666,7 @@ export default function PieChart({
             <div className="text-center flex-1 mx-4">
               <h3 className="text-white font-semibold text-lg tracking-tight">{dateRangeInfo.rangeText}</h3>
               <p className="text-white/50 text-sm mt-0.5 font-medium">
-                {dateRangeInfo.durationInDays === 0 
-                  ? 'Single day' 
-                  : `${dateRangeInfo.durationInDays + 1} day${dateRangeInfo.durationInDays === 0 ? '' : 's'}`
-                }
+                {dateRangeInfo.durationText}
               </p>
             </div>
             
@@ -528,7 +678,11 @@ export default function PieChart({
                   ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
                   : 'text-white/20 cursor-not-allowed'
               }`}
-              title="Next period (→ arrow key)"
+              title={
+                dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
+                dateRangeInfo.actualMode === 'ytd' ? 'Next year (→ arrow key)' :
+                'Next period (→ arrow key)'
+              }
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -570,24 +724,23 @@ export default function PieChart({
                 ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
                 : 'text-white/20 cursor-not-allowed'
             }`}
-            title="Previous period (← arrow key)"
+            title={
+              dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
+              dateRangeInfo.actualMode === 'ytd' ? 'Previous year (← arrow key)' :
+              'Previous period (← arrow key)'
+            }
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="rotate-180">
               <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           
-          <div className="text-center flex-1 mx-4">
-            <h3 className="text-white font-semibold text-lg tracking-tight">{dateRangeInfo.rangeText}</h3>
-            <p className="text-white/50 text-sm mt-0.5 font-medium">
-              {dateRangeInfo.durationInDays === 0 
-                ? 'Single day' 
-                : `${dateRangeInfo.durationInDays + 1} day${dateRangeInfo.durationInDays === 0 ? '' : 's'}`
-              }
-            </p>
-          </div>
-          
-          <button
+            <div className="text-center flex-1 mx-4">
+              <h3 className="text-white font-semibold text-lg tracking-tight">{dateRangeInfo.rangeText}</h3>
+              <p className="text-white/50 text-sm mt-0.5 font-medium">
+                {dateRangeInfo.durationText}
+              </p>
+            </div>          <button
             onClick={handleNavigateNext}
             disabled={!dateRangeInfo.canNavigateNext}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
@@ -595,7 +748,11 @@ export default function PieChart({
                 ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
                 : 'text-white/20 cursor-not-allowed'
             }`}
-            title="Next period (→ arrow key)"
+            title={
+              dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
+              dateRangeInfo.actualMode === 'ytd' ? 'Next year (→ arrow key)' :
+              'Next period (→ arrow key)'
+            }
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
