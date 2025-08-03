@@ -138,6 +138,10 @@ export default function Stats() {
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
+        // Set time range to custom when navigating via date picker
+        if (timeRange !== 'custom') {
+            setTimeRange('custom');
+        }
         // Close insights panel when filters change
         setSelectedPieSegment(null);
     };
@@ -344,6 +348,9 @@ export default function Stats() {
                                                     onSegmentClick={handlePieSegmentClick}
                                                     showTooltip={!selectedPieSegment}
                                                     matchHeight={false} // Never match height since insights are below
+                                                    timeRange={timeRange}
+                                                    allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
+                                                    onDateRangeChange={handleCustomDateChange}
                                                 />
                                             </div>
                                             
