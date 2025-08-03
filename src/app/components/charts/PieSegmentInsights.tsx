@@ -256,10 +256,11 @@ export default function PieSegmentInsights({
 
   return (
     <div 
-      className={`bg-white/[.05] rounded-lg p-6 border border-green/20 flex flex-col ${
+      className={`bg-white/[.05] rounded-lg p-6 border border-green/20 flex flex-col transition-all duration-200 ${
         isMobileOptimized ? '' : 'h-full'
       }`} 
       style={isMobileOptimized ? {} : { minHeight: '600px' }}
+      key={`${segment?.id}-${dateRange.start.toISOString()}-${dateRange.end.toISOString()}`} // Force re-render with subtle animation on date change
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -287,6 +288,17 @@ export default function PieSegmentInsights({
         </button>
       </div>
 
+      {/* Date Range Display */}
+      <div className="text-center mb-4 py-2 px-4 bg-white/[.02] rounded-lg border border-white/10">
+        <div className="text-sm text-white/50 mb-1">Analysis Period</div>
+        <div className="text-white font-medium">
+          {format(dateRange.start, 'MMM dd, yyyy')} - {format(dateRange.end, 'MMM dd, yyyy')}
+        </div>
+        <div className="text-xs text-white/40 mt-1">
+          {Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+        </div>
+      </div>
+
       {/* Add helpful tip for persisted group view */}
       {isPersistedGroupView && segment && segment.type === 'group' && (
         <div className="bg-blue/10 border border-blue/20 rounded-lg p-3 mb-6">
@@ -296,8 +308,7 @@ export default function PieSegmentInsights({
               <p className="text-sm text-white/90 font-medium mb-1">Detailed View Active</p>
               <p className="text-xs text-white/70">
                 You're viewing the detailed category breakdown for {segment.label}. 
-                Click on any category in the pie chart above to see category-specific insights, 
-                or use the time navigation arrows to explore this group across different periods.
+                Click on any category in the pie chart above to see category-specific insights.
               </p>
             </div>
           </div>
