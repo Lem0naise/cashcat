@@ -45,6 +45,7 @@ export default function Stats() {
     
     // Pie chart state
     const [selectedPieSegment, setSelectedPieSegment] = useState<PieSegment | null>(null);
+    const [persistedGroupSegment, setPersistedGroupSegment] = useState<PieSegment | null>(null);
 
     // Fetch data from Supabase
     const fetchData = useCallback(async () => {
@@ -144,26 +145,36 @@ export default function Stats() {
         }
         // Close insights panel when filters change
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     // Filter change handlers that also close insights panel
     const handleGroupsChange = (groups: string[]) => {
         setSelectedGroups(groups);
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     const handleCategoriesChange = (categories: string[]) => {
         setSelectedCategories(categories);
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
         setTimeRange(range);
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     // Pie chart handlers
     const handlePieSegmentClick = (segment: PieSegment) => {
+        // When clicking a category segment while we have a persisted group segment,
+        // replace the group insights with category insights
+        if (segment.type === 'category' && persistedGroupSegment) {
+            setPersistedGroupSegment(null);
+        }
+        
         setSelectedPieSegment(segment);
         
         // Scroll to the insights panel on both mobile and desktop since it's now always below
@@ -190,6 +201,7 @@ export default function Stats() {
 
     const handleClosePieInsights = () => {
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     const handleFilterBySegment = (segment: PieSegment) => {
@@ -200,6 +212,10 @@ export default function Stats() {
         // Apply filters based on segment type
         if (segment.type === 'group') {
             setSelectedGroups([segment.id]);
+            // When clicking "detailed insights" on a group, persist the group segment for continued display
+            setPersistedGroupSegment(segment);
+            // Keep the insights panel open but showing the group segment
+            // The segment will remain visible until user clicks a category or manually closes
         } else if (segment.type === 'category') {
             // Find the group this category belongs to and set both group and category filters
             const category = categories.find(cat => cat.id === segment.id);
@@ -208,14 +224,17 @@ export default function Stats() {
                 setSelectedGroups([groupName]);
                 setSelectedCategories([segment.id]);
             }
+            // When selecting a category, replace the group insights with category insights
+            setPersistedGroupSegment(null);
+            // Close the current insights panel - it will be replaced with category insights when clicked
+            setSelectedPieSegment(null);
         } else if (segment.type === 'vendor') {
             // For vendor, we need to keep the current category selection that led to this vendor view
             // The vendor view only appears when categories from the same group are selected
             // So we don't need to change the filters, just close the insights panel
+            setPersistedGroupSegment(null);
+            setSelectedPieSegment(null);
         }
-        
-        // Close the insights panel
-        setSelectedPieSegment(null);
     };
 
     const handleSetComparisonPeriod = (start: Date, end: Date) => {
@@ -225,6 +244,7 @@ export default function Stats() {
         setCustomEndDate(end);
         // Close insights panel when changing time range
         setSelectedPieSegment(null);
+        setPersistedGroupSegment(null);
     };
 
     if (loading) {
@@ -355,12 +375,12 @@ export default function Stats() {
                                             </div>
                                             
                                             {/* Insights Panel - Always below pie chart on both mobile and desktop */}
-                                            {selectedPieSegment && (
+                                            {(selectedPieSegment || persistedGroupSegment) && (
                                                 <div className="w-full insights-panel-enter">
                                                     <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
                                                         {/* Mobile insights */}
                                                         <PieSegmentInsights
-                                                            segment={selectedPieSegment}
+                                                            segment={selectedPieSegment || persistedGroupSegment}
                                                             transactions={transactions}
                                                             categories={categories}
                                                             dateRange={dateRange}
@@ -368,12 +388,13 @@ export default function Stats() {
                                                             onFilterBySegment={handleFilterBySegment}
                                                             onSetComparisonPeriod={handleSetComparisonPeriod}
                                                             isMobileOptimized={true}
+                                                            isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
                                                         />
                                                     </div>
                                                     <div className="hidden lg:block" id="desktop-insights-panel">
                                                         {/* Desktop insights - now also below the chart */}
                                                         <PieSegmentInsights
-                                                            segment={selectedPieSegment}
+                                                            segment={selectedPieSegment || persistedGroupSegment}
                                                             transactions={transactions}
                                                             categories={categories}
                                                             dateRange={dateRange}
@@ -381,6 +402,7 @@ export default function Stats() {
                                                             onFilterBySegment={handleFilterBySegment}
                                                             onSetComparisonPeriod={handleSetComparisonPeriod}
                                                             isMobileOptimized={false}
+                                                            isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
                                                         />
                                                     </div>
                                                 </div>
