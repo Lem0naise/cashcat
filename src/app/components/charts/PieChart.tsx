@@ -14,6 +14,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Doughnut } from 'react-chartjs-2';
 import { Transaction, Category } from './types';
 import { formatCurrency } from './utils';
+import { format, differenceInDays, addDays, subDays } from 'date-fns';
 
 // Register Chart.js components (without ChartDataLabels globally)
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -39,6 +40,10 @@ interface PieChartProps {
   onSegmentClick: (segment: PieSegment) => void;
   showTooltip?: boolean;
   matchHeight?: boolean;
+  // Navigation props
+  timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
+  allTimeRange?: { start: Date; end: Date };
+  onDateRangeChange?: (start: Date, end: Date) => void;
 }
 
 export default function PieChart({
@@ -49,12 +54,109 @@ export default function PieChart({
   selectedCategories,
   onSegmentClick,
   showTooltip = true,
-  matchHeight = false
+  matchHeight = false,
+  timeRange,
+  allTimeRange,
+  onDateRangeChange
 }: PieChartProps) {
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredSegment, setHoveredSegment] = useState<PieSegment | null>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  
+  // Date range navigation helpers
+  const dateRangeInfo = useMemo(() => {
+    const durationInDays = differenceInDays(dateRange.end, dateRange.start);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    const isAtToday = differenceInDays(today, dateRange.end) <= 1;
+    const isAtStart = allTimeRange ? differenceInDays(dateRange.start, allTimeRange.start) <= 1 : false;
+    
+    // Format the date range text
+    let rangeText = '';
+    if (timeRange === 'custom') {
+      if (durationInDays === 0) {
+        rangeText = format(dateRange.start, 'MMM dd, yyyy');
+      } else if (durationInDays < 32) {
+        rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+      } else {
+        rangeText = `${format(dateRange.start, 'MMM dd, yyyy')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+      }
+    } else {
+      // For preset ranges, show a more readable format
+      if (durationInDays <= 7) {
+        rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+      } else if (durationInDays < 32) {
+        rangeText = `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}`;
+      } else {
+        rangeText = `${format(dateRange.start, 'MMM yyyy')} - ${format(dateRange.end, 'MMM yyyy')}`;
+      }
+    }
+    
+    return {
+      durationInDays,
+      isAtToday,
+      isAtStart,
+      rangeText,
+      canNavigateNext: !isAtToday,
+      canNavigatePrev: !isAtStart && allTimeRange !== undefined
+    };
+  }, [dateRange, timeRange, allTimeRange]);
+  
+  const handleNavigatePrev = () => {
+    if (!onDateRangeChange || !dateRangeInfo.canNavigatePrev) return;
+    
+    const duration = dateRangeInfo.durationInDays;
+    const newEnd = subDays(dateRange.start, 1);
+    const newStart = subDays(newEnd, duration);
+    
+    // Don't go before the start of transaction history
+    if (allTimeRange && newStart < allTimeRange.start) {
+      return;
+    }
+    
+    onDateRangeChange(newStart, newEnd);
+  };
+  
+  const handleNavigateNext = () => {
+    if (!onDateRangeChange || !dateRangeInfo.canNavigateNext) return;
+    
+    const duration = dateRangeInfo.durationInDays;
+    const newStart = addDays(dateRange.end, 1);
+    const newEnd = addDays(newStart, duration);
+    
+    // Don't go beyond today
+    const today = new Date();
+    if (newEnd > today) {
+      onDateRangeChange(newStart, today);
+    } else {
+      onDateRangeChange(newStart, newEnd);
+    }
+  };
+  
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle keyboard shortcuts when the PieChart is in focus or no specific element is focused
+      if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+        return;
+      }
+      
+      if (event.key === 'ArrowLeft' && dateRangeInfo.canNavigatePrev) {
+        event.preventDefault();
+        handleNavigatePrev();
+      } else if (event.key === 'ArrowRight' && dateRangeInfo.canNavigateNext) {
+        event.preventDefault();
+        handleNavigateNext();
+      }
+    };
+    
+    if (onDateRangeChange) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [dateRangeInfo.canNavigatePrev, dateRangeInfo.canNavigateNext, onDateRangeChange]);
   
   // Monitor container size for responsive behavior
   useEffect(() => {
@@ -389,16 +491,63 @@ export default function PieChart({
 
   if (pieChartData.segments.length === 0) {
     return (
-      <div className={`bg-white/[.03] rounded-lg p-4 flex items-center justify-center ${matchHeight ? 'h-full min-h-[600px]' : 'h-[550px]'}`}>
-        <div className="text-center text-white/60">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-              <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+      <div className={`bg-white/[.03] rounded-lg p-4 flex flex-col ${matchHeight ? 'h-full min-h-[600px]' : 'h-[550px]'}`}>
+        {/* Date Range Navigation Header - Even shown when no data */}
+        {onDateRangeChange && (
+          <div className="flex items-center justify-between mb-4 px-2">
+            <button
+              onClick={handleNavigatePrev}
+              disabled={!dateRangeInfo.canNavigatePrev}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
+                dateRangeInfo.canNavigatePrev
+                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                  : 'text-white/20 cursor-not-allowed'
+              }`}
+              title="Previous period (← arrow key)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="rotate-180">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            
+            <div className="text-center flex-1 mx-4">
+              <h3 className="text-white font-semibold text-lg tracking-tight">{dateRangeInfo.rangeText}</h3>
+              <p className="text-white/50 text-sm mt-0.5 font-medium">
+                {dateRangeInfo.durationInDays === 0 
+                  ? 'Single day' 
+                  : `${dateRangeInfo.durationInDays + 1} day${dateRangeInfo.durationInDays === 0 ? '' : 's'}`
+                }
+              </p>
+            </div>
+            
+            <button
+              onClick={handleNavigateNext}
+              disabled={!dateRangeInfo.canNavigateNext}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
+                dateRangeInfo.canNavigateNext
+                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                  : 'text-white/20 cursor-not-allowed'
+              }`}
+              title="Next period (→ arrow key)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
-          <h3 className="font-medium mb-2">No Spending Data</h3>
-          <p className="text-sm">No spending transactions found for the selected time period.</p>
+        )}
+        
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-center text-white/60">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h3 className="font-medium mb-2">No Spending Data</h3>
+            <p className="text-sm">No spending transactions found for the selected time period.</p>
+          </div>
         </div>
       </div>
     );
@@ -410,6 +559,51 @@ export default function PieChart({
       className={`bg-white/[.03] rounded-lg p-4 transition-all duration-300 ease-out ${matchHeight ? 'h-full flex flex-col' : ''}`} 
       style={matchHeight ? { minHeight: '600px'} : { }}
     >
+      {/* Date Range Navigation Header */}
+      {onDateRangeChange && (
+        <div className="flex items-center justify-between mb-4 px-2">
+          <button
+            onClick={handleNavigatePrev}
+            disabled={!dateRangeInfo.canNavigatePrev}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
+              dateRangeInfo.canNavigatePrev
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
+            }`}
+            title="Previous period (← arrow key)"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="rotate-180">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          
+          <div className="text-center flex-1 mx-4">
+            <h3 className="text-white font-semibold text-lg tracking-tight">{dateRangeInfo.rangeText}</h3>
+            <p className="text-white/50 text-sm mt-0.5 font-medium">
+              {dateRangeInfo.durationInDays === 0 
+                ? 'Single day' 
+                : `${dateRangeInfo.durationInDays + 1} day${dateRangeInfo.durationInDays === 0 ? '' : 's'}`
+              }
+            </p>
+          </div>
+          
+          <button
+            onClick={handleNavigateNext}
+            disabled={!dateRangeInfo.canNavigateNext}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
+              dateRangeInfo.canNavigateNext
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
+            }`}
+            title="Next period (→ arrow key)"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+      
       {/* Maximized chart container */}
       <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}

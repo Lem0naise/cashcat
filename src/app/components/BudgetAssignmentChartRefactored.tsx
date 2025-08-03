@@ -400,7 +400,14 @@ export default function BudgetAssignmentChart({
       }
     }
     return null;
-  }, [chartDataLength, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, calculateComparisonData]);
+  }, [
+    chartDataLength, 
+    shouldShowDistanceFromGoal, 
+    distanceFromGoalDatasetsLength, 
+    calculateComparisonData,
+    dateRange.start.getTime(), // Add date range dependencies
+    dateRange.end.getTime()    // to ensure recalculation when dates change
+  ]);
 
   // Effect to set default comparison data (only when the memoized calculation changes)
   useEffect(() => {
