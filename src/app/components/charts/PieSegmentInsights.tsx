@@ -23,6 +23,7 @@ interface PieSegmentInsightsProps {
   onFilterBySegment: (segment: PieSegment) => void;
   onSetComparisonPeriod: (start: Date, end: Date) => void;
   isMobileOptimized?: boolean; // New prop for mobile layout optimization
+  isPersistedGroupView?: boolean; // New prop to indicate this is a persisted group insights view
 }
 
 export default function PieSegmentInsights({
@@ -33,7 +34,8 @@ export default function PieSegmentInsights({
   onClose,
   onFilterBySegment,
   onSetComparisonPeriod,
-  isMobileOptimized = false
+  isMobileOptimized = false,
+  isPersistedGroupView = false
 }: PieSegmentInsightsProps) {
   // Calculate insights for the selected segment
   const insights = useMemo(() => {
@@ -267,7 +269,12 @@ export default function PieSegmentInsights({
           />
           <div>
             <h3 className="font-semibold text-white text-2xl">{segment.label}</h3>
-            <p className="text-sm text-white/60 capitalize">{segment.type} Insights</p>
+            <p className="text-sm text-white/60 capitalize">
+              {segment.type} Insights
+              {isPersistedGroupView && segment.type === 'group' && (
+                <span className="ml-2 text-green">• Detailed View Active</span>
+              )}
+            </p>
           </div>
         </div>
         <button
@@ -279,6 +286,23 @@ export default function PieSegmentInsights({
           </svg>
         </button>
       </div>
+
+      {/* Add helpful tip for persisted group view */}
+      {isPersistedGroupView && segment && segment.type === 'group' && (
+        <div className="bg-blue/10 border border-blue/20 rounded-lg p-3 mb-6">
+          <div className="flex items-start gap-2">
+            <div className="text-blue mt-0.5">💡</div>
+            <div>
+              <p className="text-sm text-white/90 font-medium mb-1">Detailed View Active</p>
+              <p className="text-xs text-white/70">
+                You're viewing the detailed category breakdown for {segment.label}. 
+                Click on any category in the pie chart above to see category-specific insights, 
+                or use the time navigation arrows to explore this group across different periods.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col">
         {/* Main Stats */}
@@ -468,18 +492,31 @@ export default function PieSegmentInsights({
       )}
 
       {/* Filter Action - Only show for groups and categories, not vendors */}
-      {segment.type !== 'vendor' && (
+      {segment && segment.type !== 'vendor' && (
         <button
           onClick={() => {
+            // If this is already a persisted group view, don't do anything - it's already showing detailed breakdown
+            if (isPersistedGroupView && segment.type === 'group') {
+              return;
+            }
+            
             onFilterBySegment(segment);
             // Scroll to top of page to show updated chart (with small delay to ensure DOM updates)
             setTimeout(() => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 100);
           }}
-          className="w-full bg-green hover:bg-green/90 text-black font-medium py-3 px-4 rounded-lg transition-colors mb-6 cursor-pointer active:scale-[0.98]"
+          className={`w-full font-medium py-3 px-4 rounded-lg transition-colors mb-6 cursor-pointer active:scale-[0.98] ${
+            isPersistedGroupView && segment.type === 'group'
+              ? 'bg-white/10 text-white/70 cursor-default'
+              : 'bg-green hover:bg-green/90 text-black'
+          }`}
+          disabled={isPersistedGroupView && segment.type === 'group'}
         >
-          Show in-depth stats for {segment.label}
+          {isPersistedGroupView && segment.type === 'group' 
+            ? `📊 Viewing detailed breakdown for ${segment.label}`
+            : `Show in-depth stats for ${segment.label}`
+          }
         </button>
       )}
       </div>
