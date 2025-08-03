@@ -143,26 +143,29 @@ export default function Stats() {
         if (timeRange !== 'custom') {
             setTimeRange('custom');
         }
-        // Close insights panel when filters change
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
+        // Don't close insights panel when navigating via date picker - keep the same segment visible
+        // The insights will automatically update to show data for the new time period
     };
 
     // Filter change handlers that also close insights panel
     const handleGroupsChange = (groups: string[]) => {
         setSelectedGroups(groups);
+        // Close insights when manually changing group filters - this changes the context
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
 
     const handleCategoriesChange = (categories: string[]) => {
         setSelectedCategories(categories);
+        // Close insights when manually changing category filters - this changes the context
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
 
     const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
         setTimeRange(range);
+        // Only close insights panel when manually changing time range (not during navigation)
+        // This preserves the insights when using arrow key navigation
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
@@ -242,9 +245,8 @@ export default function Stats() {
         setTimeRange('custom');
         setCustomStartDate(start);
         setCustomEndDate(end);
-        // Close insights panel when changing time range
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
+        // Don't close insights panel when setting comparison period - keep the same segment visible
+        // The insights will automatically update to show data for the new time period
     };
 
     if (loading) {
