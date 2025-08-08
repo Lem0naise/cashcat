@@ -235,6 +235,7 @@ export default function SpendingBreakdownDemo() {
                             transactions={transactions}
                             categories={categories}
                             dateRange={dateRange}
+                            timeRange={timeRange}
                             selectedGroups={selectedGroups}
                             selectedCategories={selectedCategories}
                             onSegmentClick={handlePieSegmentClick}
@@ -261,6 +262,7 @@ export default function SpendingBreakdownDemo() {
                         transactions={transactions}
                         categories={categories}
                         dateRange={dateRange}
+                        timeRange={timeRange}
                         selectedGroups={selectedGroups}
                         selectedCategories={selectedCategories}
                         onSegmentClick={handlePieSegmentClick}

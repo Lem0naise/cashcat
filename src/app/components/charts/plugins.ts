@@ -8,6 +8,41 @@ const THROTTLE_DELAY = 50; // 50ms throttle to prevent excessive updates
 
 export const comparisonSelectionPlugin: Plugin<'line'> = {
   id: 'comparisonSelection',
+  beforeEvent: (chart, args, options) => {
+    const { event } = args as any;
+    const { selectionState } = options as any;
+    if (!selectionState) return;
+    const { onZoomRange } = selectionState as any;
+    // Pointer cursor when hovering over the zoom button
+    const rect = (chart as any)._zoomButtonRect as { x: number; y: number; w: number; h: number } | undefined;
+    if (rect && event && event.type && (event.type === 'mousemove' || event.type === 'pointermove')) {
+      const x = (event as any).offsetX ?? event.x;
+      const y = (event as any).offsetY ?? event.y;
+      const inside = x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+      if (inside && onZoomRange) {
+        (chart.canvas as HTMLCanvasElement).style.cursor = 'pointer';
+      } else {
+        // Don't fight base hover cursor; let chart options decide when not over button
+      }
+    }
+
+    // Handle click
+    if (rect && event && (event.type === 'mouseup' || event.type === 'pointerup' || event.type === 'click')) {
+      const x = (event as any).offsetX ?? event.x;
+      const y = (event as any).offsetY ?? event.y;
+      const inside = x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+      if (inside && typeof onZoomRange === 'function') {
+        const dates = (chart as any)._zoomButtonDates as { start: Date; end: Date } | undefined;
+        if (dates && dates.start && dates.end) {
+          try {
+            onZoomRange(dates.start, dates.end);
+          } catch (e) {
+            console.error('Zoom callback error:', e);
+          }
+        }
+      }
+    }
+  },
   beforeDraw: (chart, args, options) => {
     const { selectionState } = options as any;
     
@@ -256,7 +291,7 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
       const leftDate = startPos.x <= endPos.x ? startPos.date : endPos.date;
       const rightDate = startPos.x <= endPos.x ? endPos.date : startPos.date;
       
-      // Draw vertical lines
+  // Draw vertical lines
       ctx.beginPath();
       ctx.setLineDash([5, 5]);
       ctx.strokeStyle = 'rgba(186, 194, 255, 0.8)';
@@ -455,6 +490,109 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         console.error('Error formatting dates for labels:', error);
       }
       
+      // Compute and draw in-selection Zoom button if not dragging
+      try {
+        const { onZoomRange } = selectionState as any;
+        const hasZoom = typeof onZoomRange === 'function';
+        if (!isDragging && hasZoom) {
+          const centerX = (leftX + rightX) / 2;
+          const marginX = 10;
+          const minX = Math.max(left + marginX, leftX + marginX);
+          const maxX = Math.min(right - marginX, rightX - marginX);
+
+          // Button text measurements
+          const label = 'Zoom';
+          ctx.font = 'bold 12px Gabarito, system-ui, -apple-system, sans-serif';
+          const textW = ctx.measureText(label).width;
+          const padX = 10;
+          const padY = 6;
+          const btnW = Math.ceil(textW + padX * 2);
+          const btnH = 22; // fixed for consistency
+          const radius = 6;
+
+          // Helper to draw rounded rect
+          const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+          };
+
+          // Compute candidate X within selection without touching outer bars
+          let btnX = Math.min(Math.max(centerX - btnW / 2, minX), maxX - btnW);
+
+          // Compute candidate Y inside chart area trying to avoid the line value at center
+          // Approximate line Y using nearest data point to midpoint index
+          let btnY = top + 10; // default near top inside selection
+          try {
+            const dataLen = chartData.dataPoints.length;
+            if (dataLen > 0 && scales.y) {
+              const midIdx = Math.round((startPos.snappedIndex + endPos.snappedIndex) / 2);
+              const clampedMid = Math.max(0, Math.min(midIdx, dataLen - 1));
+              const val = chartData.dataPoints[clampedMid]?.y;
+              if (typeof val === 'number') {
+                const yAtCenter = scales.y.getPixelForValue(val);
+                // If our default Y would overlap the line (±14px), prefer near bottom
+                const overlapsTop = Math.abs(btnY + btnH / 2 - yAtCenter) < 14;
+                if (overlapsTop) {
+                  const altY = bottom - btnH - 10;
+                  const overlapsAlt = Math.abs(altY + btnH / 2 - yAtCenter) < 14;
+                  btnY = overlapsAlt ? (top + bottom) / 2 - btnH / 2 : altY;
+                }
+              }
+            }
+          } catch {}
+
+          // If selection is too narrow for the button inside, place just outside to the side elegantly
+          const selectionW = rightX - leftX;
+          const fitsInside = selectionW >= (btnW + marginX * 2);
+          if (!fitsInside) {
+            // Prefer right side; if not enough room, use left side
+            const sideMargin = 8;
+            if (right - (rightX + sideMargin) >= btnW) {
+              btnX = rightX + sideMargin;
+            } else if ((leftX - sideMargin) - left >= btnW) {
+              btnX = leftX - sideMargin - btnW;
+            } else {
+              // Clamp within chart bounds
+              btnX = Math.min(Math.max(centerX - btnW / 2, left + sideMargin), right - sideMargin - btnW);
+            }
+            // Keep vertically near top to avoid data overlap as much as possible
+            btnY = top + 10;
+          }
+
+          // Draw the button
+          ctx.save();
+          ctx.fillStyle = 'rgba(186, 194, 255, 0.95)';
+          drawRoundedRect(btnX, btnY, btnW, btnH, radius);
+          ctx.fill();
+          ctx.strokeStyle = '#bac2ff';
+          ctx.lineWidth = 1;
+          drawRoundedRect(btnX, btnY, btnW, btnH, radius);
+          ctx.stroke();
+          ctx.fillStyle = '#0a0a0a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, btnX + btnW / 2, btnY + btnH / 2 + 0.5);
+          ctx.restore();
+
+          // Store hit rect on chart for click detection
+          (chart as any)._zoomButtonRect = { x: btnX, y: btnY, w: btnW, h: btnH };
+          // Store dates for zoom
+          (chart as any)._zoomButtonDates = { start: leftDate, end: rightDate };
+        } else {
+          (chart as any)._zoomButtonRect = undefined;
+          (chart as any)._zoomButtonDates = undefined;
+        }
+      } catch {}
+
       ctx.restore();
     }
     

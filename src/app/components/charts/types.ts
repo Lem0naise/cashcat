@@ -31,6 +31,7 @@ export interface BudgetAssignmentChartProps {
   selectedCategories: string[];
   showGoals: boolean;
   showRollover: boolean;
+  onZoomRange?: (start: Date, end: Date) => void; // Optional callback to zoom to a selected range
 }
 
 export interface ChartDataPoint {

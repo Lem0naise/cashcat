@@ -478,6 +478,16 @@ export const useComparisonAnalysis = (
     
     const clientX = getClientX(event);
     const dataIndex = getDataIndexFromPointerPosition(clientX, chart);
+
+    // If there's an active drag selection, keep it visible while the pointer is inside it
+    if (dragStartDataIndex !== null && dragEndDataIndex !== null && dataIndex !== null) {
+      const minIdx = Math.min(dragStartDataIndex, dragEndDataIndex);
+      const maxIdx = Math.max(dragStartDataIndex, dragEndDataIndex);
+      if (dataIndex >= minIdx && dataIndex <= maxIdx) {
+        // Pointer is inside the selection: do not clear or activate hover
+        return;
+      }
+    }
     
     // If we have a recent drag selection, check distance threshold before allowing hover
     if (lastDragEndPosition && dragStartDataIndex !== null && dragEndDataIndex !== null) {
@@ -487,8 +497,8 @@ export const useComparisonAnalysis = (
       const pixelDistance = Math.abs(clientX - lastDragEndPosition.x);
       const dataDistance = dataIndex !== null ? Math.abs(dataIndex - lastDragEndPosition.dataIndex) : 0;
       
-      // If we're far enough away, clear the drag selection and allow hover
-      if (pixelDistance >= DISTANCE_THRESHOLD || dataDistance >= DATA_INDEX_THRESHOLD) {
+  // If we're far enough away, clear the drag selection and allow hover
+  if (pixelDistance >= DISTANCE_THRESHOLD || dataDistance >= DATA_INDEX_THRESHOLD) {
         // User moved beyond threshold - clear the drag selection
         setDragStartDataIndex(null);
         setDragEndDataIndex(null);

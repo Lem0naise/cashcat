@@ -11,6 +11,7 @@ interface ComparisonAnalysisProps {
   onClearSelection: () => void;
   isHovering?: boolean; // Add prop to indicate if currently showing hover data
   hasDragSelection?: boolean; // Add prop to indicate if user has made an actual drag selection
+  onZoomRange?: (start: Date, end: Date) => void; // Optional zoom action
 }
 
 export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(({
@@ -19,7 +20,8 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
   shouldShowDistanceFromGoal,
   onClearSelection,
   isHovering = false,
-  hasDragSelection = false
+  hasDragSelection = false,
+  onZoomRange
 }) => {
   const currentData = comparisonData || defaultComparisonData;
   
@@ -30,9 +32,17 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
   const isCustomSelection = hasDragSelection && !isHovering;
   const isSinglePoint = currentData.timeSpan === 0; // Single point data has timeSpan of 0
 
+  // Precompute dates to use for Zoom action
+  let zoomStart: Date | null = null;
+  let zoomEnd: Date | null = null;
+  try {
+    zoomStart = new Date(currentData.startDate);
+    zoomEnd = new Date(currentData.endDate);
+  } catch {}
+
   return (
     <div className="bg-white/[.05] rounded-lg p-4 border border-green/20">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2" style={{minHeight: 24}}>
         <h4 className="font-medium text-green">
           {isHovering && isSinglePoint ? 'Hovered Point Analysis' : 
            isSinglePoint ? 'Selected Point Analysis' : 
@@ -43,16 +53,23 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
             </span>
           )}
         </h4>
-        
-        {/* Clear button positioned in header to avoid height changes */}
-        {isCustomSelection && !isHovering && (
+
+  {/* Right-side actions: only Clear selection (Zoom handled on chart) */}
+        <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap">
+          {/* Clear button placeholder always rendered to preserve width */}
           <button
             onClick={onClearSelection}
-            className="text-xs text-white/50 hover:text-white/70 transition-colors flex-shrink-0"
+            tabIndex={isCustomSelection && !isHovering ? 0 : -1}
+            aria-hidden={!(isCustomSelection && !isHovering)}
+            className={`text-xs transition-colors flex-shrink-0 ${
+              isCustomSelection && !isHovering
+                ? 'text-white/50 hover:text-white/70'
+                : 'opacity-0 pointer-events-none select-none'
+            }`}
           >
             Clear selection
           </button>
-        )}
+        </div>
       </div>
       
       {/* Show category breakdown if multiple categories are selected */}
