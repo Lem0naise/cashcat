@@ -29,7 +29,8 @@ export const useLineChartConfig = (
   onRealTimeUpdate?: (data: any) => void, // Add real-time update callback
   calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any, // Add calculation function
   onHover?: (event: any, chart: any) => void, // Add hover handler
-  onHoverLeave?: (chart: any) => void // Add hover leave handler
+  onHoverLeave?: (chart: any) => void, // Add hover leave handler
+  onZoomRange?: (start: Date, end: Date) => void // New: Zoom action from selection
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -72,7 +73,8 @@ export const useLineChartConfig = (
             comparisonData,
             onRealTimeUpdate,
             calculateComparisonData,
-            isDragging
+            isDragging,
+            onZoomRange
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {
@@ -161,8 +163,16 @@ export const useLineChartConfig = (
         }
       },
       onHover: (event: any, activeElements: any[], chart: any) => {
-        if (event.native && event.native.target) {
-          (event.native.target as HTMLElement).style.cursor = isDragging ? 'grabbing' : 'crosshair';
+        // Respect the plugin-drawn Zoom button hit area for cursor feedback
+        if (event && event.native && event.native.target) {
+          const canvas = event.native.target as HTMLCanvasElement;
+          const mouseEvt = event.native as MouseEvent;
+          // Prefer offsetX/offsetY which are relative to the canvas
+          const mx = (mouseEvt as any).offsetX ?? event.x;
+          const my = (mouseEvt as any).offsetY ?? event.y;
+          const rect = (chart as any)._zoomButtonRect as { x: number; y: number; w: number; h: number } | undefined;
+          const overZoom = !!rect && mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h;
+          canvas.style.cursor = overZoom ? 'pointer' : (isDragging ? 'grabbing' : 'crosshair');
         }
         
         // Call custom hover handler if provided

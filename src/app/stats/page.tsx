@@ -249,6 +249,14 @@ export default function Stats() {
         // The insights will automatically update to show data for the new time period
     };
 
+    // Smooth UI state for zoom transitions
+    const [zoomAnimating, setZoomAnimating] = useState(false);
+    const triggerZoomAnimation = useCallback(() => {
+        // Briefly animate container for intentional zoom feel
+        setZoomAnimating(true);
+        window.setTimeout(() => setZoomAnimating(false), 350);
+    }, []);
+
     if (loading) {
         return (
             <ProtectedRoute>
@@ -300,7 +308,7 @@ export default function Stats() {
                     }}
                 />
                 
-                <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
+                <main className={`pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in`}>
                     <div className="max-w-7xl mx-auto">
                         {/* Mobile header */}
                         <div className="md:hidden mb-6">
@@ -328,7 +336,9 @@ export default function Stats() {
                             </div>
                         ) : (
                             // Main content
-                            <div className="space-y-6">
+                                                                                    <div
+                                                                                        className={`space-y-6 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}
+                                                                                    >
                                 {/* Chart Controls */}
                                 <ChartControls
                                     timeRange={timeRange}
@@ -425,6 +435,23 @@ export default function Stats() {
                                     selectedCategories={selectedCategories}
                                     showGoals={showGoals}
                                     showRollover={showRollover}
+                                    onZoomRange={(start: Date, end: Date) => {
+                                        // Apply custom date range and trigger subtle animation
+                                        setTimeRange('custom');
+                                        setCustomStartDate(start);
+                                        setCustomEndDate(end);
+                                        triggerZoomAnimation();
+                                        // Smoothly scroll the line chart into view to reinforce the zoom
+                                        requestAnimationFrame(() => {
+                                            const chartContainer = document.getElementById('line-chart-container');
+                                            if (chartContainer) {
+                                                const headerHeight = 64;
+                                                const rect = chartContainer.getBoundingClientRect();
+                                                const target = rect.top + window.pageYOffset - headerHeight - 8;
+                                                window.scrollTo({ top: target, behavior: 'smooth' });
+                                            }
+                                        });
+                                    }}
                                 />
 
                                 {/* Summary Stats */}
