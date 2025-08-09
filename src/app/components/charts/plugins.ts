@@ -35,7 +35,30 @@ export const comparisonSelectionPlugin: Plugin<'line'> = {
         const dates = (chart as any)._zoomButtonDates as { start: Date; end: Date } | undefined;
         if (dates && dates.start && dates.end) {
           try {
-            onZoomRange(dates.start, dates.end);
+            // Pre-zoom morph: animate x-scale to the selected window first
+            const s = dates.start.getTime();
+            const e = dates.end.getTime();
+            const xScale = chart.scales?.x;
+            if (xScale) {
+              // Apply new min/max and animate using our custom transition
+              chart.options.scales!.x = {
+                ...(chart.options.scales as any).x,
+                min: Math.min(s, e),
+                max: Math.max(s, e)
+              } as any;
+              // Notify sibling charts (e.g., bar chart) to morph in sync
+              try {
+                const preZoomEvt = new CustomEvent('preZoom', { detail: { start: dates.start, end: dates.end, duration: 600 } });
+                chart.canvas.dispatchEvent(preZoomEvt);
+              } catch {}
+              (chart as any).update('zoom');
+              // After the animation, call the external handler to actually update data/state
+              setTimeout(() => {
+                try { onZoomRange(dates.start, dates.end); } catch {}
+              }, 600);
+            } else {
+              onZoomRange(dates.start, dates.end);
+            }
           } catch (e) {
             console.error('Zoom callback error:', e);
           }

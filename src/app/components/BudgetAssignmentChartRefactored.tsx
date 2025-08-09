@@ -18,7 +18,6 @@ import {
   BarElement,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
-
 // Import our modular components
 import { 
   BudgetAssignmentChartProps, 
@@ -63,7 +62,7 @@ ChartJS.register(
 
 // Set Chart.js global font defaults
 ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
-
+ 
 export default function BudgetAssignmentChart({
   assignments,
   categories,
@@ -79,6 +78,61 @@ export default function BudgetAssignmentChart({
 }: BudgetAssignmentChartProps) {
   const lineChartRef = useRef<any>(null);
   const volumeChartRef = useRef<any>(null);
+  // Suppress one-time animations post morph
+  const [suppressNextLineAnim, setSuppressNextLineAnim] = useState(false);
+  const [suppressNextBarAnim, setSuppressNextBarAnim] = useState(false);
+
+  // Sync the bar chart morph when the line chart dispatches a preZoom event
+  useEffect(() => {
+    const line = lineChartRef.current;
+    const bar = volumeChartRef.current;
+    if (!line || !line.canvas || !bar) return;
+    const canvas = line.canvas as HTMLCanvasElement;
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ start: Date; end: Date; duration?: number }>;
+      if (!ce || !ce.detail) return;
+      const { start, end } = ce.detail;
+      const s = start instanceof Date ? start.getTime() : new Date(start as any).getTime();
+      const t = end instanceof Date ? end.getTime() : new Date(end as any).getTime();
+      try {
+        bar.options.scales = bar.options.scales || {};
+        (bar.options.scales as any).x = {
+          ...(bar.options.scales as any).x,
+          min: Math.min(s, t),
+          max: Math.max(s, t)
+        };
+        (bar as any).update('zoom');
+      } catch {}
+    };
+    canvas.addEventListener('preZoom', handler as EventListener);
+    return () => canvas.removeEventListener('preZoom', handler as EventListener);
+  }, []);
+  // Sync the bar chart morph when the line chart dispatches a preZoom event
+  useEffect(() => {
+    const line = lineChartRef.current;
+    const bar = volumeChartRef.current;
+    if (!line || !line.canvas || !bar) return;
+    const canvas = line.canvas as HTMLCanvasElement;
+    const handler = (e: Event) => {
+      // Best-effort type narrowing
+      const ce = e as CustomEvent<{ start: Date; end: Date; duration?: number }>;
+      if (!ce || !ce.detail) return;
+      const { start, end } = ce.detail;
+      const s = start instanceof Date ? start.getTime() : new Date(start as any).getTime();
+      const t = end instanceof Date ? end.getTime() : new Date(end as any).getTime();
+      try {
+        bar.options.scales = bar.options.scales || {};
+        (bar.options.scales as any).x = {
+          ...(bar.options.scales as any).x,
+          min: Math.min(s, t),
+          max: Math.max(s, t)
+        };
+        (bar as any).update('zoom');
+      } catch {}
+    };
+    canvas.addEventListener('preZoom', handler as EventListener);
+    return () => canvas.removeEventListener('preZoom', handler as EventListener);
+  }, []);
   
   // Add state for segment hover information and visibility control
   const [segmentHoverInfo, setSegmentHoverInfo] = useState<SegmentHoverInfo | null>(null);
@@ -292,6 +346,15 @@ export default function BudgetAssignmentChart({
     }
   }, [isDragging, setComparisonData]);
 
+  // Wrap onZoomRange to suppress the subsequent chart animation
+  const wrappedOnZoomRange = useCallback((start: Date, end: Date) => {
+    setSuppressNextLineAnim(true);
+    try { onZoomRange && onZoomRange(start, end); } finally {
+      // keep suppression for the next render only
+      setTimeout(() => setSuppressNextLineAnim(false), 500);
+    }
+  }, [onZoomRange]);
+
   const lineChartConfig = useLineChartConfig(
     chartData,
     categories,
@@ -310,7 +373,8 @@ export default function BudgetAssignmentChart({
     calculateComparisonData,
   handleHover,
   handleHoverLeave,
-  onZoomRange
+  wrappedOnZoomRange,
+  suppressNextLineAnim
   );
 
   const volumeChartConfig = useVolumeChartConfig(
