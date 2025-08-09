@@ -249,6 +249,16 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
   afterDatasetsDraw(chart) {
     const ctx = chart.ctx;
     const datasets = chart.data.datasets as unknown as SegmentedBarDataset[];
+    // Clip all custom drawing to the chart area to avoid bleed during animations/morphs
+    const area = chart.chartArea;
+    let didClip = false;
+    if (area) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+      ctx.clip();
+      didClip = true;
+    }
     
     // Only rebuild segment positions if needed, not on every hover
     const shouldUpdatePositions = segmentPositionsNeedUpdate;
@@ -280,7 +290,7 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
         if (!barData?.segments || barData.segments.length === 0) return;
         
         // Get the position and dimensions of the original bar
-        const { x, y, width, height, base } = barElement.getProps(['x', 'y', 'width', 'height', 'base'], true);
+  const { x, y, width, height, base } = barElement.getProps(['x', 'y', 'width', 'height', 'base'], false);
         
         // Skip very narrow bars to avoid visual artifacts
         if (width < 1) return;
@@ -533,9 +543,9 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
     
     // Step 5: Draw ALL highlighted segment borders in a final pass (ensures they're always on top)
     // This is done AFTER all bars and segments are drawn to guarantee borders are never overlapped
-    ctx.save();
+  ctx.save();
     
-    datasets.forEach((dataset, datasetIndex) => {
+  datasets.forEach((dataset, datasetIndex) => {
       // Skip if dataset doesn't use segmented bars
       if (!dataset?.useSegmentedBars) return;
       
@@ -555,7 +565,7 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
         if (!barData?.segments || barData.segments.length === 0) return;
         
         // Get the position and dimensions of the original bar
-        const { x, y, width, height, base } = barElement.getProps(['x', 'y', 'width', 'height', 'base'], true);
+  const { x, y, width, height, base } = barElement.getProps(['x', 'y', 'width', 'height', 'base'], false);
         
         // Skip very narrow bars to avoid visual artifacts
         if (width < 1) return;
@@ -663,6 +673,13 @@ export const segmentedBarsPlugin: Plugin<'bar'> = {
         }
       });
     });
+    // Restore after highlight overlay pass
+    ctx.restore();
+    
+    // Finally, restore clipping if applied
+    if (didClip) {
+      ctx.restore();
+    }
   }
 };
 
