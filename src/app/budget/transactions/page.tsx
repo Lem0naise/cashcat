@@ -437,13 +437,17 @@ export default function Transactions() {
                         disabled={loading}
                         title="Refresh transactions"
                     >
-                        <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g transform="scale(-1, 1) translate(-48, 0)">
-                            <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4"/>
-                            <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4"/>
-                        </g></svg>
+                        <Image
+                            src="/reload.svg"
+                            alt="Reload budget"
+                            width={24}
+                            height={24}
+                            className={`${loading ? 'animate-spin' : ''} invert opacity-90`}
+                        />
                         Sync
                     </button>
+
+                    
                 </div>
             </div>
 
@@ -500,22 +504,13 @@ export default function Transactions() {
                                 disabled={loading}
                                 title="Refresh transactions"
                             >
-                            <svg className={`${loading ? 'animate-spin' : ''}`}width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="scale(-1, 1) translate(-48, 0)">
-                                <path
-                                    d="M24 6a18 18 0 1 1-12.73 5.27"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                
-                                />
-                                <path
-                                    d="M12 4v8h8"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                       
-                                />
-                                </g>
-                                </svg>
+                            <Image
+                            src="/reload.svg"
+                            alt="Reload budget"
+                            width={24}
+                            height={24}
+                            className={`${loading ? 'animate-spin' : ''} invert opacity-90`}
+                        />
                                 <p className="hidden lg:inline">Sync now</p>
                              
                             </button>

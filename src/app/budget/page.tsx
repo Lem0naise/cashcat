@@ -60,38 +60,41 @@ export default function Budget() {
     // Update month string when current month changes
 
     // On mount, fetch all transactions ONCE (or if user/account changes)
+    const fetchAllTransactions = async (isMounted = false) => {
+        setTransactionsLoading(true);
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error('Not authenticated');
+            let allTx: any[] = [];
+            let from = 0;
+            const batchSize = 1000;
+            let hasMore = true;
+            while (hasMore) {
+                const response = await supabase
+                    .from('transactions')
+                    .select('amount, category_id, type, date')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: true })
+                    .range(from, from + batchSize - 1);
+                if (response.error) throw response.error;
+                const batch = response.data || [];
+                allTx = [...allTx, ...batch];
+                hasMore = batch.length === batchSize;
+                from += batchSize;
+            }
+            if (isMounted) setAllTransactionsData(allTx);
+            return allTx;
+        } catch (err) {
+            if (isMounted) setError('Failed to load transactions.');
+            return null;
+        } finally {
+            if (isMounted) setTransactionsLoading(false);
+        }
+    };
+
     useEffect(() => {
         let isMounted = true;
-        const fetchAllTransactions = async () => {
-            setTransactionsLoading(true);
-            try {
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
-                if (userError || !user) throw new Error('Not authenticated');
-                let allTx: any[] = [];
-                let from = 0;
-                const batchSize = 1000;
-                let hasMore = true;
-                while (hasMore) {
-                    const response = await supabase
-                        .from('transactions')
-                        .select('amount, category_id, type, date')
-                        .eq('user_id', user.id)
-                        .order('created_at', { ascending: true })
-                        .range(from, from + batchSize - 1);
-                    if (response.error) throw response.error;
-                    const batch = response.data || [];
-                    allTx = [...allTx, ...batch];
-                    hasMore = batch.length === batchSize;
-                    from += batchSize;
-                }
-                if (isMounted) setAllTransactionsData(allTx);
-            } catch (err) {
-                if (isMounted) setError('Failed to load transactions.');
-            } finally {
-                if (isMounted) setTransactionsLoading(false);
-            }
-        };
-        fetchAllTransactions();
+        fetchAllTransactions(isMounted);
         return () => { isMounted = false; };
     }, [supabase]);
 
@@ -838,17 +841,26 @@ export default function Budget() {
                 {/* Mobile month switcher and manage button */}
                 <div className="px-3 flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
                     <div className="w-12 flex justify-start">
+                        
                         <button
-                            onClick={toggleAllGroups}
-                            className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] invert opacity-70 hover:opacity-100"
+                            onClick={async () => {
+                                setLoading(true); 
+                                const tx = await fetchAllTransactions(true);
+                                setAllTransactionsData(tx);
+                                if (monthString && tx) {
+                                    await fetchBudgetData(monthString, tx);
+                                }
+                                setLoading(false);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                            disabled={loading}
+                            title="Refresh transactions"
                         >
-                            <Image
-                                src={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "/minus.svg" : "/plus.svg"}
-                                alt={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "Collapse all" : "Expand all"}
-                                width={18}
-                                height={18}
-                                className="opacity-70"
-                            />
+                            <svg className={`${loading ? 'animate-spin' : ''}`}width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g transform="scale(-1, 1) translate(-48, 0)">
+                                <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4"/>
+                                <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4"/>
+                            </g></svg>
                         </button>
                     </div>
                     <div className="flex-1 flex justify-center">
@@ -985,14 +997,41 @@ export default function Budget() {
                             <div className="flex-1 flex justify-end gap-2 min-w-0">
                                 <button
                                     onClick={toggleAllGroups}
-                                    className="bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm whitespace-nowrap"
+                                    className="bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
                                 >
                                     <span className="hidden xl:inline">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}</span>
                                     <span className="xl:hidden">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse' : 'Expand'}</span>
                                 </button>
+
+
+                                 <button
+                                    onClick={async () => {
+                                        setLoading(true); 
+                                        const tx = await fetchAllTransactions(true);
+                                        setAllTransactionsData(tx);
+                                        if (monthString && tx) {
+                                            await fetchBudgetData(monthString, tx);
+                                        }
+                                        setLoading(false);
+                                    }}
+                                    className={`flex items-center gap-2 bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                    disabled={loading}
+                                    title="Refresh transactions"
+                                >
+                                     <Image
+                                        src="/reload.svg"
+                                        alt="Reload budget"
+                                        width={16}
+                                        height={16}
+                                        className={`${loading ? 'animate-spin' : ''} invert opacity-90`}
+                                    />
+                                       <p className="hidden lg:inline">{`${loading ? 'Syncing' : 'Sync'}`}</p>
+                                     </button>
+
+
                                 <button
                                     onClick={() => setShowManageModal(true)}
-                                    className="bg-primary hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
+                                    className="bg-white/[.05] hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
                                 >
                                     <Image
                                         src="/settings.svg"
@@ -1001,7 +1040,7 @@ export default function Budget() {
                                         height={16}
                                         className="opacity-90"
                                     />
-                                    <p className="hidden lg:inline">Manage Budget</p>
+                                    <p className="hidden xl:inline">Manage Budget</p>
                                 </button>
                             </div>
                         </div>
