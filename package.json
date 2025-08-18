@@ -20,6 +20,7 @@
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",
     "date-fns": "^3.6.0",
+    "dexie": "^4.2.0",
     "expr-eval": "^2.0.2",
     "lodash": "^4.17.21",
     "next": "^15.3.2",
