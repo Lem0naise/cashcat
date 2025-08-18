@@ -47,15 +47,15 @@ export default function MobileNav() {
                     </Link>
 
                       <Link
-                        href="/stats"
+                        href="/budget/stats"
                         className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
-                            isActive('/stats') 
+                            isActive('/budget/stats') 
                             ? 'text-green' 
                             : 'text-white/60'
                         }`}
                     >
                         <div className={`p-2 rounded-full transition-all ${
-                            isActive('/stats') 
+                            isActive('/budget/stats') 
                             ? 'bg-green' 
                             : 'bg-white/20'
                         }`}>
@@ -65,7 +65,7 @@ export default function MobileNav() {
                                 width={20}
                                 height={20}
                                 className={`transition-opacity ${
-                                    isActive('/stats') 
+                                    isActive('/budget/stats') 
                                     ? 'opacity-100' 
                                     : 'image-black opacity-70'
                                 }`}

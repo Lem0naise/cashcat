@@ -187,7 +187,7 @@ export default function Statistics() {
                     Ready to dive into your financial analytics?
                 </p>
                 <div className="grid gap-3 md:gap-4 md:grid-cols-2">
-                    <Link href="/stats" className="group">
+                    <Link href="/budget/stats" className="group">
                         <div className="p-3 md:p-4 glass-card rounded-lg hover:bg-white/[.05] transition-all">
                             <h4 className="font-medium text-green group-hover:text-green-dark mb-1 md:mb-2 text-sm md:text-base">Explore Statistics</h4>
                             <p className="text-xs md:text-sm text-white/60">Start analyzing your financial data</p>

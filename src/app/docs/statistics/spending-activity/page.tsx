@@ -207,7 +207,7 @@ export default function SpendingActivity() {
                             <p className="text-xs md:text-sm text-white/60">Pie chart analysis of spending</p>
                         </div>
                     </Link>
-                    <Link href="/stats" className="group">
+                    <Link href="/budget/stats" className="group">
                         <div className="p-3 md:p-4 glass-card rounded-lg hover:bg-white/[.05] transition-all">
                             <h4 className="font-medium text-green group-hover:text-green-dark mb-1 md:mb-2 text-sm md:text-base">View Statistics</h4>
                             <p className="text-xs md:text-sm text-white/60">Try these features yourself</p>

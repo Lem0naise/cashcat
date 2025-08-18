@@ -38,11 +38,11 @@ export default function Sidebar() {
                 </a>
                  <a
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
-                        isActive('/stats') 
+                        isActive('/budget/stats') 
                         ? 'bg-green/10 text-green' 
                         : 'hover:bg-white/[.05]'
                     }`}
-                    href="/stats"
+                    href="/budget/stats"
                 >
                     <Image
                         aria-hidden
@@ -51,7 +51,7 @@ export default function Sidebar() {
                         width={16}
                         height={16}
                         className={`image-black transition-opacity ${
-                            isActive('/stats') 
+                            isActive('/budget/stats') 
                             ? 'opacity-100' 
                             : 'opacity-70 group-hover:opacity-100'
                         }`}
