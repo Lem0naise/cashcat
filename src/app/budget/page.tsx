@@ -15,6 +15,9 @@ import CategoryCard from '../features/Category';
 import AccountModal from '../components/account-modal';
 import Link from 'next/link';
 
+import { useTransactions } from './loading-transactions-context';
+
+
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
