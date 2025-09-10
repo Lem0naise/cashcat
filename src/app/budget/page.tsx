@@ -385,21 +385,14 @@ export default function Budget() {
                     dailyLeft
                 };
             });
-            
-
-            // DEBUG: Log number of transactions used for budget pool calculation
-            console.log('DEBUG: Number of transactions in allTransactionsData:', allTransactionsData ? allTransactionsData.length : 0);
             // Calculate total actual money available (same as transactions page total balance)
             const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
+            // Calculate total available in all categories including future assignments
+            const futureAssignments = allAssignments
+                ?.filter(assignment => assignment.month > queryMonthString)
+                ?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
 
-            // Calculate total available in all categories (assigned + rollover - spent)
-            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0);
-
-            // DEBUG: Print each category's available, assigned, rollover, spent
-            console.log('--- DEBUG: Category Balances for Left to Assign / Overspent ---');
-            categoriesWithSpent.forEach((cat, i) => {
-                console.log(`Category[${i}] '${cat.name}': assigned=${cat.assigned}, rollover=${cat.rollover}, spent=${cat.spent}, available=${cat.available}`);
-            });
+            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0) + futureAssignments;
 
             // Update balance info - Compare total balance to total available in categories
             setBalanceInfo({
