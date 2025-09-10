@@ -1,5 +1,6 @@
 import Logo from './components/logo';
 import Link from 'next/link';
+import FloatingIconsBackground from './components/floating-icon-background';
 
 export const metadata = {
   title: 'CashCat - Say Goodbye to Financial Worries',
@@ -50,60 +51,70 @@ export const metadata = {
 
 export default function Landing() {
     return (
-        <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
-            <main className="container mx-auto px-6">
-                {/* Hero Section */}
+        <div className="min-h-screen font-[family-name:var(--font-suse)]">
+
+            <FloatingIconsBackground/>    
+
+            <main className="container mx-auto md:px-6">
+                    
                 <div className="flex flex-col items-center justify-center min-h-[100dvh] text-center">
-                    <div className="max-w-4xl mx-auto">
-                        <h1 className="text-3xl md:text-6xl font-bold mb-6">
-                            <Logo></Logo>
-                        </h1>
-                        <h2 className="text-2xl md:text-4xl font-bold mb-4 text-white">
-                            Say Goodbye to Guesswork
-                        </h2>
-                        <p className="text-md md:text-xl text-white/80 mb-2 md:mb-6 max-w-2xl mx-auto leading-relaxed">
-                            The <span className="text-green font-semibold">free</span> budgeting app that stops you worrying about money, no matter your situation.
+
+                    <div className="relative max-w-4xl mx-auto">
+
+                        <div className="relative bg-white/5 glass-card-blue p-6 md:p-12 shadow-2xl">
                             
-                        </p>
-                        
-                        {/* Key highlights */}
-                        <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-8 text-xs md:text-base">
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
-                                    <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
-                                    <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span className="text-green font-medium">Budget for Free</span>
+                            <div className="relative z-10">
+                                <h1 className="text-3xl md:text-6xl font-bold mb-6">
+                                    <Logo></Logo>
+                                </h1>
+                                <h2 className="text-2xl md:text-4xl font-bold mb-4 text-white">
+                                    Say Goodbye to Guesswork
+                                </h2>
+                                <p className="text-md md:text-xl text-white/80 mb-2 md:mb-6 max-w-2xl mx-auto leading-relaxed">
+                                    The <span className="text-green font-semibold">free</span> budgeting app that stops you worrying about money, no matter your situation.
+                                    
+                                </p>
+                                
+                                {/* Key highlights */}
+                                <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-8 text-xs md:text-base">
+                                    <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
+                                            <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2"/>
+                                            <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        <span className="text-green font-medium">Budget for Free</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
+                                            <path d="M3 7V17C3 18.1 3.9 19 5 19H19C20.1 19 21 18.1 21 17V7C21 5.9 20.1 5 19 5H5C3.9 5 3 5.9 3 7Z" stroke="currentColor" strokeWidth="2"/>
+                                            <path d="M16 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M8 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        </svg>
+                                        <span className="text-green font-medium">Multiple Bank Accounts</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
+                                            <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        <span className="text-green font-medium">Detailed Statistics</span>
+                                    </div>
+                                </div>
+                               
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                                    <Link
+                                        href="/signup"
+                                        className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
+                                    >
+                                        Start Budgeting Free
+                                    </Link>
+                                    <Link
+                                        href="#features"
+                                        className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20"
+                                    >
+                                        See How It Works
+                                    </Link>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
-                                    <path d="M3 7V17C3 18.1 3.9 19 5 19H19C20.1 19 21 18.1 21 17V7C21 5.9 20.1 5 19 5H5C3.9 5 3 5.9 3 7Z" stroke="currentColor" strokeWidth="2"/>
-                                    <path d="M16 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                    <path d="M8 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                                <span className="text-green font-medium">Multiple Bank Accounts</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-green/10 px-4 py-2 rounded-full border border-green/20">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-green">
-                                    <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span className="text-green font-medium">Detailed Statistics</span>
-                            </div>
-                        </div>
-                       
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <Link
-                                href="/signup"
-                                className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
-                            >
-                                Start Budgeting Free
-                            </Link>
-                            <Link
-                                href="#features"
-                                className="px-8 py-4 bg-white/[.08] text-white/90 font-medium rounded-lg hover:bg-white/[.12] transition-all text-lg border border-white/20"
-                            >
-                                See How It Works
-                            </Link>
                         </div>
                     </div>
                 </div>
@@ -232,7 +243,7 @@ export default function Landing() {
 
 
                 {/* Common Questions */}
-                <div id="common-questions" className="py-16 bg-white/[.02] rounded-2xl max-w-6xl mx-auto mb-16">
+                <div id="common-questions" className="py-5 md:py-12 bg-white/[.02] rounded-2xl max-w-6xl mx-auto mb-16 glass-card-blue">
                     <div className="md:px-8">
                         <h3 className="text-2xl md:text-4xl font-bold text-center mb-4 md:mb-12 text-white">
                             Common Questions
@@ -303,7 +314,7 @@ export default function Landing() {
 
 
                 {/* Social Proof Section */}
-                <div className="md:py-4 text-center max-w-4xl mx-auto">
+                <div className="md:py-4 text-center max-w-5xl mx-auto glass-card-blue mt-9 py-4 md:px-10">
                     <h3 className="text-2xl md:text-3xl font-bold mb-8 text-white">
                         Join Users Taking Control
                     </h3>
@@ -381,7 +392,7 @@ export default function Landing() {
                     </div>
 
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:p-0">
                         <Link
                             href="/signup"
                             className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
@@ -398,7 +409,7 @@ export default function Landing() {
                             href="/learn"
                             className="px-8 py-4 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all text-lg"
                         >
-                            Demo & Sample Category
+                            Demo
                         </Link>
                         <Link
                             href="/docs"
