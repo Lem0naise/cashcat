@@ -6,7 +6,7 @@
     --foreground: #ededed;
   --green: #84D684;
   --blue: #bac2ff;
-  --blue-dark: #197BBD;
+  --blue-dark: #7B7BBD;
   --green-dark: #246644;
   --reddy: #f2602f;
   --old-reddy: rgba(224, 72, 12, 0.689);
@@ -78,6 +78,38 @@ a,
 select {
   touch-action: manipulation;
 }
+
+.transition-all {
+  transition-duration: 0.3s !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+@keyframes graceful-float {
+  0% {
+    transform: translate(-50%, -50%) translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translate(-50%, -50%) translateY(calc(-1 * var(--float-y))) translateX(var(--float-x)) rotate(var(--float-rotation));
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(calc(-0.2 * var(--float-y))) translateX(calc(1.2 * var(--float-x))) rotate(calc(-0.5 * var(--float-rotation)));
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(-50%, -50%) translateY(calc(0.3 * var(--float-y))) translateX(calc(-0.5 * var(--float-x))) rotate(calc(0.3 * var(--float-rotation)));
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.2;
+  }
+}
+
+.animate-random-float {
+  animation: graceful-float var(--float-duration) ease-in-out infinite;
+  animation-delay: var(--float-delay);
+}
+
+
 @keyframes fadeIn {
   from {
     opacity: 0;
