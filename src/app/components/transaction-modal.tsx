@@ -477,7 +477,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                     className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                                 />
                                 {showSuggestions && vendorSuggestions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
+                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
                                         {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
                                             .map((suggestion) => (
                                             <button

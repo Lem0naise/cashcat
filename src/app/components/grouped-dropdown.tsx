@@ -33,14 +33,26 @@ export default function GroupedDropdown({
     icon
 }: GroupedDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Group and sort options
+    // Group and sort options with filtering
     const groupedOptions = useMemo(() => {
+        let filteredOptions = options;
+        
+        // Filter options based on search term
+        if (searchTerm.trim()) {
+            filteredOptions = options.filter(option => 
+                option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (option.group && option.group.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
         const groups: { [key: string]: GroupedDropdownOption[] } = {};
         
         // Group options by their group property
-        options.forEach(option => {
+        filteredOptions.forEach(option => {
             const groupName = option.group || 'Other';
             if (!groups[groupName]) {
                 groups[groupName] = [];
@@ -57,7 +69,7 @@ export default function GroupedDropdown({
             }));
 
         return sortedGroups;
-    }, [options]);
+    }, [options, searchTerm]);
 
     const selectedOption = options.find(option => option.value === value);
 
@@ -65,6 +77,7 @@ export default function GroupedDropdown({
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
+                setSearchTerm('');
             }
         };
 
@@ -75,19 +88,38 @@ export default function GroupedDropdown({
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);
         setIsOpen(false);
+        setSearchTerm('');
     };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+        if (!isOpen) {
+            setIsOpen(true);
+        }
+    };
+
+    const handleInputFocus = () => {
+        setIsOpen(true);
+    };
+
+    const displayValue = selectedOption ? selectedOption.label : '';
 
     return (
         <div ref={dropdownRef} className="relative">
-            <button
-                type="button"
-                onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
-                disabled={disabled || loading}
-                className={`w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-left flex items-center justify-between ${
-                    disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-white/[.1]'
-                } ${className}`}
-            >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="relative">
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={isOpen ? searchTerm : displayValue}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    disabled={disabled || loading}
+                    placeholder={selectedOption ? selectedOption.label : placeholder}
+                    className={`w-full p-2.5 pr-12 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors ${
+                        disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-text'
+                    } ${className}`}
+                />
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
                     {icon && (
                         <Image
                             src={icon}
@@ -97,30 +129,28 @@ export default function GroupedDropdown({
                             className="opacity-50 invert flex-shrink-0"
                         />
                     )}
-                    <div className="flex-1 min-w-0">
-                        {selectedOption ? (
-                            <div>
-                                <div className="truncate">{selectedOption.label}</div>
-                                {selectedOption.subtitle && (
-                                    <div className="text-xs text-white/50 truncate">{selectedOption.subtitle}</div>
-                                )}
-                            </div>
-                        ) : (
-                            <span className="text-white/50">{placeholder}</span>
-                        )}
-                    </div>
+                    {selectedOption && selectedOption.subtitle && !isOpen && (
+                        <div className="text-xs text-white/50 truncate ml-16">{selectedOption.subtitle}</div>
+                    )}
                 </div>
-                <Image
-                    src="/chevron-right.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                    className={`opacity-50 invert transition-transform flex-shrink-0 ${isOpen ? 'rotate-90' : 'rotate-270'}`}
-                />
-            </button>
+                <button
+                    type="button"
+                    onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
+                    disabled={disabled || loading}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                >
+                    <Image
+                        src="/chevron-right.svg"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className={`opacity-50 invert transition-transform flex-shrink-0 ${isOpen ? 'rotate-90' : 'rotate-270'}`}
+                    />
+                </button>
+            </div>
 
             {isOpen && !disabled && !loading && (
-                <div className="absolute z-50 w-full mt-1 bg-white/[.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white/[.05] rounded-lg overflow-hidden shadow-lg max-h-64 overflow-y-auto">
                     {groupedOptions.map((group, groupIndex) => (
                         <div key={group.name}>
                             {groupIndex > 0 && (
@@ -134,7 +164,7 @@ export default function GroupedDropdown({
                                     key={option.value}
                                     type="button"
                                     onClick={() => handleSelect(option.value)}
-                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9] hover:bg-green/[0.9] transition-colors ${
+                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9] hover:bg-gray-900/[0.9] transition-colors ${
                                         value === option.value ? 'bg-green/[.2] text-green' : ''
                                     }`}
                                 >
@@ -149,7 +179,7 @@ export default function GroupedDropdown({
                         </div>
                     ))}
                     {groupedOptions.length === 0 && (
-                        <div className="px-4 py-2.5 text-white/50">No options available</div>
+                        <div className="px-4 py-2.5 text-white/50 bg-black">No options available</div>
                     )}
                 </div>
             )}
