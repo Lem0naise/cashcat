@@ -5,9 +5,10 @@ import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database } from '@/types/supabase';
-import type { Category } from '@/types/supabase';
+import type { Category, Group } from '@/types/supabase';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
+import GroupedDropdown from './grouped-dropdown';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -44,6 +45,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [categoryId, setCategoryId] = useState('');
     const [accountId, setAccountId] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
     const [accounts, setAccounts] = useState<{id: string; name: string; type: string}[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -64,7 +66,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
 
-                const [categoriesResponse, accountsResponse, vendorsResponse] = await Promise.all([
+                const [categoriesResponse, accountsResponse, vendorsResponse, groupsResponse] = await Promise.all([
                     supabase
                         .from('categories')
                         .select('*')
@@ -80,16 +82,23 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         .from('vendors')
                         .select('id, name')
                         .eq('user_id', user.id)
+                        .order('name'),
+                    supabase
+                        .from('groups')
+                        .select('*')
+                        .eq('user_id', user.id)
                         .order('name')
                 ]);
                 
                 if (categoriesResponse.error) throw categoriesResponse.error;
                 if (accountsResponse.error) throw accountsResponse.error;
                 if (vendorsResponse.error) throw vendorsResponse.error;
+                if (groupsResponse.error) throw groupsResponse.error;
                 
                 setCategories(categoriesResponse.data || []);
                 setAccounts(accountsResponse.data || []);
                 setAllVendors(vendorsResponse.data || []);
+                setGroups(groupsResponse.data || []);
                 
                 // Set default account from most recent transaction if creating new transaction
                 if (!transaction && accountsResponse.data.length > 0) {
@@ -468,7 +477,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                     className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                                 />
                                 {showSuggestions && vendorSuggestions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05] border border-white/[.15] rounded-lg overflow-hidden shadow-lg">
+                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
                                         {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
                                             .map((suggestion) => (
                                             <button
@@ -504,14 +513,18 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                             <span className="text-xs text-white/50 px-1 py-1">Loading...</span>
                                         )}
                                     </div>
-                                    <Dropdown
+                                    <GroupedDropdown
                                         required={type === 'payment'}
                                         value={categoryId}
                                         onChange={setCategoryId}
-                                        options={categories.map((category): DropdownOption => ({
-                                            value: category.id,
-                                            label: category.name,
-                                        }))}
+                                        options={categories.map((category) => {
+                                            const group = groups.find(g => g.id === category.group);
+                                            return {
+                                                value: category.id,
+                                                label: category.name,
+                                                group: group?.name || 'Other'
+                                            };
+                                        })}
                                         placeholder={loadingCategories ? 'Loading categories...' : 'Select a category'}
                                         disabled={loadingCategories}
                                         loading={loadingCategories}
