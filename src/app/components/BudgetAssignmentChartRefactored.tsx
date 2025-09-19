@@ -107,32 +107,6 @@ export default function BudgetAssignmentChart({
     canvas.addEventListener('preZoom', handler as EventListener);
     return () => canvas.removeEventListener('preZoom', handler as EventListener);
   }, []);
-  // Sync the bar chart morph when the line chart dispatches a preZoom event
-  useEffect(() => {
-    const line = lineChartRef.current;
-    const bar = volumeChartRef.current;
-    if (!line || !line.canvas || !bar) return;
-    const canvas = line.canvas as HTMLCanvasElement;
-    const handler = (e: Event) => {
-      // Best-effort type narrowing
-      const ce = e as CustomEvent<{ start: Date; end: Date; duration?: number }>;
-      if (!ce || !ce.detail) return;
-      const { start, end } = ce.detail;
-      const s = start instanceof Date ? start.getTime() : new Date(start as any).getTime();
-      const t = end instanceof Date ? end.getTime() : new Date(end as any).getTime();
-      try {
-        bar.options.scales = bar.options.scales || {};
-        (bar.options.scales as any).x = {
-          ...(bar.options.scales as any).x,
-          min: Math.min(s, t),
-          max: Math.max(s, t)
-        };
-        (bar as any).update('zoom');
-      } catch {}
-    };
-    canvas.addEventListener('preZoom', handler as EventListener);
-    return () => canvas.removeEventListener('preZoom', handler as EventListener);
-  }, []);
   
   // Add state for segment hover information and visibility control
   const [segmentHoverInfo, setSegmentHoverInfo] = useState<SegmentHoverInfo | null>(null);
