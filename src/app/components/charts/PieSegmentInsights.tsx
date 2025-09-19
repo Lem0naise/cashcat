@@ -24,7 +24,6 @@ interface PieSegmentInsightsProps {
   onSetComparisonPeriod: (start: Date, end: Date) => void;
   isMobileOptimized?: boolean; // New prop for mobile layout optimization
   isPersistedGroupView?: boolean; // New prop to indicate this is a persisted group insights view
-  isPersistedGroupView?: boolean; // New prop to indicate this is a persisted group insights view
 }
 
 export default function PieSegmentInsights({
@@ -36,7 +35,6 @@ export default function PieSegmentInsights({
   onFilterBySegment,
   onSetComparisonPeriod,
   isMobileOptimized = false,
-  isPersistedGroupView = false,
   isPersistedGroupView = false
 }: PieSegmentInsightsProps) {
   // Calculate insights for the selected segment
