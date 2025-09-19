@@ -11,6 +11,9 @@
   --reddy: #f2602f;
   --old-reddy: rgba(224, 72, 12, 0.689);
 
+
+  --bz: #232323;
+
   /* Budget specific colors */
   --budget-assigned: var(--green);
   --budget-assigned-bg: var(--green-dark);
@@ -34,8 +37,12 @@
   --color-green-dark: var(--blue-dark);
   --color-reddy: var(--reddy);
   --color-old-reddy: var(--old-reddy);
+
+  --color-bz: var(--bz);
+  
   --font-sans: var(--font-SUSE);
   --font-mono: var(--font-SUSE);
+
 }
 
  

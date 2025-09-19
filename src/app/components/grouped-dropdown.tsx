@@ -126,7 +126,7 @@ export default function GroupedDropdown({
                             {groupIndex > 0 && (
                                 <div className="border-t border-white/[.1]" />
                             )}
-                            <div className="px-3 py-2 text-xs font-medium text-green bg-gray-700 border-b border-white/10">
+                            <div className="px-3 py-2 text-sm font-medium text-green bg-bz">
                                 {group.name}
                             </div>
                             {group.options.map((option) => (
@@ -134,7 +134,7 @@ export default function GroupedDropdown({
                                     key={option.value}
                                     type="button"
                                     onClick={() => handleSelect(option.value)}
-                                    className={`w-full px-4 py-2.5 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[0.9] transition-colors ${
+                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9] hover:bg-green/[0.9] transition-colors ${
                                         value === option.value ? 'bg-green/[.2] text-green' : ''
                                     }`}
                                 >
