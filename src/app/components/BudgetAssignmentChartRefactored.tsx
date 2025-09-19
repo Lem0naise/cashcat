@@ -18,7 +18,6 @@ import {
   BarElement,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
-
 // Import our modular components
 import { 
   BudgetAssignmentChartProps, 
@@ -63,7 +62,7 @@ ChartJS.register(
 
 // Set Chart.js global font defaults
 ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
-
+ 
 export default function BudgetAssignmentChart({
   assignments,
   categories,
@@ -74,10 +73,40 @@ export default function BudgetAssignmentChart({
   selectedGroups,
   selectedCategories,
   showGoals,
-  showRollover
+  showRollover,
+  onZoomRange
 }: BudgetAssignmentChartProps) {
   const lineChartRef = useRef<any>(null);
   const volumeChartRef = useRef<any>(null);
+  // Suppress one-time animations post morph
+  const [suppressNextLineAnim, setSuppressNextLineAnim] = useState(false);
+  const [suppressNextBarAnim, setSuppressNextBarAnim] = useState(false);
+
+  // Sync the bar chart morph when the line chart dispatches a preZoom event
+  useEffect(() => {
+    const line = lineChartRef.current;
+    const bar = volumeChartRef.current;
+    if (!line || !line.canvas || !bar) return;
+    const canvas = line.canvas as HTMLCanvasElement;
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ start: Date; end: Date; duration?: number }>;
+      if (!ce || !ce.detail) return;
+      const { start, end } = ce.detail;
+      const s = start instanceof Date ? start.getTime() : new Date(start as any).getTime();
+      const t = end instanceof Date ? end.getTime() : new Date(end as any).getTime();
+      try {
+        bar.options.scales = bar.options.scales || {};
+        (bar.options.scales as any).x = {
+          ...(bar.options.scales as any).x,
+          min: Math.min(s, t),
+          max: Math.max(s, t)
+        };
+        (bar as any).update('zoom');
+      } catch {}
+    };
+    canvas.addEventListener('preZoom', handler as EventListener);
+    return () => canvas.removeEventListener('preZoom', handler as EventListener);
+  }, []);
   
   // Add state for segment hover information and visibility control
   const [segmentHoverInfo, setSegmentHoverInfo] = useState<SegmentHoverInfo | null>(null);
@@ -291,6 +320,15 @@ export default function BudgetAssignmentChart({
     }
   }, [isDragging, setComparisonData]);
 
+  // Wrap onZoomRange to suppress the subsequent chart animation
+  const wrappedOnZoomRange = useCallback((start: Date, end: Date) => {
+    setSuppressNextLineAnim(true);
+    try { onZoomRange && onZoomRange(start, end); } finally {
+      // keep suppression for the next render only
+      setTimeout(() => setSuppressNextLineAnim(false), 500);
+    }
+  }, [onZoomRange]);
+
   const lineChartConfig = useLineChartConfig(
     chartData,
     categories,
@@ -307,8 +345,10 @@ export default function BudgetAssignmentChart({
     comparisonData,
     handleRealTimeUpdate,
     calculateComparisonData,
-    handleHover,
-    handleHoverLeave
+  handleHover,
+  handleHoverLeave,
+  wrappedOnZoomRange,
+  suppressNextLineAnim
   );
 
   const volumeChartConfig = useVolumeChartConfig(
@@ -327,17 +367,49 @@ export default function BudgetAssignmentChart({
     const chart = lineChartRef.current;
     if (chart && chart.canvas) {
       const canvas = chart.canvas;
+      const isOverZoomButton = (evt: MouseEvent | TouchEvent): boolean => {
+        const rect = (chart as any)._zoomButtonRect as { x: number; y: number; w: number; h: number } | undefined;
+        if (!rect) return false;
+        let x: number, y: number;
+        if ('offsetX' in evt && typeof (evt as any).offsetX === 'number') {
+          x = (evt as any).offsetX; y = (evt as any).offsetY;
+        } else if ('clientX' in evt) {
+          const r = canvas.getBoundingClientRect();
+          let clientX = 0, clientY = 0;
+          if ('touches' in (evt as any) || 'changedTouches' in (evt as any)) {
+            const te = evt as unknown as TouchEvent;
+            const t = te.touches && te.touches.length > 0 ? te.touches[0] : (te.changedTouches && te.changedTouches.length > 0 ? te.changedTouches[0] : undefined);
+            clientX = t ? t.clientX : 0;
+            clientY = t ? t.clientY : 0;
+          } else {
+            const me = evt as MouseEvent;
+            clientX = me.clientX;
+            clientY = me.clientY;
+          }
+          x = clientX - r.left; y = clientY - r.top;
+        } else {
+          return false;
+        }
+        return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+      };
       
       // Mouse event handlers
-      const onMouseDown = (e: MouseEvent) => handleMouseDown(e, chart);
+      const onMouseDown = (e: MouseEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
+        handleMouseDown(e, chart);
+      };
       const onMouseMove = (e: MouseEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
         if (isDragging) {
           handleMouseMove(e, chart);
         } else {
           handleHover(e, chart);
         }
       };
-      const onMouseUp = (e: MouseEvent) => handleMouseUp(e, chart);
+      const onMouseUp = (e: MouseEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
+        handleMouseUp(e, chart);
+      };
       const onMouseLeave = (e: MouseEvent) => {
         handleHoverLeave(chart);
         if (isDragging) {
@@ -346,9 +418,18 @@ export default function BudgetAssignmentChart({
       };
       
       // Touch event handlers
-      const onTouchStart = (e: TouchEvent) => handleTouchStart(e, chart);
-      const onTouchMove = (e: TouchEvent) => handleTouchMove(e, chart);
-      const onTouchEnd = (e: TouchEvent) => handleTouchEnd(e, chart);
+      const onTouchStart = (e: TouchEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
+        handleTouchStart(e, chart);
+      };
+      const onTouchMove = (e: TouchEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
+        handleTouchMove(e, chart);
+      };
+      const onTouchEnd = (e: TouchEvent) => {
+        if (isOverZoomButton(e)) { e.preventDefault(); return; }
+        handleTouchEnd(e, chart);
+      };
       const onTouchCancel = (e: TouchEvent) => {
         if (isDragging) {
           setComparisonData(null);
@@ -400,7 +481,14 @@ export default function BudgetAssignmentChart({
       }
     }
     return null;
-  }, [chartDataLength, shouldShowDistanceFromGoal, distanceFromGoalDatasetsLength, calculateComparisonData]);
+  }, [
+    chartDataLength, 
+    shouldShowDistanceFromGoal, 
+    distanceFromGoalDatasetsLength, 
+    calculateComparisonData,
+    dateRange.start.getTime(), // Add date range dependencies
+    dateRange.end.getTime()    // to ensure recalculation when dates change
+  ]);
 
   // Effect to set default comparison data (only when the memoized calculation changes)
   useEffect(() => {
@@ -525,6 +613,16 @@ export default function BudgetAssignmentChart({
         onClearSelection={clearSelection}
         isHovering={hoverDataIndex !== null && !hasDragSelection}
         hasDragSelection={hasDragSelection}
+        onZoomRange={onZoomRange ? (() => {
+          // We return a function that the child will call with dates
+          // However, the child expects (start: Date, end: Date) directly, so pass through
+          return (start: Date, end: Date) => {
+            // Ensure chronological order
+            const s = start <= end ? start : end;
+            const e = start <= end ? end : start;
+            onZoomRange(s, e);
+          };
+        })() : undefined}
       />
 
       {/* Show helpful message when no data */}
@@ -546,7 +644,7 @@ export default function BudgetAssignmentChart({
       {Array.isArray(transactions) && chartData.dataPoints.length > 0 && (
         <>
           {/* Main Line Chart */}
-          <div className="bg-white/[.02] rounded-lg p-4 h-96">
+          <div id="line-chart-container" className="bg-white/[.02] rounded-lg p-4 h-96">
             <Line ref={lineChartRef} {...lineChartConfig} />
           </div>
 

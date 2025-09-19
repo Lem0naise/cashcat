@@ -29,7 +29,9 @@ export const useLineChartConfig = (
   onRealTimeUpdate?: (data: any) => void, // Add real-time update callback
   calculateComparisonData?: (startIdx: number, endIdx: number, dataToUse: any[], datasets?: any[]) => any, // Add calculation function
   onHover?: (event: any, chart: any) => void, // Add hover handler
-  onHoverLeave?: (chart: any) => void // Add hover leave handler
+  onHoverLeave?: (chart: any) => void, // Add hover leave handler
+  onZoomRange?: (start: Date, end: Date) => void, // New: Zoom action from selection
+  suppressNextLineAnim: boolean = false
 ) => {
   return useMemo(() => ({
     type: 'line' as const,
@@ -55,6 +57,20 @@ export const useLineChartConfig = (
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        // Disable the immediate next re-draw animation when requested (post-zoom morph)
+        duration: suppressNextLineAnim ? 0 : 800,
+        easing: 'easeOutQuart' as const
+      },
+      // Smooth morphing when changing x-scale min/max (used for in-canvas Zoom)
+      transitions: {
+        zoom: {
+          animation: {
+            duration: 600,
+            easing: 'easeOutCubic' as const
+          }
+        }
+      } as const,
       interaction: {
         intersect: false,
         mode: 'index' as const,
@@ -72,7 +88,8 @@ export const useLineChartConfig = (
             comparisonData,
             onRealTimeUpdate,
             calculateComparisonData,
-            isDragging
+            isDragging,
+            onZoomRange
           }
         } as any, // Type assertion to avoid TypeScript issues
         title: {
@@ -111,6 +128,23 @@ export const useLineChartConfig = (
       scales: {
         x: {
           type: 'time' as const,
+          // Keep the x-scale pinned to current data extents so the line spans the full width
+          min: (() => {
+            const pts = chartData.dataPoints;
+            if (pts && pts.length > 0) {
+              const first = new Date(pts[0].x).getTime();
+              return first;
+            }
+            return dateRange.start.getTime();
+          })(),
+          max: (() => {
+            const pts = chartData.dataPoints;
+            if (pts && pts.length > 0) {
+              const last = new Date(pts[pts.length - 1].x).getTime();
+              return last;
+            }
+            return dateRange.end.getTime();
+          })(),
           time: {
             unit: xUnit,
             displayFormats: {
@@ -161,8 +195,16 @@ export const useLineChartConfig = (
         }
       },
       onHover: (event: any, activeElements: any[], chart: any) => {
-        if (event.native && event.native.target) {
-          (event.native.target as HTMLElement).style.cursor = isDragging ? 'grabbing' : 'crosshair';
+        // Respect the plugin-drawn Zoom button hit area for cursor feedback
+        if (event && event.native && event.native.target) {
+          const canvas = event.native.target as HTMLCanvasElement;
+          const mouseEvt = event.native as MouseEvent;
+          // Prefer offsetX/offsetY which are relative to the canvas
+          const mx = (mouseEvt as any).offsetX ?? event.x;
+          const my = (mouseEvt as any).offsetY ?? event.y;
+          const rect = (chart as any)._zoomButtonRect as { x: number; y: number; w: number; h: number } | undefined;
+          const overZoom = !!rect && mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h;
+          canvas.style.cursor = overZoom ? 'pointer' : (isDragging ? 'grabbing' : 'crosshair');
         }
         
         // Call custom hover handler if provided
@@ -194,7 +236,8 @@ export const useLineChartConfig = (
     onRealTimeUpdate,
     calculateComparisonData,
     onHover,
-    onHoverLeave
+  onHoverLeave,
+  suppressNextLineAnim
   ]);
 };
 
@@ -206,7 +249,8 @@ export const useVolumeChartConfig = (
   categories: Category[],
   selectedCategories: string[] = [],
   selectedGroups: string[] = [],
-  transactions?: Transaction[] // Add optional transactions parameter
+  transactions?: Transaction[], // Add optional transactions parameter
+  suppressNextBarAnim: boolean = false
 ) => {
   return useMemo(() => {
     // Import our segmentation utilities
@@ -296,9 +340,18 @@ export const useVolumeChartConfig = (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        // Smooth morphing + default animation (suppressed when needed)
+        transitions: {
+          zoom: {
+            animation: {
+              duration: 600,
+              easing: 'easeOutCubic' as const
+            }
+          }
+        } as const,
         animation: {
-          duration: 800,
-          easing: 'easeOutQuart' as const,
+          duration: suppressNextBarAnim ? 0 : 800,
+          easing: 'easeOutQuart' as const
         },
         // Bar chart specific options for full width bars
         barPercentage: 1.0,
@@ -495,7 +548,24 @@ export const useVolumeChartConfig = (
               align: 'center' as const
             },
             bounds: 'data' as const,
-            offset: true
+            offset: false,
+            // Keep the x-scale pinned to current data extents so bars span the full width (aligned with line chart)
+            min: (() => {
+              const pts = filteredVolumeData;
+              if (pts && pts.length > 0) {
+                const first = new Date(pts[0].x).getTime();
+                return first;
+              }
+              return dateRange.start.getTime();
+            })(),
+            max: (() => {
+              const pts = filteredVolumeData;
+              if (pts && pts.length > 0) {
+                const last = new Date(pts[pts.length - 1].x).getTime();
+                return last;
+              }
+              return dateRange.end.getTime();
+            })()
           },
           y: {
             stacked: false,
