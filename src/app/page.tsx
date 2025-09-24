@@ -102,7 +102,7 @@ export default function Landing() {
                                
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                                     <Link
-                                        href="/signup"
+                                        href="/login"
                                         className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                                     >
                                         Start Budgeting Free

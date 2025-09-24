@@ -206,7 +206,7 @@ export default function SignUpClient() {
           </a>
         </p>
 
-        <div className="mt-3 text-center bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-2">
+        <div className="mt-3 text-center bg-blue-100/[.1] border border-blue-500/[.2] rounded-lg p-2">
           <span className="text-white/70 text-md">Already have an account? </span>
           <Link href="/login" className="text-green hover:underline text-md">
             Sign in here

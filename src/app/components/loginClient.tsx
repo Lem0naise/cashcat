@@ -190,8 +190,8 @@ export default function LoginClient() {
           view="sign_in"
         />
 
-        <div className="mt-3 text-center bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-2">
-          <span className="text-white/70 text-md">Don't have an account? </span>
+        <div className="mt-3 text-center bg-blue-100/[.1] border border-blue-500/[.2] rounded-lg p-2">
+          <span className="text-white/70 text-md">Don't have an account yet? </span>
           <Link href="/signup" className="text-green hover:underline text-md">
             Sign up here
           </Link>
