@@ -203,13 +203,19 @@ export default function LearnMore() {
                     </div>
 
                     <div className="mt-6 sm:mt-8">
-                        <div className="mt-8 flex justify-center">
+                        <div className="mt-8 flex justify-center gap-8">
+                            <button
+                            onClick={() => router.push('/')}
+                            className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
+                            >
+                            Go Home
+                            </button>
                             <button
                             onClick={() => router.back()}
                             className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                             >
-                            Done Reading
-                        </button>
+                            Back
+                            </button>
                         </div>
                     </div>
                 </div>
