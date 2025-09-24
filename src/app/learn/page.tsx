@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "../components/logo";
 import OpenButton from "../components/openButton";
 import CategoryCard from '../features/Category';
@@ -24,14 +24,39 @@ export default function LearnMore() {
     const [isAnimatingAway, setIsAnimatingAway] = useState(false);
     const [mockAssigning, setMockAssigning] = useState(false);
     const [currentTipIndex, setCurrentTipIndex] = useState(0);
+    const [canGoBack, setCanGoBack] = useState(false);
 
     const [mockAssignedValue, setMockAssignedValue] = useState(45);
+
+    // Check if we can meaningfully go back in history
+    useEffect(() => {
+        const checkHistory = () => {
+            // Check if there's meaningful history by looking at the referrer
+            const referrer = document.referrer;
+            const currentOrigin = window.location.origin;
+            
+            // If referrer is from the same origin (our site), we can go back
+            // Otherwise, we should redirect to a meaningful page
+            setCanGoBack(referrer.startsWith(currentOrigin) && referrer !== window.location.href);
+        };
+        
+        checkHistory();
+    }, []);
 
     const handleClick = () => {
         setIsAnimatingAway(true);
         setTimeout(() => {
             router.push("/budget");
         }, 500);
+    };
+
+    const handleDoneReading = () => {
+        if (canGoBack) {
+            router.back();
+        } else {
+            // If user came from external source (like Google), redirect to budget page
+            router.push("/budget");
+        }
     };
 
     const getRandomTip = (ind: number) => {
@@ -205,7 +230,7 @@ export default function LearnMore() {
                     <div className="mt-6 sm:mt-8">
                         <div className="mt-8 flex justify-center">
                             <button
-                            onClick={() => router.back()}
+                            onClick={handleDoneReading}
                             className="px-8 py-4 bg-green text-black font-semibold rounded-lg hover:bg-green-dark transition-all text-lg"
                             >
                             Done Reading
