@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, subMonths, startOfMonth, endOfMonth, subYears, startOfYear, endOfYear} from 'date-fns';
 import { Transaction, Category } from './types';
 import { formatCurrency } from './utils';
 
@@ -24,6 +24,7 @@ interface PieSegmentInsightsProps {
   onSetComparisonPeriod: (start: Date, end: Date) => void;
   isMobileOptimized?: boolean; // New prop for mobile layout optimization
   isPersistedGroupView?: boolean; // New prop to indicate this is a persisted group insights view
+  timeRange?: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
 }
 
 export default function PieSegmentInsights({
@@ -35,7 +36,8 @@ export default function PieSegmentInsights({
   onFilterBySegment,
   onSetComparisonPeriod,
   isMobileOptimized = false,
-  isPersistedGroupView = false
+  isPersistedGroupView = false,
+  timeRange
 }: PieSegmentInsightsProps) {
   // Calculate insights for the selected segment
   const insights = useMemo(() => {
@@ -73,10 +75,37 @@ export default function PieSegmentInsights({
     // Calculate average transaction amount
     const averageTransaction = transactionCount > 0 ? currentSpending / transactionCount : 0;
 
-    // Calculate comparison period (same length, immediately before current period)
-    const periodDuration = dateRange.end.getTime() - dateRange.start.getTime();
-    const comparisonStart = new Date(dateRange.start.getTime() - periodDuration);
-    const comparisonEnd = new Date(dateRange.start.getTime());
+    
+        // Calculate comparison period
+    let comparisonStart: Date;
+    let comparisonEnd: Date;
+
+    // Detect if we're in MTD or YTD mode (similar to PieChart's logic)
+    const isCompleteMonth = dateRange.start.getTime() === startOfMonth(dateRange.start).getTime() &&
+      dateRange.end.getTime() === endOfMonth(dateRange.start).getTime();
+    const isCompleteYear = dateRange.start.getTime() === startOfYear(dateRange.start).getTime() &&
+      dateRange.end.getTime() === endOfYear(dateRange.start).getTime();
+
+    const actualMode = (timeRange === 'mtd' || isCompleteMonth) ? 'mtd' :
+      (timeRange === 'ytd' || isCompleteYear) ? 'ytd' :
+        timeRange;
+
+    if (actualMode === 'mtd') {
+      // For MTD, compare to the complete previous month
+      const prevMonth = subMonths(dateRange.start, 1);
+      comparisonStart = startOfMonth(prevMonth);
+      comparisonEnd = endOfMonth(prevMonth);
+    } else if (actualMode === 'ytd') {
+      // For YTD, compare to the complete previous year
+      const prevYear = subYears(dateRange.start, 1);
+      comparisonStart = startOfYear(prevYear);
+      comparisonEnd = endOfYear(prevYear);
+    } else {
+      // For duration-based ranges, use the same duration immediately before
+      const periodDuration = dateRange.end.getTime() - dateRange.start.getTime();
+      comparisonStart = new Date(dateRange.start.getTime() - periodDuration);
+      comparisonEnd = new Date(dateRange.start.getTime());
+    }
 
     // Filter transactions for comparison period
     const comparisonTransactions = transactions.filter(transaction => {
