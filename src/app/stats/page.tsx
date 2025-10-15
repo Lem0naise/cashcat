@@ -401,10 +401,11 @@ export default function Stats() {
                                                             onSetComparisonPeriod={handleSetComparisonPeriod}
                                                             isMobileOptimized={true}
                                                             isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
+                                                            timeRange={timeRange}
                                                         />
                                                     </div>
                                                     <div className="hidden lg:block" id="desktop-insights-panel">
-                                                        {/* Desktop insights - now also below the chart */}
+                                                        {/* Desktop insights */}
                                                         <PieSegmentInsights
                                                             segment={selectedPieSegment || persistedGroupSegment}
                                                             transactions={transactions}
@@ -415,6 +416,7 @@ export default function Stats() {
                                                             onSetComparisonPeriod={handleSetComparisonPeriod}
                                                             isMobileOptimized={false}
                                                             isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
+                                                            timeRange={timeRange}
                                                         />
                                                     </div>
                                                 </div>
@@ -423,7 +425,7 @@ export default function Stats() {
                                     );
                                 })()}
 
-                                {/* Budget Assignment Chart - NOW WITH TRANSACTIONS! */}
+                                {/* Budget Assignment Chart*/}
                                 <BudgetAssignmentChart
                                     assignments={assignments}
                                     categories={categories}
