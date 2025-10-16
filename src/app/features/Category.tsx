@@ -263,7 +263,9 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                             style={{
                                 width: goal 
                                 ? `${Math.max(Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1), 0) * 100}%` 
-                                : '0%', // don't use a spent bar if there is no 'goal'
+                                : (assigned + rollover > 0
+                                    ? `${Math.max(Math.min(spent / (assigned + rollover), 1), 0) * 100}%`
+                                    : '0%'),
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />
