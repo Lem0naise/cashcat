@@ -497,21 +497,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
                                         <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        {amount && categoryRemaining !== null && !loadingCategoryRemaining && (
-                                            <span className={`text-xs font-medium ${
-                                                (categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0)
-                                                    ? 'text-green px-1 py-1' 
-                                                    : 'text-reddy animate-pulse bg-reddy/20 rounded-full px-1 py-1'
-                                            }`}>
-                                                {categoryRemaining >= 0 
-                                                    ? `£${categoryRemaining.toFixed(2)} left` + ((categoryRemaining - parseFloat(amount) >= 0 ) || (transaction && categoryRemaining >= 0) ? '' : ' - not enough!')
-                                                    : `⚠️ £${Math.abs(categoryRemaining).toFixed(2)} OVER`
-                                                }
-                                            </span>
-                                        )}
-                                        {loadingCategoryRemaining && ( 
-                                            <span className="text-xs text-white/50 px-1 py-1">Loading...</span>
-                                        )}
+                                        
                                     </div>
                                     <GroupedDropdown
                                         required={type === 'payment'}
