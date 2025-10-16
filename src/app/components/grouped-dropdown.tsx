@@ -164,8 +164,8 @@ export default function GroupedDropdown({
                                     key={option.value}
                                     type="button"
                                     onClick={() => handleSelect(option.value)}
-                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9] hover:bg-gray-900/[0.9] transition-colors ${
-                                        value === option.value ? 'bg-green/[.2] text-green' : ''
+                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9]  transition-colors ${
+                                        value === option.value ? 'bg-green-dark/[0.9] text-white' : 'hover:bg-gray-900/[0.9]'
                                     }`}
                                 >
                                     <div>
