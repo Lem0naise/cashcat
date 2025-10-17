@@ -34,6 +34,7 @@ export default function GroupedDropdown({
 }: GroupedDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [focusedOptionIdx, setFocusedOptionIdx] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,8 +72,20 @@ export default function GroupedDropdown({
         return sortedGroups;
     }, [options, searchTerm]);
 
+    // Flatten grouped options for easier navigation
+    const flatOptions = useMemo(() => {
+        return groupedOptions.flatMap(group => group.options);
+    }, [groupedOptions]);
+
     const selectedOption = options.find(option => option.value === value);
 
+    // Reset focus when dropdown closes or search changes
+    useEffect(() => {
+        if (!isOpen) setFocusedOptionIdx(null);
+        else setFocusedOptionIdx(flatOptions.length > 0 ? 0 : null);
+    }, [isOpen, searchTerm, flatOptions.length]);
+
+    // Close dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -84,6 +97,38 @@ export default function GroupedDropdown({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Keyboard navigation handler
+    useEffect(() => {
+        if (!isOpen || disabled || loading) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (flatOptions.length === 0) return;
+
+            if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+                e.preventDefault();
+                setFocusedOptionIdx(idx => {
+                    if (idx === null) return 0;
+                    return (idx + 1) % flatOptions.length;
+                });
+            } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+                e.preventDefault();
+                setFocusedOptionIdx(idx => {
+                    if (idx === null) return flatOptions.length - 1;
+                    return (idx - 1 + flatOptions.length) % flatOptions.length;
+                });
+            } else if (e.key === 'Enter' && focusedOptionIdx !== null) {
+                e.preventDefault();
+                handleSelect(flatOptions[focusedOptionIdx].value);
+            } else if (e.key === 'Escape') {
+                setIsOpen(false);
+                setSearchTerm('');
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, disabled, loading, flatOptions, focusedOptionIdx]);
 
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);
@@ -159,23 +204,32 @@ export default function GroupedDropdown({
                             <div className="px-3 py-2 text-sm font-medium text-green bg-bz">
                                 {group.name}
                             </div>
-                            {group.options.map((option) => (
-                                <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => handleSelect(option.value)}
-                                    className={`w-full px-4 py-2.5 text-left md:bg-black/[0.9] bg-black/[0.9] hover:bg-gray-900/[0.9] transition-colors ${
-                                        value === option.value ? 'bg-green/[.2] text-green' : ''
-                                    }`}
-                                >
-                                    <div>
-                                        <div className="truncate">{option.label}</div>
-                                        {option.subtitle && (
-                                            <div className="text-xs opacity-70 truncate">{option.subtitle}</div>
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
+                            {group.options.map((option) => {
+                                // Find index in flatOptions for focus
+                                const optionIdx = flatOptions.findIndex(o => o.value === option.value);
+                                const isFocused = focusedOptionIdx === optionIdx;
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() => handleSelect(option.value)}
+                                        className={`w-full px-4 py-2.5 text-left bg-black/[0.9] transition-colors ${
+                                            value === option.value ? 'bg-green-dark/[0.9] text-white' : isFocused ? 'bg-green-dark/[0.9] text-white' : 'hover:bg-gray-900/[0.9]'
+                                        }`}
+                                        tabIndex={-1}
+                                        ref={el => {
+                                            if (isFocused && el) el.scrollIntoView({block: 'nearest'});
+                                        }}
+                                    >
+                                        <div>
+                                            <div className="truncate">{option.label}</div>
+                                            {option.subtitle && (
+                                                <div className="text-xs opacity-70 truncate">{option.subtitle}</div>
+                                            )}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     ))}
                     {groupedOptions.length === 0 && (
