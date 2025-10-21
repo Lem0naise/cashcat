@@ -46,6 +46,10 @@ export default function BankCompareModal({
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [correctionAmount, setCorrectionAmount] = useState('');
     const [usableTransactions, setUsableTransactions] = useState(transactions);
+    const [lastReconciliation, setLastReconciliation] = useState<{
+        reconciled_at: string;
+        bank_balance: number;
+    } | null>(null);
 
     // Calculate budget balance from transactions
     useEffect(() => {
