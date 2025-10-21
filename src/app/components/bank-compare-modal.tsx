@@ -65,6 +65,29 @@ export default function BankCompareModal({
         setBudgetBalance(balance);
     }, [transactions, bankAccountId]);
 
+    // Fetch last reconciliation data
+    useEffect(() => {
+        const fetchLastReconciliation = async () => {
+            if (!isOpen || !bankAccountId) return;
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data, error } = await supabase
+                .from('bank_reconciliations')
+                .select('reconciled_at, bank_balance')
+                .eq('user_id', user.id)
+                .eq('account_id', bankAccountId)
+                .single();
+
+            if (!error && data) {
+                setLastReconciliation(data);
+            }
+        };
+
+        fetchLastReconciliation();
+    }, [isOpen, bankAccountId]);
+
     // Prevent scrolling when modal is open
     useEffect(() => {
         if (isOpen) {
@@ -85,7 +108,7 @@ export default function BankCompareModal({
         }).format(amount);
     };
 
-    const handleCompare = () => {
+    const handleCompare = async () => {
         const bankAmount = parseFloat(bankBalance);
         if (isNaN(bankAmount)) {
             toast.error('Please enter a valid bank balance');
@@ -94,6 +117,11 @@ export default function BankCompareModal({
 
         const diff = bankAmount - budgetBalance;
         setDifference(diff);
+
+        // If balances match, save reconciliation
+        if (Math.abs(diff) < 0.01) {
+            await saveReconciliation(bankAmount);
+        }
 
         // Find potential problematic transactions
         const recentTransactions = usableTransactions
@@ -113,6 +141,37 @@ export default function BankCompareModal({
 
         setPotentialIssues(unique);
         setStep('results');
+    };
+
+    const saveReconciliation = async (bankAmount: number) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase
+                .from('bank_reconciliations')
+                .upsert({
+                    user_id: user.id,
+                    account_id: bankAccountId!,
+                    reconciled_at: new Date().toISOString(),
+                    bank_balance: bankAmount,
+                    cashcat_balance: budgetBalance
+                }, {
+                    onConflict: 'user_id,account_id'
+                });
+
+            if (error) throw error;
+            
+            // Update local state
+            setLastReconciliation({
+                reconciled_at: new Date().toISOString(),
+                bank_balance: bankAmount
+            });
+            
+            toast.success('Reconciliation saved!');
+        } catch (error) {
+            console.error('Error saving reconciliation:', error);
+        }
     };
 
     const handleTransactionEdit = (transaction: Transaction) => {
@@ -399,6 +458,22 @@ export default function BankCompareModal({
                                         </>
                                     )}
 
+                                    {Math.abs(difference) >= 0.01 && lastReconciliation && (
+                                        <div className="bg-blue/10 border border-blue/20 rounded-lg p-4 mb-4">
+                                            <h4 className="font-medium text-blue mb-2">💡 Search Tip</h4>
+                                            <p className="text-sm text-white/70">
+                                                Your last successful reconciliation was on{' '}
+                                                <span className="font-medium">
+                                                    {new Date(lastReconciliation.reconciled_at).toLocaleDateString('en-GB', {
+                                                        day: 'numeric',
+                                                        month: 'long'
+                                                    })}
+                                                </span>
+                                                . Check transactions after this date to find the discrepancy.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={() => setStep('input')}
                                         className="w-full py-2 bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
@@ -425,6 +500,31 @@ export default function BankCompareModal({
                                             onChange={(value) => setCorrectionAmount(value)}
                                             placeholder="0.00"
                                         />
+                                    </div>
+                                </div>
+                            )}
+
+                            {lastReconciliation && (
+                                <div className="bg-green/10 border border-green/20 rounded-lg p-4">
+                                    <h4 className="font-medium text-green mb-2">Last Reconciliation</h4>
+                                    <div className="text-sm text-white/70 space-y-1">
+                                        <p>
+                                            <span className="text-white/50">Date: </span>
+                                            {new Date(lastReconciliation.reconciled_at).toLocaleDateString('en-GB', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                        <p>
+                                            <span className="text-white/50">Balance: </span>
+                                            {formatCurrency(lastReconciliation.bank_balance)}
+                                        </p>
+                                        <p className="text-xs text-white/50 mt-2">
+                                            ✨ Any discrepancies likely occurred after this date
+                                        </p>
                                     </div>
                                 </div>
                             )}
