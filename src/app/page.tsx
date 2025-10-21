@@ -211,6 +211,7 @@ export default function Landing() {
                 </div>
 
 
+
                 {/* What is Zero-Based Budgeting */}
                 <div id='intro' className="md:py-4 max-w-6xl mx-auto">
                     <div className="p-6 max-w-4xl mx-auto glass-card-blue">
@@ -240,6 +241,57 @@ export default function Landing() {
                         Join our Discord Community
                     </Link>
                 </div>
+{/* Mobile App Section */}
+<div className="py-16 max-w-6xl mx-auto">
+    <div className="glass-card-blue p-8">
+        <div className="text-center mb-8">
+            <h3 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+                Use CashCat on Your Phone
+            </h3>
+            <p className="text-lg text-white/70">
+                Install as an app for quick access to your budget on the go
+            </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="left-envelope-card">
+                <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-green">
+                            <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M12 18H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </div>
+                    <div className="text-left">
+                        <h4 className="text-lg font-semibold mb-2 text-green">Perfect for Quick Budgeting</h4>
+                        <p className="text-white/70 text-sm">
+                            Check your budget, log transactions, and move money between categories right from your phone's home screen. Makes it a lot more convenient to budget on-the-go!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="left-envelope-card">
+                <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-green">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </div>
+                    <div className="text-left">
+                        <h4 className="text-lg font-semibold mb-2 text-green">Syncs Across All Devices</h4>
+                        <p className="text-white/70 text-sm">
+                            Works on iPhone, Android, tablets, and desktop. Changes sync instantly wherever you budget. There are in-app instructions on how to install the app for each platform in the Settings menu when you first log into the website on your phone.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
 
 
                 {/* Common Questions */}
@@ -368,7 +420,7 @@ export default function Landing() {
                                 <div className="w-2 h-2 bg-green/60 rounded-full mt-2 flex-shrink-0"></div>
                                 <div>
                                     <p className="text-white font-medium">Native Mobile App</p>
-                                    <p className="text-white/60 text-sm">Budget on-the-go with native iOS and Android apps (don't worry, the webapp already works perfectly on mobile!)</p>
+                                    <p className="text-white/60 text-sm">You can already budget on-the-go - but soon, it'll be even easier with native iOS and Android apps.</p>
                                 </div>
                             </div>
                         </div>
