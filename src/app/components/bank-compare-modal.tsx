@@ -75,21 +75,24 @@ export default function BankCompareModal({
 
             const { data, error } = await supabase
                 .from('bank_reconciliations')
-                .select('reconciled_at, bank_balance, cashcat_balance')
+                .select('reconciled_at, bank_balance')
                 .eq('user_id', user.id)
                 .eq('account_id', bankAccountId)
                 .order('reconciled_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
 
             if (!error && data) {
                 setLastReconciliation(data);
             }
+            else {
+                setLastReconciliation(null);
+            }
         };
 
         fetchLastReconciliation();
-    }, [isOpen, bankAccountId]);
+    }, [isOpen, bankAccountId,supabase]);
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -526,7 +529,7 @@ export default function BankCompareModal({
                                             {formatCurrency(lastReconciliation.bank_balance)}
                                         </p>
                                         <p className="text-xs text-white/50 mt-2">
-                                            Any discrepancies likely occurred after this date
+                                            Your balance matched CashCat on this date. Any problems likely occurred since then.
                                         </p>
                                     </div>
                                 </div>
