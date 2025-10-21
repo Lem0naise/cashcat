@@ -46,7 +46,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [accountId, setAccountId] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
     const [groups, setGroups] = useState<Group[]>([]);
-    const [accounts, setAccounts] = useState<{id: string; name: string; type: string}[]>([]);
+    const [accounts, setAccounts] = useState<{id: string; name: string; type: string, is_default: boolean}[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [loadingAccounts, setLoadingAccounts] = useState(true);
     const [categoryRemaining, setCategoryRemaining] = useState<number | null>(null);
@@ -332,8 +332,23 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
             // If we found a transaction, set its category
             if (transactions && transactions.length > 0) {
+
+
                 setCategoryId(transactions[0].category_id);
-                setAccountId(transactions[0].account_id);
+
+
+                // Check if the account from the transaction is still active
+                const accountExists = accounts.find(acc => acc.id === transactions[0].account_id);
+                
+                if (accountExists) {
+                    // Use the account from the previous transaction if it's still active
+                    setAccountId(transactions[0].account_id);
+                } else {
+                    // Fall back to default account if the previous account is closed
+                    const defaultAccount = accounts.find(account => account.is_default === true);
+                    setAccountId(defaultAccount?.id || accounts[0]?.id || '');
+                }
+
             }
         } catch (error) {
             console.error('Error fetching vendor category:', error);
