@@ -75,10 +75,13 @@ export default function BankCompareModal({
 
             const { data, error } = await supabase
                 .from('bank_reconciliations')
-                .select('reconciled_at, bank_balance')
+                .select('reconciled_at, bank_balance, cashcat_balance')
                 .eq('user_id', user.id)
                 .eq('account_id', bankAccountId)
+                .order('reconciled_at', { ascending: false })
+                .limit(1)
                 .single();
+
 
             if (!error && data) {
                 setLastReconciliation(data);
@@ -148,16 +151,15 @@ export default function BankCompareModal({
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
+            // Simply INSERT a new reconciliation record
             const { error } = await supabase
                 .from('bank_reconciliations')
-                .upsert({
+                .insert({
                     user_id: user.id,
                     account_id: bankAccountId!,
                     reconciled_at: new Date().toISOString(),
                     bank_balance: bankAmount,
                     cashcat_balance: budgetBalance
-                }, {
-                    onConflict: 'user_id,account_id'
                 });
 
             if (error) throw error;
@@ -171,6 +173,7 @@ export default function BankCompareModal({
             toast.success('Reconciliation saved!');
         } catch (error) {
             console.error('Error saving reconciliation:', error);
+            toast.error('Failed to save reconciliation');
         }
     };
 
@@ -460,7 +463,7 @@ export default function BankCompareModal({
 
                                     {Math.abs(difference) >= 0.01 && lastReconciliation && (
                                         <div className="bg-blue/10 border border-blue/20 rounded-lg p-4 mb-4">
-                                            <h4 className="font-medium text-blue mb-2">💡 Search Tip</h4>
+                                            <h4 className="font-medium text-blue mb-2">Search Tip</h4>
                                             <p className="text-sm text-white/70">
                                                 Your last successful reconciliation was on{' '}
                                                 <span className="font-medium">
@@ -505,7 +508,7 @@ export default function BankCompareModal({
                             )}
 
                             {lastReconciliation && (
-                                <div className="bg-green/10 border border-green/20 rounded-lg p-4">
+                                <div className="mt-6 bg-green/10 border border-green/20 rounded-lg p-4">
                                     <h4 className="font-medium text-green mb-2">Last Reconciliation</h4>
                                     <div className="text-sm text-white/70 space-y-1">
                                         <p>
@@ -523,7 +526,7 @@ export default function BankCompareModal({
                                             {formatCurrency(lastReconciliation.bank_balance)}
                                         </p>
                                         <p className="text-xs text-white/50 mt-2">
-                                            ✨ Any discrepancies likely occurred after this date
+                                            Any discrepancies likely occurred after this date
                                         </p>
                                     </div>
                                 </div>

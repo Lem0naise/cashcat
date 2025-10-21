@@ -341,43 +341,31 @@ export type Database = {
       }
       bank_reconciliations: {
         Row: {
-          account_id: string | null
-          amount: number
-          category_id: string
-          created_at: string
-          date: string
-          description: string | null
           id: string
-          type: string
           user_id: string
-          vendor: string
-          vendor_id?: string | null
+          account_id: string
+          reconciled_at: string
+          bank_balance: number
+          cashcat_balance: number
+          created_at: string
         }
         Insert: {
-          account_id?: string | null
-          amount: number
-          category_id?: string
-          created_at?: string
-          date: string
-          description?: string | null
           id?: string
-          type?: string
           user_id?: string
-          vendor: string
-          vendor_id?: string | null
+          account_id: string
+          reconciled_at?: string
+          bank_balance: number
+          cashcat_balance: number
+          created_at?: string
         }
         Update: {
-          account_id?: string | null
-          amount?: number
-          category_id?: string
-          created_at?: string
-          date?: string
-          description?: string | null
           id?: string
-          type?: string
           user_id?: string
-          vendor?: string
-          vendor_id?: string | null
+          account_id?: string
+          reconciled_at?: string
+          bank_balance?: number
+          cashcat_balance?: number
+          created_at?: string
         }
         Relationships: [
           {
@@ -385,20 +373,6 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_reconciliations_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_reconciliations_vendor_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
