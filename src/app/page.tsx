@@ -253,7 +253,7 @@ export default function Landing() {
             </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 mb-2">
             <div className="left-envelope-card">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -265,7 +265,7 @@ export default function Landing() {
                     <div className="text-left">
                         <h4 className="text-lg font-semibold mb-2 text-green">Perfect for Quick Budgeting</h4>
                         <p className="text-white/70 text-sm">
-                            Check your budget, log transactions, and move money between categories right from your phone's home screen. Makes it a lot more convenient to budget on-the-go!
+                            Check your budget, log purchases, and move money between categories from your phone. Add CashCat to your home screen for quick access.
                         </p>
                     </div>
                 </div>
@@ -282,12 +282,13 @@ export default function Landing() {
                     <div className="text-left">
                         <h4 className="text-lg font-semibold mb-2 text-green">Syncs Across All Devices</h4>
                         <p className="text-white/70 text-sm">
-                            Works on iPhone, Android, tablets, and desktop. Changes sync instantly wherever you budget. There are in-app instructions on how to install the app for each platform in the Settings menu when you first log into the website on your phone.
+                            Budget on iPhone, Android, tablets, and desktop. Your changes sync instantly across all devices. Install instructions are in Settings when you log in on your phone.
                         </p>
                     </div>
                 </div>
             </div>
-        </div>
+
+             </div>
 
         
     </div>
