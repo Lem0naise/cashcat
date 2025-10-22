@@ -25,7 +25,7 @@ export default function GettingStarted() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Create Your Account</h3>
                             <p className="text-white/70 text-sm md:text-base mb-3 md:mb-4">
-                                Sign up for a free CashCat account to get started. All you need is an email address.
+                                You have probably already done this! If you haven't, sign up for a free CashCat account to get started. All you need is an email address.
                             </p>
                             <Link
                                 href="/signup"

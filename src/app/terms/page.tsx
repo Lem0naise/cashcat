@@ -1,6 +1,7 @@
 import Logo from "../components/logo";
 import Link from 'next/link';
 
+// If change the terms of service, change supabase 'database function' from v1.1
 
 export const metadata = {
   title: 'Terms - CashCat',
@@ -23,7 +24,7 @@ export default function Terms() {
                 {/* Add this summary section */}
                 <div className="bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-6 mb-6 text-white/90">
                     <h2 className="text-xl font-semibold text-green">Quick Summary</h2>
-                    <span className="text-xs text-white/60 mb-3">Effective: June 7, 2025, v1.0</span>
+                    <span className="text-xs text-white/60 mb-3">Effective: October 22, 2025, v1.1</span>
                     <ul className="space-y-2 text-sm list-disc list-inside">
                         <li>CashCat is a budgeting tool only - we don't handle your real money in any way</li>
                         <li>We only collect your email and any budget data you enter - we don't track you</li>
@@ -39,7 +40,7 @@ export default function Terms() {
                 
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Terms of Service</h2>
-                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on June 7, 2025.</h3>
+                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on October 22nd, 2025.</h3>
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">Acceptance of Terms</h2>
                         <p>By accessing and using CashCat, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service.</p>
@@ -47,13 +48,13 @@ export default function Terms() {
                     
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">1. Description of Service</h2>
-                        <p>CashCat is a personal budget tracking and planning application that helps users organize their financial information, set goals, and track spending categories. CashCat is purely a budgeting tool and does not provide financial services, investment guidance, professional financial services, or handle real money in any way. We have no ability to change any information related to any accounts you hold at any financial institutions or banks, and no permission is requested for CashCat to do so. All financial management and transactions remain under your complete control. You are solely responsible for all financial decisions and the accuracy of data you input into the application.
+                        <p>CashCat is a personal budget tracking and planning application that helps users organize their financial information, set goals, and track spending categories. CashCat is purely a budgeting tool and does not provide financial services, investment guidance, professional financial services, or handle real money in any way. We have no ability to change any information related to any accounts you hold at any financial institutions or banks, and no permission is requested for CashCat to do so. All financial management and transactions remain under your complete control. You are solely responsible for all financial decisions and the accuracy of data you input into the application. The service is provided for informational purposes only. CashCat does not provide or claim to provide financial advice. You agree that you are using the service at your own risk and you are solely responsible for any financial decisions you make. Any information provided is not a substitute for professional financial advice from a qualified advisor.
                         </p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">2. User Accounts and Responsibilities</h2>
-                        <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to provide a valid email address when creating your account. You agree, that if you are aware that your account has become compromised, to contact CashCat support, if it is not possible to delete your account. All budget data, goals, and financial information you input is your responsibility to maintain and verify.</p> <p>Where a subscription is provided, such as for access to premium features including external bank account syncing, your consumer rights apply.</p>
+                        <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to provide a valid email address when creating your account. You agree, that if you are aware that your account has become compromised, to contact CashCat support and notify us immediately. All budget data, goals, and financial information you input is your responsibility to maintain and verify.</p> <p>Where a subscription is provided, such as for access to premium features including external bank account syncing, your consumer rights apply.</p>
                     </section>
 
                     <section>
@@ -64,13 +65,13 @@ export default function Terms() {
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">4. Limitation of Liability</h2>
                         <p>To the fullest extent permitted by law, CashCat and its developers are not liable for any direct, indirect, incidental, consequential, or punitive damages arising from your use of the service. Since CashCat does not handle actual money or financial accounts, we are not responsible for any financial losses, budgeting decisions, or financial outcomes based on your use of the application.</p>
-                        <p>Our total liability to you for all claims arising from these terms or your use of the service shall not exceed the amount you paid us in the 6 months preceding the claim, whichever is greater. This limitation applies even if we have been advised of the possibility of such damages.</p>
+                        <p>Our total liability to you for all claims arising from these terms or your use of the service shall not exceed the amount you paid us in the 6 months preceding the claim, or £10, whichever is greater. This limitation applies even if we have been advised of the possibility of such damages.</p>
                         <p>Some jurisdictions do not allow limitation of liability for certain types of damages, so this limitation may not apply to you to the extent prohibited by law.</p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">5. Modifications to Terms</h2>
-                        <p>We reserve the right to modify these terms at any time. Users will be notified of significant changes, and continued use of the service after changes constitutes acceptance of the new terms.</p>
+                        <p>We reserve the right to modify these terms at any time. This page will be updated whenever the terms are changed, and continued use of the service after changes constitutes acceptance of the new terms.</p>
                     </section>
 
                     <section>
@@ -85,7 +86,10 @@ export default function Terms() {
                     
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">8. Service Availability and Modifications</h2>
-                        <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time without notice. We are not liable for any interruption or discontinuation of service.</p>
+                        <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time, without prior notice. We will strive to provide reasonable notice, but this may not always be possible. We are not liable for any interruption or discontinuation of service.</p>
+                        <p>
+                            In the unlikely event of a data breach that affects your personal information, we will notify you and any applicable supervisory authority within 72 hours of becoming aware of the breach, as required by GDPR. Notification will be sent to your registered email address and will include the nature of the breach, potential consequences, and measures taken to address it.
+                        </p>
                     </section>
                     
                     <section>
@@ -100,22 +104,22 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">11. Governing Law</h2>
-                        <p>These Terms of Service are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or relating to these terms or your use of CashCat shall be subject to the exclusive jurisdiction of the courts of England and Wales. For users located outside the UK, you agree that any disputes will be resolved in accordance with English law, though local consumer protection laws may also apply where you reside, including but not limited to the California Consumer Privacy Act (CCPA) for California residents and other applicable state and federal consumer protection regulations. We will all make reasonable efforts to resolve disputes amicably before any formal legal proceedings are required.</p>
+                        <p>These Terms of Service are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or relating to these terms or your use of CashCat shall be subject to the exclusive jurisdiction of the courts of England and Wales. For users located outside the UK, you agree that any disputes will be resolved in accordance with English law, though local consumer protection laws may also apply where you reside. We shall both make reasonable efforts to resolve disputes amicably before any formal legal proceedings are required. Before initiating any formal dispute resolution, you agree to first contact us at lemonaise.dev@gmail.com or legal@indigonolan.com to attempt to resolve the dispute amicably.</p>
                     </section>
                 </div>
                 
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Privacy Policy</h2>
-                    <h2 className="text-md mb-3 text-white/70">This Privacy Policy was last updated on June 7, 2025.</h2>
-                    
-                    <section>
+                    <h2 className="text-md mb-3 text-white/70">This Privacy Policy was last updated on October 22nd, 2025.</h2>
+            
+                    <section> 
                         <h2 className="text-xl font-semibold mb-3 text-green">Data Controller Information</h2>
-                        <p>For the purposes of UK GDPR and data protection law, the data controller for your personal information is CashCat, contactable at lemonaise.dev@gmail.com. As the data controller, we are responsible for deciding how and why your personal data is processed.</p>
+                        <p>For the purposes of UK GDPR and data protection law, the data controller for your personal information is Zac Indigo Nolan, contactable at legal@indigonolan.com. As the data controller, we are responsible for deciding how and why your personal data is processed.</p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">1. Information We Collect</h2>
-                        <p>We care about your privacy - so CashCat collects minimal personal information. We only store: (1) Your email address used for account creation and authentication, and (2) Budget-related information you voluntarily input, including income amounts, expense categories, financial goals, and budget planning data. We do not collect or store your name, age, location, banking information, or any actual financial account details.</p>
+                        <p>We care about your privacy - so CashCat collects minimal personal information. We only store: (1) Your email address used for account creation and authentication, and (2) Budget-related information you voluntarily input, including income amounts, expense categories, financial goals, and budget planning data. We do not first-hand collect or store your name, age, or location. In cases of third-party providers and aggregation services, we may store read-only information such as transaction descriptions, dates, amounts, and account balances. We never receieve or store your bank login credentials. You are subject to the external provider's terms and privacy policy. The provider will be made clear when the user begins the process to link a bank account, and will be prominently named.</p>
                     </section>
                     
                     <section>
@@ -142,13 +146,13 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">6. Contact Information</h2>
-                        <p>For questions about this Privacy Policy, your data, or to request data deletion or export, please contact us through the app's support feature, or via lemonaise.dev@gmail.com. We are committed to responding to privacy-related inquiries promptly and transparently.</p>
+                        <p>For questions about this Privacy Policy, your data, or to request data deletion or export, please contact us through the app's support feature, or via lemonaise.dev@gmail.com or legal@indigonolan.com. We are committed to responding to privacy-related inquiries promptly and transparently.</p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">7. Your Rights Under GDPR</h2>
-                        <p>Under GDPR and UK GDPR, you have the right to: access your personal data, rectify inaccurate data, erase your data ("right to be forgotten"), restrict processing, data portability, and object to processing. You also have the right to withdraw consent at any time and lodge a complaint with the Information Commissioner's Office (ICO) or your local data protection authority if you believe your data protection rights have been breached.</p>
-                        <p>To exercise any of these rights, please contact us at lemonaise.dev@gmail.com. We will respond to your request and provide the requested information free of charge, unless the request is manifestly unfounded or excessive.</p>
+                        <p>Under GDPR and UK GDPR, you have the right to: access your personal data, rectify inaccurate data, erase your data ("right to be forgotten"), restrict processing, data portability, and object to processing. You also have the right to withdraw consent at any time and lodge a complaint with the Information Commissioner's Office (ICO, ico.org.uk) or your local data protection authority if you believe your data protection rights have been breached.</p>
+                        <p>To exercise any of these rights, please contact us at lemonaise.dev@gmail.com or legal@indigonolan.com. We will respond to your request and provide the requested information free of charge, unless the request is manifestly unfounded or excessive.</p>
                     </section>
 
                     <section>
