@@ -1,3 +1,11 @@
+// If change any database tables:
+// Change supabase delete-user-account function
+
+// If change any urls:
+// Change allowed CORS origin in delete-user-account function
+// Change Resend email, change supabase integration email SMTP
+
+
 export type Json =
   | string
   | number
