@@ -339,6 +339,44 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_reconciliations: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          reconciled_at: string
+          bank_balance: number
+          cashcat_balance: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          account_id: string
+          reconciled_at?: string
+          bank_balance: number
+          cashcat_balance: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          reconciled_at?: string
+          bank_balance?: number
+          cashcat_balance?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -369,7 +407,7 @@ export type Tables<
   }
     ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
@@ -471,3 +509,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+export type BankReconciliation = Database['public']['Tables']['bank_reconciliations']['Row'];
