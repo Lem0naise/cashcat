@@ -1,7 +1,7 @@
 import Logo from "../components/logo";
 import Link from 'next/link';
 
-// If change the terms of service, change supabase 'database function' from v1.0
+// If change the terms of service, change supabase 'database function' from v1.1
 
 export const metadata = {
   title: 'Terms - CashCat',
@@ -48,7 +48,7 @@ export default function Terms() {
                     
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">1. Description of Service</h2>
-                        <p>CashCat is a personal budget tracking and planning application that helps users organize their financial information, set goals, and track spending categories. CashCat is purely a budgeting tool and does not provide financial services, investment guidance, professional financial services, or handle real money in any way. We have no ability to change any information related to any accounts you hold at any financial institutions or banks, and no permission is requested for CashCat to do so. All financial management and transactions remain under your complete control. You are solely responsible for all financial decisions and the accuracy of data you input into the application. The service is provided for informational purposes only. CashCat does not provide or claim to provide financial advise. You agree that you are using the service at your own risk and you are solely responsible for any financial decisions you make. Any information provided is not a substitute for professional financial advice from a qualified advisor.
+                        <p>CashCat is a personal budget tracking and planning application that helps users organize their financial information, set goals, and track spending categories. CashCat is purely a budgeting tool and does not provide financial services, investment guidance, professional financial services, or handle real money in any way. We have no ability to change any information related to any accounts you hold at any financial institutions or banks, and no permission is requested for CashCat to do so. All financial management and transactions remain under your complete control. You are solely responsible for all financial decisions and the accuracy of data you input into the application. The service is provided for informational purposes only. CashCat does not provide or claim to provide financial advice. You agree that you are using the service at your own risk and you are solely responsible for any financial decisions you make. Any information provided is not a substitute for professional financial advice from a qualified advisor.
                         </p>
                     </section>
 
@@ -71,7 +71,7 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">5. Modifications to Terms</h2>
-                        <p>We reserve the right to modify these terms at any time. Users will be notified of significant changes, and continued use of the service after changes constitutes acceptance of the new terms.</p>
+                        <p>We reserve the right to modify these terms at any time. This page will be updated whenever the terms are changed, and continued use of the service after changes constitutes acceptance of the new terms.</p>
                     </section>
 
                     <section>
@@ -86,7 +86,10 @@ export default function Terms() {
                     
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">8. Service Availability and Modifications</h2>
-                        <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time without notice. We are not liable for any interruption or discontinuation of service.</p>
+                        <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time, without prior notice. We will strive to provide reasonable notice, but this may not always be possible. We are not liable for any interruption or discontinuation of service.</p>
+                        <p>
+                            In the unlikely event of a data breach that affects your personal information, we will notify you and any applicable supervisory authority within 72 hours of becoming aware of the breach, as required by GDPR. Notification will be sent to your registered email address and will include the nature of the breach, potential consequences, and measures taken to address it.
+                        </p>
                     </section>
                     
                     <section>
@@ -101,7 +104,7 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">11. Governing Law</h2>
-                        <p>These Terms of Service are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or relating to these terms or your use of CashCat shall be subject to the exclusive jurisdiction of the courts of England and Wales. For users located outside the UK, you agree that any disputes will be resolved in accordance with English law, though local consumer protection laws may also apply where you reside. We will all make reasonable efforts to resolve disputes amicably before any formal legal proceedings are required. Before initiating any formal dispute resolution, you agree to first contact us at lemonaise.dev@gmail.com or legal@indigonolan.com to attempt to resolve the dispute amicably.</p>
+                        <p>These Terms of Service are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or relating to these terms or your use of CashCat shall be subject to the exclusive jurisdiction of the courts of England and Wales. For users located outside the UK, you agree that any disputes will be resolved in accordance with English law, though local consumer protection laws may also apply where you reside. We shall both make reasonable efforts to resolve disputes amicably before any formal legal proceedings are required. Before initiating any formal dispute resolution, you agree to first contact us at lemonaise.dev@gmail.com or legal@indigonolan.com to attempt to resolve the dispute amicably.</p>
                     </section>
                 </div>
                 
@@ -143,13 +146,13 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">6. Contact Information</h2>
-                        <p>For questions about this Privacy Policy, your data, or to request data deletion or export, please contact us through the app's support feature, or via lemonaise.dev@gmail.com. We are committed to responding to privacy-related inquiries promptly and transparently.</p>
+                        <p>For questions about this Privacy Policy, your data, or to request data deletion or export, please contact us through the app's support feature, or via lemonaise.dev@gmail.com or legal@indigonolan.com. We are committed to responding to privacy-related inquiries promptly and transparently.</p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">7. Your Rights Under GDPR</h2>
-                        <p>Under GDPR and UK GDPR, you have the right to: access your personal data, rectify inaccurate data, erase your data ("right to be forgotten"), restrict processing, data portability, and object to processing. You also have the right to withdraw consent at any time and lodge a complaint with the Information Commissioner's Office (ICO) or your local data protection authority if you believe your data protection rights have been breached.</p>
-                        <p>To exercise any of these rights, please contact us at lemonaise.dev@gmail.com. We will respond to your request and provide the requested information free of charge, unless the request is manifestly unfounded or excessive.</p>
+                        <p>Under GDPR and UK GDPR, you have the right to: access your personal data, rectify inaccurate data, erase your data ("right to be forgotten"), restrict processing, data portability, and object to processing. You also have the right to withdraw consent at any time and lodge a complaint with the Information Commissioner's Office (ICO, ico.org.uk) or your local data protection authority if you believe your data protection rights have been breached.</p>
+                        <p>To exercise any of these rights, please contact us at lemonaise.dev@gmail.com or legal@indigonolan.com. We will respond to your request and provide the requested information free of charge, unless the request is manifestly unfounded or excessive.</p>
                     </section>
 
                     <section>
