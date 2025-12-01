@@ -5,45 +5,46 @@
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
+  "version": "2",
   "icons": [
     {
-      "src": "/favicons/ccpwa72.png",
+      "src": "/favicons/ccpwa72.png?v=2",
       "type": "image/png",
       "sizes": "72x72",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa96.png",
+      "src": "/favicons/ccpwa96.png?v=2",
       "type": "image/png",
       "sizes": "96x96",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa144.png",
+      "src": "/favicons/ccpwa144.png?v=2",
       "type": "image/png",
       "sizes": "144x144",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa192.png",
+      "src": "/favicons/ccpwa192.png?v=2",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa256.png",
+      "src": "/favicons/ccpwa256.png?v=2",
       "type": "image/png",
       "sizes": "256x256",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa384.png",
+      "src": "/favicons/ccpwa384.png?v=2",
       "type": "image/png",
       "sizes": "384x384",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicons/ccpwa512.png",
+      "src": "/favicons/ccpwa512.png?v=2",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"

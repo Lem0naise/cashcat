@@ -62,12 +62,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicons/ccfavicon16.ico?v=2" sizes="16x16" />
-        <link rel="icon" href="/favicons/ccfavicon32.ico?v=2" sizes="32x32" />
-        <link rel="icon" href="/favicons/ccfavicon64.ico?v=2" sizes="64x64" />
-        <link rel="icon" href="/favicons/ccfavicon128.ico?v=2" sizes="128x128" />
-        <link rel="icon" href="/favicons/ccfavicon256.ico?v=2" sizes="256x256" />
-        <link rel="apple-touch-icon" href="/favicons/ccpwa512.png?v=2" />
+        <link rel="icon" href="/favicons/ccfavicon16.ico?v=3" sizes="16x16" />
+        <link rel="icon" href="/favicons/ccfavicon32.ico?v=3" sizes="32x32" />
+        <link rel="icon" href="/favicons/ccfavicon64.ico?v=3" sizes="64x64" />
+        <link rel="icon" href="/favicons/ccfavicon128.ico?v=3" sizes="128x128" />
+        <link rel="icon" href="/favicons/ccfavicon256.ico?v=3" sizes="256x256" />
+        <link rel="apple-touch-icon" href="/favicons/ccpwa512.png?v=3" />
         <meta name="theme-color" content="#0a0a0a" />  
       </head>
       <body
