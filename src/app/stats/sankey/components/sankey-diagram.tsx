@@ -92,20 +92,6 @@ export default function SankeyDiagram({
         incomeByVendor.set(vendor, (incomeByVendor.get(vendor) || 0) + Math.abs(t.amount));
       });
 
-    // Create income vendor nodes
-    let nodeIndex = 0;
-    incomeByVendor.forEach((amount, vendor) => {
-      const node: SankeyNode = {
-        id: `income-${vendor}`,
-        name: vendor,
-        type: 'income-vendor',
-        value: amount,
-        color: COLORS.income,
-      };
-      nodes.push(node);
-      nodeMap.set(node.id, node);
-    });
-
     // Process spending by group
     const spendingByGroup = new Map<string, { amount: number; color: string; categories: Map<string, number> }>();
     filteredTransactions
@@ -128,15 +114,56 @@ export default function SankeyDiagram({
         const groupData = spendingByGroup.get(groupName)!;
         groupData.amount += Math.abs(t.amount);
 
-        // Track category spending within group
-        const categoryName = category.name;
         groupData.categories.set(
           t.category_id,
           (groupData.categories.get(t.category_id) || 0) + Math.abs(t.amount)
         );
       });
 
-    // Create group nodes
+    const totalIncome = Array.from(incomeByVendor.values()).reduce((sum, v) => sum + v, 0);
+    const totalSpending = Array.from(spendingByGroup.values()).reduce((sum, v) => sum + v.amount, 0);
+    const totalUnspent = Math.max(0, totalIncome - totalSpending);
+
+    // Create income vendor nodes (column 0)
+    incomeByVendor.forEach((amount, vendor) => {
+      const node: SankeyNode = {
+        id: `income-${vendor}`,
+        name: vendor,
+        type: 'income-vendor',
+        value: amount,
+        color: COLORS.income,
+      };
+      nodes.push(node);
+      nodeMap.set(node.id, node);
+    });
+
+    // Create Spent/Unspent nodes (column 1)
+    if (totalSpending > 0) {
+      const spentNode: SankeyNode = {
+        id: 'spent',
+        name: 'Spent',
+        type: 'group',
+        value: totalSpending,
+        color: '#EF4444',
+        isExpanded: true,
+      };
+      nodes.push(spentNode);
+      nodeMap.set(spentNode.id, spentNode);
+    }
+
+    if (totalUnspent > 0) {
+      const unspentNode: SankeyNode = {
+        id: 'unspent',
+        name: 'Unspent',
+        type: 'group',
+        value: totalUnspent,
+        color: '#10B981',
+      };
+      nodes.push(unspentNode);
+      nodeMap.set(unspentNode.id, unspentNode);
+    }
+
+    // Create group nodes (column 2)
     spendingByGroup.forEach((data, groupName) => {
       const groupId = `group-${groupName}`;
       const node: SankeyNode = {
@@ -150,7 +177,7 @@ export default function SankeyDiagram({
       nodes.push(node);
       nodeMap.set(node.id, node);
 
-      // If group is expanded, create category nodes
+      // If group is expanded, create category nodes (column 3)
       if (expandedNodes.has(groupId)) {
         data.categories.forEach((amount, categoryId) => {
           const category = categoryMap.get(categoryId);
@@ -169,7 +196,6 @@ export default function SankeyDiagram({
           nodes.push(categoryNode);
           nodeMap.set(catNodeId, categoryNode);
 
-          // Link from group to category
           links.push({
             source: groupId,
             target: catNodeId,
@@ -177,7 +203,7 @@ export default function SankeyDiagram({
             color: data.color,
           });
 
-          // If category is expanded, create vendor nodes
+          // If category is expanded, create vendor nodes (column 4)
           if (expandedNodes.has(catNodeId)) {
             const vendorSpending = new Map<string, number>();
             filteredTransactions
@@ -200,7 +226,6 @@ export default function SankeyDiagram({
               nodes.push(vendorNode);
               nodeMap.set(vendorNodeId, vendorNode);
 
-              // Link from category to vendor
               links.push({
                 source: catNodeId,
                 target: vendorNodeId,
@@ -213,27 +238,38 @@ export default function SankeyDiagram({
       }
     });
 
-    // Create links from income to groups (proportional distribution)
-    // Always link income to groups, never bypass them
-    const totalIncome = Array.from(incomeByVendor.values()).reduce((sum, v) => sum + v, 0);
-    const totalSpending = Array.from(spendingByGroup.values()).reduce((sum, v) => sum + v.amount, 0);
-
-    if (totalIncome > 0 && totalSpending > 0) {
+    // Create links from income to spent/unspent
+    if (totalIncome > 0) {
       incomeByVendor.forEach((incomeAmount, vendor) => {
-        spendingByGroup.forEach((groupData, groupName) => {
-          const groupId = `group-${groupName}`;
-          // Proportional link: income vendor contributes to group based on group's share of total spending
-          const proportionalAmount = (incomeAmount * groupData.amount) / totalSpending;
-          
-          if (proportionalAmount > 0) {
-            // Always link to the group first - never bypass it
-            links.push({
-              source: `income-${vendor}`,
-              target: groupId,
-              value: proportionalAmount,
-              color: groupData.color,
-            });
-          }
+        if (totalSpending > 0) {
+          links.push({
+            source: `income-${vendor}`,
+            target: 'spent',
+            value: (incomeAmount * totalSpending) / totalIncome,
+            color: 'rgba(239, 68, 68, 0.3)',
+          });
+        }
+
+        if (totalUnspent > 0) {
+          links.push({
+            source: `income-${vendor}`,
+            target: 'unspent',
+            value: (incomeAmount * totalUnspent) / totalIncome,
+            color: 'rgba(16, 185, 129, 0.3)',
+          });
+        }
+      });
+    }
+
+    // Create links from spent to groups
+    if (totalSpending > 0) {
+      spendingByGroup.forEach((groupData, groupName) => {
+        const groupId = `group-${groupName}`;
+        links.push({
+          source: 'spent',
+          target: groupId,
+          value: groupData.amount,
+          color: `${groupData.color}80`,
         });
       });
     }
@@ -288,9 +324,10 @@ export default function SankeyDiagram({
         // Set explicit horizontal position based on node type
         let nodeDepth = 0;
         if (n.type === 'income-vendor') nodeDepth = 0;
-        else if (n.type === 'group') nodeDepth = 1;
-        else if (n.type === 'category') nodeDepth = 2;
-        else if (n.type === 'spending-vendor') nodeDepth = 3;
+        else if (n.id === 'spent' || n.id === 'unspent') nodeDepth = 1;
+        else if (n.type === 'group') nodeDepth = 2;
+        else if (n.type === 'category') nodeDepth = 3;
+        else if (n.type === 'spending-vendor') nodeDepth = 4;
         
         return { ...n, depth: nodeDepth };
       }),
@@ -300,26 +337,31 @@ export default function SankeyDiagram({
     // @ts-ignore
     const { nodes, links } = sankey(graph);
 
-    // Force nodes into fixed columns to prevent position drift on expansion
-    const columnWidth = width / 4; // 4 columns: income, groups, categories, vendors
+    // Calculate dynamic column width based on maximum depth
+    const maxDepth = Math.max(...nodes.map((n: any) => n.depth || 0));
+    const columnWidth = width / (maxDepth + 1);
     nodes.forEach((node: any) => {
       const nodeData = node as SankeyNode;
       if (nodeData.type === 'income-vendor') {
         // Income vendors in leftmost column
         node.x0 = 0;
         node.x1 = 15;
-      } else if (nodeData.type === 'group') {
-        // Groups in second column - always same position
+      } else if (nodeData.id === 'spent' || nodeData.id === 'unspent') {
+        // Spent/Unspent in column 1
         node.x0 = columnWidth;
         node.x1 = columnWidth + 15;
-      } else if (nodeData.type === 'category') {
-        // Categories in third column when expanded
+      } else if (nodeData.type === 'group') {
+        // Groups in column 2
         node.x0 = columnWidth * 2;
         node.x1 = columnWidth * 2 + 15;
-      } else if (nodeData.type === 'spending-vendor') {
-        // Spending vendors in rightmost column when expanded
+      } else if (nodeData.type === 'category') {
+        // Categories in column 3 when expanded
         node.x0 = columnWidth * 3;
         node.x1 = columnWidth * 3 + 15;
+      } else if (nodeData.type === 'spending-vendor') {
+        // Spending vendors in column 4 when expanded
+        node.x0 = columnWidth * 4;
+        node.x1 = columnWidth * 4 + 15;
       }
     });
 
