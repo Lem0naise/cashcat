@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as d3 from 'd3-sankey';
 import { select } from 'd3-selection';
+import { interpolateNumber } from 'd3-interpolate';
 import { Transaction, Category } from '../../../components/charts/types';
 
 interface SankeyNode {
@@ -213,6 +214,7 @@ export default function SankeyDiagram({
     });
 
     // Create links from income to groups (proportional distribution)
+    // Always link income to groups, never bypass them
     const totalIncome = Array.from(incomeByVendor.values()).reduce((sum, v) => sum + v, 0);
     const totalSpending = Array.from(spendingByGroup.values()).reduce((sum, v) => sum + v.amount, 0);
 
@@ -224,26 +226,13 @@ export default function SankeyDiagram({
           const proportionalAmount = (incomeAmount * groupData.amount) / totalSpending;
           
           if (proportionalAmount > 0) {
-            // If group is expanded, link to categories instead
-            if (expandedNodes.has(groupId)) {
-              groupData.categories.forEach((catAmount, categoryId) => {
-                const catNodeId = `category-${categoryId}`;
-                const catProportional = (incomeAmount * catAmount) / totalSpending;
-                links.push({
-                  source: `income-${vendor}`,
-                  target: catNodeId,
-                  value: catProportional,
-                  color: groupData.color,
-                });
-              });
-            } else {
-              links.push({
-                source: `income-${vendor}`,
-                target: groupId,
-                value: proportionalAmount,
-                color: groupData.color,
-              });
-            }
+            // Always link to the group first - never bypass it
+            links.push({
+              source: `income-${vendor}`,
+              target: groupId,
+              value: proportionalAmount,
+              color: groupData.color,
+            });
           }
         });
       });
@@ -281,10 +270,11 @@ export default function SankeyDiagram({
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create Sankey layout
+    // Create Sankey layout with left alignment to keep columns consistent
     const sankey = d3
       .sankey()
       .nodeId((d: any) => d.id)
+      .nodeAlign(d3.sankeyLeft) // Align nodes to left to maintain column structure
       .nodeWidth(15)
       .nodePadding(10)
       .extent([
@@ -292,14 +282,46 @@ export default function SankeyDiagram({
         [width, height],
       ]);
 
-    // Prepare data for d3-sankey
+    // Prepare data for d3-sankey with explicit node depths for column control
     const graph = {
-      nodes: sankeyData.nodes.map(n => ({ ...n })),
+      nodes: sankeyData.nodes.map(n => {
+        // Set explicit horizontal position based on node type
+        let nodeDepth = 0;
+        if (n.type === 'income-vendor') nodeDepth = 0;
+        else if (n.type === 'group') nodeDepth = 1;
+        else if (n.type === 'category') nodeDepth = 2;
+        else if (n.type === 'spending-vendor') nodeDepth = 3;
+        
+        return { ...n, depth: nodeDepth };
+      }),
       links: sankeyData.links.map(l => ({ ...l })),
     };
 
     // @ts-ignore
     const { nodes, links } = sankey(graph);
+
+    // Force nodes into fixed columns to prevent position drift on expansion
+    const columnWidth = width / 4; // 4 columns: income, groups, categories, vendors
+    nodes.forEach((node: any) => {
+      const nodeData = node as SankeyNode;
+      if (nodeData.type === 'income-vendor') {
+        // Income vendors in leftmost column
+        node.x0 = 0;
+        node.x1 = 15;
+      } else if (nodeData.type === 'group') {
+        // Groups in second column - always same position
+        node.x0 = columnWidth;
+        node.x1 = columnWidth + 15;
+      } else if (nodeData.type === 'category') {
+        // Categories in third column when expanded
+        node.x0 = columnWidth * 2;
+        node.x1 = columnWidth * 2 + 15;
+      } else if (nodeData.type === 'spending-vendor') {
+        // Spending vendors in rightmost column when expanded
+        node.x0 = columnWidth * 3;
+        node.x1 = columnWidth * 3 + 15;
+      }
+    });
 
     // Draw links
     const link = g
@@ -309,7 +331,14 @@ export default function SankeyDiagram({
       .join('path')
       .attr('d', d3.sankeyLinkHorizontal())
       .attr('stroke', (d: any) => d.color || '#999')
-      .attr('stroke-opacity', 0.3)
+      .attr('stroke-opacity', (d: any) => {
+        // Make links from expanded nodes more visible
+        const source = d.source;
+        if ((source.type === 'group' || source.type === 'category') && source.isExpanded) {
+          return 0.4;
+        }
+        return 0.3;
+      })
       .attr('stroke-width', (d: any) => Math.max(1, d.width))
       .attr('fill', 'none')
       .style('cursor', 'pointer')
@@ -317,8 +346,10 @@ export default function SankeyDiagram({
         select(this as SVGPathElement).attr('stroke-opacity', 0.6);
         setHoveredLink(d);
       })
-      .on('mouseleave', function () {
-        select(this as SVGPathElement).attr('stroke-opacity', 0.3);
+      .on('mouseleave', function (event: any, d: any) {
+        const source = d.source;
+        const baseOpacity = ((source.type === 'group' || source.type === 'category') && source.isExpanded) ? 0.4 : 0.3;
+        select(this as SVGPathElement).attr('stroke-opacity', baseOpacity);
         setHoveredLink(null);
       });
 
@@ -359,15 +390,21 @@ export default function SankeyDiagram({
         }
       });
 
-    // Add node labels
+    // Add node labels with better positioning for fixed columns
     g.append('g')
       .selectAll('text')
       .data(nodes)
       .join('text')
-      .attr('x', (d: any) => (d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6))
+      .attr('x', (d: any) => {
+        // Income vendors: label on right
+        // Groups: label on right
+        // Categories: label on right  
+        // Spending vendors: label on right
+        return d.x1 + 6;
+      })
       .attr('y', (d: any) => (d.y1 + d.y0) / 2)
       .attr('dy', '0.35em')
-      .attr('text-anchor', (d: any) => (d.x0 < width / 2 ? 'start' : 'end'))
+      .attr('text-anchor', 'start')
       .text((d: any) => d.name)
       .style('font-size', '12px')
       .style('fill', 'rgba(255, 255, 255, 0.8)')
