@@ -6,7 +6,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import { format, differenceInDays, addDays, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from 'date-fns';
 import { Database } from '../../../types/supabase';
 import { calculateDateRange, calculateAllTimeRange } from '../../components/charts/utils';
-import ChartControls from '../../components/chart-controls';
 import MobileNav from "../../components/mobileNav";
 import Navbar from "../../components/navbar";
 import ProtectedRoute from "../../components/protected-route";
@@ -37,8 +36,6 @@ export default function SankeyPage() {
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('3m');
     const [customStartDate, setCustomStartDate] = useState<Date>();
     const [customEndDate, setCustomEndDate] = useState<Date>();
-    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     
     // Expansion state for Sankey nodes
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -111,40 +108,12 @@ export default function SankeyPage() {
         fetchData();
     }, [fetchData]);
 
-    // Get available groups for filtering
-    const categoriesWithGroupNames = useMemo(() => 
-        categories.map(cat => ({
-            ...cat,
-            groupName: (cat as any).groups?.name || cat.group || 'Uncategorized',
-        })), [categories]);
-    
-    const availableGroups = useMemo(() => 
-        Array.from(new Set(
-            categoriesWithGroupNames.map(cat => cat.groupName)
-        )).sort(), [categoriesWithGroupNames]);
-
-    // Get available categories for filtering
-    const availableCategories = useMemo(() => 
-        categoriesWithGroupNames.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            group: cat.groupName
-        })), [categoriesWithGroupNames]);
-
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
         if (timeRange !== 'custom') {
             setTimeRange('custom');
         }
-    };
-
-    const handleGroupsChange = (groups: string[]) => {
-        setSelectedGroups(groups);
-    };
-
-    const handleCategoriesChange = (categories: string[]) => {
-        setSelectedCategories(categories);
     };
 
     const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
@@ -504,21 +473,65 @@ export default function SankeyPage() {
                             </div>
                         </div>
 
-                        {/* Chart Controls - Always visible */}
+                        {/* Time Range Selection */}
                         <div className="mb-6">
-                            <ChartControls
-                                timeRange={timeRange}
-                                onTimeRangeChange={handleTimeRangeChange}
-                                customStartDate={customStartDate}
-                                customEndDate={customEndDate}
-                                onCustomDateChange={handleCustomDateChange}
-                                availableGroups={availableGroups}
-                                selectedGroups={selectedGroups}
-                                onGroupsChange={handleGroupsChange}
-                                availableCategories={availableCategories}
-                                selectedCategories={selectedCategories}
-                                onCategoriesChange={handleCategoriesChange}
-                            />
+                            <div className="bg-white/[.03] rounded-lg p-4">
+                                <h3 className="font-medium mb-3">Time Range</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { value: '7d', label: 'Last 7 Days' },
+                                        { value: '30d', label: 'Last 30 Days' },
+                                        { value: 'mtd', label: 'Month to Date' },
+                                        { value: '3m', label: 'Last 3 Months' },
+                                        { value: 'ytd', label: 'Year to Date' },
+                                        { value: '12m', label: 'Last 12 Months' },
+                                        { value: 'all', label: 'All Time' },
+                                        { value: 'custom', label: 'Custom Range' }
+                                    ].map(option => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => handleTimeRangeChange(option.value as any)}
+                                            className={`px-3 py-2 text-sm rounded-lg transition-all ${
+                                                timeRange === option.value
+                                                    ? 'bg-green text-black'
+                                                    : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {/* Custom Date Inputs */}
+                                {timeRange === 'custom' && (
+                                    <div className="mt-4 flex flex-wrap gap-3 items-center">
+                                        <div>
+                                            <label className="text-sm text-white/60 block mb-1">Start Date</label>
+                                            <input
+                                                type="date"
+                                                value={customStartDate ? format(customStartDate, 'yyyy-MM-dd') : ''}
+                                                onChange={(e) => {
+                                                    const newStart = new Date(e.target.value);
+                                                    handleCustomDateChange(newStart, customEndDate || newStart);
+                                                }}
+                                                className="px-3 py-2 bg-white/[.05] rounded-lg text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm text-white/60 block mb-1">End Date</label>
+                                            <input
+                                                type="date"
+                                                value={customEndDate ? format(customEndDate, 'yyyy-MM-dd') : ''}
+                                                onChange={(e) => {
+                                                    const newEnd = new Date(e.target.value);
+                                                    handleCustomDateChange(customStartDate || newEnd, newEnd);
+                                                }}
+                                                className="px-3 py-2 bg-white/[.05] rounded-lg text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {!hasData ? (
