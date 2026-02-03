@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Gabarito } from "next/font/google";
+import { Providers } from './providers';
 import SupabaseProvider from './contexts/supabase-provider';
 import "./globals.css";
 
@@ -76,9 +77,11 @@ export default function RootLayout({
       >
         <SpeedInsights />
         <Analytics />
-        <SupabaseProvider>
-          {children}
-        </SupabaseProvider>
+        <Providers>
+          <SupabaseProvider>
+            {children}
+          </SupabaseProvider>
+        </Providers>
         <div id='portal-root' className={`${USEFont.variable} antialiased`}></div>
       </body>
     </html>

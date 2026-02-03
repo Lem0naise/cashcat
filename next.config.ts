@@ -4,7 +4,7 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   // Add disable: process.env.NODE_ENV === 'development' if you want to disable PWA in dev mode
-  // disable: process.env.NODE_ENV === 'development'
+  disable: process.env.NODE_ENV === 'development'
 });
 
 /** @type {import('next').NextConfig} */

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function Sidebar() {
@@ -13,13 +14,12 @@ export default function Sidebar() {
         <aside className="fixed left-0 top-16 bottom-0 min-w-20 w-20 lg:w-1/7 bg-background/95 backdrop-blur-sm border-r border-white/[.15] p-4 hidden md:block font-[family-name:var(--font-suse)] fade-in">
             <div className="flex flex-col gap-4">
                 <div className="text-sm font-semibold mb-4 text-white/60 uppercase tracking-wider">Menu</div>
-               
-                <a
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
-                        isActive('/budget') 
-                        ? 'bg-green/10 text-green' 
-                        : 'hover:bg-white/[.05]'
-                    }`}
+
+                <Link
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/budget')
+                            ? 'bg-green/10 text-green'
+                            : 'hover:bg-white/[.05]'
+                        }`}
                     href="/budget"
                 >
                     <Image
@@ -28,20 +28,18 @@ export default function Sidebar() {
                         alt="Money icon"
                         width={16}
                         height={16}
-                        className={` image-black transition-opacity ${
-                            isActive('/budget') 
-                            ? 'opacity-100' 
-                            : 'opacity-70 group-hover:opacity-100'
-                        }`}
+                        className={` image-black transition-opacity ${isActive('/budget')
+                                ? 'opacity-100'
+                                : 'opacity-70 group-hover:opacity-100'
+                            }`}
                     />
                     <span className="text-sm hidden lg:inline">Budget</span>
-                </a>
-                 <a
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
-                        isActive('/stats') 
-                        ? 'bg-green/10 text-green' 
-                        : 'hover:bg-white/[.05]'
-                    }`}
+                </Link>
+                <Link
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/stats')
+                            ? 'bg-green/10 text-green'
+                            : 'hover:bg-white/[.05]'
+                        }`}
                     href="/stats"
                 >
                     <Image
@@ -50,20 +48,18 @@ export default function Sidebar() {
                         alt="Home icon"
                         width={16}
                         height={16}
-                        className={`image-black transition-opacity ${
-                            isActive('/stats') 
-                            ? 'opacity-100' 
-                            : 'opacity-70 group-hover:opacity-100'
-                        }`}
+                        className={`image-black transition-opacity ${isActive('/stats')
+                                ? 'opacity-100'
+                                : 'opacity-70 group-hover:opacity-100'
+                            }`}
                     />
                     <span className="text-sm hidden lg:inline">Stats</span>
-                </a>
-                <a
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
-                        isActive('/budget/transactions') 
-                        ? 'bg-green/10 text-green' 
-                        : 'hover:bg-white/[.05]'
-                    }`}
+                </Link>
+                <Link
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/budget/transactions')
+                            ? 'bg-green/10 text-green'
+                            : 'hover:bg-white/[.05]'
+                        }`}
                     href="/budget/transactions"
                 >
                     <Image
@@ -72,20 +68,18 @@ export default function Sidebar() {
                         alt="Transactions icon"
                         width={16}
                         height={16}
-                        className={`image-black transition-opacity ${
-                            isActive('/budget/transactions') 
-                            ? 'opacity-100' 
-                            : 'opacity-70 group-hover:opacity-100'
-                        }`}
+                        className={`image-black transition-opacity ${isActive('/budget/transactions')
+                                ? 'opacity-100'
+                                : 'opacity-70 group-hover:opacity-100'
+                            }`}
                     />
                     <span className="text-sm hidden lg:inline">Transactions</span>
-                </a>
-                <a
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${
-                        isActive('/account') 
-                        ? 'bg-green/10 text-green' 
-                        : 'hover:bg-white/[.05]'
-                    }`}
+                </Link>
+                <Link
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/account')
+                            ? 'bg-green/10 text-green'
+                            : 'hover:bg-white/[.05]'
+                        }`}
                     href="/account"
                 >
                     <Image
@@ -94,15 +88,14 @@ export default function Sidebar() {
                         alt="Account icon"
                         width={16}
                         height={16}
-                        className={`image-black transition-opacity ${
-                            isActive('/account') 
-                            ? 'opacity-100' 
-                            : 'opacity-70 group-hover:opacity-100'
-                        }`}
+                        className={`image-black transition-opacity ${isActive('/account')
+                                ? 'opacity-100'
+                                : 'opacity-70 group-hover:opacity-100'
+                            }`}
                     />
                     <span className="text-sm hidden lg:inline">Account</span>
-                </a>
-                <a
+                </Link>
+                <Link
                     className="flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group  
                      hover:bg-white/[.05]"
                     href="/docs"
@@ -116,7 +109,7 @@ export default function Sidebar() {
                         className="image-black transition-opacity opacity-70 group-hover:opacity-100"
                     />
                     <span className="text-sm hidden lg:inline">Documentation</span>
-                </a>
+                </Link>
             </div>
         </aside>
     );
