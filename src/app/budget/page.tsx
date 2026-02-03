@@ -4,7 +4,7 @@ import type { Database } from '@/types/supabase';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import ManageBudgetModal from "../components/manage-budget-modal";
 import MobileNav from "../components/mobileNav";
@@ -14,7 +14,11 @@ import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
 import AccountModal from '../components/account-modal';
 import Link from 'next/link';
-
+// TanStack Query hooks for offline-first data
+import { useTransactions } from '../hooks/useTransactions';
+import { useCategories } from '../hooks/useCategories';
+import { useAssignments } from '../hooks/useAssignments';
+import { useUpdateAssignment } from '../hooks/useUpdateAssignment';
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -32,9 +36,31 @@ type Category = {
 };
 
 
+const EMPTY_ARRAY: any[] = [];
+
 export default function Budget() {
     const router = useRouter();
     const supabase = createClientComponentClient<Database>();
+
+    const { data: allTransactionsData = EMPTY_ARRAY, isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useTransactions();
+    const { data: rawCategoriesData = EMPTY_ARRAY, refetch: refetchCategories } = useCategories();
+    const { data: allAssignmentsData = EMPTY_ARRAY, refetch: refetchAssignments } = useAssignments();
+    const updateAssignmentMutation = useUpdateAssignment();
+
+    // ... (state definitions)
+
+
+
+    // ...
+
+    // In handleAssignmentUpdate
+
+
+    // ...
+
+    // Modals
+    // onClose={() => {setShowAccountModal(false); refreshData()}}
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [monthString, setMonthString] = useState(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)
@@ -53,62 +79,222 @@ export default function Budget() {
     const [reminderText, setReminderText] = useState<string>('');
     const [reminderLoading, setReminderLoading] = useState(false);
     const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-    // Cache all transactions in state
-    const [allTransactionsData, setAllTransactionsData] = useState<any[] | null>(null);
-    const [transactionsLoading, setTransactionsLoading] = useState(false);
 
-    // Update month string when current month changes
 
-    // On mount, fetch all transactions ONCE (or if user/account changes)
-    useEffect(() => {
-        let isMounted = true;
-        const fetchAllTransactions = async () => {
-            setTransactionsLoading(true);
-            try {
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
-                if (userError || !user) throw new Error('Not authenticated');
-                let allTx: any[] = [];
-                let from = 0;
-                const batchSize = 1000;
-                let hasMore = true;
-                while (hasMore) {
-                    const response = await supabase
-                        .from('transactions')
-                        .select('amount, category_id, type, date')
-                        .eq('user_id', user.id)
-                        .order('created_at', { ascending: true })
-                        .range(from, from + batchSize - 1);
-                    if (response.error) throw response.error;
-                    const batch = response.data || [];
-                    allTx = [...allTx, ...batch];
-                    hasMore = batch.length === batchSize;
-                    from += batchSize;
+
+
+
+
+    const calculateRolloverForCategory = useCallback((
+        categoryId: string,
+        targetMonth: string,
+        allAssignments: Assignment[]
+    ): number => {
+        if (!categoryId) return 0;
+
+        const categoryAssignments = allAssignments.filter(a => a.category_id === categoryId);
+
+        // Find earliest month from assignments
+        const earliestAssignmentMonth = categoryAssignments.length > 0
+            ? categoryAssignments.reduce((earliest, a) => a.month < earliest ? a.month : earliest, categoryAssignments[0].month)
+            : null;
+
+        // Determine the actual start month
+        let startMonth = earliestAssignmentMonth;
+
+        if (!startMonth || startMonth >= targetMonth) return 0;
+
+        let currentDate = new Date(startMonth + '-01');
+        currentDate.setDate(1);
+
+        let rollover = 0;
+
+        while (true) {
+            const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            if (monthStr >= targetMonth) break;
+
+            const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === monthStr);
+            const assigned = assignment?.assigned || 0;
+
+            // Reverted to direct filtering for maximum accuracy
+            const monthStart = monthStr + '-01';
+            const nextMonthDate = new Date(monthStart);
+            nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+            const monthEnd = new Date(nextMonthDate.getTime() - 1).toISOString().split('T')[0];
+
+            const monthSpent = allTransactionsData
+                ? allTransactionsData
+                    .filter(t => t.category_id === categoryId &&
+                        t.date >= monthStart &&
+                        t.date <= monthEnd &&
+                        t.type === 'payment')
+                    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+                : 0;
+
+            rollover = rollover + assigned - monthSpent;
+
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            currentDate.setDate(1);
+        }
+
+        return rollover;
+    }, [allTransactionsData]);
+
+    // Helper function to calculate days remaining in current month
+    const getDaysRemainingInMonth = useCallback((date: Date = currentMonth): number => {
+        const today = new Date();
+        const currentDate = new Date(date.getFullYear(), date.getMonth(), today.getDate());
+        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+        // If we're viewing a future month, return total days in that month
+        if (date.getMonth() > today.getMonth() || date.getFullYear() > today.getFullYear()) {
+            return lastDayOfMonth.getDate();
+        }
+
+        // If we're viewing a past month, return 0
+        if (date.getMonth() < today.getMonth() || date.getFullYear() < today.getFullYear()) {
+            return 0;
+        }
+
+        // For current month, calculate remaining days including today
+        const daysRemaining = lastDayOfMonth.getDate() - today.getDate() + 1;
+        return Math.max(0, daysRemaining);
+    }, [currentMonth]);
+
+
+    // Only fetch assignments, categories, and reminder for the current month
+    const calculateBudgetData = useCallback(async (queryMonthString: string) => {
+        try {
+            setLoading(true);
+
+            // Derive data from cache instead of fetching
+            const categoriesData = rawCategoriesData;
+            const allAssignments = allAssignmentsData;
+
+            // Filter assignments for current month
+            const assignmentsData = allAssignments.filter(a => a.month === queryMonthString);
+
+            // Filter transactions for current month
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+            const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+
+            const transactionsData = allTransactionsData.filter(t => {
+                // Filter by date range
+                return t.date >= startDate && t.date <= endDate;
+            });
+
+            let startingBalance = 0;
+            let totalIncome = 0;
+            // Calculate spent amounts for each category
+            const spentByCategory: { [key: string]: number } = {};
+
+            // Get starting balance and total income from ALL transactions (cached)
+            allTransactionsData?.forEach(transaction => {
+                if (transaction.type == 'starting') { startingBalance += transaction.amount; }
+                if (transaction.type == 'income') { totalIncome += transaction.amount; }
+            });
+
+            // Calculate spending for current month only
+            transactionsData?.forEach(transaction => {
+                if (!spentByCategory[transaction.category_id]) {
+                    spentByCategory[transaction.category_id] = 0;
                 }
-                if (isMounted) setAllTransactionsData(allTx);
-            } catch (err) {
-                if (isMounted) setError('Failed to load transactions.');
-            } finally {
-                if (isMounted) setTransactionsLoading(false);
-            }
-        };
-        fetchAllTransactions();
-        return () => { isMounted = false; };
-    }, [supabase]);
+                // Only include negative amounts (expenses) in spent calculation
+                if (transaction.type === 'payment') {
+                    spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
+                }
+            });
 
-    // On month change, only fetch assignments, categories, and reminder
+            // Create a map of assignments by category ID
+            const assignmentsByCategory = assignmentsData.reduce((acc, assignment) => {
+                acc[assignment.category_id] = assignment;
+                return acc;
+            }, {} as Record<string, typeof assignmentsData[0]>);
+
+            // Calculate categories with assignments and rollovers
+            const categoriesWithSpent = categoriesData.map(category => {
+                const assignment = assignmentsByCategory[category.id];
+                // Always use numbers and round to 2 decimals
+                const assigned = Math.round((Number(assignment?.assigned ?? 0)) * 100) / 100;
+                const spent = Math.round((Number(spentByCategory[category.id] || 0)) * 100) / 100;
+                const rollover = Math.round((Number(calculateRolloverForCategory(category.id, queryMonthString, allAssignments || []))) * 100) / 100;
+                const available = Math.round((assigned + rollover - spent) * 100) / 100;
+                const daysRemaining = getDaysRemainingInMonth();
+                const dailyLeft = daysRemaining > 0 ? Math.round((available / daysRemaining) * 100) / 100 : 0;
+                return {
+                    id: category.id,
+                    name: category.name,
+                    assigned,
+                    spent,
+                    goalAmount: category.goal || 0,
+                    group: category.groups?.name || category.group || 'Uncategorized',
+                    rollover,
+                    available,
+                    dailyLeft
+                };
+            });
+            // Calculate total actual money available (same as transactions page total balance)
+            const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
+            // Calculate total available in all categories including future assignments
+            const futureAssignments = allAssignments
+                ?.filter(assignment => assignment.month > queryMonthString)
+                ?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
+
+            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0) + futureAssignments;
+
+            // Update balance info - Compare total balance to total available in categories
+            setBalanceInfo({
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories
+            });
+            console.log('DEBUG: setBalanceInfo (leftToAssign/overspent):', {
+                budgetPool: totalActualMoney,
+                assigned: totalAvailableInCategories,
+                leftToAssign: totalActualMoney - totalAvailableInCategories
+            });
+
+            setCategories(categoriesWithSpent);
+            setError(null);
+        } catch (error) {
+            console.error('Error calculating budget data:', error);
+            setError('Failed to load budget data. Please try again in a second.');
+        } finally {
+            setLoading(false);
+        }
+    }, [calculateRolloverForCategory, getDaysRemainingInMonth, currentMonth, rawCategoriesData, allAssignmentsData, allTransactionsData]);
+
+    // Helper to refresh all data from server
+    const refreshData = async () => {
+        await Promise.all([
+            refetchTransactions(),
+            refetchCategories(),
+            refetchAssignments()
+        ]);
+    };
+
+    // Handle transaction loading errors
+    useEffect(() => {
+        if (transactionsError) {
+            setError('Failed to load transactions.');
+        }
+    }, [transactionsError]);
+
+    // On month change, only run calculation
     useEffect(() => {
         const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         setMonthString(newMonthString);
         if (allTransactionsData) {
-            fetchBudgetData(newMonthString, allTransactionsData);
+            calculateBudgetData(newMonthString);
         }
-        // Remove separate fetchReminderData call - now included in fetchBudgetData
-    }, [currentMonth, allTransactionsData]);
+    }, [currentMonth, allTransactionsData, calculateBudgetData]);
+
 
     // Listen for hide budget values changes
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
+            const savedHideBudgetValues = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('hideBudgetValues') === 'true' : false;
             setHideBudgetValues(savedHideBudgetValues);
 
             const handleHideBudgetValuesChange = (event: CustomEvent) => {
@@ -146,10 +332,10 @@ export default function Budget() {
         const today = new Date();
         const currentYear = today.getFullYear();
         const currentMonthNum = today.getMonth();
-        
+
         const viewingYear = currentMonth.getFullYear();
         const viewingMonthNum = currentMonth.getMonth();
-        
+
         if (viewingYear < currentYear || (viewingYear === currentYear && viewingMonthNum < currentMonthNum)) {
             return 'past';
         } else if (viewingYear > currentYear || (viewingYear === currentYear && viewingMonthNum > currentMonthNum)) {
@@ -159,268 +345,42 @@ export default function Budget() {
         }
     };
 
-    // Helper function to calculate rollover for a category up to a specific month
-    const calculateRolloverForCategory = useCallback((
-        categoryId: string, 
-        targetMonth: string, 
-        allAssignments: Assignment[], 
-        allTransactions: any[]
-    ): number => {
-        if (!categoryId) return 0;
-
-        // Get all assignments and transactions for this category to find the earliest date
-        const categoryAssignments = allAssignments.filter(a => a.category_id === categoryId);
-        const categoryTransactions = allTransactions.filter(t => t.category_id === categoryId);
-        
-        if (categoryAssignments.length === 0 && categoryTransactions.length === 0) return 0;
-
-        // Find the earliest month from either assignments or transactions
-        const earliestAssignmentMonth = categoryAssignments.length > 0 
-            ? categoryAssignments.reduce((earliest, a) => a.month < earliest ? a.month : earliest, categoryAssignments[0].month)
-            : null;
-        
-        const earliestTransactionDate = categoryTransactions.length > 0
-            ? categoryTransactions.reduce((earliest, t) => t.date < earliest ? t.date : earliest, categoryTransactions[0].date)
-            : null;
-        
-        const earliestTransactionMonth = earliestTransactionDate 
-            ? earliestTransactionDate.substring(0, 7) // Convert YYYY-MM-DD to YYYY-MM
-            : null;
-
-        // Determine the actual start month (earliest of assignments or transactions)
-        let startMonth = earliestAssignmentMonth;
-        if (earliestTransactionMonth && (!startMonth || earliestTransactionMonth < startMonth)) {
-            startMonth = earliestTransactionMonth;
-        }
-        
-        if (!startMonth || startMonth >= targetMonth) return 0;
-        // Generate all months from the earliest data up to (but not including) target month
-        const targetDate = new Date(targetMonth + '-01');
-        const months: string[] = [];
-
-        // Always normalize to the first of the month
-        let currentDate = new Date(startMonth + '-01');
-        currentDate.setDate(1);
-        
-        while (true) {
-            const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-            if (monthStr >= targetMonth) break; // Only include months strictly before targetMonth
-            months.push(monthStr);
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            currentDate.setDate(1);
-        }
-
-        let rollover = 0;
-
-        
-        
-        console.log('Rollover calculation for category', categoryId, 'targetMonth:', targetMonth, 'months included:', months);
-
-        // Calculate rollover month by month
-        for (const month of months) {
-            const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
-            const assigned = assignment?.assigned || 0;
-
-            
-            
-            // Calculate spending for this month
-            const monthStart = month + '-01';
-            const nextMonth = new Date(monthStart);
-            nextMonth.setMonth(nextMonth.getMonth() + 1);
-            const monthEnd = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0];
-            
-            const monthSpent = allTransactions
-                .filter(t => t.category_id === categoryId && 
-                            t.date >= monthStart && 
-                            t.date <= monthEnd &&
-                            t.type === 'payment')
-                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            
-            // Add to rollover: assigned + previous rollover - spent
-            rollover = rollover + assigned - monthSpent;
-
-            console.log(`[Rollover] Month: ${month}, Assigned: ${assigned}, Spent: ${monthSpent}, Rollover so far: ${rollover}`);
-            
-            // Rollover CAN be negative
-        }
-        
-        return rollover;
-    }, []);
-
-    // Helper function to calculate days remaining in current month
-    const getDaysRemainingInMonth = useCallback((date: Date = currentMonth): number => {
-        const today = new Date();
-        const currentDate = new Date(date.getFullYear(), date.getMonth(), today.getDate());
-        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        
-        // If we're viewing a future month, return total days in that month
-        if (date.getMonth() > today.getMonth() || date.getFullYear() > today.getFullYear()) {
-            return lastDayOfMonth.getDate();
-        }
-        
-        // If we're viewing a past month, return 0
-        if (date.getMonth() < today.getMonth() || date.getFullYear() < today.getFullYear()) {
-            return 0;
-        }
-        
-        // For current month, calculate remaining days including today
-        const daysRemaining = lastDayOfMonth.getDate() - today.getDate() + 1;
-        return Math.max(0, daysRemaining);
-    }, [currentMonth]);
 
 
-    // Only fetch assignments, categories, and reminder for the current month
-    const fetchBudgetData = useCallback(async (queryMonthString: string, allTransactionsData: any[]) => {
-        try {
-            setLoading(true);
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
+    // Fetch reminder separately
+    useEffect(() => {
+        const fetchReminder = async () => {
+            try {
+                setReminderLoading(true);
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
 
-            // Get first and last day of the selected month
-            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-            const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
-            const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-
-            // Fetch only categories, assignments, and reminder for this month
-            const [categoriesResponse, transactionsResponse, assignmentsResponse, allAssignmentsResponse, reminderResponse] = await Promise.all([
-                supabase
-                    .from('categories')
-                    .select(`
-                        *,
-                        groups (
-                            id,
-                            name
-                        )
-                    `)
-                    .eq('user_id', user.id)
-                    .order('created_at'),
-                supabase
-                    .from('transactions')
-                    .select('amount, category_id, type')
-                    .eq('user_id', user.id)
-                    .gte('date', startDate)
-                    .lte('date', endDate),
-                supabase
-                    .from('assignments')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('month', queryMonthString),
-                supabase
-                    .from('assignments')
-                    .select('*')
-                    .eq('user_id', user.id),
-                supabase
+                const { data, error } = await supabase
                     .from('information')
                     .select('reminder')
                     .eq('user_id', user.id)
-                    .eq('month', queryMonthString)
-                    .single()
-            ]);
+                    .eq('month', monthString)
+                    .single();
 
-            if (categoriesResponse.error) throw categoriesResponse.error;
-            if (transactionsResponse.error) throw transactionsResponse.error;
-            if (assignmentsResponse.error) throw assignmentsResponse.error;
-            if (allAssignmentsResponse.error) throw allAssignmentsResponse.error;
-            // Don't throw error for reminder response - it's okay if no reminder exists
-
-            const categoriesData = categoriesResponse.data;
-            const transactionsData = transactionsResponse.data;
-            const assignmentsData = assignmentsResponse.data;
-            const allAssignments = allAssignmentsResponse.data;
-
-            // Handle reminder data
-            if (reminderResponse.error && reminderResponse.error.code !== 'PGRST116') {
-                console.error('Error fetching reminder:', reminderResponse.error);
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Error fetching reminder:', error);
+                }
+                setReminderText(data?.reminder || '');
+            } catch (err) {
+                // ignore
+            } finally {
+                setReminderLoading(false);
             }
-            setReminderText(reminderResponse.data?.reminder || '');
-
-            let startingBalance = 0;
-            let totalIncome = 0;
-            // Calculate spent amounts for each category
-            const spentByCategory: { [key: string]: number } = {};
-            
-            // Get starting balance and total income from ALL transactions (cached)
-            allTransactionsData?.forEach(transaction => {
-                if (transaction.type == 'starting') {startingBalance += transaction.amount;}
-                if (transaction.type == 'income') {totalIncome += transaction.amount;}
-            });
-
-            // Calculate spending for current month only
-            transactionsData?.forEach(transaction => {
-                if (!spentByCategory[transaction.category_id]) {
-                    spentByCategory[transaction.category_id] = 0;
-                }
-                // Only include negative amounts (expenses) in spent calculation
-                if (transaction.type === 'payment') {
-                    spentByCategory[transaction.category_id] += Math.abs(transaction.amount);
-                }
-            });
-
-            // Create a map of assignments by category ID
-            const assignmentsByCategory = assignmentsData.reduce((acc, assignment) => {
-                acc[assignment.category_id] = assignment;
-                return acc;
-            }, {} as Record<string, typeof assignmentsData[0]>);
-
-            // Calculate categories with assignments and rollovers
-            const categoriesWithSpent = categoriesData.map(category => {
-                const assignment = assignmentsByCategory[category.id];
-                // Always use numbers and round to 2 decimals
-                const assigned = Math.round((Number(assignment?.assigned ?? 0)) * 100) / 100;
-                const spent = Math.round((Number(spentByCategory[category.id] || 0)) * 100) / 100;
-                const rollover = Math.round((Number(calculateRolloverForCategory(category.id, queryMonthString, allAssignments || [], allTransactionsData))) * 100) / 100;
-                const available = Math.round((assigned + rollover - spent) * 100) / 100;
-                const daysRemaining = getDaysRemainingInMonth();
-                const dailyLeft = daysRemaining > 0 ? Math.round((available / daysRemaining) * 100) / 100 : 0;
-                return {
-                    id: category.id,
-                    name: category.name,
-                    assigned,
-                    spent,
-                    goalAmount: category.goal || 0,
-                    group: category.groups?.name || 'Uncategorized',
-                    rollover,
-                    available,
-                    dailyLeft
-                };
-            });
-            // Calculate total actual money available (same as transactions page total balance)
-            const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
-            // Calculate total available in all categories including future assignments
-            const futureAssignments = allAssignments
-                ?.filter(assignment => assignment.month > queryMonthString)
-                ?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
-
-            const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0) + futureAssignments;
-
-            // Update balance info - Compare total balance to total available in categories
-            setBalanceInfo({
-                budgetPool: totalActualMoney,
-                assigned: totalAvailableInCategories
-            });
-            console.log('DEBUG: setBalanceInfo (leftToAssign/overspent):', {
-                budgetPool: totalActualMoney,
-                assigned: totalAvailableInCategories,
-                leftToAssign: totalActualMoney - totalAvailableInCategories
-            });
-            
-            setCategories(categoriesWithSpent);
-            setError(null);
-        } catch (error) {
-            console.error('Error fetching budget data:', error);
-            setError('Failed to load budget data. Please try again in a second.');
-        } finally {
-            setLoading(false);
-        }
-    }, [supabase, calculateRolloverForCategory, getDaysRemainingInMonth, currentMonth]);
+        };
+        fetchReminder();
+    }, [monthString, supabase]);
 
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
-            
+
             // Get current assignment for this category/month to calculate difference
             const { data: currentAssignment } = await supabase
                 .from('assignments')
@@ -429,10 +389,10 @@ export default function Budget() {
                 .eq('month', monthString)
                 .eq('user_id', user.id)
                 .single();
-            
+
             const currentAssigned = currentAssignment?.assigned || 0;
             const assignmentDifference = newAmount - currentAssigned;
-            
+
             // Calculate the new total assigned amount before making the API call
             const updatedCategories = categories.map(cat => {
                 if (cat.id === categoryId) {
@@ -454,20 +414,14 @@ export default function Budget() {
                 });
             }
 
-            const promise = (async () => {
-                const { error } = await supabase
-                    .from('assignments')
-                    .upsert({
-                        category_id: categoryId,
-                        month: monthString,
-                        assigned: newAmount,
-                        user_id: user.id
-                    }, {onConflict: 'category_id,month'});
-                if (error) throw error;
-            })();
+            const promise = updateAssignmentMutation.mutateAsync({
+                categoryId: categoryId,
+                month: monthString,
+                assigned: newAmount
+            });
 
             if (toToast) {
-                    await toast.promise(promise, {
+                await toast.promise(promise, {
                     loading: 'Updating assignment...',
                     success: 'Updated assignment successfully!',
                     error: 'Failed to update assignment'
@@ -476,12 +430,12 @@ export default function Budget() {
         } catch (error) {
             console.error('Error updating assignment:', error);
             // Revert the local state changes on error
-            setCategories(cats => cats.map(cat => 
+            setCategories(cats => cats.map(cat =>
                 cat.id === categoryId ? { ...cat, assigned: cat.assigned } : cat
             ));
             // Refresh data to ensure consistency
             if (monthString && allTransactionsData) {
-                await fetchBudgetData(monthString, allTransactionsData);
+                await calculateBudgetData(monthString);
             }
             throw error;
         }
@@ -524,12 +478,12 @@ export default function Budget() {
             });
             // Refetch data to ensure consistency
             if (monthString && allTransactionsData) {
-                await fetchBudgetData(monthString, allTransactionsData);
+                await calculateBudgetData(monthString);
             }
         } catch (error) {
             console.error('Error balancing overspent categories:', error);
             if (monthString && allTransactionsData) {
-                await fetchBudgetData(monthString, allTransactionsData);
+                await calculateBudgetData(monthString);
             }
             throw error;
         }
@@ -541,10 +495,10 @@ export default function Budget() {
         try {
             // Start by collecting all changes to make
             const changes = new Map();
-            
+
             // Get categories from the active group only
-            const targetCategories = activeGroup === 'All' 
-                ? categories 
+            const targetCategories = activeGroup === 'All'
+                ? categories
                 : categories.filter(cat => cat.group === activeGroup);
 
             // Handle different mass actions
@@ -565,10 +519,10 @@ export default function Budget() {
                 categoryInputs.forEach(input => {
                     const name = input.dataset.categoryId;
                     if (!name) return;
-                    
+
                     const category = categories.find(c => c.name === name);
                     if (!category) return;
-                    
+
                     const newAmount = parseFloat(input.value);
                     if (!isNaN(newAmount) && newAmount !== category.assigned) {
                         changes.set(category.id, newAmount);
@@ -613,15 +567,15 @@ export default function Budget() {
             }
 
             // Prepare all database updates
-            const updates = Array.from(changes.entries()).map(([categoryId, amount]) => 
+            const updates = Array.from(changes.entries()).map(([categoryId, amount]) =>
                 handleAssignmentUpdate(categoryId, amount, false),
             );
 
             // Execute all updates in parallel
             if (updates.length > 0) {
-                const actionDesc = pendingAction === 'fill-goals' ? 'Filling goals' 
-                    : pendingAction === 'clear' ? 'Clearing assignments' 
-                    : 'Updating assignments';
+                const actionDesc = pendingAction === 'fill-goals' ? 'Filling goals'
+                    : pendingAction === 'clear' ? 'Clearing assignments'
+                        : 'Updating assignments';
 
                 await toast.promise(Promise.all(updates), {
                     loading: `${actionDesc}...`,
@@ -632,14 +586,14 @@ export default function Budget() {
 
             // After successful update, refetch data to ensure consistency
             if (monthString && allTransactionsData) {
-                await fetchBudgetData(monthString, allTransactionsData);
+                await calculateBudgetData(monthString);
             }
 
         } catch (error) {
             console.error('Error updating assignments:', error);
             // On error, refresh data to ensure consistency
             if (monthString && allTransactionsData) {
-                await fetchBudgetData(monthString, allTransactionsData);
+                await calculateBudgetData(monthString);
             }
             throw error;
         }
@@ -667,12 +621,12 @@ export default function Budget() {
             setShowOverspentAlert(false);
         }
     }
-    
+
     const groups = ['All', ...new Set(categories.map(cat => cat.group))];
-    const filteredCategories = activeGroup === 'All' 
-        ? categories 
+    const filteredCategories = activeGroup === 'All'
+        ? categories
         : categories.filter(cat => cat.group === activeGroup);
-    
+
     // Group categories by their group
     const groupedCategories = categories.reduce((acc, category) => {
         const groupName = category.group || 'Uncategorized';
@@ -713,7 +667,7 @@ export default function Budget() {
     const toggleAllGroups = () => {
         const groups = Array.from(new Set(categories.map(cat => cat.group)));
         const allExpanded = groups.every(group => expandedGroups.has(group));
-        
+
         if (allExpanded) {
             setExpandedGroups(new Set());
         } else {
@@ -794,17 +748,17 @@ export default function Budget() {
     // Handle reminder text change with debounced save
     const handleReminderChange = (text: string) => {
         setReminderText(text);
-        
+
         // Clear existing timeout
         if (saveTimeout) {
             clearTimeout(saveTimeout);
         }
-        
+
         // Set new timeout for auto-save
         const newTimeout = setTimeout(() => {
             saveReminderData(text);
         }, 1000); // Save after 1 second of no typing
-        
+
         setSaveTimeout(newTimeout);
     };
 
@@ -819,14 +773,14 @@ export default function Budget() {
 
 
     const totalAvailable = categories.reduce((sum, cat) => sum + cat.available, 0);
-    
-    return(
+
+    return (
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <div className="hidden md:block"><Navbar /></div>
                 <Sidebar />
                 <MobileNav />
-                
+
 
                 {/* Mobile month switcher and manage button */}
                 <div className="px-3 flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
@@ -846,7 +800,7 @@ export default function Budget() {
                     </div>
                     <div className="flex-1 flex justify-center">
                         <div className="flex items-center">
-                            <button 
+                            <button
                                 onClick={goToPreviousMonth}
                                 className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                             >
@@ -871,7 +825,7 @@ export default function Budget() {
                                     </button>
                                 )}
                             </div>
-                            <button 
+                            <button
                                 onClick={goToNextMonth}
                                 className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                             >
@@ -886,7 +840,7 @@ export default function Budget() {
                         </div>
                     </div>
                     <div className="w-12 flex justify-end">
-                        <button 
+                        <button
                             onClick={() => setShowManageModal(true)}
                             className="flex gap-2 p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                         >
@@ -902,14 +856,14 @@ export default function Budget() {
                 </div>
 
                 {/* Toast notifications */}
-                <Toaster 
+                <Toaster
                     containerClassName='mb-[15dvh]'
                     position="bottom-center"
                     toastOptions={{
                         style: {
                             background: '#333',
                             color: '#fff',
-       
+
                         },
                         success: {
                             iconTheme: {
@@ -923,7 +877,7 @@ export default function Budget() {
                                 secondary: '#fff',
                             },
                         }
-        
+
                     }}
                 />
 
@@ -936,10 +890,10 @@ export default function Budget() {
                             </div>
                             <div className="flex-shrink-0 flex justify-center mx-4 lg:mx-8">
                                 <div className="flex items-center gap-1 lg:gap-2">
-                                    <button 
+                                    <button
                                         onClick={goToPreviousMonth}
                                         className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
-                                    >   
+                                    >
                                         <Image
                                             src="/chevron-left.svg"
                                             alt="Previous month"
@@ -961,7 +915,7 @@ export default function Budget() {
                                             </button>
                                         )}
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={goToNextMonth}
                                         className="flex-shrink-0 p-1.5 lg:p-2 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                                     >
@@ -1001,10 +955,9 @@ export default function Budget() {
 
                         {/* Overspent Alert */}
                         {getOverspentCategories().length > 0 && (
-                            <div 
-                                className={`rounded-lg overflow-hidden transition-all duration-200 bg-reddy/10 text-reddy border-b-4 border-b-reddy mb-4 ${
-                                    showOverspentAlert ? 'h-auto' : 'h-[56px] md:h-[64px]'
-                                }`}
+                            <div
+                                className={`rounded-lg overflow-hidden transition-all duration-200 bg-reddy/10 text-reddy border-b-4 border-b-reddy mb-4 ${showOverspentAlert ? 'h-auto' : 'h-[56px] md:h-[64px]'
+                                    }`}
                                 onClick={expandOverspent}
                             >
                                 <div className="p-3 md:p-4 flex justify-between items-center">
@@ -1020,48 +973,46 @@ export default function Budget() {
                                         {showOverspentAlert ? 'Close' : 'Fix Now'}
                                     </button>
                                 </div>
-                                
-                        <div 
-                            className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
-                                showOverspentAlert 
-                                ? 'opacity-100 transform translate-y-0' 
-                                : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                            }`}
-                        >
-                            <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
-                                <h4 className="font-medium mb-2">Overspent Categories:</h4>
-                                <div className="space-y-1 text-sm">
-                                    {getOverspentCategories().map(cat => (
-                                        <div key={cat.id} className="flex justify-between">
-                                            <span>{cat.name}</span>
-                                            <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <button
-                                    className="mt-4 w-full bg-green text-background font-semibold py-2 rounded-lg hover:bg-green-dark transition-colors"
-                                    onClick={balanceOverspentCategories}
+
+                                <div
+                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${showOverspentAlert
+                                        ? 'opacity-100 transform translate-y-0'
+                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
+                                        }`}
                                 >
-                                    Balance Overspent
-                                </button>
-                            </div>
-                            <div className="text-sm opacity-90">
-                                <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending. Or, use the button above to automatically balance all overspent categories.</p>
-                            </div>
-                        </div>
+                                    <div className="bg-reddy/20 rounded-lg p-3 md:p-4 mb-3">
+                                        <h4 className="font-medium mb-2">Overspent Categories:</h4>
+                                        <div className="space-y-1 text-sm">
+                                            {getOverspentCategories().map(cat => (
+                                                <div key={cat.id} className="flex justify-between">
+                                                    <span>{cat.name}</span>
+                                                    <span className="font-medium">{formatCurrency(Math.abs(cat.available))} over</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            className="mt-4 w-full bg-green text-background font-semibold py-2 rounded-lg hover:bg-green-dark transition-colors"
+                                            onClick={balanceOverspentCategories}
+                                        >
+                                            Balance Overspent
+                                        </button>
+                                    </div>
+                                    <div className="text-sm opacity-90">
+                                        <p className=""><strong>To balance your budget:</strong> Move money from other categories into the overspent ones, or add more income to cover the overspending. Or, use the button above to automatically balance all overspent categories.</p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
                         {/* Balance Assignment Info */}
                         {balanceInfo && (
-                            <div 
-                                className={`rounded-lg overflow-hidden transition-all duration-200 ${
-                                    Math.round(balanceInfo.budgetPool*100)/100 == Math.round(balanceInfo.assigned*100)/100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned 
-                                    ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4' 
-                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4') 
-                                } ${isMassAssigning ? 'h-[140px] md:h-[140px]' : ''}
+                            <div
+                                className={`rounded-lg overflow-hidden transition-all duration-200 ${Math.round(balanceInfo.budgetPool * 100) / 100 == Math.round(balanceInfo.assigned * 100) / 100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned
+                                    ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4'
+                                    : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4')
+                                    } ${isMassAssigning ? 'h-[140px] md:h-[140px]' : ''}
                                 `}
-                            onClick={isMassAssigning ? ()=>{} : massAssign}>
+                                onClick={isMassAssigning ? () => { } : massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
                                     <div>
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
@@ -1089,13 +1040,12 @@ export default function Budget() {
                                         {isMassAssigning ? 'Apply Changes' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
                                     </button>
                                 </div>
-                                
-                                <div 
-                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${
-                                        isMassAssigning 
-                                        ? 'opacity-100 transform translate-y-0' 
+
+                                <div
+                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${isMassAssigning
+                                        ? 'opacity-100 transform translate-y-0'
                                         : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                                    }`}
+                                        }`}
                                 >
                                     {/* Mobile: show disclaimer in body if past month */}
                                     {getMonthStatus() === 'past' && (
@@ -1104,16 +1054,15 @@ export default function Budget() {
                                         </div>
                                     )}
                                     {getMonthStatus() !== 'past' && (
-                                    <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
-                                        <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
-                                    </div>)}
-                                    <div className= "flex gap-2">
+                                        <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
+                                            <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
+                                        </div>)}
+                                    <div className="flex gap-2">
                                         <button
-                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
-                                                pendingAction === 'fill-goals' 
-                                                ? 'bg-green text-background' 
+                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${pendingAction === 'fill-goals'
+                                                ? 'bg-green text-background'
                                                 : 'bg-white/10 hover:bg-white/20'
-                                            }`}
+                                                }`}
                                             onClick={() => setPendingAction(
                                                 pendingAction === 'fill-goals' ? null : 'fill-goals'
                                             )}
@@ -1121,11 +1070,10 @@ export default function Budget() {
                                             Fill All
                                         </button>
                                         <button
-                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${
-                                                pendingAction === 'clear' 
-                                                ? 'bg-reddy text-background' 
+                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${pendingAction === 'clear'
+                                                ? 'bg-reddy text-background'
                                                 : 'bg-white/10 hover:bg-white/20'
-                                            }`}
+                                                }`}
                                             onClick={() => setPendingAction(
                                                 pendingAction === 'clear' ? null : 'clear'
                                             )}
@@ -1177,8 +1125,8 @@ export default function Budget() {
                                     >
                                         Learn the Basics First
                                     </Link>
-                                    
-                                    
+
+
                                 </div>
                                 <div className="sm:mt-4 mt-8">
                                     <Link
@@ -1188,7 +1136,7 @@ export default function Budget() {
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all text-sm"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
                                         </svg>
                                         Join our Discord Community
                                     </Link>
@@ -1202,7 +1150,7 @@ export default function Budget() {
                                         const monthStatus = getMonthStatus();
                                         const totalAssigned = categories.reduce((sum, cat) => sum + cat.assigned, 0);
                                         const totalSpent = categories.reduce((sum, cat) => sum + cat.spent, 0);
-                                        
+
                                         // If both assigned and spent are 0, show month status indicator
                                         if (totalAssigned === 0 && totalSpent === 0) {
                                             return (
@@ -1230,7 +1178,7 @@ export default function Budget() {
                                                 </div>
                                             );
                                         }
-                                        
+
                                         // Show normal assigned/spent with status indicator
                                         return (
                                             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm">
@@ -1277,7 +1225,7 @@ export default function Budget() {
 
                                 {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
                                     const { totalAssigned, totalSpent, totalAvailable } = getGroupTotals(groupCategories);
-                                    
+
                                     return (
                                         <div key={groupName} className="space-y-1">
                                             <button
@@ -1303,22 +1251,20 @@ export default function Budget() {
                                                     alt={expandedGroups.has(groupName) ? 'Collapse' : 'Expand'}
                                                     width={18}
                                                     height={18}
-                                                    className={`opacity-70 transition-transform duration-100 ${
-                                                        expandedGroups.has(groupName) ? 'rotate-90' : ''
-                                                    }`}
+                                                    className={`opacity-70 transition-transform duration-100 ${expandedGroups.has(groupName) ? 'rotate-90' : ''
+                                                        }`}
                                                 />
                                             </button>
-                                            
-                                            <div className={`transition-all duration-100 overflow-hidden ${
-                                                expandedGroups.has(groupName) 
-                                                    ? 'opacity-100 max-h-[5000px]' 
-                                                    : 'opacity-0 max-h-0'
-                                            }`}>
+
+                                            <div className={`transition-all duration-100 overflow-hidden ${expandedGroups.has(groupName)
+                                                ? 'opacity-100 max-h-[5000px]'
+                                                : 'opacity-0 max-h-0'
+                                                }`}>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-3">
                                                     {groupCategories.map((category) => (
                                                         <div key={category.id}
                                                             className="transform transition-all hover:scale-[1.01] hover:shadow-md"
-                                                            style={{ 
+                                                            style={{
                                                                 animation: 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards'
                                                             }}
                                                         >
@@ -1376,13 +1322,13 @@ export default function Budget() {
                 </main>
 
                 <ManageBudgetModal
-                  isOpen={showManageModal}
-                  onClose={() => {
-                    if (monthString && allTransactionsData) {
-                      fetchBudgetData(monthString, allTransactionsData);
-                    }
-                    setShowManageModal(false);
-                  }}
+                    isOpen={showManageModal}
+                    onClose={() => {
+                        if (monthString && allTransactionsData) {
+                            calculateBudgetData(monthString);
+                        }
+                        setShowManageModal(false);
+                    }}
                 />
 
                 <AccountModal

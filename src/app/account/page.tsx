@@ -31,9 +31,9 @@ export default function Account() {
     }, []);
 
     // Check if running in PWA mode
-    const isPWA = typeof window !== 'undefined' && 
-        (window.matchMedia('(display-mode: standalone)').matches || 
-         (window.navigator as any).standalone === true);
+    const isPWA = typeof window !== 'undefined' &&
+        (window.matchMedia('(display-mode: standalone)').matches ||
+            (window.navigator as any).standalone === true);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -77,16 +77,16 @@ export default function Account() {
     const displayUser = user;
 
     return (
-        
+
         <ProtectedRoute>
-            
+
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <Navbar />
                 <Sidebar />
                 <MobileNav />
 
                 {/* Toast notifications */}
-                <Toaster 
+                <Toaster
                     containerClassName='mb-[15dvh]'
                     position="bottom-center"
                     toastOptions={{
@@ -108,14 +108,14 @@ export default function Account() {
                         }
                     }}
                 />
-                
+
                 <main className="pt-16 pb-28 md:pb-6 p-6 sm:ml-20 lg:ml-[max(16.66%,100px)] fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between mb-8 mt-3 md:mt-6">
-                           <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
+                            <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
                         </div>
 
-                        
+
 
                         <div className="p-4 bg-white/[.02] rounded-lg border-b-4">
                             <p className={`${displayUser ? 'inline' : 'hidden'}`}>
@@ -128,7 +128,7 @@ export default function Account() {
                                         <p className="font-medium">{displayUser?.email}</p>
                                     </div>
                                 </div>
-                                
+
                                 <button
                                     onClick={handleSignOut}
                                     className="px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white"
@@ -160,11 +160,11 @@ export default function Account() {
                                             aria-label={isInstallDismissed ? "Show install instructions" : "Hide install instructions"}
                                         >
                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path 
-                                                    d={isInstallDismissed ? "M9 18L15 12L9 6 " : "M15 18L9 12L15 6"} 
-                                                    stroke="white" 
-                                                    strokeWidth="1.5" 
-                                                    strokeLinecap="round" 
+                                                <path
+                                                    d={isInstallDismissed ? "M9 18L15 12L9 6 " : "M15 18L9 12L15 6"}
+                                                    stroke="white"
+                                                    strokeWidth="1.5"
+                                                    strokeLinecap="round"
                                                     strokeLinejoin="round"
                                                     className="opacity-70 hover:opacity-100 transition-opacity"
                                                 />
@@ -186,7 +186,7 @@ export default function Account() {
                                 </div>
                             )
                         )}
-                        
+
 
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
@@ -203,7 +203,7 @@ export default function Account() {
                             </Link>
                         </div>
 
-    
+
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-semibold">Docs & Knowledgebase</h2>
@@ -212,7 +212,7 @@ export default function Account() {
                             <Link
                                 href='/docs'
                                 className="w-full block text-center px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
-                            
+
                             >
                                 Documentation
                             </Link>
@@ -225,7 +225,7 @@ export default function Account() {
                                 <li>To manage your budget settings, click the Manage button on the Budget page.</li>
                                 <li>To manage your bank accounts, click the account selector on on the Transactions page.</li>
                             </ul>
-                     
+
                             <div className="flex flex-col gap-4">
                                 <Link
                                     href="/learn"
@@ -247,27 +247,25 @@ export default function Account() {
                                 </button>
                                 <button
                                     onClick={handleContactSupport}
-                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left ${
-                                        contactConfirmStep === 1 
-                                            ? 'bg-green/20 text-green hover:bg-green/30 border border-green/30' 
+                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left ${contactConfirmStep === 1
+                                            ? 'bg-green/20 text-green hover:bg-green/30 border border-green/30'
                                             : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-white'
-                                    }`}
+                                        }`}
                                 >
                                     {contactConfirmStep === 1 ? 'Click again to email lemonaise.dev@gmail.com' : 'Contact Support'}
                                 </button>
                                 <button
                                     onClick={handleDeleteAccount}
-                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${
-                                        deleteConfirmStep === 1 
-                                            ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30' 
+                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${deleteConfirmStep === 1
+                                            ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30'
                                             : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-reddy'
-                                    }`}
+                                        }`}
                                 >
                                     {deleteConfirmStep === 1 ? 'Are you sure? Click again to confirm' : 'Delete Account'}
                                 </button>
-                                
+
                             </div>
-                        
+
 
                         </div>
 
@@ -277,7 +275,7 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.8.8</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.9.0</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>A new 'last reconciled' date for each bank account!</li>
