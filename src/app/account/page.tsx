@@ -12,6 +12,7 @@ import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
 import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
+import ApiKeyManager from '../components/api-key-manager';
 
 export default function Account() {
     const router = useRouter();
@@ -188,6 +189,9 @@ export default function Account() {
                         )}
 
 
+                        {/* API Keys */}
+                        <ApiKeyManager />
+
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
@@ -248,8 +252,8 @@ export default function Account() {
                                 <button
                                     onClick={handleContactSupport}
                                     className={`w-full px-4 py-2 rounded-lg transition-all text-left ${contactConfirmStep === 1
-                                            ? 'bg-green/20 text-green hover:bg-green/30 border border-green/30'
-                                            : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-white'
+                                        ? 'bg-green/20 text-green hover:bg-green/30 border border-green/30'
+                                        : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-white'
                                         }`}
                                 >
                                     {contactConfirmStep === 1 ? 'Click again to email lemonaise.dev@gmail.com' : 'Contact Support'}
@@ -257,8 +261,8 @@ export default function Account() {
                                 <button
                                     onClick={handleDeleteAccount}
                                     className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${deleteConfirmStep === 1
-                                            ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30'
-                                            : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-reddy'
+                                        ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30'
+                                        : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-reddy'
                                         }`}
                                 >
                                     {deleteConfirmStep === 1 ? 'Are you sure? Click again to confirm' : 'Delete Account'}
