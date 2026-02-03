@@ -198,7 +198,7 @@ export default function ApiDocs() {
                                         <td className="py-2 px-4 font-mono text-green">description</td>
                                         <td className="py-2 px-4">string</td>
                                         <td className="py-2 px-4 text-green">Yes</td>
-                                        <td className="py-2 px-4 text-white/60">Merchant name or details.</td>
+                                        <td className="py-2 px-4 text-white/60">Any details you want.</td>
                                     </tr>
                                     <tr className="border-b border-white/5">
                                         <td className="py-2 px-4 font-mono text-green">category_id</td>
