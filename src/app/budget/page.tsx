@@ -236,7 +236,10 @@ export default function Budget() {
                 };
             });
             // Calculate total actual money available (same as transactions page total balance)
-            const totalActualMoney = allTransactionsData?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
+            // Fix: Filter transactions up to the end of the current view month
+            const totalActualMoney = allTransactionsData
+                ?.filter(t => t.date <= endDate)
+                ?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
             // Calculate total available in all categories including future assignments
             const futureAssignments = allAssignments
                 ?.filter(assignment => assignment.month > queryMonthString)
