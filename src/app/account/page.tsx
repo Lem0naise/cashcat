@@ -24,12 +24,28 @@ export default function Account() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmStep, setDeleteConfirmStep] = useState(0); // 0: normal, 1: are you sure
     const [contactConfirmStep, setContactConfirmStep] = useState(0); // 0: normal, 1: click again to email
+    const [chatEnabled, setChatEnabled] = useState(true);
 
     // Load dismissed state from localStorage
     useEffect(() => {
         const dismissed = localStorage.getItem('install-instructions-dismissed');
         setIsInstallDismissed(dismissed === 'true');
+
+        const chatPref = localStorage.getItem('cashcat-chat-enabled');
+        if (chatPref === null) {
+            setChatEnabled(true);
+        } else {
+            setChatEnabled(chatPref !== 'false');
+        }
     }, []);
+
+    const toggleChatSidebar = () => {
+        const next = !chatEnabled;
+        setChatEnabled(next);
+        localStorage.setItem('cashcat-chat-enabled', next.toString());
+        // Notify other components in this tab
+        window.dispatchEvent(new CustomEvent('cashcat-chat-toggle', { detail: { key: 'cashcat-chat-enabled', value: next.toString() } }));
+    };
 
     // Check if running in PWA mode
     const isPWA = typeof window !== 'undefined' &&
@@ -130,6 +146,22 @@ export default function Account() {
                                     </div>
                                 </div>
 
+                                <div className="flex items-center justify-between p-3 bg-white/[.02] rounded-lg border border-white/[.05]">
+                                    <div>
+                                        <p className="text-sm font-medium">CashCat Assistant</p>
+                                        <p className="text-xs text-white/60">Toggle the AI chat sidebar floating button</p>
+                                    </div>
+                                    <button
+                                        onClick={toggleChatSidebar}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${chatEnabled ? 'bg-green' : 'bg-white/20'}`}
+                                        aria-label="Toggle CashCat chat sidebar"
+                                    >
+                                        <span
+                                            className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${chatEnabled ? 'translate-x-5' : 'translate-x-1'}`}
+                                        />
+                                    </button>
+                                </div>
+
                                 <button
                                     onClick={handleSignOut}
                                     className="px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white"
@@ -189,9 +221,6 @@ export default function Account() {
                         )}
 
 
-                        {/* API Keys */}
-                        <ApiKeyManager />
-
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
@@ -208,6 +237,7 @@ export default function Account() {
                         </div>
 
 
+
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-semibold">Docs & Knowledgebase</h2>
@@ -221,6 +251,10 @@ export default function Account() {
                                 Documentation
                             </Link>
                         </div>
+
+                        {/* API Keys */}
+                        <ApiKeyManager />
+
 
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">

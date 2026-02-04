@@ -12,6 +12,7 @@ import Image from 'next/image';
 
 export default function ChatSidebar() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(true);
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
@@ -20,6 +21,40 @@ export default function ChatSidebar() {
     const { data: transactions } = useTransactions();
     const { data: categories } = useCategories();
     const { data: assignments } = useAssignments();
+
+    // Respect user preference to hide the chat sidebar (stored in localStorage)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const loadPreference = () => {
+            const stored = localStorage.getItem('cashcat-chat-enabled');
+            if (stored === null) {
+                // default to enabled
+                setIsEnabled(true);
+            } else {
+                setIsEnabled(stored !== 'false');
+            }
+        };
+
+        loadPreference();
+
+        const handler = (e: StorageEvent) => {
+            if (e.key === 'cashcat-chat-enabled') {
+                loadPreference();
+            }
+        };
+        const customHandler = (e: Event) => {
+            if ((e as CustomEvent).detail?.key === 'cashcat-chat-enabled') {
+                loadPreference();
+            }
+        };
+        window.addEventListener('storage', handler);
+        window.addEventListener('cashcat-chat-toggle', customHandler);
+        return () => {
+            window.removeEventListener('storage', handler);
+            window.removeEventListener('cashcat-chat-toggle', customHandler);
+        };
+    }, []);
 
     // Prepare cached data to send with requests
     const getCachedData = useCallback(() => {
@@ -225,6 +260,8 @@ export default function ChatSidebar() {
                 return null;
         }
     };
+
+    if (!isEnabled) return null;
 
     return (
         <>
