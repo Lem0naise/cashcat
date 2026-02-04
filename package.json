@@ -1,6 +1,6 @@
 {
   "name": "cashcat",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,6 +16,7 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/query-async-storage-persister": "^5.90.22",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-query-devtools": "^5.91.3",
@@ -37,6 +38,8 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.5.2",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

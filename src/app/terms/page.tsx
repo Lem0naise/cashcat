@@ -1,11 +1,11 @@
 import Logo from "../components/logo";
 import Link from 'next/link';
 
-// If change the terms of service, change supabase 'database function' from v1.1
+// If change the terms of service, change supabase 'database function' from v1.2
 
 export const metadata = {
-  title: 'Terms - CashCat',
-  description: 'View the legal terms and privacy policy of CashCat.',
+    title: 'Terms - CashCat',
+    description: 'View the legal terms and privacy policy of CashCat.',
 };
 
 export default function Terms() {
@@ -19,16 +19,17 @@ export default function Terms() {
                     </div>
                     <h1 className="text-3xl font-bold mb-4 px-8">Terms of Service & Privacy Policy</h1>
                 </div>
-                
+
 
                 {/* Add this summary section */}
                 <div className="bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-6 mb-6 text-white/90">
                     <h2 className="text-xl font-semibold text-green">Quick Summary</h2>
-                    <span className="text-xs text-white/60 mb-3">Effective: October 22, 2025, v1.1</span>
+                    <span className="text-xs text-white/60 mb-3">Effective: January 4th, 2026, v1.2</span>
                     <ul className="space-y-2 text-sm list-disc list-inside">
                         <li>CashCat is a budgeting tool only - we don't handle your real money in any way</li>
                         <li>We only collect your email and any budget data you enter - we don't track you</li>
                         <li>Your data stays private - we never sell or share it</li>
+                        <li>Optional AI Assistant (CashCat) that can be disabled in settings - we never use your data to train AI models</li>
                         <li>You can delete your account and all data anytime</li>
                         <li>Contact us at lemonaise.dev@gmail.com for any questions</li>
                     </ul>
@@ -37,15 +38,15 @@ export default function Terms() {
                     </p>
                 </div>
 
-                
+
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Terms of Service</h2>
-                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on October 22nd, 2025.</h3>
+                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on January 4th, 2026.</h3>
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">Acceptance of Terms</h2>
                         <p>By accessing and using CashCat, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service.</p>
                     </section>
-                    
+
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">1. Description of Service</h2>
                         <p>CashCat is a personal budget tracking and planning application that helps users organize their financial information, set goals, and track spending categories. CashCat is purely a budgeting tool and does not provide financial services, investment guidance, professional financial services, or handle real money in any way. We have no ability to change any information related to any accounts you hold at any financial institutions or banks, and no permission is requested for CashCat to do so. All financial management and transactions remain under your complete control. You are solely responsible for all financial decisions and the accuracy of data you input into the application. The service is provided for informational purposes only. CashCat does not provide or claim to provide financial advice. You agree that you are using the service at your own risk and you are solely responsible for any financial decisions you make. Any information provided is not a substitute for professional financial advice from a qualified advisor.
@@ -78,12 +79,12 @@ export default function Terms() {
                         <h2 className="text-xl font-semibold mb-3 text-green">6. User Age Requirements</h2>
                         <p>CashCat is intended for users who are at least 18 years old. Users between 13 and 17 years old may use the service only with parental or guardian consent and supervision. Users under 13 are not permitted to use CashCat. By using this service, you confirm that you meet these age requirements.</p>
                     </section>
-                    
+
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">7. Intellectual Property</h2>
                         <p>CashCat and all related content, features, and functionality are owned by us and are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of our service or software without our express written consent.</p>
                     </section>
-                    
+
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">8. Service Availability and Modifications</h2>
                         <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time, without prior notice. We will strive to provide reasonable notice, but this may not always be possible. We are not liable for any interruption or discontinuation of service.</p>
@@ -91,7 +92,7 @@ export default function Terms() {
                             In the unlikely event of a data breach that affects your personal information, we will notify you and any applicable supervisory authority within 72 hours of becoming aware of the breach, as required by GDPR. Notification will be sent to your registered email address and will include the nature of the breach, potential consequences, and measures taken to address it.
                         </p>
                     </section>
-                    
+
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">9. Severability</h2>
                         <p>If any provision of these Terms of Service is found to be unenforceable or invalid by a court of competent jurisdiction, that provision will be limited or eliminated to the minimum extent necessary so that these terms will otherwise remain in full force and effect. The invalidity of any particular provision will not affect the validity of the remaining provisions.</p>
@@ -107,12 +108,12 @@ export default function Terms() {
                         <p>These Terms of Service are governed by and construed in accordance with the laws of England and Wales. Any disputes arising from or relating to these terms or your use of CashCat shall be subject to the exclusive jurisdiction of the courts of England and Wales. For users located outside the UK, you agree that any disputes will be resolved in accordance with English law, though local consumer protection laws may also apply where you reside. We shall both make reasonable efforts to resolve disputes amicably before any formal legal proceedings are required. Before initiating any formal dispute resolution, you agree to first contact us at lemonaise.dev@gmail.com or legal@indigonolan.com to attempt to resolve the dispute amicably.</p>
                     </section>
                 </div>
-                
+
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Privacy Policy</h2>
                     <h2 className="text-md mb-3 text-white/70">This Privacy Policy was last updated on October 22nd, 2025.</h2>
-            
-                    <section> 
+
+                    <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">Data Controller Information</h2>
                         <p>For the purposes of UK GDPR and data protection law, the data controller for your personal information is Zac Indigo Nolan, contactable at legal@indigonolan.com. As the data controller, we are responsible for deciding how and why your personal data is processed.</p>
                     </section>
@@ -121,11 +122,24 @@ export default function Terms() {
                         <h2 className="text-xl font-semibold mb-3 text-green">1. Information We Collect</h2>
                         <p>We care about your privacy - so CashCat collects minimal personal information. We only store: (1) Your email address used for account creation and authentication, and (2) Budget-related information you voluntarily input, including income amounts, expense categories, financial goals, and budget planning data. We do not first-hand collect or store your name, age, or location. In cases of third-party providers and aggregation services, we may store read-only information such as transaction descriptions, dates, amounts, and account balances. We never receieve or store your bank login credentials. You are subject to the external provider's terms and privacy policy. The provider will be made clear when the user begins the process to link a bank account, and will be prominently named.</p>
                     </section>
-                    
+
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">2. How We Use Your Information</h2>
                         <p>Your email address is used solely for account authentication and essential service communications. Your budget data is used exclusively to provide the app's budgeting functionality, generate your personal reports and insights, and save your preferences. We never analyze your data for advertising purposes or external use. Under GDPR, our legal basis for processing your personal data is: (1) Legitimate interest for providing the budgeting service you requested, (2) Contract performance for account management and service delivery, and (3) Your explicit consent where required. You have the right to withdraw consent at any time without affecting the lawfulness of processing based on consent before its withdrawal.</p>
+                        <p>
+                            CashCat provides an optional AI-powered assistant to help you analyze your budget and search transactions.
+                        </p>
+                        <ul className="list-disc list-inside mt-2 space-y-2 ml-4">
+                            <li>
+                                <strong>User-Initiated Only:</strong> The AI is never prompted or "fed" your data without your explicit request. It does not run in the background or monitor your activity; it only accesses the specific data needed to answer your direct questions.
+                            </li>
+                            <li>
+                                <strong>Opt-Out:</strong> The AI Assistant is a completely optional feature. You can turn the assistant off at any time via your <strong>Account Settings</strong>, which will remove the chat interface and prevent any data from being sent to our AI processing partners.
+                            </li>
+                        </ul>
                     </section>
+
+
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">3. Data Storage and Sharing</h2>
@@ -135,7 +149,7 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">4. Data Retention</h2>
-                         <p>You have complete control over your data. You can access, modify, or delete any of your budget information at any time through the app. You can request complete account deletion, which will permanently remove all associated data. </p>
+                        <p>You have complete control over your data. You can access, modify, or delete any of your budget information at any time through the app. You can request complete account deletion, which will permanently remove all associated data. </p>
                         <p>We retain your email address and budget data only while your account remains active. Upon account deletion, all personal information including your email address and all budget data is permanently and irreversibly deleted from our systems within 7 days or as required by law, with no backup copies retained.</p>
                     </section>
 

@@ -279,11 +279,12 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.9.0</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.10.0</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
-                                    <li>A new 'last reconciled' date for each bank account!</li>
-                                    <li>UX improvements on the stats page</li>
+                                    <li>CashCat Assistant is here! Ask it anything about your budget!</li>
+                                    <li>Improved caching and lighting-fast performance!</li>
+                                    <li>RESTFUL API for developers!</li>
                                     <li>Our new Discord server</li>
                                     <li>A large amount of UI polishing</li>
                                     <li>Routine bug fixes as always</li>
