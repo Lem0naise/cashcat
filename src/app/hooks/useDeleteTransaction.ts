@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 // Delete a transaction
 const deleteTransaction = async (id: string): Promise<void> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { error } = await supabase
         .from('transactions')

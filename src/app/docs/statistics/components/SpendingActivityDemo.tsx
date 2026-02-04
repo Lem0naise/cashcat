@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Database } from '../../../../types/supabase';
 import BudgetAssignmentChart from '../../../components/BudgetAssignmentChartRefactored';
@@ -11,7 +11,7 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 export default function SpendingActivityDemo() {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);

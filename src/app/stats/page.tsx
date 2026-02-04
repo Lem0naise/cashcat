@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
@@ -25,7 +25,7 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 export default function Stats() {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     // TanStack Query Hooks
     const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments();
     const { data: categories = [], isLoading: categoriesLoading } = useCategories();

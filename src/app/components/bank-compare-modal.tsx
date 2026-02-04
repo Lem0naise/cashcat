@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -28,14 +28,14 @@ type BankCompareModalProps = {
     bankAccountId: string | null
 };
 
-export default function BankCompareModal({ 
-    isOpen, 
-    onClose, 
+export default function BankCompareModal({
+    isOpen,
+    onClose,
     bankAccountId,
-    transactions, 
+    transactions,
     onTransactionUpdated,
 }: BankCompareModalProps) {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const [bankBalance, setBankBalance] = useState('');
     const [step, setStep] = useState<'input' | 'results' | 'correction'>('input');
     const [difference, setDifference] = useState(0);
@@ -54,7 +54,7 @@ export default function BankCompareModal({
     // Calculate budget balance from transactions
     useEffect(() => {
         // filter transactions by the current bank account
-        const filteredTransactions = (transactions.filter(transaction => 
+        const filteredTransactions = (transactions.filter(transaction =>
             transaction.account_id === bankAccountId
         ));
 
@@ -69,7 +69,7 @@ export default function BankCompareModal({
     useEffect(() => {
         const fetchLastReconciliation = async () => {
             if (!isOpen || !bankAccountId) return;
-            
+
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
@@ -92,7 +92,7 @@ export default function BankCompareModal({
         };
 
         fetchLastReconciliation();
-    }, [isOpen, bankAccountId,supabase]);
+    }, [isOpen, bankAccountId, supabase]);
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -136,12 +136,12 @@ export default function BankCompareModal({
             .slice(0, 10); // Last 10 transactions
 
         // Also include transactions that match the difference amount
-        const matchingAmountTransactions = usableTransactions.filter(t => 
+        const matchingAmountTransactions = usableTransactions.filter(t =>
             Math.abs(t.amount) === Math.abs(diff) && t.type !== 'starting'
         );
 
         const combined = [...recentTransactions, ...matchingAmountTransactions];
-        const unique = combined.filter((transaction, index, self) => 
+        const unique = combined.filter((transaction, index, self) =>
             index === self.findIndex(t => t.id === transaction.id)
         );
 
@@ -166,13 +166,13 @@ export default function BankCompareModal({
                 });
 
             if (error) throw error;
-            
+
             // Update local state
             setLastReconciliation({
                 reconciled_at: new Date().toISOString(),
                 bank_balance: bankAmount
             });
-            
+
             toast.success('Reconciliation saved!');
         } catch (error) {
             console.error('Error saving reconciliation:', error);
@@ -223,8 +223,8 @@ export default function BankCompareModal({
                     date: transaction.date,
                     vendor: transaction.vendor,
                     account_id: transaction.account_id,
-                    description: transaction.description || null,
-                    category_id: transaction.category_id || null
+                    description: transaction.description || undefined,
+                    category_id: transaction.category_id || undefined
                 })
                 .eq('id', selectedTransaction.id);
 
@@ -266,7 +266,7 @@ export default function BankCompareModal({
                 });
             if (error) throw error;
             */}
-            
+
             // Instead, adjust the starting balance
             const startingTransaction = usableTransactions.find(t => t.type === 'starting' && t.account_id === bankAccountId);
 
@@ -320,20 +320,18 @@ export default function BankCompareModal({
 
     return (
         <>
-            <div 
-                className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                    isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+                    }`}
                 onClick={handleBackdropClick}
             >
-                <div 
-                    className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-lg md:p-6 min-h-[100dvh] md:min-h-0 ${
-                        isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                    }`}
+                <div
+                    className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-lg md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                        }`}
                 >
                     <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                         <h2 className="text-xl font-bold">Compare with Bank</h2>
-                        <button 
+                        <button
                             onClick={handleClose}
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                         >
@@ -393,7 +391,7 @@ export default function BankCompareModal({
                                                 <div className="text-4xl mb-2">⚠️</div>
                                                 <h3 className="text-xl font-bold text-reddy mb-2">Difference Found</h3>
                                                 <p className="text-white/70 mb-3">
-                                                    Your bank has <span className="font-bold">{formatCurrency(Math.abs(difference))}</span> 
+                                                    Your bank has <span className="font-bold">{formatCurrency(Math.abs(difference))}</span>
                                                     {difference > 0 ? ' more' : ' less'} than CashCat shows.
                                                 </p>
                                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -448,7 +446,7 @@ export default function BankCompareModal({
                                             <div className="border-t border-white/[.15] pt-4">
                                                 <h4 className="font-medium mb-2">Or add a balance correction:</h4>
                                                 <p className="text-sm text-white/60 mb-3">
-                                                    This is less precise but will quickly fix the difference. 
+                                                    This is less precise but will quickly fix the difference.
                                                     The correction will adjust your account's initial balance.
                                                 </p>
                                                 <button
@@ -494,7 +492,7 @@ export default function BankCompareModal({
                                     <div className="bg-yellow/10 border border-yellow/20 rounded-lg p-4">
                                         <h3 className="font-medium text-yellow mb-2">Balance Correction</h3>
                                         <p className="text-sm text-white/70">
-                                            This will adjust your account's initial balance to make your current balance your bank balance. 
+                                            This will adjust your account's initial balance to make your current balance your bank balance.
                                             It's better to find and fix the actual incorrect transaction, but this works as a quick fix.
                                         </p>
                                     </div>

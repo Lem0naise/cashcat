@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Gabarito } from "next/font/google";
 import { Providers } from './providers';
 import SupabaseProvider from './contexts/supabase-provider';
+import ChatSidebar from './components/ChatSidebar';
 import "./globals.css";
 
 const USEFont = Gabarito({
@@ -80,6 +81,7 @@ export default function RootLayout({
         <Providers>
           <SupabaseProvider>
             {children}
+            <ChatSidebar />
           </SupabaseProvider>
         </Providers>
         <div id='portal-root' className={`${USEFont.variable} antialiased`}></div>

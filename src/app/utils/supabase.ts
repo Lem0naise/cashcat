@@ -1,5 +1,5 @@
 import { Database } from '@/types/supabase';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
@@ -11,10 +11,11 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
 export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Create a singleton browser client for client components
 export const createClient = () =>
-  createClientComponentClient<Database>({
+  createBrowserClient<Database>(
     supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-  });
+    supabaseAnonKey
+  );
 
 // Add more helper functions here as needed

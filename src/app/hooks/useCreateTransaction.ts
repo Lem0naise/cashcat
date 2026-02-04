@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 
 type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
@@ -7,7 +7,7 @@ type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 // Create a new transaction
 const createTransaction = async (newTransaction: TransactionInsert): Promise<Transaction> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) throw new Error('Not authenticated');

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,7 +18,7 @@ type Vendor = {
 };
 
 type TransactionModalProps = {
-    transaction: Transaction|null;
+    transaction: Transaction | null;
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (transaction: {
@@ -30,11 +30,11 @@ type TransactionModalProps = {
         account_id: string;
         category_id?: string | null;
     }) => void;
-    onDelete : () => void;
+    onDelete: () => void;
 };
 
-export default function TransactionModal({transaction, isOpen, onClose, onSubmit, onDelete }: TransactionModalProps) {
-    const supabase = createClientComponentClient();
+export default function TransactionModal({ transaction, isOpen, onClose, onSubmit, onDelete }: TransactionModalProps) {
+    const supabase = createClient();
     const [type, setType] = useState<string>('payment');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -46,7 +46,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [accountId, setAccountId] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
     const [groups, setGroups] = useState<Group[]>([]);
-    const [accounts, setAccounts] = useState<{id: string; name: string; type: string, is_default: boolean}[]>([]);
+    const [accounts, setAccounts] = useState<{ id: string; name: string; type: string, is_default: boolean }[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [loadingAccounts, setLoadingAccounts] = useState(true);
     const [categoryRemaining, setCategoryRemaining] = useState<number | null>(null);
@@ -89,17 +89,17 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         .eq('user_id', user.id)
                         .order('name')
                 ]);
-                
+
                 if (categoriesResponse.error) throw categoriesResponse.error;
                 if (accountsResponse.error) throw accountsResponse.error;
                 if (vendorsResponse.error) throw vendorsResponse.error;
                 if (groupsResponse.error) throw groupsResponse.error;
-                
-                setCategories(categoriesResponse.data || []);
+
+                setCategories((categoriesResponse.data || []).map(cat => ({ ...cat, assigned: null })) as Category[]);
                 setAccounts(accountsResponse.data || []);
                 setAllVendors(vendorsResponse.data || []);
                 setGroups(groupsResponse.data || []);
-                
+
                 // Set default account from most recent transaction if creating new transaction
                 if (!transaction && accountsResponse.data.length > 0) {
                     const defaultAccount = accountsResponse.data.find(account => account.is_default === true);
@@ -119,7 +119,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     }, [isOpen, transaction]);
 
     useEffect(() => {
-        if (transaction){
+        if (transaction) {
             setType(transaction.type || 'payment');
             setAmount((Math.abs(transaction.amount).toFixed(2)));
             setDate(transaction.date);
@@ -159,8 +159,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             }
 
             const filtered = allVendors
-                .filter(vendor => 
-                    vendor.name != "Starting Balance" && 
+                .filter(vendor =>
+                    vendor.name != "Starting Balance" &&
                     vendor.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
                 )
                 .slice(0, 5);
@@ -192,11 +192,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             // Get current month
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            
+
             // Get first and last day of current month
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
             const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            
+
             // Format dates for database query - use local timezone instead of UTC
             const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
             const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
@@ -235,9 +235,9 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
             // Calculate rollover using the same logic as budget page
             const calculateRolloverForCategory = (
-                categoryId: string, 
-                targetMonth: string, 
-                allAssignments: any[], 
+                categoryId: string,
+                targetMonth: string,
+                allAssignments: any[],
                 allTransactions: any[]
             ): number => {
                 if (!categoryId) return 0;
@@ -245,11 +245,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 // Get all months from category creation up to target month
                 const targetDate = new Date(targetMonth + '-01');
                 const months: string[] = [];
-                
+
                 // Start from 12 months ago to ensure we capture enough history
                 const startDate = new Date(targetDate);
                 startDate.setMonth(startDate.getMonth() - 12);
-                
+
                 let currentDate = new Date(startDate);
                 while (currentDate <= targetDate) {
                     const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
@@ -260,29 +260,29 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 }
 
                 let rollover = 0;
-                
+
                 // Calculate rollover month by month
                 for (const month of months) {
                     const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
                     const assigned = assignment?.assigned || 0;
-                    
+
                     // Calculate spending for this month
                     const monthStart = month + '-01';
                     const nextMonth = new Date(monthStart);
                     nextMonth.setMonth(nextMonth.getMonth() + 1);
                     const monthEnd = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0];
-                    
+
                     const monthSpent = allTransactions
-                        .filter(t => t.category_id === categoryId && 
-                                    t.date >= monthStart && 
-                                    t.date <= monthEnd &&
-                                    t.type === 'payment')
+                        .filter(t => t.category_id === categoryId &&
+                            t.date >= monthStart &&
+                            t.date <= monthEnd &&
+                            t.type === 'payment')
                         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-                    
+
                     // Add to rollover: assigned + previous rollover - spent
                     rollover = rollover + assigned - monthSpent;
                 }
-                
+
                 return rollover;
             };
 
@@ -339,10 +339,10 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
                 // Check if the account from the transaction is still active
                 const accountExists = accounts.find(acc => acc.id === transactions[0].account_id);
-                
+
                 if (accountExists) {
                     // Use the account from the previous transaction if it's still active
-                    setAccountId(transactions[0].account_id);
+                    setAccountId(transactions[0].account_id || '');
                 } else {
                     // Fall back to default account if the previous account is closed
                     const defaultAccount = accounts.find(account => account.is_default === true);
@@ -378,7 +378,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         const parsedAmount = parseFloat(amount);
         if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
         if (!accountId) return; // Prevent submission if no account selected
-        
+
         onSubmit({
             amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
             type: type || 'payment', // Ensure type is never undefined
@@ -405,20 +405,18 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     };
 
     return (
-        <div 
-            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                isClosing ? '' : 'animate-[fadeIn_0.2s_ease-out]'
-            }`}
+        <div
+            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${isClosing ? '' : 'animate-[fadeIn_0.2s_ease-out]'
+                }`}
             onClick={handleBackdropClick}
         >
-            <div 
-                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${
-                    isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    }`}
             >
                 <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <h2 className="text-xl font-bold">{transaction ? "Edit Transaction" : "New Transaction"}</h2>
-                    <button 
+                    <button
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                     >
@@ -438,22 +436,20 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                             <button
                                 type="button"
                                 onClick={() => setType('payment')}
-                                className={`p-3 rounded-lg border transition-colors ${
-                                    type === 'payment'
-                                        ? 'bg-reddy/20 border-reddy text-reddy'
-                                        : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                }`}
+                                className={`p-3 rounded-lg border transition-colors ${type === 'payment'
+                                    ? 'bg-reddy/20 border-reddy text-reddy'
+                                    : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                    }`}
                             >
                                 Payment
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setType('income')}
-                                className={`p-3 rounded-lg border transition-colors ${
-                                    type === 'income'
-                                        ? 'bg-green/20 border-green text-green'
-                                        : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                }`}
+                                className={`p-3 rounded-lg border transition-colors ${type === 'income'
+                                    ? 'bg-green/20 border-green text-green'
+                                    : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                    }`}
                             >
                                 Income
                             </button>
@@ -470,7 +466,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                     setTimeout(() => {
                                         vendorInputRef.current?.focus();
                                     }, 100);
-                                } :  () => {}}
+                                } : () => { }}
                             />
                         </div>
 
@@ -493,17 +489,17 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 />
                                 {showSuggestions && vendorSuggestions.length > 0 && (
                                     <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
-                                        {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
+                                        {vendorSuggestions.filter((suggestion) => suggestion.name != "Starting Balance")
                                             .map((suggestion) => (
-                                            <button
-                                                key={suggestion.id}
-                                                type="button"
-                                                onClick={() => selectVendor(suggestion.name)}
-                                                className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
-                                            >
-                                                {suggestion.name}
-                                            </button>
-                                        ))}
+                                                <button
+                                                    key={suggestion.id}
+                                                    type="button"
+                                                    onClick={() => selectVendor(suggestion.name)}
+                                                    className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
+                                                >
+                                                    {suggestion.name}
+                                                </button>
+                                            ))}
                                     </div>
                                 )}
                             </div>
@@ -511,8 +507,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                             {type === 'payment' && (
                                 <div>
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        
+                                        <label className={`block text-sm ${categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : 'text-white/50'}`}>Category</label>
+
                                     </div>
                                     <GroupedDropdown
                                         required={type === 'payment'}
@@ -534,7 +530,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 </div>
                             )}
 
-                            
+
 
                             <div>
                                 <label className="block text-sm text-white/50 mb-0.5">Date</label>
@@ -582,7 +578,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                             <button
                                 type="button"
                                 onClick={() => isDeleting ? (setIsDeleting(false), onDelete()) : setIsDeleting(true)}
-                                className={`${transaction ? 'block': 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
+                                className={`${transaction ? 'block' : 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
                             >
                                 {isDeleting ? "Are you sure?" : "Delete"}
                             </button>

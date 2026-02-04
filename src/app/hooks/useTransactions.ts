@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 
 // Define the extended transaction type with joins
@@ -22,7 +22,7 @@ export type TransactionWithDetails = Database['public']['Tables']['transactions'
 
 // Fetch all transactions for the current user
 const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) throw new Error('Not authenticated');

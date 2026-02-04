@@ -8,7 +8,7 @@ const createTransactionSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
     description: z.string().min(1),
     category_id: z.string().uuid(),
-    type: z.enum(['income', 'expense']).optional(), // Optional, defaults to expense if usually implied, but let's be strict if needed. 
+    type: z.enum(['income', 'payment']).optional(), // Optional, defaults to payment if usually implied, but let's be strict if needed. 
     // Actually schema says: type is text. In app it's often inferred.
     // Let's look at schema requirements. For now allow string.
 });

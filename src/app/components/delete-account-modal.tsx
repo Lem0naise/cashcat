@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -13,7 +13,7 @@ type DeleteAccountModalProps = {
 };
 
 export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }: DeleteAccountModalProps) {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const [reason, setReason] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -12,7 +12,7 @@ interface UpdateAssignmentParams {
 
 // Upsert an assignment (create or update)
 const updateAssignment = async ({ categoryId, month, assigned }: UpdateAssignmentParams): Promise<Assignment> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) throw new Error('Not authenticated');

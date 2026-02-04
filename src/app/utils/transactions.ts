@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import { Database } from '@/types/supabase';
 
 export type NewTransaction = {
@@ -22,12 +22,12 @@ export type Transaction = Omit<NewTransaction, 'category_id'> & {
 export async function submitTransaction(
     transaction: NewTransaction
 ): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
-    const {data: {user}, error: userError} = await supabase.auth.getUser();
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not authenticated");
 
-    
-    const {error} = await supabase.from('transactions').insert({
+
+    const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         amount: transaction.amount,
         type: transaction.type,
@@ -49,11 +49,11 @@ export async function updateTransaction(
     id: string,
     transaction: NewTransaction
 ): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
-    const {data: {user}, error: userError} = await supabase.auth.getUser();
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not authenticated");
 
-    const {error} = await supabase
+    const { error } = await supabase
         .from('transactions')
         .update({
             amount: transaction.amount,
@@ -73,11 +73,11 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
-    const {data: {user}, error: userError} = await supabase.auth.getUser();
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error("User not authenticated");
 
-    const {error} = await supabase
+    const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('id', id);
