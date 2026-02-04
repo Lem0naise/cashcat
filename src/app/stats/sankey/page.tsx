@@ -1,8 +1,7 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useCallback, useEffect, useState, useMemo } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import { useEffect, useState, useMemo } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { format, differenceInDays, addDays, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from 'date-fns';
 import { Database } from '../../../types/supabase';
 import { calculateDateRange, calculateAllTimeRange } from '../../components/charts/utils';
@@ -12,6 +11,9 @@ import ProtectedRoute from "../../components/protected-route";
 import Sidebar from "../../components/sidebar";
 import { useMobileViewportStability } from '../../hooks/useMobileViewportStability';
 import { useIsDesktop } from '../../hooks/useIsDesktop';
+import { useTransactions } from '../../hooks/useTransactions';
+import { useCategories } from '../../hooks/useCategories';
+import { useAssignments } from '../../hooks/useAssignments';
 import SankeyDiagram from './components/sankey-diagram';
 import Link from 'next/link';
 
@@ -20,93 +22,27 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 export default function SankeyPage() {
-    const supabase = createClientComponentClient<Database>();
-    const [assignments, setAssignments] = useState<Assignment[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [loading, setLoading] = useState(true);
-    
+    // TanStack Query Hooks
+    const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments();
+    const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+    const { data: transactions = [], isLoading: transactionsLoading } = useTransactions();
+
+    // Combined loading state
+    const loading = assignmentsLoading || categoriesLoading || transactionsLoading;
+
     // Mobile viewport stability hook
     useMobileViewportStability();
-    
+
     // Responsive breakpoint detection
     const isDesktop = useIsDesktop();
-    
+
     // Chart state
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('3m');
     const [customStartDate, setCustomStartDate] = useState<Date>();
     const [customEndDate, setCustomEndDate] = useState<Date>();
-    
+
     // Expansion state for Sankey nodes
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-
-    // Fetch data from Supabase
-    const fetchData = useCallback(async () => {
-        try {
-            setLoading(true);
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
-
-            // Fetch assignments and categories
-            const [assignmentsResponse, categoriesResponse] = await Promise.all([
-                supabase
-                    .from('assignments')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('month', { ascending: true }),
-                supabase
-                    .from('categories')
-                    .select(`
-                        *,
-                        groups (
-                            id,
-                            name
-                        )
-                    `)
-                    .eq('user_id', user.id)
-                    .order('created_at'),
-            ]);
-
-            if (assignmentsResponse.error) throw assignmentsResponse.error;
-            if (categoriesResponse.error) throw categoriesResponse.error;
-
-            setAssignments(assignmentsResponse.data || []);
-            setCategories(categoriesResponse.data || []);
-
-            // Paginate transactions
-            let allTransactions: Transaction[] = [];
-            let from = 0;
-            const batchSize = 1000;
-            let hasMore = true;
-
-            while (hasMore) {
-                const response = await supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('date', { ascending: true })
-                    .range(from, from + batchSize - 1);
-
-                if (response.error) throw response.error;
-
-                const batch = response.data || [];
-                allTransactions = [...allTransactions, ...batch];
-                hasMore = batch.length === batchSize;
-                from += batchSize;
-            }
-
-            setTransactions(allTransactions);
-        } catch (error) {
-            console.error('Error fetching Sankey data:', error);
-            toast.error('Failed to load data');
-        } finally {
-            setLoading(false);
-        }
-    }, [supabase]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
@@ -121,12 +57,12 @@ export default function SankeyPage() {
     };
 
     // Calculate date ranges
-    const { allTimeStart, allTimeEnd } = useMemo(() => 
-        calculateAllTimeRange(assignments, transactions), 
-        [assignments.length, transactions.length]
+    const { allTimeStart, allTimeEnd } = useMemo(() =>
+        calculateAllTimeRange(assignments, transactions),
+        [assignments, transactions]
     );
-    
-    const dateRange = useMemo(() => 
+
+    const dateRange = useMemo(() =>
         calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd),
         [timeRange, customStartDate?.getTime(), customEndDate?.getTime(), allTimeStart?.getTime(), allTimeEnd?.getTime()]
     );
@@ -134,12 +70,12 @@ export default function SankeyPage() {
     // Handle node clicks for expansion
     const handleNodeClick = (node: any) => {
         const newExpanded = new Set(expandedNodes);
-        
+
         if (node.type === 'group' || node.type === 'category') {
             if (newExpanded.has(node.id)) {
                 // Collapse: remove this node and all its descendants
                 newExpanded.delete(node.id);
-                
+
                 // If collapsing a group, also collapse all its categories
                 if (node.type === 'group') {
                     Array.from(newExpanded).forEach(id => {
@@ -152,7 +88,7 @@ export default function SankeyPage() {
                 // Expand
                 newExpanded.add(node.id);
             }
-            
+
             setExpandedNodes(newExpanded);
         }
     };
@@ -165,7 +101,7 @@ export default function SankeyPage() {
     // Handle expand all groups
     const handleExpandAllGroups = () => {
         const newExpanded = new Set<string>();
-        
+
         // Find all group nodes
         const groupNodes = Array.from(
             new Set(
@@ -180,11 +116,11 @@ export default function SankeyPage() {
                     .filter(Boolean)
             )
         );
-        
+
         groupNodes.forEach(id => {
             if (id) newExpanded.add(id);
         });
-        
+
         setExpandedNodes(newExpanded);
     };
 
@@ -223,7 +159,7 @@ export default function SankeyPage() {
             const prevYear = subYears(dateRange.start, 1);
             const prevYearStart = startOfYear(prevYear);
             const prevYearEnd = endOfYear(prevYear);
-            isAtStart = allTimeStart && allTimeEnd ? 
+            isAtStart = allTimeStart && allTimeEnd ?
                 (prevYearEnd < allTimeStart || prevYearStart > allTimeEnd) : false;
         } else {
             isAtToday = differenceInDays(today, dateRange.end) <= 1;
@@ -385,7 +321,7 @@ export default function SankeyPage() {
                     <Navbar />
                     <Sidebar />
                     <MobileNav />
-                    
+
                     <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                         <div className="max-w-7xl mx-auto">
                             <div className="flex items-center justify-center min-h-[400px]">
@@ -398,7 +334,7 @@ export default function SankeyPage() {
         );
     }
 
-    const hasData = transactions.some(t => 
+    const hasData = transactions.some(t =>
         new Date(t.date) >= dateRange.start && new Date(t.date) <= dateRange.end
     );
 
@@ -410,7 +346,7 @@ export default function SankeyPage() {
                 <MobileNav />
 
                 {/* Toast notifications */}
-                <Toaster 
+                <Toaster
                     containerClassName='mb-[15dvh]'
                     position="bottom-center"
                     toastOptions={{
@@ -432,21 +368,21 @@ export default function SankeyPage() {
                         }
                     }}
                 />
-                
+
                 <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                     <div className="max-w-7xl mx-auto">
                         {/* Header with back link */}
                         <div className="mb-6">
-                            <Link 
-                                href="/stats" 
+                            <Link
+                                href="/stats"
                                 className="text-sm text-white/60 hover:text-white/80 flex items-center gap-2 mb-4"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                                    <path d="M19 12H5M12 19l-7-7 7-7" />
                                 </svg>
                                 Back to Statistics
                             </Link>
-                            
+
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h1 className="text-2xl font-bold tracking-[-.01em]">Money Flow</h1>
@@ -454,7 +390,7 @@ export default function SankeyPage() {
                                         Visualize how money flows from income sources through your budget
                                     </p>
                                 </div>
-                                
+
                                 {/* View controls */}
                                 <div className="hidden md:flex items-center gap-2">
                                     <button
@@ -491,17 +427,16 @@ export default function SankeyPage() {
                                         <button
                                             key={option.value}
                                             onClick={() => handleTimeRangeChange(option.value as any)}
-                                            className={`px-3 py-2 text-sm rounded-lg transition-all ${
-                                                timeRange === option.value
-                                                    ? 'bg-green text-black'
-                                                    : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
-                                            }`}
+                                            className={`px-3 py-2 text-sm rounded-lg transition-all ${timeRange === option.value
+                                                ? 'bg-green text-black'
+                                                : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
+                                                }`}
                                         >
                                             {option.label}
                                         </button>
                                     ))}
                                 </div>
-                                
+
                                 {/* Custom Date Inputs */}
                                 {timeRange === 'custom' && (
                                     <div className="mt-4 flex flex-wrap gap-3 items-center">
@@ -539,8 +474,8 @@ export default function SankeyPage() {
                             <div className="text-center text-white/60 mt-20">
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
-                                        <path d="M3 3V21H21V3H3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                                        <path d="M9 9L15 15M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        <path d="M3 3V21H21V3H3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                                        <path d="M9 9L15 15M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                                     </svg>
                                 </div>
                                 <h2 className="text-xl font-semibold mb-2">No Transaction Data</h2>
@@ -599,15 +534,14 @@ export default function SankeyPage() {
                                         <button
                                             onClick={handleNavigatePrev}
                                             disabled={!dateRangeInfo.canNavigatePrev}
-                                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                                                dateRangeInfo.canNavigatePrev
-                                                    ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                                                    : 'text-white/20 cursor-not-allowed'
-                                            }`}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigatePrev
+                                                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                                                : 'text-white/20 cursor-not-allowed'
+                                                }`}
                                             title={
                                                 dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
-                                                dateRangeInfo.actualMode === 'ytd' ? 'Previous year (← arrow key)' :
-                                                'Previous period (← arrow key)'
+                                                    dateRangeInfo.actualMode === 'ytd' ? 'Previous year (← arrow key)' :
+                                                        'Previous period (← arrow key)'
                                             }
                                         >
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="rotate-180">
@@ -625,15 +559,14 @@ export default function SankeyPage() {
                                         <button
                                             onClick={handleNavigateNext}
                                             disabled={!dateRangeInfo.canNavigateNext}
-                                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
-                                                dateRangeInfo.canNavigateNext
-                                                    ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                                                    : 'text-white/20 cursor-not-allowed'
-                                            }`}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigateNext
+                                                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                                                : 'text-white/20 cursor-not-allowed'
+                                                }`}
                                             title={
                                                 dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
-                                                dateRangeInfo.actualMode === 'ytd' ? 'Next year (→ arrow key)' :
-                                                'Next period (→ arrow key)'
+                                                    dateRangeInfo.actualMode === 'ytd' ? 'Next year (→ arrow key)' :
+                                                        'Next period (→ arrow key)'
                                             }
                                         >
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -641,7 +574,7 @@ export default function SankeyPage() {
                                             </svg>
                                         </button>
                                     </div>
-                                    
+
                                     <div className="h-[600px] md:h-[700px]">
                                         <SankeyDiagram
                                             transactions={transactions}
