@@ -268,7 +268,7 @@ export default function ChatSidebar() {
             {/* Floating Chat Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green hover:bg-green/90 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+                className="fixed bottom-24 md:bottom-6 right-6 z-50 w-14 h-14 bg-green hover:bg-green/90 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
                 aria-label="Toggle chat"
             >
                 {isOpen ? (
@@ -284,7 +284,7 @@ export default function ChatSidebar() {
 
             {/* Chat Panel */}
             <div
-                className={`font-[family-name:var(--font-suse)] fixed bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] bg-background/95 backdrop-blur-sm border border-white/[.15] rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
+                className={`font-[family-name:var(--font-suse)] fixed bottom-36 md:bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] bg-background/95 backdrop-blur-sm border border-white/[.15] rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
                     }`}
             >
                 {/* Header */}
