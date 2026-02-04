@@ -7,8 +7,7 @@ import { Database } from '../../types/supabase';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAssignments } from '../hooks/useAssignments';
-import { useMobileViewportStability } from '../hooks/useMobileViewportStability';
-import { useIsDesktop } from '../hooks/useIsDesktop'; import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
+import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
 import ChartControls from '../components/chart-controls';
 import PieChart from '../components/charts/PieChart';
 import PieSegmentInsights from '../components/charts/PieSegmentInsights';
@@ -18,7 +17,9 @@ import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
-
+import { useMobileViewportStability } from '../hooks/useMobileViewportStability';
+import { useIsDesktop } from '../hooks/useIsDesktop';
+import Link from 'next/link';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -260,6 +261,37 @@ export default function Stats() {
                         <div className="hidden md:flex items-center justify-between mb-8 md:mt-8">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Statistics</h1>
                         </div>
+
+                        {/* Money Flow Card */}
+                        <Link href="/stats/sankey">
+                            <div className="bg-gradient-to-br from-blue-500/20 to-green/20 rounded-lg p-6 border border-blue-500/30 hover:border-green/50 transition-all cursor-pointer mb-6 group">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green rounded-lg flex items-center justify-center">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 3v18h18" />
+                                                <path d="m19 9-5 5-4-4-3 3" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Money Flow Diagram</h3>
+                                            <p className="text-sm text-white/60">Interactive Sankey visualization of income and spending</p>
+                                        </div>
+                                    </div>
+                                    <svg
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                                    >
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </Link>
 
                         {assignments.length === 0 ? (
                             // No data state
