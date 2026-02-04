@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTransactions, TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { useCategories } from '@/app/hooks/useCategories';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatSidebar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -252,7 +254,7 @@ export default function ChatSidebar() {
                         >
                             <div
                                 className={`max-w-[85%] rounded-2xl px-4 py-2 ${message.role === 'user'
-                                    ? 'bg-green text-background rounded-br-md'
+                                    ? 'bg-green text-black rounded-br-md'
                                     : 'bg-white/10 text-white rounded-bl-md'
                                     }`}
                             >
@@ -261,9 +263,34 @@ export default function ChatSidebar() {
                                     switch (part.type) {
                                         case 'text':
                                             return (
-                                                <p key={`${message.id}-${i}`} className="text-sm whitespace-pre-wrap">
-                                                    {part.text}
-                                                </p>
+                                                <div
+                                                    key={`${message.id}-${i}`}
+                                                    className="prose prose-invert prose-sm max-w-none break-words prose-p:leading-relaxed prose-pre:bg-white/10 prose-pre:p-2 prose-pre:rounded-lg"
+                                                >
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            // Override specific elements if needed
+                                                            a: ({ href, children }) => (
+                                                                <a href={href} target="_blank" rel="noopener noreferrer" className="text-green hover:underline">
+                                                                    {children}
+                                                                </a>
+                                                            ),
+                                                            table: ({ children }) => (
+                                                                <div className="overflow-x-auto my-2">
+                                                                    <table className="min-w-full text-left text-xs bg-white/5 rounded-lg overflow-hidden">
+                                                                        {children}
+                                                                    </table>
+                                                                </div>
+                                                            ),
+                                                            thead: ({ children }) => <thead className="bg-white/10 font-medium">{children}</thead>,
+                                                            th: ({ children }) => <th className="p-2 border-b border-white/10">{children}</th>,
+                                                            td: ({ children }) => <td className="p-2 border-b border-white/5">{children}</td>,
+                                                        }}
+                                                    >
+                                                        {part.text}
+                                                    </ReactMarkdown>
+                                                </div>
                                             );
                                         case 'tool-invocation':
                                             return (
