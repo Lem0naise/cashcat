@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTransactions, TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { useCategories } from '@/app/hooks/useCategories';
+import { useAssignments } from '@/app/hooks/useAssignments';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -17,6 +18,7 @@ export default function ChatSidebar() {
     // Get cached data from TanStack Query
     const { data: transactions } = useTransactions();
     const { data: categories } = useCategories();
+    const { data: assignments } = useAssignments();
 
     // Prepare cached data to send with requests
     const getCachedData = useCallback(() => {
@@ -40,11 +42,20 @@ export default function ChatSidebar() {
             group_name: c.groups?.name || null,
         })) || [];
 
+        const cachedAssignments = assignments?.map((a) => ({
+            id: a.id,
+            category_id: a.category_id,
+            month: a.month,
+            assigned: a.assigned,
+            rollover: a.rollover,
+        })) || [];
+
         return {
             transactions: cachedTransactions,
             categories: cachedCategories,
+            assignments: cachedAssignments,
         };
-    }, [transactions, categories]);
+    }, [transactions, categories, assignments]);
 
     const { messages, sendMessage, status, error } = useChat({
         onFinish: (event) => {
@@ -168,11 +179,25 @@ export default function ChatSidebar() {
                         <div className="grid grid-cols-2 gap-2 mb-3">
                             <div>
                                 <div className="text-white/40 text-xs">Assigned</div>
-                                <div className="text-white">${result?.summary?.totalAssigned?.toFixed(2)}</div>
+                                <div className="text-white">£{result?.summary?.totalAssigned?.toFixed(2)}</div>
                             </div>
                             <div>
                                 <div className="text-white/40 text-xs">Spent</div>
-                                <div className="text-white">${result?.summary?.totalSpent?.toFixed(2)}</div>
+                                <div className="text-white">£{result?.summary?.totalSpent?.toFixed(2)}</div>
+                            </div>
+                            {result?.summary?.totalRollover !== undefined && result.summary.totalRollover !== 0 && (
+                                <div>
+                                    <div className="text-white/40 text-xs">Rollover</div>
+                                    <div className={result.summary.totalRollover >= 0 ? 'text-green' : 'text-orange-400'}>
+                                        £{result.summary.totalRollover?.toFixed(2)}
+                                    </div>
+                                </div>
+                            )}
+                            <div>
+                                <div className="text-white/40 text-xs">Available</div>
+                                <div className={result?.summary?.totalAvailable >= 0 ? 'text-green' : 'text-red-400'}>
+                                    £{result?.summary?.totalAvailable?.toFixed(2)}
+                                </div>
                             </div>
                         </div>
                         {result?.alerts?.length > 0 && (

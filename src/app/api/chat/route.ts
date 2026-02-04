@@ -81,10 +81,17 @@ export async function POST(req: Request) {
                     group_id: string;
                     group_name: string | null;
                 }>;
+                assignments?: Array<{
+                    id: string;
+                    category_id: string;
+                    month: string;
+                    assigned: number | null;
+                    rollover: number;
+                }>;
             };
         } = body;
         console.log('Messages received:', messages.length);
-        console.log('Cached data received:', cachedData ? `${cachedData.transactions?.length || 0} transactions, ${cachedData.categories?.length || 0} categories` : 'none');
+        console.log('Cached data received:', cachedData ? `${cachedData.transactions?.length || 0} transactions, ${cachedData.categories?.length || 0} categories, ${cachedData.assignments?.length || 0} assignments` : 'none');
 
         // Generate date context for the AI
         const dateContext = getDateContext();
@@ -693,7 +700,7 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                 }),
 
                 summarize_budget: tool({
-                    description: 'Analyze the user\'s current spending against their budget for a given month. Shows how much is assigned vs spent per category.',
+                    description: 'Analyze the user\'s current spending against their budget for a given month. Shows assigned amount, spent amount, rollover from previous months, and available balance per category.',
                     inputSchema: z.object({
                         month: z.string().optional().describe('Month to analyze (YYYY-MM). Defaults to current month.'),
                     }),
@@ -707,88 +714,219 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             0
                         ).toISOString().split('T')[0];
 
-                        // Get assignments for the month
-                        type AssignmentWithCategory = {
-                            id: string;
-                            assigned: number | null;
-                            category_id: string;
-                            categories: { id: string; name: string; group: string } | null;
+                        // Helper function to calculate rollover for a category
+                        const calculateRollover = (
+                            categoryId: string,
+                            targetMonth: string,
+                            allAssignments: Array<{ category_id: string; month: string; assigned: number | null }>,
+                            allTransactions: Array<{ category_id: string; date: string; type: string; amount: number }>
+                        ): number => {
+                            // Get all assignments for this category before the target month
+                            const categoryAssignments = allAssignments.filter(a => a.category_id === categoryId && a.month < targetMonth);
+                            
+                            if (categoryAssignments.length === 0) return 0;
+                            
+                            // Find earliest month
+                            const earliestMonth = categoryAssignments.reduce((earliest, a) => 
+                                a.month < earliest ? a.month : earliest, categoryAssignments[0].month);
+                            
+                            let rollover = 0;
+                            let currentDate = new Date(earliestMonth + '-01');
+                            
+                            while (true) {
+                                const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                                if (monthStr >= targetMonth) break;
+                                
+                                const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === monthStr);
+                                const assigned = assignment?.assigned || 0;
+                                
+                                // Calculate month boundaries
+                                const monthStart = monthStr + '-01';
+                                const nextMonthDate = new Date(monthStart);
+                                nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                                const monthEnd = new Date(nextMonthDate.getTime() - 1).toISOString().split('T')[0];
+                                
+                                // Sum spending for this month (payments only)
+                                const monthSpent = allTransactions
+                                    .filter(t => t.category_id === categoryId &&
+                                        t.date >= monthStart &&
+                                        t.date <= monthEnd &&
+                                        t.type === 'payment')
+                                    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                                
+                                rollover = rollover + assigned - monthSpent;
+                                
+                                currentDate.setMonth(currentDate.getMonth() + 1);
+                            }
+                            
+                            return rollover;
                         };
 
-                        const { data: assignments, error: assignError } = await supabase
+                        // Use cached data if available
+                        if (cachedData?.transactions && cachedData.transactions.length > 0 && 
+                            cachedData?.categories && cachedData?.assignments) {
+                            console.log('Using cached data for budget summary');
+                            
+                            // Get this month's assignments
+                            const monthAssignments = cachedData.assignments.filter(a => a.month === targetMonth);
+                            
+                            // Calculate spending for this month
+                            const spendingByCategory: Record<string, number> = {};
+                            cachedData.transactions
+                                .filter(t => t.date >= startDate && t.date <= endDate && t.type === 'payment')
+                                .forEach(t => {
+                                    spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + t.amount;
+                                });
+                            
+                            // Build category summaries with rollover
+                            const categorySummaries = monthAssignments.map(a => {
+                                const category = cachedData.categories?.find(c => c.id === a.category_id);
+                                const spent = spendingByCategory[a.category_id] || 0;
+                                const assigned = a.assigned || 0;
+                                
+                                // Calculate rollover from previous months
+                                const rollover = calculateRollover(
+                                    a.category_id,
+                                    targetMonth,
+                                    cachedData.assignments || [],
+                                    cachedData.transactions || []
+                                );
+                                
+                                // Available = rollover + assigned - spent
+                                const available = rollover + assigned - spent;
+                                
+                                return {
+                                    category: category?.name || 'Unknown',
+                                    assigned,
+                                    spent,
+                                    rollover,
+                                    available,
+                                    percentUsed: (rollover + assigned) > 0 ? Math.round((spent / (rollover + assigned)) * 100) : 0,
+                                    status: available < 0 ? 'overspent' : available < (rollover + assigned) * 0.2 ? 'low' : 'ok',
+                                };
+                            });
+                            
+                            const totalAssigned = categorySummaries.reduce((sum, c) => sum + c.assigned, 0);
+                            const totalSpent = categorySummaries.reduce((sum, c) => sum + c.spent, 0);
+                            const totalRollover = categorySummaries.reduce((sum, c) => sum + c.rollover, 0);
+                            const totalAvailable = categorySummaries.reduce((sum, c) => sum + c.available, 0);
+                            
+                            console.log('summarize_budget (cached) success', { totalAssigned, totalSpent, totalRollover });
+                            return {
+                                month: targetMonth,
+                                summary: {
+                                    totalAssigned,
+                                    totalSpent,
+                                    totalRollover,
+                                    totalAvailable,
+                                    percentUsed: (totalAssigned + totalRollover) > 0 ? Math.round((totalSpent / (totalAssigned + totalRollover)) * 100) : 0,
+                                },
+                                categories: categorySummaries.sort((a, b) => b.spent - a.spent),
+                                alerts: categorySummaries
+                                    .filter(c => c.status === 'overspent')
+                                    .map(c => `${c.category} is £${Math.abs(c.available).toFixed(2)} over budget`),
+                                source: 'cached',
+                            };
+                        }
+
+                        // Fallback to database query
+                        console.log('No cached data, falling back to database for budget summary');
+
+                        // Get ALL assignments (needed for rollover calculation)
+                        const { data: allAssignments, error: allAssignError } = await supabase
                             .from('assignments')
                             .select(`
                                 id,
                                 assigned,
                                 category_id,
+                                month,
                                 categories (
                                     id,
                                     name,
                                     group
                                 )
                             `)
-                            .eq('user_id', user.id)
-                            .eq('month', targetMonth);
+                            .eq('user_id', user.id);
 
-                        if (assignError) {
-                            console.error('summarize_budget assignment error:', assignError);
+                        if (allAssignError) {
+                            console.error('summarize_budget assignment error:', allAssignError);
                             return { error: 'Failed to fetch budget assignments' };
                         }
 
-                        // Get transactions for the month
-                        const { data: transactions, error: txError } = await supabase
+                        // Get ALL transactions (needed for rollover calculation)
+                        const { data: allTransactions, error: allTxError } = await supabase
                             .from('transactions')
-                            .select('amount, category_id, type')
-                            .eq('user_id', user.id)
-                            .gte('date', startDate)
-                            .lte('date', endDate);
+                            .select('amount, category_id, type, date')
+                            .eq('user_id', user.id);
 
-                        if (txError) {
-                            console.error('summarize_budget transaction error:', txError);
+                        if (allTxError) {
+                            console.error('summarize_budget transaction error:', allTxError);
                             return { error: 'Failed to fetch transactions' };
                         }
 
-                        // Calculate spending per category
-                        const spendingByCategory: Record<string, number> = {};
-                        for (const tx of transactions || []) {
-                            if (tx.type === 'payment') {
-                                spendingByCategory[tx.category_id] = (spendingByCategory[tx.category_id] || 0) + tx.amount;
-                            }
-                        }
+                        // Filter to this month's assignments
+                        type AssignmentWithCategory = {
+                            id: string;
+                            assigned: number | null;
+                            category_id: string;
+                            month: string;
+                            categories: { id: string; name: string; group: string } | null;
+                        };
+                        const monthAssignments = (allAssignments || []).filter(a => a.month === targetMonth) as AssignmentWithCategory[];
 
-                        // Build summary
-                        const typedAssignments = (assignments || []) as AssignmentWithCategory[];
-                        const categorySummaries = typedAssignments.map((a) => {
+                        // Calculate spending for this month
+                        const spendingByCategory: Record<string, number> = {};
+                        (allTransactions || [])
+                            .filter(t => t.date >= startDate && t.date <= endDate && t.type === 'payment')
+                            .forEach(t => {
+                                spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + t.amount;
+                            });
+
+                        // Build summary with rollover
+                        const categorySummaries = monthAssignments.map((a) => {
                             const spent = spendingByCategory[a.category_id] || 0;
                             const assigned = a.assigned || 0;
-                            const remaining = assigned - spent;
+                            
+                            // Calculate rollover
+                            const rollover = calculateRollover(
+                                a.category_id,
+                                targetMonth,
+                                (allAssignments || []).map(x => ({ category_id: x.category_id, month: x.month, assigned: x.assigned })),
+                                (allTransactions || []).map(x => ({ category_id: x.category_id, date: x.date, type: x.type, amount: x.amount }))
+                            );
+                            
+                            const available = rollover + assigned - spent;
 
                             return {
                                 category: a.categories?.name || 'Unknown',
                                 assigned,
                                 spent,
-                                remaining,
-                                percentUsed: assigned > 0 ? Math.round((spent / assigned) * 100) : 0,
-                                status: remaining < 0 ? 'overspent' : remaining < assigned * 0.2 ? 'low' : 'ok',
+                                rollover,
+                                available,
+                                percentUsed: (rollover + assigned) > 0 ? Math.round((spent / (rollover + assigned)) * 100) : 0,
+                                status: available < 0 ? 'overspent' : available < (rollover + assigned) * 0.2 ? 'low' : 'ok',
                             };
                         });
 
                         const totalAssigned = categorySummaries.reduce((sum: number, c) => sum + c.assigned, 0);
                         const totalSpent = categorySummaries.reduce((sum: number, c) => sum + c.spent, 0);
+                        const totalRollover = categorySummaries.reduce((sum: number, c) => sum + c.rollover, 0);
+                        const totalAvailable = categorySummaries.reduce((sum: number, c) => sum + c.available, 0);
 
-                        console.log('summarize_budget success', { totalAssigned, totalSpent });
+                        console.log('summarize_budget success', { totalAssigned, totalSpent, totalRollover });
                         return {
                             month: targetMonth,
                             summary: {
                                 totalAssigned,
                                 totalSpent,
-                                totalRemaining: totalAssigned - totalSpent,
-                                percentUsed: totalAssigned > 0 ? Math.round((totalSpent / totalAssigned) * 100) : 0,
+                                totalRollover,
+                                totalAvailable,
+                                percentUsed: (totalAssigned + totalRollover) > 0 ? Math.round((totalSpent / (totalAssigned + totalRollover)) * 100) : 0,
                             },
                             categories: categorySummaries.sort((a, b) => b.spent - a.spent),
                             alerts: categorySummaries
                                 .filter((c) => c.status === 'overspent')
-                                .map((c) => `${c.category} is $${Math.abs(c.remaining).toFixed(2)} over budget`),
+                                .map((c) => `${c.category} is £${Math.abs(c.available).toFixed(2)} over budget`),
                         };
                     },
                 }),
