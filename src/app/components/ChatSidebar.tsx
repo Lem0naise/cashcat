@@ -8,6 +8,7 @@ import { useCategories } from '@/app/hooks/useCategories';
 import { useAssignments } from '@/app/hooks/useAssignments';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Image from 'next/image';
 
 export default function ChatSidebar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -178,11 +179,21 @@ export default function ChatSidebar() {
                         <div className="text-white/60 mb-2">📈 Budget Summary for {result?.month}</div>
                         <div className="grid grid-cols-2 gap-2 mb-3">
                             <div>
-                                <div className="text-white/40 text-xs">Assigned</div>
+                                <div className="text-white/40 text-xs">Total Balance</div>
+                                <div className={result?.summary?.totalBankBalance >= 0 ? 'text-green' : 'text-red-400'}>
+                                    £{result?.summary?.totalBankBalance?.toFixed(2)}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-white/40 text-xs">In Categories</div>
+                                <div className="text-white">£{result?.summary?.totalInCategories?.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div className="text-white/40 text-xs">Assigned (this month)</div>
                                 <div className="text-white">£{result?.summary?.totalAssigned?.toFixed(2)}</div>
                             </div>
                             <div>
-                                <div className="text-white/40 text-xs">Spent</div>
+                                <div className="text-white/40 text-xs">Spent (this month)</div>
                                 <div className="text-white">£{result?.summary?.totalSpent?.toFixed(2)}</div>
                             </div>
                             {result?.summary?.totalRollover !== undefined && result.summary.totalRollover !== 0 && (
@@ -193,12 +204,14 @@ export default function ChatSidebar() {
                                     </div>
                                 </div>
                             )}
-                            <div>
-                                <div className="text-white/40 text-xs">Available</div>
-                                <div className={result?.summary?.totalAvailable >= 0 ? 'text-green' : 'text-red-400'}>
-                                    £{result?.summary?.totalAvailable?.toFixed(2)}
+                            {result?.summary?.leftToAssign !== undefined && (
+                                <div>
+                                    <div className="text-white/40 text-xs">Left to Assign</div>
+                                    <div className={result.summary.leftToAssign >= 0 ? 'text-green' : 'text-orange-400'}>
+                                        £{result.summary.leftToAssign?.toFixed(2)}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                         {result?.alerts?.length > 0 && (
                             <div className="text-orange-400 text-xs mt-2">
@@ -234,13 +247,19 @@ export default function ChatSidebar() {
 
             {/* Chat Panel */}
             <div
-                className={`fixed bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] bg-background/95 backdrop-blur-sm border border-white/[.15] rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
+                className={`font-[family-name:var(--font-suse)] fixed bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] bg-background/95 backdrop-blur-sm border border-white/[.15] rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
                     }`}
             >
                 {/* Header */}
                 <div className="flex items-center gap-3 p-4 border-b border-white/[.15]">
-                    <div className="w-10 h-10 rounded-full bg-green/20 flex items-center justify-center">
-                        <span className="text-xl">🐱</span>
+                    <div className="w-10 h-10 rounded-full bg-green/20 flex items-center justify-center p-2">
+                        <Image
+                            src="/favicons/transparent.png"
+                            alt="CashCat"
+                            width={24}
+                            height={24}
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                     <div>
                         <h3 className="font-semibold text-white">CashCat Assistant</h3>
@@ -249,7 +268,7 @@ export default function ChatSidebar() {
                 </div>
 
                 {/* Messages */}
-                <div className="h-80 overflow-y-auto p-4 space-y-4">
+                <div className="h-80 overflow-y-auto p-4 space-y-4 font-[family-name:var(--font-suse)]">
                     {messages.length === 0 && (
                         <div className="text-center text-white/40 py-8">
                             <p className="text-sm">👋 Hi! I&apos;m CashCat.</p>
@@ -279,8 +298,8 @@ export default function ChatSidebar() {
                         >
                             <div
                                 className={`max-w-[85%] rounded-2xl px-4 py-2 ${message.role === 'user'
-                                    ? 'bg-green text-black rounded-br-md'
-                                    : 'bg-white/10 text-white rounded-bl-md'
+                                    ? 'bg-green text-black rounded-br-md prose'
+                                    : 'bg-white/10 text-white rounded-bl-md prose-invert'
                                     }`}
                             >
                                 {/* Message parts */}
@@ -290,7 +309,7 @@ export default function ChatSidebar() {
                                             return (
                                                 <div
                                                     key={`${message.id}-${i}`}
-                                                    className="prose prose-invert prose-sm max-w-none break-words prose-p:leading-relaxed prose-pre:bg-white/10 prose-pre:p-2 prose-pre:rounded-lg"
+                                                    className="prose-sm max-w-none break-words prose-p:leading-relaxed prose-pre:bg-white/10 prose-pre:p-2 prose-pre:rounded-lg"
                                                 >
                                                     <ReactMarkdown
                                                         remarkPlugins={[remarkGfm]}

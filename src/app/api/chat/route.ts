@@ -148,7 +148,19 @@ ALWAYS use the date context above. "This month" = ${dateContext.monthStart} to $
 - Ask for category if unclear
 - **CRITICAL:** When reporting spending totals, **ALWAYS** use the 'totalSpent' and 'summaryByCategory' values provided by the 'get_transactions' tool. **DO NOT** attempt to sum the transaction amounts yourself, as you may make arithmetic errors. Trust the tool's calculations.
 
-Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.`,
+## Formatting Guidelines
+- **ALWAYS** use markdown tables when presenting budget summaries, transaction lists, or category breakdowns
+- Use **bold** for category names and totals
+- Format currency amounts consistently with 2 decimal places (e.g., £189.62)
+- Use emojis sparingly but effectively (e.g., ⚠️ for overspent categories, ✅ for on-track)
+- Present data in a structured, scannable format
+
+Example budget summary format:
+| Category | Assigned | Spent | Rollover | Available | Status |
+|----------|----------|-------|----------|-----------|--------|
+| Category Name | £X.XX | £X.XX | £X.XX | £X.XX | ✅/⚠️ |
+
+Be concise, friendly, and prioritize visual clarity.`,
             messages: await convertToModelMessages(messages),
             tools: {
                 // Tool to get categories and groups - call this first to understand user's budget structure
@@ -277,11 +289,12 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             // Limit results
                             results = results.slice(0, limit);
 
-                            // Calculate totals
+                            // Calculate totals - payments are negative in DB, so use Math.abs
+                            // totalSpent only counts payments, NOT income
                             let totalSpent = 0;
                             results.forEach(t => {
                                 if (t.type === 'payment') {
-                                    totalSpent += t.amount;
+                                    totalSpent += Math.abs(t.amount);
                                 }
                             });
 
@@ -363,11 +376,12 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             return true;
                         }).slice(0, limit);
 
-                        // Calculate totals
+                        // Calculate totals - payments are negative in DB, so use Math.abs
+                        // totalSpent only counts payments, NOT income
                         let totalSpent = 0;
                         filtered.forEach(t => {
                             if (t.type === 'payment') {
-                                totalSpent += t.amount;
+                                totalSpent += Math.abs(t.amount);
                             }
                         });
 
@@ -450,16 +464,19 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             });
 
 
+                            // Calculate totals - payments are negative in DB, so use Math.abs
+                            // totalSpent only counts payments, NOT income
                             let totalSpent = 0;
                             const summaryByCategory: Record<string, number> = {};
 
 
                             results.forEach(t => {
-                                const amount = t.type === 'payment' ? t.amount : -t.amount;
-                                totalSpent += amount;
-
-                                const catName = t.category_name || 'Uncategorized';
-                                summaryByCategory[catName] = (summaryByCategory[catName] || 0) + amount;
+                                if (t.type === 'payment') {
+                                    const absAmount = Math.abs(t.amount);
+                                    totalSpent += absAmount;
+                                    const catName = t.category_name || 'Uncategorized';
+                                    summaryByCategory[catName] = (summaryByCategory[catName] || 0) + absAmount;
+                                }
                             });
 
 
@@ -481,7 +498,7 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                                     category: t.category_name || 'Uncategorized',
                                 })),
                                 count: results.length,
-                                totalSpent: Math.abs(totalSpent),
+                                totalSpent,
                                 summaryByCategory,
                                 source: 'cached',
                             };
@@ -576,16 +593,18 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             );
                         }
 
-                        // Calculate total spent and breakdown
+                        // Calculate total spent and breakdown - payments are negative in DB, so use Math.abs
+                        // totalSpent only counts payments, NOT income
                         let totalSpent = 0;
                         const summaryByCategory: Record<string, number> = {};
 
                         filtered.forEach(t => {
-                            const amount = t.type === 'payment' ? t.amount : -t.amount;
-                            totalSpent += amount;
-
-                            const catName = t.categories?.name || 'Uncategorized';
-                            summaryByCategory[catName] = (summaryByCategory[catName] || 0) + amount;
+                            if (t.type === 'payment') {
+                                const absAmount = Math.abs(t.amount);
+                                totalSpent += absAmount;
+                                const catName = t.categories?.name || 'Uncategorized';
+                                summaryByCategory[catName] = (summaryByCategory[catName] || 0) + absAmount;
+                            }
                         });
 
                         console.log(`get_transactions success: found ${filtered.length} items, total: ${totalSpent}`);
@@ -600,7 +619,7 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                                 category: t.categories?.name || 'Uncategorized',
                             })),
                             count: filtered.length,
-                            totalSpent: Math.abs(totalSpent),
+                            totalSpent,
                             summaryByCategory,
                         };
                     },
@@ -770,12 +789,12 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             // Get this month's assignments
                             const monthAssignments = cachedData.assignments.filter(a => a.month === targetMonth);
                             
-                            // Calculate spending for this month
+                            // Calculate spending for this month (use Math.abs for payments)
                             const spendingByCategory: Record<string, number> = {};
                             cachedData.transactions
                                 .filter(t => t.date >= startDate && t.date <= endDate && t.type === 'payment')
                                 .forEach(t => {
-                                    spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + t.amount;
+                                    spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + Math.abs(t.amount);
                                 });
                             
                             // Build category summaries with rollover
@@ -806,19 +825,44 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                                 };
                             });
                             
+                            // Calculate totals for this month's budget categories
                             const totalAssigned = categorySummaries.reduce((sum, c) => sum + c.assigned, 0);
-                            const totalSpent = categorySummaries.reduce((sum, c) => sum + c.spent, 0);
+                            // Calculate TOTAL spent across ALL transactions this month (not just assigned categories)
+                            const totalSpent = Object.values(spendingByCategory).reduce((sum, spent) => sum + spent, 0);
                             const totalRollover = categorySummaries.reduce((sum, c) => sum + c.rollover, 0);
-                            const totalAvailable = categorySummaries.reduce((sum, c) => sum + c.available, 0);
+                            const totalCategoryAvailable = categorySummaries.reduce((sum, c) => sum + c.available, 0);
                             
-                            console.log('summarize_budget (cached) success', { totalAssigned, totalSpent, totalRollover });
+                            // Calculate actual total money (bank balance) - sum of ALL transactions up to end of month
+                            const totalActualMoney = cachedData.transactions
+                                .filter(t => t.date <= endDate)
+                                .reduce((sum, t) => sum + t.amount, 0);
+                            
+                            // Calculate future assignments (for complete picture)
+                            const futureAssignments = (cachedData.assignments || [])
+                                .filter(a => a.month > targetMonth)
+                                .reduce((sum, a) => sum + (a.assigned || 0), 0);
+                            
+                            const totalAvailableInCategories = totalCategoryAvailable + futureAssignments;
+                            
+                            // "Left to assign" = actual money - total available in categories
+                            const leftToAssign = totalActualMoney - totalAvailableInCategories;
+                            
+                            console.log('summarize_budget (cached) success', { totalAssigned, totalSpent, totalRollover, totalActualMoney });
                             return {
                                 month: targetMonth,
                                 summary: {
+                                    // What the dashboard shows as "Available" (total bank balance)
+                                    totalBankBalance: totalActualMoney,
+                                    // What the dashboard shows as "Assigned" (sum of all category availables)
+                                    totalInCategories: totalAvailableInCategories,
+                                    // This month's assigned amount
                                     totalAssigned,
+                                    // This month's spent amount
                                     totalSpent,
+                                    // Rollover from previous months
                                     totalRollover,
-                                    totalAvailable,
+                                    // Money not yet assigned to categories
+                                    leftToAssign,
                                     percentUsed: (totalAssigned + totalRollover) > 0 ? Math.round((totalSpent / (totalAssigned + totalRollover)) * 100) : 0,
                                 },
                                 categories: categorySummaries.sort((a, b) => b.spent - a.spent),
@@ -874,12 +918,12 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                         };
                         const monthAssignments = (allAssignments || []).filter(a => a.month === targetMonth) as AssignmentWithCategory[];
 
-                        // Calculate spending for this month
+                        // Calculate spending for this month (use Math.abs for payments)
                         const spendingByCategory: Record<string, number> = {};
                         (allTransactions || [])
                             .filter(t => t.date >= startDate && t.date <= endDate && t.type === 'payment')
                             .forEach(t => {
-                                spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + t.amount;
+                                spendingByCategory[t.category_id] = (spendingByCategory[t.category_id] || 0) + Math.abs(t.amount);
                             });
 
                         // Build summary with rollover
@@ -908,19 +952,36 @@ Be concise, friendly, and use emojis sparingly. Format currency amounts clearly.
                             };
                         });
 
+                        // Calculate totals
                         const totalAssigned = categorySummaries.reduce((sum: number, c) => sum + c.assigned, 0);
-                        const totalSpent = categorySummaries.reduce((sum: number, c) => sum + c.spent, 0);
+                        // Calculate TOTAL spent across ALL transactions this month (not just assigned categories)
+                        const totalSpent = Object.values(spendingByCategory).reduce((sum: number, spent) => sum + spent, 0);
                         const totalRollover = categorySummaries.reduce((sum: number, c) => sum + c.rollover, 0);
-                        const totalAvailable = categorySummaries.reduce((sum: number, c) => sum + c.available, 0);
+                        const totalCategoryAvailable = categorySummaries.reduce((sum: number, c) => sum + c.available, 0);
+                        
+                        // Calculate actual total money (bank balance) - sum of ALL transactions up to end of month
+                        const totalActualMoney = (allTransactions || [])
+                            .filter(t => t.date <= endDate)
+                            .reduce((sum, t) => sum + t.amount, 0);
+                        
+                        // Calculate future assignments
+                        const futureAssignments = (allAssignments || [])
+                            .filter(a => a.month > targetMonth)
+                            .reduce((sum, a) => sum + (a.assigned || 0), 0);
+                        
+                        const totalAvailableInCategories = totalCategoryAvailable + futureAssignments;
+                        const leftToAssign = totalActualMoney - totalAvailableInCategories;
 
-                        console.log('summarize_budget success', { totalAssigned, totalSpent, totalRollover });
+                        console.log('summarize_budget success', { totalAssigned, totalSpent, totalRollover, totalActualMoney });
                         return {
                             month: targetMonth,
                             summary: {
+                                totalBankBalance: totalActualMoney,
+                                totalInCategories: totalAvailableInCategories,
                                 totalAssigned,
                                 totalSpent,
                                 totalRollover,
-                                totalAvailable,
+                                leftToAssign,
                                 percentUsed: (totalAssigned + totalRollover) > 0 ? Math.round((totalSpent / (totalAssigned + totalRollover)) * 100) : 0,
                             },
                             categories: categorySummaries.sort((a, b) => b.spent - a.spent),

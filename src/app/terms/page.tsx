@@ -56,6 +56,13 @@ export default function Terms() {
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">2. User Accounts and Responsibilities</h2>
                         <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to provide a valid email address when creating your account. You agree, that if you are aware that your account has become compromised, to contact CashCat support and notify us immediately. All budget data, goals, and financial information you input is your responsibility to maintain and verify.</p> <p>Where a subscription is provided, such as for access to premium features including external bank account syncing, your consumer rights apply.</p>
+                        <ul>
+                         <li>
+        CashCat utilizes artificial intelligence via the Vercel AI SDK to provide insights and search functionality. You acknowledge that AI-generated content can occasionally be inaccurate, incomplete, or biased. 
+    </li>
+    <li>
+        <strong>Do not rely solely on the AI Assistant for critical financial decisions.</strong> Always verify transaction data and budget totals against your actual bank statements or the primary data entries within the CashCat application. We are not liable for any financial decisions or errors resulting from the use of AI-generated information.
+    </li></ul>
                     </section>
 
                     <section>
@@ -136,7 +143,7 @@ export default function Terms() {
                             <li>
                                 <strong>Opt-Out:</strong> The AI Assistant is a completely optional feature. You can turn the assistant off at any time via your <strong>Account Settings</strong>, which will remove the chat interface and prevent any data from being sent to our AI processing partners.
                             </li>
-                        </ul>
+                       </ul>
                     </section>
 
 
@@ -145,6 +152,9 @@ export default function Terms() {
                         <h2 className="text-xl font-semibold mb-3 text-green">3. Data Storage and Sharing</h2>
                         <p>All data is stored with industry-standard encryption and security measures on servers located in the United Kingdom. Your budget information is stored securely and remains completely private to your account. Secure data transmission protocols are implemented by our third-party data management providers, including Supabase for management of your budget data, and Resend for the sending of automated emails. We never sell, trade, rent, or share your personal information or budget data with other third parties. Your financial information remains completely private and is never used for advertising, marketing, or any external purposes. </p>
                         <p>If you are located outside the UK/EU, your data may be transferred to and processed in the UK under adequate data protection safeguards.</p>
+                        <p className="mt-2">
+    <strong>AI Processing:</strong> When using the optional AI Assistant, specific transaction data is temporarily processed by our AI infrastructure partners (such as OpenAI) via the Vercel AI SDK. While we have disabled model training on your data, please be aware that this processing may occur on servers located in the United States.
+</p>
                     </section>
 
                     <section>
