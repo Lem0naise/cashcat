@@ -429,31 +429,7 @@ export default function Stats() {
                                     }}
                                 />
 
-                                {/* Summary Stats */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-white/[.03] rounded-lg p-4">
-                                        <h3 className="text-sm text-white/50 mb-1">Total Assignments</h3>
-                                        <p className="text-2xl font-bold text-green">
-                                            {assignments.reduce((sum, a) => sum + (a.assigned || 0), 0).toLocaleString('en-GB', {
-                                                style: 'currency',
-                                                currency: 'GBP',
-                                                minimumFractionDigits: 0
-                                            })}
-                                        </p>
-                                    </div>
-                                    <div className="bg-white/[.03] rounded-lg p-4">
-                                        <h3 className="text-sm text-white/50 mb-1">Active Categories</h3>
-                                        <p className="text-2xl font-bold text-white">
-                                            {categories.length}
-                                        </p>
-                                    </div>
-                                    <div className="bg-white/[.03] rounded-lg p-4">
-                                        <h3 className="text-sm text-white/50 mb-1">Budget Groups</h3>
-                                        <p className="text-2xl font-bold text-white">
-                                            {availableGroups.length}
-                                        </p>
-                                    </div>
-                                </div>
+
                             </div>
                         )}
                     </div>
