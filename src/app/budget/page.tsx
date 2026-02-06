@@ -80,6 +80,56 @@ export default function Budget() {
     const [reminderLoading, setReminderLoading] = useState(false);
     const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
+    // Draft assignments for mass assign mode (categoryId -> drafted amount)
+    const [draftAssignments, setDraftAssignments] = useState<Map<string, number>>(new Map());
+
+    // Compute the total draft difference from current assignments
+    const draftDifference = useMemo(() => {
+        let diff = 0;
+        draftAssignments.forEach((draftAmount, catId) => {
+            const cat = categories.find(c => c.id === catId);
+            if (cat) {
+                diff += draftAmount - cat.assigned;
+            }
+        });
+        return diff;
+    }, [draftAssignments, categories]);
+
+    // Live "left to assign" that updates as user types during mass assign
+    const draftLeftToAssign = useMemo(() => {
+        if (!balanceInfo) return 0;
+        const currentLeftToAssign = balanceInfo.budgetPool - balanceInfo.assigned;
+        return currentLeftToAssign - draftDifference;
+    }, [balanceInfo, draftDifference]);
+
+    // Calculate underfunded amount for each category (considering rollover)
+    // A category is underfunded if goal > (assigned + rollover), meaning it actually needs more
+    const getUnderfundedAmount = useCallback((cat: Category): number => {
+        if (!cat.goalAmount || cat.goalAmount <= 0) return 0;
+        const currentFunded = cat.assigned + cat.rollover;
+        const needed = cat.goalAmount - currentFunded;
+        return needed > 0 ? Math.round(needed * 100) / 100 : 0;
+    }, []);
+
+    // Get underfunded amount considering draft assignments
+    const getDraftUnderfundedAmount = useCallback((cat: Category): number => {
+        if (!cat.goalAmount || cat.goalAmount <= 0) return 0;
+        const draftAmount = draftAssignments.get(cat.id) ?? cat.assigned;
+        const currentFunded = draftAmount + cat.rollover;
+        const needed = cat.goalAmount - currentFunded;
+        return needed > 0 ? Math.round(needed * 100) / 100 : 0;
+    }, [draftAssignments]);
+
+    // Get all underfunded categories
+    const getUnderfundedCategories = useCallback(() => {
+        return categories.filter(cat => getUnderfundedAmount(cat) > 0);
+    }, [categories, getUnderfundedAmount]);
+
+    // Total amount needed to fund all underfunded categories
+    const totalUnderfundedAmount = useMemo(() => {
+        return categories.reduce((sum, cat) => sum + getDraftUnderfundedAmount(cat), 0);
+    }, [categories, getDraftUnderfundedAmount]);
+
 
 
 
@@ -493,45 +543,16 @@ export default function Budget() {
     };
 
     const updateCategoriesInMass = async () => {
-        let updatedCategories = [...categories];
-
         try {
-            // Start by collecting all changes to make
-            const changes = new Map();
+            // Use draft assignments as the source of changes
+            const changes = new Map<string, number>();
 
-            // Get categories from the active group only
-            const targetCategories = activeGroup === 'All'
-                ? categories
-                : categories.filter(cat => cat.group === activeGroup);
-
-            // Handle different mass actions
-            if (pendingAction === 'fill-goals') {
-                targetCategories.forEach(category => {
-                    const goal = category.goalAmount || 0;
-                    if (goal > category.assigned) {
-                        changes.set(category.id, goal);
-                    }
-                });
-            } else if (pendingAction === 'clear') {
-                targetCategories.forEach(category => {
-                    changes.set(category.id, 0);
-                });
-            } else {
-                // Handle manual input changes
-                const categoryInputs = document.querySelectorAll('input[data-category-id]') as NodeListOf<HTMLInputElement>;
-                categoryInputs.forEach(input => {
-                    const name = input.dataset.categoryId;
-                    if (!name) return;
-
-                    const category = categories.find(c => c.name === name);
-                    if (!category) return;
-
-                    const newAmount = parseFloat(input.value);
-                    if (!isNaN(newAmount) && newAmount !== category.assigned) {
-                        changes.set(category.id, newAmount);
-                    }
-                });
-            }
+            draftAssignments.forEach((draftAmount, catId) => {
+                const cat = categories.find(c => c.id === catId);
+                if (cat && Math.round(draftAmount * 100) !== Math.round(cat.assigned * 100)) {
+                    changes.set(catId, draftAmount);
+                }
+            });
 
             // If there are no changes, exit early
             if (changes.size === 0) {
@@ -548,10 +569,9 @@ export default function Budget() {
             }
 
             // Update local state first for immediate feedback
-            updatedCategories = categories.map(cat => {
+            const updatedCategories = categories.map(cat => {
                 const newAmount = changes.get(cat.id);
                 if (newAmount !== undefined) {
-                    // Recalculate available when assigned changes
                     const newAvailable = newAmount + cat.rollover - cat.spent;
                     const daysRemaining = getDaysRemainingInMonth();
                     const dailyLeft = daysRemaining > 0 ? newAvailable / daysRemaining : 0;
@@ -576,13 +596,9 @@ export default function Budget() {
 
             // Execute all updates in parallel
             if (updates.length > 0) {
-                const actionDesc = pendingAction === 'fill-goals' ? 'Filling goals'
-                    : pendingAction === 'clear' ? 'Clearing assignments'
-                        : 'Updating assignments';
-
                 await toast.promise(Promise.all(updates), {
-                    loading: `${actionDesc}...`,
-                    success: `Updated ${updates.length.toString()} categories successfully!`,
+                    loading: `Updating ${updates.length} categories...`,
+                    success: `Updated ${updates.length} categories successfully!`,
                     error: 'Failed to complete some updates'
                 });
             }
@@ -594,7 +610,6 @@ export default function Budget() {
 
         } catch (error) {
             console.error('Error updating assignments:', error);
-            // On error, refresh data to ensure consistency
             if (monthString && allTransactionsData) {
                 await calculateBudgetData(monthString);
             }
@@ -604,16 +619,65 @@ export default function Budget() {
 
     const massAssign = async () => {
         if (isMassAssigning) {
+            // Apply: commit draft changes
             try {
                 await updateCategoriesInMass();
             } finally {
                 setIsMassAssigning(false);
                 setPendingAction(null);
+                setDraftAssignments(new Map());
             }
         } else {
+            // Enter mass assign mode: initialize drafts from current assignments
+            const initialDrafts = new Map<string, number>();
+            categories.forEach(cat => {
+                initialDrafts.set(cat.id, cat.assigned);
+            });
+            setDraftAssignments(initialDrafts);
             setIsMassAssigning(true);
             setwasMassAssigningSoShouldClose(true);
+            // Auto-expand all groups so all categories are visible
+            const allGroups = new Set(categories.map(cat => cat.group));
+            setExpandedGroups(allGroups);
         }
+    };
+
+    const cancelMassAssign = () => {
+        setIsMassAssigning(false);
+        setPendingAction(null);
+        setDraftAssignments(new Map());
+        setwasMassAssigningSoShouldClose(true);
+    };
+
+    // Quick action: Fill all underfunded categories
+    const fillAllUnderfunded = () => {
+        const newDrafts = new Map(draftAssignments);
+        categories.forEach(cat => {
+            const needed = getDraftUnderfundedAmount(cat);
+            if (needed > 0) {
+                const currentDraft = newDrafts.get(cat.id) ?? cat.assigned;
+                newDrafts.set(cat.id, Math.round((currentDraft + needed) * 100) / 100);
+            }
+        });
+        setDraftAssignments(newDrafts);
+    };
+
+    // Quick action: Empty all draft assignments to 0
+    const emptyAllDrafts = () => {
+        const newDrafts = new Map<string, number>();
+        categories.forEach(cat => {
+            newDrafts.set(cat.id, 0);
+        });
+        setDraftAssignments(newDrafts);
+    };
+
+    // Handle draft change from individual category card
+    const handleDraftChange = (categoryId: string, amount: number) => {
+        setDraftAssignments(prev => {
+            const next = new Map(prev);
+            next.set(categoryId, amount);
+            return next;
+        });
     };
 
     const expandOverspent = async () => {
@@ -1007,31 +1071,29 @@ export default function Budget() {
                             </div>
                         )}
 
-                        {/* Balance Assignment Info */}
-                        {balanceInfo && (
+                        {/* Balance Assignment Info & Mass Assign Panel */}
+                        {balanceInfo && !isMassAssigning && (
                             <div
                                 className={`rounded-lg overflow-hidden transition-all duration-200 ${Math.round(balanceInfo.budgetPool * 100) / 100 == Math.round(balanceInfo.assigned * 100) / 100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4'
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4')
-                                    } ${isMassAssigning ? 'h-[140px] md:h-[140px]' : ''}
+                                    }
                                 `}
-                                onClick={isMassAssigning ? () => { } : massAssign}>
+                                onClick={massAssign}>
                                 <div className="p-3 md:p-4 flex justify-between items-center">
                                     <div>
                                         {balanceInfo.budgetPool > balanceInfo.assigned ? (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.budgetPool - balanceInfo.assigned)}</span> left to assign
-                                                {/* Desktop: show disclaimer in title if past month */}
                                                 {getMonthStatus() === 'past' && (
-                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: rolls over automatically)</span>
                                                 )}
                                             </p>
                                         ) : (
                                             <p className="font-medium">
                                                 <span className="text-base md:text-lg inline">{formatCurrency(balanceInfo.assigned - balanceInfo.budgetPool)}</span> too much assigned
-                                                {/* Desktop: show disclaimer in title if past month */}
                                                 {getMonthStatus() === 'past' && (
-                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: Don't worry, this rolls over. Focus on the current month!)</span>
+                                                    <span className="hidden md:inline text-xs text-white/60 ml-2">(Past month: rolls over automatically)</span>
                                                 )}
                                             </p>
                                         )}
@@ -1040,50 +1102,85 @@ export default function Budget() {
                                         onClick={massAssign}
                                         className={`px-3 md:px-4 py-1 rounded-full ${balanceInfo.budgetPool > balanceInfo.assigned ? 'bg-green hover:bg-green-dark' : 'bg-reddy hover:bg-old-reddy'} text-background text-sm font-medium transition-colors`}
                                     >
-                                        {isMassAssigning ? 'Apply Changes' : (balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now')}
+                                        {balanceInfo.budgetPool > balanceInfo.assigned ? 'Assign' : 'Fix Now'}
                                     </button>
                                 </div>
+                            </div>
+                        )}
 
-                                <div
-                                    className={`px-3 md:px-4 pb-3 md:pb-4 transition-all duration-200 ${isMassAssigning
-                                        ? 'opacity-100 transform translate-y-0'
-                                        : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                                        }`}
-                                >
-                                    {/* Mobile: show disclaimer in body if past month */}
-                                    {getMonthStatus() === 'past' && (
-                                        <div className="md:hidden text-xs text-white/70 mb-2">
-                                            Past month: Don't worry, this rolls over. Focus on the current month!
-                                        </div>
-                                    )}
-                                    {getMonthStatus() !== 'past' && (
-                                        <div className="text-xs md:text-sm opacity-90 mb-1 -mt-1">
-                                            <p className="">{balanceInfo.budgetPool > balanceInfo.assigned ? "If you have money left over, assign it into next month's budget! This allows you to plan ahead." : "If you have over-assigned your budget, take some money away from categories that don't need it."}</p>
-                                        </div>)}
-                                    <div className="flex gap-2">
-                                        <button
-                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${pendingAction === 'fill-goals'
-                                                ? 'bg-green text-background'
-                                                : 'bg-white/10 hover:bg-white/20'
-                                                }`}
-                                            onClick={() => setPendingAction(
-                                                pendingAction === 'fill-goals' ? null : 'fill-goals'
+                        {/* Mass Assign Panel - shown when in mass assign mode */}
+                        {isMassAssigning && balanceInfo && (
+                            <div className="rounded-lg overflow-hidden transition-all duration-200 bg-white/[.05] border border-white/[.15] mb-4">
+                                {/* Draft Balance Header */}
+                                <div className="p-3 md:p-4 border-b border-white/[.1]">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div>
+                                            <div className="text-xs text-white/50 uppercase tracking-wide mb-0.5">Draft Balance</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className={`text-xl md:text-2xl font-bold ${draftLeftToAssign >= 0 ? 'text-green' : 'text-reddy'}`}>
+                                                    {hideBudgetValues ? '****' : `£${Math.abs(draftLeftToAssign).toFixed(2)}`}
+                                                </span>
+                                                <span className={`text-sm ${draftLeftToAssign >= 0 ? 'text-green/70' : 'text-reddy/70'}`}>
+                                                    {draftLeftToAssign >= 0 ? 'left to assign' : 'over-assigned'}
+                                                </span>
+                                            </div>
+                                            {draftDifference !== 0 && (
+                                                <div className="text-xs text-white/50 mt-0.5">
+                                                    {draftDifference > 0 ? '+' : ''}{hideBudgetValues ? '****' : `£${draftDifference.toFixed(2)}`} from current
+                                                </div>
                                             )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={cancelMassAssign}
+                                                className="px-3 md:px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={massAssign}
+                                                className="px-4 md:px-5 py-1.5 rounded-lg bg-green hover:bg-green-dark text-background text-sm font-medium transition-colors"
+                                            >
+                                                Apply Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quick Actions */}
+                                <div className="p-3 md:p-4">
+                                    <div className="text-xs text-white/50 uppercase tracking-wide mb-2">Quick Actions</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            onClick={fillAllUnderfunded}
+                                            disabled={totalUnderfundedAmount === 0}
+                                            className="px-3 md:px-4 py-1.5 rounded-lg text-sm font-medium transition-colors bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
                                         >
-                                            Fill All
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2v20M2 12h20" />
+                                            </svg>
+                                            Fund All Underfunded
+                                            {totalUnderfundedAmount > 0 && (
+                                                <span className="text-xs opacity-70">
+                                                    ({hideBudgetValues ? '****' : `£${totalUnderfundedAmount.toFixed(2)}`})
+                                                </span>
+                                            )}
                                         </button>
                                         <button
-                                            className={`px-3 md:px-4 py-1 rounded-full text-sm transition-colors ${pendingAction === 'clear'
-                                                ? 'bg-reddy text-background'
-                                                : 'bg-white/10 hover:bg-white/20'
-                                                }`}
-                                            onClick={() => setPendingAction(
-                                                pendingAction === 'clear' ? null : 'clear'
-                                            )}
+                                            onClick={emptyAllDrafts}
+                                            className="px-3 md:px-4 py-1.5 rounded-lg text-sm font-medium transition-colors bg-reddy/15 text-reddy hover:bg-reddy/25 flex items-center gap-1.5"
                                         >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                            </svg>
                                             Empty All
                                         </button>
                                     </div>
+                                    {getMonthStatus() === 'past' && (
+                                        <div className="text-xs text-white/50 mt-2">
+                                            Past month: Don&apos;t worry, unassigned money rolls over. Focus on the current month!
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1284,6 +1381,9 @@ export default function Budget() {
                                                                 onAssignmentUpdate={(amount) => handleAssignmentUpdate(category.id, amount)}
                                                                 available={category.available}
                                                                 dailyLeft={category.dailyLeft}
+                                                                draftAssigned={isMassAssigning ? draftAssignments.get(category.id) : undefined}
+                                                                onDraftChange={isMassAssigning ? (amount) => handleDraftChange(category.id, amount) : undefined}
+                                                                underfundedAmount={isMassAssigning ? getDraftUnderfundedAmount(category) : undefined}
                                                             />
                                                         </div>
                                                     ))}

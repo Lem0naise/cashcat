@@ -17,9 +17,12 @@ interface CategoryProps {
     onAssignmentStateChange?: (isAssigning: boolean) => void;
     available?: number;
     dailyLeft?: number;
+    draftAssigned?: number;
+    onDraftChange?: (amount: number) => void;
+    underfundedAmount?: number;
 }
 
-export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft}: CategoryProps) {
+export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft, draftAssigned, onDraftChange, underfundedAmount}: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
@@ -57,16 +60,24 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         }
     }, [forceFlipMassAssign, assigned]);
 
+    // Sync editedAmount when draftAssigned changes from parent (e.g. quick actions)
+    useEffect(() => {
+        if (forceFlipMassAssign && draftAssigned !== undefined) {
+            setEditedAmount(draftAssigned.toFixed(2));
+        }
+    }, [draftAssigned, forceFlipMassAssign]);
+
     // Keep values in sync with props using debounce to prevent flashing
     useEffect(() => {
         const timeout = setTimeout(() => {
             setProgress(goal ? assigned/goal : 0);
-            if (!isAssigning || !isUpdating) {
+            // Don't overwrite editedAmount from assigned prop when in mass assign mode
+            if ((!isAssigning || !isUpdating) && !forceFlipMassAssign) {
                 setEditedAmount(assigned.toFixed(2));
             }
         }, 50);
         return () => clearTimeout(timeout);
-    }, [assigned, goal, isAssigning, isUpdating]);
+    }, [assigned, goal, isAssigning, isUpdating, forceFlipMassAssign]);
 
     // Listen for hide budget values changes
     useEffect(() => {
@@ -115,7 +126,14 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
 
     const handleInputChange = useCallback((value: string) => {
         setEditedAmount(value);
-    }, []);
+        // In mass assign mode, notify parent of draft change for live balance
+        if (forceFlipMassAssign && onDraftChange) {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+                onDraftChange(parsed);
+            }
+        }
+    }, [forceFlipMassAssign, onDraftChange]);
 
 
 
@@ -133,7 +151,14 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
             onClick={!isAssigning ? handleCardClick : undefined}
         >
             <div className="flex justify-between items-start">
-                <h3 className="text-sm md:text-lg font-medium leading-tight truncate pr-2 flex-1 min-w-0">{name}</h3>
+                <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+                    <h3 className="text-sm md:text-lg font-medium leading-tight truncate">{name}</h3>
+                    {forceFlipMassAssign && underfundedAmount !== undefined && underfundedAmount > 0 && (
+                        <span className="flex-shrink-0 text-[10px] md:text-xs font-medium bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            Needs {formatCurrency(underfundedAmount)}
+                        </span>
+                    )}
+                </div>
                 <div className="text-right flex-shrink-0">
                     <div className="flex items-baseline gap-1.5">
                         {dailyLeft !== undefined && Math.round(dailyLeft*100)/100 > 0 && displayAvailable > 0 && (
