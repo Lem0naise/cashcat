@@ -92,6 +92,71 @@ export default function ApiDocs() {
                         </pre>
                     </div>
 
+                    {/* GET Transfers */}
+                    <div className="mb-10">
+                        <h3 className="text-xl font-medium mb-2 flex items-center gap-3">
+                            <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">GET</span>
+                            <code>/api/v1/transfers</code>
+                        </h3>
+                        <p className="mb-4 text-white/70">
+                            Retrieve a list of your most recent transfers between accounts.
+                        </p>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Query Parameters</h4>
+                        <div className="overflow-x-auto mb-6">
+                            <table className="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-white/60">
+                                        <th className="py-2 px-4">Param</th>
+                                        <th className="py-2 px-4">Type</th>
+                                        <th className="py-2 px-4">Default</th>
+                                        <th className="py-2 px-4">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">limit</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">100</td>
+                                        <td className="py-2 px-4 text-white/60">Number of records to return.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">offset</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">0</td>
+                                        <td className="py-2 px-4 text-white/60">Number of records to skip.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Example Response</h4>
+                        <pre className="bg-black/30 p-4 rounded-lg border border-white/10 overflow-x-auto text-sm text-white/80">
+                            {`{
+  "data": [
+    {
+      "id": "uuid-string",
+      "from_account_id": "uuid-string-from",
+      "to_account_id": "uuid-string-to",
+      "amount": 100.00,
+      "date": "2024-02-04",
+      "description": "Moving funds",
+      "from_account": {
+        "id": "uuid-string-from",
+        "name": "Checking",
+        "type": "checking"
+      },
+      "to_account": {
+        "id": "uuid-string-to",
+        "name": "Savings",
+        "type": "savings"
+      }
+    }
+  ]
+}`}
+                        </pre>
+                    </div>
+
 
                     {/* GET Assignments */}
                     <div className="mb-10">
@@ -243,6 +308,104 @@ export default function ApiDocs() {
     "category_id": "2fb65eee-ab32-4299-b6d4-5ed61f829204"
   }'`}
                         </pre>
+                    </div>
+
+                    {/* POST Transfers */}
+                    <div className="mb-10">
+                        <h3 className="text-xl font-medium mb-2 flex items-center gap-3">
+                            <span className="bg-green/20 text-green px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">POST</span>
+                            <code>/api/v1/transfers</code>
+                        </h3>
+                        <p className="mb-4 text-white/70">
+                            Create a new transfer between two of your accounts.
+                        </p>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Request Body (JSON)</h4>
+                        <div className="overflow-x-auto mb-6">
+                            <table className="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-white/60">
+                                        <th className="py-2 px-4">Field</th>
+                                        <th className="py-2 px-4">Type</th>
+                                        <th className="py-2 px-4">Required</th>
+                                        <th className="py-2 px-4">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">from_account_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4 text-green">Yes</td>
+                                        <td className="py-2 px-4 text-white/60">UUID of the source account.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">to_account_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4 text-green">Yes</td>
+                                        <td className="py-2 px-4 text-white/60">UUID of the destination account.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">amount</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4 text-green">Yes</td>
+                                        <td className="py-2 px-4 text-white/60">Positive value of the transfer.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">date</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4 text-green">Yes</td>
+                                        <td className="py-2 px-4 text-white/60">Format: YYYY-MM-DD</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">description</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4 text-white/50">No</td>
+                                        <td className="py-2 px-4 text-white/60">Optional note for the transfer.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* PUT Transfers */}
+                    <div className="mb-10">
+                        <h3 className="text-xl font-medium mb-2 flex items-center gap-3">
+                            <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">PUT</span>
+                            <code>/api/v1/transfers</code>
+                        </h3>
+                        <p className="mb-4 text-white/70">
+                            Update an existing transfer. Include the transfer `id` in the request body.
+                        </p>
+                    </div>
+
+                    {/* DELETE Transfers */}
+                    <div className="mb-10">
+                        <h3 className="text-xl font-medium mb-2 flex items-center gap-3">
+                            <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">DELETE</span>
+                            <code>/api/v1/transfers</code>
+                        </h3>
+                        <p className="mb-4 text-white/70">
+                            Delete a transfer by its ID.
+                        </p>
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Query Parameters</h4>
+                        <div className="overflow-x-auto mb-6">
+                            <table className="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-white/60">
+                                        <th className="py-2 px-4">Param</th>
+                                        <th className="py-2 px-4">Type</th>
+                                        <th className="py-2 px-4">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4 text-white/60">The ID of the transfer to delete.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
