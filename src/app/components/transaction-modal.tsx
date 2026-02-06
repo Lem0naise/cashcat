@@ -5,7 +5,7 @@ import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database } from '@/types/supabase';
-import type { Category, Group } from '@/types/supabase';
+import type { Category, Group, TransferWithAccounts } from '@/types/supabase';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import GroupedDropdown from './grouped-dropdown';
@@ -18,7 +18,8 @@ type Vendor = {
 };
 
 type TransactionModalProps = {
-    transaction: Transaction|null;
+    transaction: Transaction | null;
+    transfer?: TransferWithAccounts | null;
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (transaction: {
@@ -30,11 +31,32 @@ type TransactionModalProps = {
         account_id: string;
         category_id?: string | null;
     }) => void;
-    onDelete : () => void;
+    onDelete: () => void;
+    // Transfer props
+    onSubmitTransfer?: (transfer: {
+        from_account_id: string;
+        to_account_id: string;
+        amount: number;
+        date: string;
+        description?: string;
+    }) => void;
+    onUpdateTransfer?: (transfer: {
+        from_account_id: string;
+        to_account_id: string;
+        amount: number;
+        date: string;
+        description?: string;
+    }) => void;
+    onDeleteTransfer?: () => void;
 };
 
-export default function TransactionModal({transaction, isOpen, onClose, onSubmit, onDelete }: TransactionModalProps) {
+export default function TransactionModal({transaction, transfer, isOpen, onClose, onSubmit, onDelete, onSubmitTransfer, onUpdateTransfer, onDeleteTransfer }: TransactionModalProps) {
     const supabase = createClientComponentClient();
+    
+    // Mode state - transaction or transfer
+    const [mode, setMode] = useState<'transaction' | 'transfer'>('transaction');
+    const isEditing = transaction !== null || transfer !== null;
+    
     const [type, setType] = useState<string>('payment');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -44,6 +66,11 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [accountId, setAccountId] = useState('');
+    
+    // Transfer-specific states
+    const [fromAccountId, setFromAccountId] = useState('');
+    const [toAccountId, setToAccountId] = useState('');
+    
     const [categories, setCategories] = useState<Category[]>([]);
     const [groups, setGroups] = useState<Group[]>([]);
     const [accounts, setAccounts] = useState<{id: string; name: string; type: string, is_default: boolean}[]>([]);
@@ -58,6 +85,27 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
     const vendorInputRef = useRef<HTMLInputElement>(null);
+    
+    // Clear form when switching modes
+    const clearForm = () => {
+        setAmount('');
+        setDate(new Date().toISOString().split('T')[0]);
+        setDescription('');
+        setVendor('');
+        setCategoryId('');
+        setAccountId('');
+        setFromAccountId('');
+        setToAccountId('');
+        setType('payment');
+    };
+    
+    // Handle mode toggle
+    const handleModeToggle = (newMode: 'transaction' | 'transfer') => {
+        if (newMode !== mode && !isEditing) {
+            clearForm();
+            setMode(newMode);
+        }
+    };
 
     // Fetch categories and accounts
     useEffect(() => {
@@ -120,6 +168,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
     useEffect(() => {
         if (transaction){
+            setMode('transaction'); // Always transaction mode when editing
             setType(transaction.type || 'payment');
             setAmount((Math.abs(transaction.amount).toFixed(2)));
             setDate(transaction.date);
@@ -127,7 +176,17 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             setVendor(transaction.vendor);
             setCategoryId(transaction.category_id || '');
             setAccountId(transaction.account_id || '');
+        } else if (transfer) {
+            // Populate transfer for editing
+            setMode('transfer');
+            setAmount(Math.abs(transfer.amount).toString());
+            setDate(transfer.date);
+            setDescription(transfer.description || '');
+            setFromAccountId(transfer.from_account_id);
+            setToAccountId(transfer.to_account_id);
         } else {
+            // Reset to transaction mode when creating new
+            setMode('transaction');
             setType('payment');
             setAmount('');
             setDate(new Date().toISOString().split('T')[0]);
@@ -135,8 +194,10 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
             setVendor('');
             setCategoryId('');
             setAccountId('');
+            setFromAccountId('');
+            setToAccountId('');
         }
-    }, [isOpen, transaction]);
+    }, [isOpen, transaction, transfer]);
 
     // Close suggestions when clicking outside
     useEffect(() => {
@@ -376,18 +437,52 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const parsedAmount = parseFloat(amount);
-        if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
-        if (!accountId) return; // Prevent submission if no account selected
         
-        onSubmit({
-            amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
-            type: type || 'payment', // Ensure type is never undefined
-            date,
-            vendor,
-            account_id: accountId,
-            description: description || undefined,
-            category_id: type === 'payment' ? categoryId : null // Only include category for payments
-        });
+        if (mode === 'transfer') {
+            // Transfer validation and submission
+            if (isNaN(parsedAmount) || parsedAmount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            if (!fromAccountId || !toAccountId) {
+                alert('Please select both accounts');
+                return;
+            }
+            if (fromAccountId === toAccountId) {
+                alert('Cannot transfer to the same account');
+                return;
+            }
+            
+            const transferData = {
+                from_account_id: fromAccountId,
+                to_account_id: toAccountId,
+                amount: parsedAmount,
+                date,
+                description: description || undefined,
+            };
+            
+            // Check if editing or creating transfer
+            if (transfer && onUpdateTransfer) {
+                onUpdateTransfer(transferData);
+            } else if (onSubmitTransfer) {
+                onSubmitTransfer(transferData);
+            }
+        } else {
+            // Transaction validation and submission
+            if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
+            if (!accountId) return; // Prevent submission if no account selected
+            
+            onSubmit({
+                amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
+                type: type || 'payment', // Ensure type is never undefined
+                date,
+                vendor,
+                account_id: accountId,
+                description: description || undefined,
+                category_id: type === 'payment' ? categoryId : null // Only include category for payments
+            });
+        }
+        
         // Reset form
         setAmount('');
         setVendor('');
@@ -395,6 +490,8 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
         setDate(new Date().toISOString().split('T')[0]);
         setCategoryId('');
         setAccountId('');
+        setFromAccountId('');
+        setToAccountId('');
         handleClose();
     };
 
@@ -417,7 +514,39 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                 }`}
             >
                 <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
-                    <h2 className="text-xl font-bold">{transaction ? "Edit Transaction" : "New Transaction"}</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold">
+                            {transaction ? "Edit Transaction" : transfer ? "Edit Transfer" : "New"}
+                        </h2>
+                        
+                        {!isEditing && (
+                            <div className="flex gap-1 bg-white/[.05] rounded-lg p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => handleModeToggle('transaction')}
+                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                                        mode === 'transaction'
+                                            ? 'bg-white/[.1] text-white'
+                                            : 'text-white/60 hover:text-white/80'
+                                    }`}
+                                >
+                                    Transaction
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleModeToggle('transfer')}
+                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                                        mode === 'transfer'
+                                            ? 'bg-white/[.1] text-white'
+                                            : 'text-white/60 hover:text-white/80'
+                                    }`}
+                                >
+                                    Transfer
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
                     <button 
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
@@ -434,146 +563,187 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
 
                 <form onSubmit={handleSubmit} className="flex flex-col h-[calc(100dvh-4rem)] md:h-auto iphone-padding">
                     <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-0">
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <button
-                                type="button"
-                                onClick={() => setType('payment')}
-                                className={`p-3 rounded-lg border transition-colors ${
-                                    type === 'payment'
-                                        ? 'bg-reddy/20 border-reddy text-reddy'
-                                        : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                }`}
-                            >
-                                Payment
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setType('income')}
-                                className={`p-3 rounded-lg border transition-colors ${
-                                    type === 'income'
-                                        ? 'bg-green/20 border-green text-green'
-                                        : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                }`}
-                            >
-                                Income
-                            </button>
-                        </div>
+                        {mode === 'transaction' ? (
+                            // TRANSACTION MODE
+                            <>
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setType('payment')}
+                                        className={`p-3 rounded-lg border transition-colors ${
+                                            type === 'payment'
+                                                ? 'bg-reddy/20 border-reddy text-reddy'
+                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                        }`}
+                                    >
+                                        Payment
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setType('income')}
+                                        className={`p-3 rounded-lg border transition-colors ${
+                                            type === 'income'
+                                                ? 'bg-green/20 border-green text-green'
+                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                        }`}
+                                    >
+                                        Income
+                                    </button>
+                                </div>
 
-                        <div className="mb-6">
-                            <MoneyInput
-                                value={amount}
-                                onChange={(value) => setAmount(value)}
-                                placeholder="0.00"
-                                autoFocus={(transaction === null)}
-                                currencySymbol={true}
-                                onBlur={(transaction === null) ? () => {
-                                    setTimeout(() => {
-                                        vendorInputRef.current?.focus();
-                                    }, 100);
-                                } :  () => {}}
+                                <div className="mb-6">
+                                    <MoneyInput
+                                        value={amount}
+                                        onChange={(value) => setAmount(value)}
+                                        placeholder="0.00"
+                                        autoFocus={(transaction === null)}
+                                        currencySymbol={true}
+                                        onBlur={(transaction === null) ? () => {
+                                            setTimeout(() => {
+                                                vendorInputRef.current?.focus();
+                                            }, 100);
+                                        } :  () => {}}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            // TRANSFER MODE
+                            <>
+                                <div className="mb-6">
+                                    <label className="block text-sm text-white/50 mb-1">Amount</label>
+                                    <MoneyInput
+                                        value={amount}
+                                        onChange={(value) => setAmount(value)}
+                                        placeholder="0.00"
+                                        autoFocus={true}
+                                        currencySymbol={true}
+                                    />
+                                </div>
+                                
+                                <div className="mb-4">
+                                    <label className="block text-sm text-white/50 mb-1">From Account</label>
+                                    <Dropdown
+                                        options={accounts.map(acc => ({ value: acc.id, label: acc.name }))}
+                                        value={fromAccountId}
+                                        onChange={setFromAccountId}
+                                        placeholder="Select account"
+                                    />
+                                </div>
+                                
+                                <div className="mb-4">
+                                    <label className="block text-sm text-white/50 mb-1">To Account</label>
+                                    <Dropdown
+                                        options={accounts.map(acc => ({ value: acc.id, label: acc.name }))}
+                                        value={toAccountId}
+                                        onChange={setToAccountId}
+                                        placeholder="Select account"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* Transaction-specific fields */}
+                        {mode === 'transaction' && (
+                            <>
+                                <div ref={vendorRef} className="relative">
+                                    <label className="block text-sm text-white/50 mb-0.5">Vendor</label>
+                                    <input
+                                        ref={vendorInputRef}
+                                        type="text"
+                                        required
+                                        value={vendor}
+                                        onChange={handleVendorChange}
+                                        onFocus={() => {
+                                            setVendorInputFocused(true);
+                                            setShowSuggestions(true);
+                                            if (vendor) searchVendors(vendor);
+                                        }}
+                                        placeholder="Shop"
+                                        className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
+                                    />
+                                    {showSuggestions && vendorSuggestions.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
+                                            {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
+                                                .map((suggestion) => (
+                                                <button
+                                                    key={suggestion.id}
+                                                    type="button"
+                                                    onClick={() => selectVendor(suggestion.name)}
+                                                    className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
+                                                >
+                                                    {suggestion.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {type === 'payment' && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-0.5">
+                                            <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
+                                            
+                                        </div>
+                                        <GroupedDropdown
+                                            required={type === 'payment'}
+                                            value={categoryId}
+                                            onChange={setCategoryId}
+                                            options={categories.map((category) => {
+                                                const group = groups.find(g => g.id === category.group);
+                                                return {
+                                                    value: category.id,
+                                                    label: category.name,
+                                                    group: group?.name || 'Other'
+                                                };
+                                            })}
+                                            placeholder={loadingCategories ? 'Loading categories...' : 'Select a category'}
+                                            disabled={loadingCategories}
+                                            loading={loadingCategories}
+                                            className={categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : ''}
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm text-white/50 mb-0.5">Account</label>
+                                    <Dropdown
+                                        required
+                                        value={accountId}
+                                        onChange={setAccountId}
+                                        options={accounts.map((account): DropdownOption => ({
+                                            value: account.id,
+                                            label: account.name,
+                                            subtitle: account.type,
+                                        }))}
+                                        placeholder={loadingAccounts ? 'Loading accounts...' : 'Select an account'}
+                                        disabled={loadingAccounts}
+                                        loading={loadingAccounts}
+                                        icon="/bank.svg"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* Shared fields - Date and Description */}
+                        <div>
+                            <label className="block text-sm text-white/50 mb-0.5">Date</label>
+                            <input
+                                type="date"
+                                required
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                             />
                         </div>
 
-                        <div className="space-y-1">
-                            <div ref={vendorRef} className="relative">
-                                <label className="block text-sm text-white/50 mb-0.5">Vendor</label>
-                                <input
-                                    ref={vendorInputRef}
-                                    type="text"
-                                    required
-                                    value={vendor}
-                                    onChange={handleVendorChange}
-                                    onFocus={() => {
-                                        setVendorInputFocused(true);
-                                        setShowSuggestions(true);
-                                        if (vendor) searchVendors(vendor);
-                                    }}
-                                    placeholder="Shop"
-                                    className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                />
-                                {showSuggestions && vendorSuggestions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
-                                        {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
-                                            .map((suggestion) => (
-                                            <button
-                                                key={suggestion.id}
-                                                type="button"
-                                                onClick={() => selectVendor(suggestion.name)}
-                                                className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
-                                            >
-                                                {suggestion.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {type === 'payment' && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                        
-                                    </div>
-                                    <GroupedDropdown
-                                        required={type === 'payment'}
-                                        value={categoryId}
-                                        onChange={setCategoryId}
-                                        options={categories.map((category) => {
-                                            const group = groups.find(g => g.id === category.group);
-                                            return {
-                                                value: category.id,
-                                                label: category.name,
-                                                group: group?.name || 'Other'
-                                            };
-                                        })}
-                                        placeholder={loadingCategories ? 'Loading categories...' : 'Select a category'}
-                                        disabled={loadingCategories}
-                                        loading={loadingCategories}
-                                        className={categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : ''}
-                                    />
-                                </div>
-                            )}
-
-                            
-
-                            <div>
-                                <label className="block text-sm text-white/50 mb-0.5">Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2.5 pr-5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm text-white/50 mb-0.5">Account</label>
-                                <Dropdown
-                                    required
-                                    value={accountId}
-                                    onChange={setAccountId}
-                                    options={accounts.map((account): DropdownOption => ({
-                                        value: account.id,
-                                        label: account.name,
-                                        subtitle: account.type,
-                                    }))}
-                                    placeholder={loadingAccounts ? 'Loading accounts...' : 'Select an account'}
-                                    disabled={loadingAccounts}
-                                    loading={loadingAccounts}
-                                    icon="/bank.svg"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-ms text-white/50 mb-0.5">Description (Optional)</label>
-                                <textarea
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Weekly groceries..."
-                                    className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors resize-none h-16"
-                                />
-                            </div>
+                        <div>
+                            <label className="block text-ms text-white/50 mb-0.5">Description {mode === 'transfer' ? '' : '(Optional)'}</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder={mode === 'transfer' ? 'Transfer note...' : 'Weekly groceries...'}
+                                className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors resize-none h-16"
+                            />
                         </div>
                     </div>
 
@@ -581,8 +751,19 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                         <div className="flex gap-4">
                             <button
                                 type="button"
-                                onClick={() => isDeleting ? (setIsDeleting(false), onDelete()) : setIsDeleting(true)}
-                                className={`${transaction ? 'block': 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
+                                onClick={() => {
+                                    if (isDeleting) {
+                                        setIsDeleting(false);
+                                        if (transfer && onDeleteTransfer) {
+                                            onDeleteTransfer();
+                                        } else {
+                                            onDelete();
+                                        }
+                                    } else {
+                                        setIsDeleting(true);
+                                    }
+                                }}
+                                className={`${(transaction || transfer) ? 'block': 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
                             >
                                 {isDeleting ? "Are you sure?" : "Delete"}
                             </button>
@@ -590,7 +771,7 @@ export default function TransactionModal({transaction, isOpen, onClose, onSubmit
                                 type="submit"
                                 className="flex-1 py-4 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors"
                             >
-                                {transaction ? "Update" : "Add"}
+                                {(transaction || transfer) ? "Update" : "Add"}
                             </button>
                         </div>
                     </div>

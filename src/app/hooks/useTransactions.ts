@@ -54,6 +54,7 @@ const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
                 )
             `)
             .eq('user_id', user.id)
+            .order('date', { ascending: false })
             .order('created_at', { ascending: false })
             .range(from, from + batchSize - 1);
 

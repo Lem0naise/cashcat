@@ -385,6 +385,54 @@ export type Database = {
           },
         ]
       }
+      transfers: {
+        Row: {
+          id: string
+          user_id: string
+          from_account_id: string
+          to_account_id: string
+          amount: number
+          date: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          from_account_id: string
+          to_account_id: string
+          amount: number
+          date: string
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          from_account_id?: string
+          to_account_id?: string
+          amount?: number
+          date?: string
+          description?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -519,3 +567,16 @@ export const Constants = {
 } as const
 
 export type BankReconciliation = Database['public']['Tables']['bank_reconciliations']['Row'];
+export type Transfer = Database['public']['Tables']['transfers']['Row'];
+export type TransferWithAccounts = Transfer & {
+  from_account: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+  to_account: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+};
