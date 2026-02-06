@@ -123,6 +123,7 @@ export default function SankeyDiagram({
     const totalIncome = Array.from(incomeByVendor.values()).reduce((sum, v) => sum + v, 0);
     const totalSpending = Array.from(spendingByGroup.values()).reduce((sum, v) => sum + v.amount, 0);
     const totalUnspent = Math.max(0, totalIncome - totalSpending);
+    const totalDeficit = Math.max(0, totalSpending - totalIncome);
 
     // Create income vendor nodes (column 0)
     incomeByVendor.forEach((amount, vendor) => {
@@ -136,6 +137,19 @@ export default function SankeyDiagram({
       nodes.push(node);
       nodeMap.set(node.id, node);
     });
+
+    // Create Rollover node if needed (column 0)
+    if (totalDeficit > 0) {
+      const rolloverNode: SankeyNode = {
+        id: 'income-rollover',
+        name: 'From Budget',
+        type: 'income-vendor', // Keeps it in the first column
+        value: totalDeficit,
+        color: '#10B981', // Green
+      };
+      nodes.push(rolloverNode);
+      nodeMap.set(rolloverNode.id, rolloverNode);
+    }
 
     // Create Spent/Unspent nodes (column 1)
     if (totalSpending > 0) {
@@ -239,8 +253,17 @@ export default function SankeyDiagram({
     });
 
     // Create links from income to spent/unspent
-    if (totalIncome > 0) {
-      incomeByVendor.forEach((incomeAmount, vendor) => {
+    incomeByVendor.forEach((incomeAmount, vendor) => {
+      if (totalDeficit > 0) {
+        // If there's a deficit, all income goes to spent (augmented by rollover)
+        links.push({
+          source: `income-${vendor}`,
+          target: 'spent',
+          value: incomeAmount,
+          color: 'rgba(239, 68, 68, 0.3)',
+        });
+      } else {
+        // Normal case (Surplus or Balanced)
         if (totalSpending > 0) {
           links.push({
             source: `income-${vendor}`,
@@ -258,6 +281,16 @@ export default function SankeyDiagram({
             color: 'rgba(16, 185, 129, 0.3)',
           });
         }
+      }
+    });
+
+    // Create link from Rollover to Spent
+    if (totalDeficit > 0) {
+      links.push({
+        source: 'income-rollover',
+        target: 'spent',
+        value: totalDeficit,
+        color: 'rgba(16, 185, 129, 0.3)',
       });
     }
 
