@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
+import ImportWizard from './import-wizard/ImportWizard';
 import type { Category, Group } from '@/types/supabase';
 type ManageBudgetModalProps = {
     isOpen: boolean;
@@ -20,6 +21,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [showImportWizard, setShowImportWizard] = useState(false);
 
     // Form states
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -308,6 +310,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     if (!isOpen) return null;
 
     return (
+        <>
         <div 
             className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${
                 isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
@@ -425,10 +428,10 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                             <div className="flex text-left justify-between p-4 bg-white/[.03] rounded-lg flex-col">
                                                 <p className="block font-medium text-white mb-2">Import Transactions</p>
                                                 <button
-                                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white disabled:opacity-50 disabled:hover:bg-white/[.05] disabled:hover:text-white/70"
-                                                    disabled
+                                                    className="w-full px-4 py-2 bg-white/[.05] hover:bg-white/[.08] rounded-lg transition-all text-white/70 hover:text-white"
+                                                    onClick={() => setShowImportWizard(true)}
                                                 >
-                                                    Import from CSV (Coming Soon)
+                                                    Import from CSV
                                                 </button>
                                             </div>
                                         </div>
@@ -722,5 +725,11 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 </div>
             </div>
         </div>
+
+            <ImportWizard
+                isOpen={showImportWizard}
+                onClose={() => setShowImportWizard(false)}
+            />
+        </>
     );
 }

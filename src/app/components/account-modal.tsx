@@ -6,6 +6,7 @@ import { useSupabaseClient } from '../hooks/useSupabaseClient';
 import MoneyInput from "./money-input";
 import ConfirmationModal from "./confirmation-modal";
 import Dropdown, { DropdownOption } from './dropdown';
+import ImportWizard from './import-wizard/ImportWizard';
 
 type Account = {
     id: string;
@@ -45,6 +46,8 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         account: null,
     });
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [showImportWizard, setShowImportWizard] = useState(false);
+    const [importAccountId, setImportAccountId] = useState<string | null>(null);
     const supabase = useSupabaseClient();
 
     useEffect(() => {
@@ -395,6 +398,26 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 </button>
                             </div>)}
 
+                            {editingAccount !== null && editingAccount.is_active && (
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setImportAccountId(editingAccount.id);
+                                            setShowImportWizard(true);
+                                        }}
+                                        className="w-full p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-green transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        Import Transactions from CSV
+                                    </button>
+                                </div>
+                            )}
+
                             {!editingAccount && (<div>
                                  <label className="block text-sm font-medium text-white/80 mb-2">
                                     Balance Right Now
@@ -527,6 +550,17 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 onConfirm={handleConfirmAction}
                 isLoading={confirmLoading}
                 {...getConfirmationContent()}
+            />
+
+            <ImportWizard
+                isOpen={showImportWizard}
+                onClose={() => {
+                    setShowImportWizard(false);
+                    setImportAccountId(null);
+                    fetchAccounts();
+                    onAccountsUpdated();
+                }}
+                preselectedAccountId={importAccountId}
             />
         </div>
     );
