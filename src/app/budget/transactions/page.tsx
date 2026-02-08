@@ -56,6 +56,7 @@ export default function Transactions() {
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
 
     const loading = loadingTransactions || loadingTransfers;
@@ -552,19 +553,58 @@ export default function Transactions() {
                                 </button>
                             </>
                         )}
-                        <button
-                            onClick={() => { refetch() }}
-                            className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                            disabled={loading}
-                            title="Refresh transactions"
-                        >
-                            <svg className={`${loading ? 'animate-spin' : ''}`} width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <g transform="scale(-1, 1) translate(-48, 0)">
-                                    <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
-                                    <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
-                                </g></svg>
-                            Sync
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                                className={`p-2 hover:bg-white/[.05] rounded-lg transition-all ${showMobileMenu ? 'bg-white/[.1]' : ''}`}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+
+                            {showMobileMenu && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40 bg-transparent"
+                                        onClick={() => setShowMobileMenu(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                                        <button
+                                            onClick={() => {
+                                                refetch();
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors ${loading ? 'opacity-50' : ''}`}
+                                            disabled={loading}
+                                        >
+                                            <svg className={`${loading ? 'animate-spin' : ''}`} width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <g transform="scale(-1, 1) translate(-48, 0)">
+                                                    <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                                    <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
+                                                </g>
+                                            </svg>
+                                            <span className="text-sm">Sync</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowExportModal(true);
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="text-sm">Export</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 

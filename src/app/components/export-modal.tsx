@@ -190,7 +190,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     });
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#151515]">
@@ -242,7 +242,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                                 {accounts.map(acc => (
                                     <label key={acc.id} className="flex items-center gap-2 cursor-pointer group">
                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAccountIds.includes(acc.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
-                                            {selectedAccountIds.includes(acc.id) && <Image src="/check.svg" alt="Check" width={10} height={10} className="invert" />}
+
                                         </div>
                                         <input
                                             type="checkbox"
@@ -278,7 +278,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                                             {groupCategories.map(cat => (
                                                 <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedCategoryIds.includes(cat.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
-                                                        {selectedCategoryIds.includes(cat.id) && <Image src="/check.svg" alt="Check" width={10} height={10} className="invert" />}
+
                                                     </div>
                                                     <input
                                                         type="checkbox"
@@ -333,8 +333,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                             </>
                         ) : (
                             <>
-                                <Image src="/transactions.svg" alt="" width={20} height={20} className="invert brightness-0" />
-                                Export Data
+                                Export
                             </>
                         )}
                     </button>
