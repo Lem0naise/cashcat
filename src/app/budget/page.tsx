@@ -43,8 +43,8 @@ export default function Budget() {
     const supabase = createClientComponentClient<Database>();
 
     const { data: allTransactionsData = EMPTY_ARRAY, isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useTransactions();
-    const { data: rawCategoriesData = EMPTY_ARRAY, refetch: refetchCategories } = useCategories();
-    const { data: allAssignmentsData = EMPTY_ARRAY, refetch: refetchAssignments } = useAssignments();
+    const { data: rawCategoriesData = EMPTY_ARRAY, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
+    const { data: allAssignmentsData = EMPTY_ARRAY, isLoading: assignmentsLoading, refetch: refetchAssignments } = useAssignments();
     const updateAssignmentMutation = useUpdateAssignment();
 
     // ... (state definitions)
@@ -67,6 +67,7 @@ export default function Budget() {
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
+    // Combine all loading states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [balanceInfo, setBalanceInfo] = useState<{ budgetPool: number; assigned: number } | null>(null);
@@ -215,7 +216,8 @@ export default function Budget() {
     // Only fetch assignments, categories, and reminder for the current month
     const calculateBudgetData = useCallback(async (queryMonthString: string) => {
         try {
-            setLoading(true);
+            // No need to set loading=true here if we are already handling it via the useEffect check
+            // checking !transactionsLoading etc.
 
             // Derive data from cache instead of fetching
             const categoriesData = rawCategoriesData;
@@ -334,14 +336,21 @@ export default function Budget() {
         }
     }, [transactionsError]);
 
-    // On month change, only run calculation
+    // On month change or data update, recalculate budget
+    // BUT only if all data is loaded
     useEffect(() => {
         const newMonthString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         setMonthString(newMonthString);
-        if (allTransactionsData) {
+
+        if (transactionsLoading || categoriesLoading || assignmentsLoading) {
+            setLoading(true);
+            return;
+        }
+
+        if (allTransactionsData && rawCategoriesData && allAssignmentsData) {
             calculateBudgetData(newMonthString);
         }
-    }, [currentMonth, allTransactionsData, calculateBudgetData]);
+    }, [currentMonth, allTransactionsData, rawCategoriesData, allAssignmentsData, transactionsLoading, categoriesLoading, assignmentsLoading, calculateBudgetData]);
 
 
     // Listen for hide budget values changes

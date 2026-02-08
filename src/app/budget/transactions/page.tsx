@@ -12,6 +12,7 @@ import TransactionModalWrapper from "@/app/components/transactionSus";
 import BankCompareModal from "../../components/bank-compare-modal";
 import AccountSelector from "../../components/account-selector";
 import AccountModal from "../../components/account-modal";
+import ExportModal from "../../components/export-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
@@ -22,7 +23,7 @@ import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 
 // Combined type for displaying both transactions and transfers
-type CombinedItem = 
+type CombinedItem =
     | { type: 'transaction'; data: TransactionWithDetails }
     | { type: 'transfer'; data: TransferWithAccounts };
 
@@ -54,10 +55,12 @@ export default function Transactions() {
     const [showBankCompareModal, setShowBankCompareModal] = useState(false);
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [showAccountModal, setShowAccountModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
 
     const loading = loadingTransactions || loadingTransfers;
-    
+
     const refetch = () => {
         refetchTransactions();
         refetchTransfers();
@@ -301,12 +304,12 @@ export default function Transactions() {
     const calculateTotalBalance = (txs: TransactionWithDetails[], tfrs: TransferWithAccounts[], accountId: string | null) => {
         console.log('DEBUG: Number of transactions in transactions page:', txs.length);
         const transactionTotal = txs.reduce((total, transaction) => total + transaction.amount, 0);
-        
+
         // If viewing all accounts, transfers cancel out (don't include them)
         if (!accountId) {
             return transactionTotal;
         }
-        
+
         // If viewing a specific account, include transfers
         const transferTotal = tfrs.reduce((total, transfer) => {
             // Money leaving this account (negative)
@@ -319,7 +322,7 @@ export default function Transactions() {
             }
             return total;
         }, 0);
-        
+
         return transactionTotal + transferTotal;
     };
 
@@ -451,6 +454,11 @@ export default function Transactions() {
     return (
         <ProtectedRoute>
             <TransactionModalWrapper setShowModal={setShowModal} />
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                transactions={transactions}
+            />
             <Toaster
                 containerClassName='mb-[15dvh]'
                 position="bottom-center"
@@ -545,19 +553,58 @@ export default function Transactions() {
                                 </button>
                             </>
                         )}
-                        <button
-                            onClick={() => { refetch() }}
-                            className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                            disabled={loading}
-                            title="Refresh transactions"
-                        >
-                            <svg className={`${loading ? 'animate-spin' : ''}`} width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <g transform="scale(-1, 1) translate(-48, 0)">
-                                    <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
-                                    <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
-                                </g></svg>
-                            Sync
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                                className={`p-2 hover:bg-white/[.05] rounded-lg transition-all ${showMobileMenu ? 'bg-white/[.1]' : ''}`}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+
+                            {showMobileMenu && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40 bg-transparent"
+                                        onClick={() => setShowMobileMenu(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                                        <button
+                                            onClick={() => {
+                                                refetch();
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors ${loading ? 'opacity-50' : ''}`}
+                                            disabled={loading}
+                                        >
+                                            <svg className={`${loading ? 'animate-spin' : ''}`} width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <g transform="scale(-1, 1) translate(-48, 0)">
+                                                    <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                                    <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
+                                                </g>
+                                            </svg>
+                                            <span className="text-sm">Sync</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowExportModal(true);
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="text-sm">Export</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -608,6 +655,20 @@ export default function Transactions() {
                             </div>
 
                             <div className="flex gap-5">
+                                <button
+                                    title="Export Transactions"
+                                    onClick={() => setShowExportModal(true)}
+                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <p className="hidden lg:inline">Export</p>
+                                </button>
+
                                 <button
                                     onClick={() => { refetch() }}
                                     className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
@@ -739,7 +800,7 @@ export default function Transactions() {
                                                                 const transferAmount = getTransferAmountForAccount(transfer, selectedAccountId);
                                                                 const isOutgoing = selectedAccountId ? transfer.from_account_id === selectedAccountId : false;
                                                                 const isIncoming = selectedAccountId ? transfer.to_account_id === selectedAccountId : false;
-                                                                
+
                                                                 return (
                                                                     <div key={transfer.id}
                                                                         onClick={() => { setModalTransfer(transfer); setModalTransaction(null); setShowModal(true); }}
@@ -760,12 +821,11 @@ export default function Transactions() {
                                                                                 </div>
                                                                             )}
                                                                         </div>
-                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${
-                                                                            !selectedAccountId ? 'text-blue-300' : 
-                                                                            isOutgoing ? 'text-reddy' : 
-                                                                            isIncoming ? 'text-green' : 
-                                                                            'text-blue-300'
-                                                                        }`}>
+                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${!selectedAccountId ? 'text-blue-300' :
+                                                                            isOutgoing ? 'text-reddy' :
+                                                                                isIncoming ? 'text-green' :
+                                                                                    'text-blue-300'
+                                                                            }`}>
                                                                             {formatAmount(transferAmount || transfer.amount)}
                                                                         </span>
                                                                     </div>
