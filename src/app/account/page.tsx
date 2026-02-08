@@ -279,7 +279,7 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.9.2</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.9.3</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>A publicly accessible RESTful API</li>
