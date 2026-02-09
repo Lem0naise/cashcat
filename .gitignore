@@ -42,3 +42,41 @@ next-env.d.ts
 **/public/workbox-*.js
 **/public/sw.js
 **/public/worker-*.js
+
+
+
+# -----------------------------------
+# NEXT.JS & WEB (Standard)
+# -----------------------------------
+.next/
+out/          # <--- IMPORTANT: This is your static mobile export. Don't commit it.
+node_modules/
+.env*.local
+.DS_Store
+
+# -----------------------------------
+# CAPACITOR (General)
+# -----------------------------------
+# Ignore the web assets that get copied into the native projects
+android/app/src/main/assets/public
+ios/App/App/public
+
+# -----------------------------------
+# ANDROID (The Native Shell)
+# -----------------------------------
+# Ignore the actual compiled app (APKs, AABs)
+android/app/build/
+android/build/
+
+# Ignore local machine settings (SDK location, KeyStore paths)
+android/local.properties  # <--- CRITICAL: Prevents "SDK not found" errors for other devs
+android/.gradle/
+android/.idea/
+*.iml
+
+# -----------------------------------
+# iOS (If you ever add it)
+# -----------------------------------
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/Pods/
+ios/.DS_Store
