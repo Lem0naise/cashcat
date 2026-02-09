@@ -46,11 +46,12 @@
 }
 
  
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -267,6 +268,11 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
     animation: slideInUp 0.3s ease-out;
   }
   
+
+  html, body {
+    overscroll-behavior-y: none;
+  }
+
   /* Slide up animation for mobile insights */
   @keyframes slideInUp {
     from {
