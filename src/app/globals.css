@@ -2,8 +2,8 @@
 
 :root {
   /* Base colors */
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --background: #0a0a0a;
+  --foreground: #ededed;
   --green: #84D684;
   --blue: #bac2ff;
   --blue-dark: #7B7BBD;
@@ -17,57 +17,75 @@
   /* Budget specific colors */
   --budget-assigned: var(--green);
   --budget-assigned-bg: var(--green-dark);
-  --budget-spent: rgb(249 115 22); /* orange-500 */
-  --budget-spent-normal: rgb(107 114 128 / 0.5); /* gray-500/50 */
-  --budget-spent-over: rgb(185 28 28 / 0.7); /* red-700/70 */
-  --budget-text-muted: rgb(0 0 0 / 0.5); /* black/50 */
-  --budget-text-muted-dark: rgb(255 255 255 / 0.5); /* white/50 */
-  --budget-hover-light: rgb(242 242 242); /* #f2f2f2 */
-  --budget-hover-dark: rgb(42 42 42); /* #2a2a2a */
-  --budget-surface-light: rgb(0 0 0 / 0.02); /* black/[.02] */
-  --budget-surface-dark: rgb(255 255 255 / 0.02); /* white/[.02] */
-  --budget-border-light: rgb(0 0 0 / 0.09); /* black/[.09] */
-  --budget-border-dark: rgb(255 255 255 / 0.15); /* white/[.15] */
+  --budget-spent: rgb(249 115 22);
+  /* orange-500 */
+  --budget-spent-normal: rgb(107 114 128 / 0.5);
+  /* gray-500/50 */
+  --budget-spent-over: rgb(185 28 28 / 0.7);
+  /* red-700/70 */
+  --budget-text-muted: rgb(0 0 0 / 0.5);
+  /* black/50 */
+  --budget-text-muted-dark: rgb(255 255 255 / 0.5);
+  /* white/50 */
+  --budget-hover-light: rgb(242 242 242);
+  /* #f2f2f2 */
+  --budget-hover-dark: rgb(42 42 42);
+  /* #2a2a2a */
+  --budget-surface-light: rgb(0 0 0 / 0.02);
+  /* black/[.02] */
+  --budget-surface-dark: rgb(255 255 255 / 0.02);
+  /* white/[.02] */
+  --budget-border-light: rgb(0 0 0 / 0.09);
+  /* black/[.09] */
+  --budget-border-dark: rgb(255 255 255 / 0.15);
+  /* white/[.15] */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-green: var(--blue); 
+  --color-green: var(--blue);
   --color-green-dark: var(--blue-dark);
   --color-reddy: var(--reddy);
   --color-old-reddy: var(--old-reddy);
 
   --color-bz: var(--bz);
-  
+
   --font-sans: var(--font-SUSE);
   --font-mono: var(--font-SUSE);
 
 }
 
- 
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior: none;
+}
+
+html {
+  overscroll-behavior: none;
 }
 
 @supports (-webkit-touch-callout: none) {
- 
+
   .iphone-padding-container {
     height: calc(64px + env(safe-area-inset-bottom));
   }
+
   .iphone-padding {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
 @media screen and (max-width: 430px) {
- .iphone-padding-container {
+  .iphone-padding-container {
     height: calc(64px + env(safe-area-inset-bottom));
   }
+
   .iphone-padding {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -79,7 +97,7 @@ body {
 }
 
 button,
-input[type="text"], 
+input[type="text"],
 input[type="tel"],
 input[type="number"],
 a,
@@ -91,21 +109,26 @@ select {
   transition-duration: 0.3s !important;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
 @keyframes graceful-float {
   0% {
     transform: translate(-50%, -50%) translateY(0px) translateX(0px) rotate(0deg);
     opacity: 0.2;
   }
+
   25% {
     transform: translate(-50%, -50%) translateY(calc(-1 * var(--float-y))) translateX(var(--float-x)) rotate(var(--float-rotation));
   }
+
   50% {
     transform: translate(-50%, -50%) translateY(calc(-0.2 * var(--float-y))) translateX(calc(1.2 * var(--float-x))) rotate(calc(-0.5 * var(--float-rotation)));
     opacity: 0.4;
   }
+
   75% {
     transform: translate(-50%, -50%) translateY(calc(0.3 * var(--float-y))) translateX(calc(-0.5 * var(--float-x))) rotate(calc(0.3 * var(--float-rotation)));
   }
+
   100% {
     transform: translate(-50%, -50%) translateY(0px) translateX(0px) rotate(0deg);
     opacity: 0.2;
@@ -123,6 +146,7 @@ select {
     opacity: 0;
     transform: translateY(10px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -134,6 +158,7 @@ select {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+
   to {
     opacity: 0;
     transform: translateY(-10px) scale(0.98);
@@ -145,6 +170,7 @@ select {
     opacity: 0;
     transform: translateY(100%);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -157,6 +183,7 @@ select {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -169,6 +196,7 @@ select {
     opacity: 1;
     transform: translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateY(100%);
@@ -181,6 +209,7 @@ select {
       opacity: 1;
       transform: translateY(0);
     }
+
     to {
       opacity: 0;
       transform: translateY(20px);
@@ -204,8 +233,9 @@ select {
 
 
 .hide-scrollbar::-webkit-scrollbar {
-  display:none;
+  display: none;
 }
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -213,7 +243,7 @@ select {
 
 
 .image-black {
-filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-rotate(135deg) brightness(86%) contrast(89%);
+  filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-rotate(135deg) brightness(86%) contrast(89%);
 }
 
 
@@ -263,15 +293,14 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
     max-height: none !important;
     min-height: auto !important;
     /* Ensure enough bottom margin for mobile navbar */
-    margin-bottom: 120px; /* Extra space for mobile navbar */
+    margin-bottom: 120px;
+    /* Extra space for mobile navbar */
     /* Smooth appearance animation */
     animation: slideInUp 0.3s ease-out;
   }
-  
 
-  html, body {
-    overscroll-behavior-y: none;
-  }
+
+
 
   /* Slide up animation for mobile insights */
   @keyframes slideInUp {
@@ -279,6 +308,7 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -296,6 +326,7 @@ filter: brightness(0) saturate(100%) invert(97%) sepia(0%) saturate(211%) hue-ro
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

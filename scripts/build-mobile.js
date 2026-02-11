@@ -68,3 +68,4 @@ console.log('🔄 Syncing with Android/iOS...');
 shell.exec('npx cap sync');
 
 console.log('✅ Mobile build complete!');
+console.log('Run npx cap open android to open Android Studio.')
