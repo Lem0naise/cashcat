@@ -11,8 +11,11 @@ import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored
 import ChartControls from '../components/chart-controls';
 import PieChart from '../components/charts/PieChart';
 import PieSegmentInsights from '../components/charts/PieSegmentInsights';
+import TopCategoriesChart from '../components/charts/TopCategoriesChart';
+import TopVendorsChart from '../components/charts/TopVendorsChart';
+import SpendingOverTime from '../components/charts/SpendingOverTime';
 import { PieSegment } from '../components/charts/types';
-import { calculateDateRange, calculateAllTimeRange } from '../components/charts/utils';
+import { calculateDateRange, calculateAllTimeRange, formatCurrency } from '../components/charts/utils';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from "../components/protected-route";
@@ -54,11 +57,10 @@ export default function Stats() {
     const [selectedPieSegment, setSelectedPieSegment] = useState<PieSegment | null>(null);
     const [persistedGroupSegment, setPersistedGroupSegment] = useState<PieSegment | null>(null);
 
-    // Initial data setup removed as hooks handle it automatically
+    // Collapsible section state
+    const [showBreakdownChart, setShowBreakdownChart] = useState(false);
 
-
-    // Get available groups for filtering
-    // Memoize expensive calculations to prevent re-computation on every render
+    // Memoize expensive calculations
     const categoriesWithGroupNames = useMemo(() =>
         categories.map(cat => ({
             ...cat,
@@ -70,7 +72,6 @@ export default function Stats() {
             categoriesWithGroupNames.map(cat => cat.groupName)
         )).sort(), [categoriesWithGroupNames]);
 
-    // Get available categories for filtering
     const availableCategories = useMemo(() =>
         categoriesWithGroupNames.map(cat => ({
             id: cat.id,
@@ -78,68 +79,84 @@ export default function Stats() {
             group: cat.groupName
         })), [categoriesWithGroupNames]);
 
+    // Quick stats
+    const quickStats = useMemo(() => {
+        const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
+        const dr = calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd);
+
+        const filtered = transactions.filter(t => {
+            if (!t || t.type !== 'payment') return false;
+            const d = new Date(t.date);
+            if (d < dr.start || d > dr.end) return false;
+
+            // Apply group filter
+            if (selectedGroups.length > 0) {
+                const category = categories.find(c => c.id === t.category_id);
+                if (!category) return false;
+                const groupName = category.groups?.name || category.group || 'Uncategorized';
+                if (!selectedGroups.includes(groupName)) return false;
+            }
+
+            // Apply category filter
+            if (selectedCategories.length > 0) {
+                if (!selectedCategories.includes(t.category_id || '')) return false;
+            }
+
+            return true;
+        });
+
+        const totalSpent = filtered.reduce((s, t) => s + Math.abs(t.amount), 0);
+        const txnCount = filtered.length;
+        const days = Math.max(1, (dr.end.getTime() - dr.start.getTime()) / (1000 * 60 * 60 * 24));
+        const dailyAvg = totalSpent / days;
+
+        return { totalSpent, txnCount, dailyAvg };
+    }, [transactions, assignments, timeRange, customStartDate, customEndDate, selectedGroups, selectedCategories, categories]);
+
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
-        // Set time range to custom when navigating via date picker
         if (timeRange !== 'custom') {
             setTimeRange('custom');
         }
-        // Don't close insights panel when navigating via date picker - keep the same segment visible
-        // The insights will automatically update to show data for the new time period
     };
 
-    // Filter change handlers that also close insights panel
     const handleGroupsChange = (groups: string[]) => {
         setSelectedGroups(groups);
-        // Close insights when manually changing group filters - this changes the context
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
 
     const handleCategoriesChange = (categories: string[]) => {
         setSelectedCategories(categories);
-        // Close insights when manually changing category filters - this changes the context
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
 
     const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
         setTimeRange(range);
-        // Only close insights panel when manually changing time range (not during navigation)
-        // This preserves the insights when using arrow key navigation
         setSelectedPieSegment(null);
         setPersistedGroupSegment(null);
     };
 
     // Pie chart handlers
     const handlePieSegmentClick = (segment: PieSegment) => {
-        // When clicking a category segment while we have a persisted group segment,
-        // replace the group insights with category insights
         if (segment.type === 'category' && persistedGroupSegment) {
             setPersistedGroupSegment(null);
         }
-
         setSelectedPieSegment(segment);
 
-        // Scroll to the insights panel on both mobile and desktop since it's now always below
         requestAnimationFrame(() => {
-            // Find the appropriate insights panel based on screen size
             const insightsPanel = isDesktop
                 ? document.getElementById('desktop-insights-panel')
                 : document.getElementById('mobile-insights-panel');
 
             if (insightsPanel) {
-                // Calculate the position accounting for the fixed header
-                const headerHeight = 64; // pt-16 = 64px header height
-                const additionalOffset = 16; // Extra spacing for better visual positioning
+                const headerHeight = 64;
+                const additionalOffset = 16;
                 const elementPosition = insightsPanel.getBoundingClientRect().top + window.pageYOffset;
                 const targetPosition = elementPosition - headerHeight - additionalOffset;
-
-                window.scrollTo({
-                    top: targetPosition,
-                    behavior: 'smooth'
-                });
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
             }
         });
     };
@@ -150,51 +167,36 @@ export default function Stats() {
     };
 
     const handleFilterBySegment = (segment: PieSegment) => {
-        // Clear existing filters first
         setSelectedGroups([]);
         setSelectedCategories([]);
 
-        // Apply filters based on segment type
         if (segment.type === 'group') {
             setSelectedGroups([segment.id]);
-            // When clicking "detailed insights" on a group, persist the group segment for continued display
             setPersistedGroupSegment(segment);
-            // Keep the insights panel open but showing the group segment
-            // The segment will remain visible until user clicks a category or manually closes
         } else if (segment.type === 'category') {
-            // Find the group this category belongs to and set both group and category filters
             const category = categories.find(cat => cat.id === segment.id);
             if (category) {
                 const groupName = category.groups?.name || category.group || 'Uncategorized';
                 setSelectedGroups([groupName]);
                 setSelectedCategories([segment.id]);
             }
-            // When selecting a category, replace the group insights with category insights
             setPersistedGroupSegment(null);
-            // Close the current insights panel - it will be replaced with category insights when clicked
             setSelectedPieSegment(null);
         } else if (segment.type === 'vendor') {
-            // For vendor, we need to keep the current category selection that led to this vendor view
-            // The vendor view only appears when categories from the same group are selected
-            // So we don't need to change the filters, just close the insights panel
             setPersistedGroupSegment(null);
             setSelectedPieSegment(null);
         }
     };
 
     const handleSetComparisonPeriod = (start: Date, end: Date) => {
-        // Set time range to custom and update the custom dates
         setTimeRange('custom');
         setCustomStartDate(start);
         setCustomEndDate(end);
-        // Don't close insights panel when setting comparison period - keep the same segment visible
-        // The insights will automatically update to show data for the new time period
     };
 
-    // Smooth UI state for zoom transitions
+    // Zoom animation
     const [zoomAnimating, setZoomAnimating] = useState(false);
     const triggerZoomAnimation = useCallback(() => {
-        // Briefly animate container for intentional zoom feel
         setZoomAnimating(true);
         window.setTimeout(() => setZoomAnimating(false), 350);
     }, []);
@@ -206,7 +208,6 @@ export default function Stats() {
                     <Navbar />
                     <Sidebar />
                     <MobileNav />
-
                     <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                         <div className="max-w-7xl mx-auto">
                             <div className="flex items-center justify-center min-h-[400px]">
@@ -219,6 +220,10 @@ export default function Stats() {
         );
     }
 
+    // Calculate date ranges
+    const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
+    const dateRange = calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd);
+
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
@@ -226,75 +231,24 @@ export default function Stats() {
                 <Sidebar />
                 <MobileNav />
 
-                {/* Toast notifications */}
                 <Toaster
                     containerClassName='mb-[15dvh]'
                     position="bottom-center"
                     toastOptions={{
-                        style: {
-                            background: '#333',
-                            color: '#fff',
-                        },
-                        success: {
-                            iconTheme: {
-                                primary: '#bac2ff',
-                                secondary: '#fff',
-                            },
-                        },
-                        error: {
-                            iconTheme: {
-                                primary: '#EF4444',
-                                secondary: '#fff',
-                            },
-                        }
+                        style: { background: '#333', color: '#fff' },
+                        success: { iconTheme: { primary: '#bac2ff', secondary: '#fff' } },
+                        error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } }
                     }}
                 />
 
-                <main className={`pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in`}>
+                <main className={`pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-4 sm:p-6 fade-in`}>
                     <div className="max-w-7xl mx-auto">
-                        {/* Mobile header */}
-                        <div className="md:hidden mb-6">
-                            <h1 className="text-2xl font-bold tracking-[-.01em]">Statistics</h1>
+                        {/* Header */}
+                        <div className="mb-4 sm:mb-6 md:mt-8">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-[-.01em]">Statistics</h1>
                         </div>
-
-                        {/* Desktop header */}
-                        <div className="hidden md:flex items-center justify-between mb-8 md:mt-8">
-                            <h1 className="text-2xl font-bold tracking-[-.01em]">Statistics</h1>
-                        </div>
-
-                        {/* Money Flow Card */}
-                        <Link href="/stats/sankey">
-                            <div className="bg-gradient-to-br from-blue-500/20 to-green/20 rounded-lg p-6 border border-blue-500/30 hover:border-green/50 transition-all cursor-pointer mb-6 group">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green rounded-lg flex items-center justify-center">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M3 3v18h18" />
-                                                <path d="m19 9-5 5-4-4-3 3" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-lg">Money Flow Diagram</h3>
-                                            <p className="text-sm text-white/60">Interactive Sankey visualization of income and spending</p>
-                                        </div>
-                                    </div>
-                                    <svg
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
-                                    >
-                                        <path d="M5 12h14M12 5l7 7-7 7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </Link>
 
                         {assignments.length === 0 ? (
-                            // No data state
                             <div className="text-center text-white/60 mt-20">
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
@@ -308,10 +262,7 @@ export default function Stats() {
                                 </p>
                             </div>
                         ) : (
-                            // Main content
-                            <div
-                                className={`space-y-6 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}
-                            >
+                            <div className={`space-y-4 sm:space-y-6 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}>
                                 {/* Chart Controls */}
                                 <ChartControls
                                     timeRange={timeRange}
@@ -325,45 +276,122 @@ export default function Stats() {
                                     availableCategories={availableCategories}
                                     selectedCategories={selectedCategories}
                                     onCategoriesChange={handleCategoriesChange}
-                                // Removed showGoals, onShowGoalsChange, showRollover, onShowRolloverChange
                                 />
 
-                                {/* Pie Chart Section */}
-                                {(() => {
-                                    // Calculate date ranges for pie chart
-                                    const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
-                                    const dateRange = calculateDateRange(
-                                        timeRange,
-                                        customStartDate,
-                                        customEndDate,
-                                        allTimeStart,
-                                        allTimeEnd
-                                    );
+                                {/* Quick Stats Row */}
+                                <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                                    <div className="stats-card">
+                                        <div className="text-xs text-white/50 mb-0.5">Total Spent</div>
+                                        <div className="text-sm sm:text-lg font-bold text-white">{formatCurrency(quickStats.totalSpent)}</div>
+                                    </div>
+                                    <div className="stats-card">
+                                        <div className="text-xs text-white/50 mb-0.5">Transactions</div>
+                                        <div className="text-sm sm:text-lg font-bold text-white">{quickStats.txnCount}</div>
+                                    </div>
+                                    <div className="stats-card">
+                                        <div className="text-xs text-white/50 mb-0.5">Daily Avg</div>
+                                        <div className="text-sm sm:text-lg font-bold text-white">{formatCurrency(quickStats.dailyAvg)}</div>
+                                    </div>
+                                </div>
 
-                                    return (
-                                        <div className="w-full space-y-6">
-                                            {/* Pie Chart Section - Always full width */}
-                                            <div className="w-full">
-                                                <PieChart
-                                                    transactions={transactions}
-                                                    categories={categories}
-                                                    dateRange={dateRange}
-                                                    selectedGroups={selectedGroups}
-                                                    selectedCategories={selectedCategories}
-                                                    onSegmentClick={handlePieSegmentClick}
-                                                    showTooltip={!selectedPieSegment}
-                                                    matchHeight={false} // Never match height since insights are below
-                                                    timeRange={timeRange}
-                                                    allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
-                                                    onDateRangeChange={handleCustomDateChange}
-                                                />
-                                            </div>
+                                {/* Top Categories */}
+                                <div className="stats-card">
+                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                            <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+                                        </svg>
+                                        Top Categories
+                                    </h2>
+                                    <div className="overflow-x-auto hide-scrollbar">
+                                        <div className="min-w-[300px]">
+                                            <TopCategoriesChart
+                                                transactions={transactions}
+                                                categories={categories}
+                                                dateRange={dateRange}
+                                                selectedGroups={selectedGroups}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
-                                            {/* Insights Panel - Always below pie chart on both mobile and desktop */}
+                                {/* Top Vendors */}
+                                <div className="stats-card">
+                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                            <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9" />
+                                        </svg>
+                                        Top Vendors
+                                    </h2>
+                                    <div className="overflow-x-auto hide-scrollbar">
+                                        <div className="min-w-[300px]">
+                                            <TopVendorsChart
+                                                transactions={transactions}
+                                                categories={categories}
+                                                dateRange={dateRange}
+                                                selectedGroups={selectedGroups}
+                                                selectedCategories={selectedCategories}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Spending Over Time */}
+                                <div className="stats-card">
+                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                            <path d="M3 3v18h18" /><rect x="7" y="10" width="3" height="8" rx="0.5" /><rect x="12" y="6" width="3" height="12" rx="0.5" /><rect x="17" y="13" width="3" height="5" rx="0.5" />
+                                        </svg>
+                                        Spending Over Time
+                                    </h2>
+                                    <SpendingOverTime
+                                        transactions={transactions}
+                                        categories={categories}
+                                        dateRange={dateRange}
+                                        selectedGroups={selectedGroups}
+                                        selectedCategories={selectedCategories}
+                                    />
+                                </div>
+
+                                {/* Spending Breakdown (Pie Chart) - Collapsible */}
+                                <div className="stats-card">
+                                    <button
+                                        onClick={() => setShowBreakdownChart(!showBreakdownChart)}
+                                        className="w-full flex items-center justify-between text-left"
+                                    >
+                                        <h2 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                                <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 019.95 9H12V2z" />
+                                            </svg>
+                                            Spending Breakdown
+                                        </h2>
+                                        <svg
+                                            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                            className={`text-white/50 transition-transform duration-200 ${showBreakdownChart ? 'rotate-180' : ''}`}
+                                        >
+                                            <path d="M6 9l6 6 6-6" />
+                                        </svg>
+                                    </button>
+
+                                    {showBreakdownChart && (
+                                        <div className="mt-4 space-y-4">
+                                            <PieChart
+                                                transactions={transactions}
+                                                categories={categories}
+                                                dateRange={dateRange}
+                                                selectedGroups={selectedGroups}
+                                                selectedCategories={selectedCategories}
+                                                onSegmentClick={handlePieSegmentClick}
+                                                showTooltip={!selectedPieSegment}
+                                                matchHeight={false}
+                                                timeRange={timeRange}
+                                                allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
+                                                onDateRangeChange={handleCustomDateChange}
+                                            />
+
+                                            {/* Insights Panel */}
                                             {(selectedPieSegment || persistedGroupSegment) && (
                                                 <div className="w-full insights-panel-enter">
                                                     <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
-                                                        {/* Mobile insights */}
                                                         <PieSegmentInsights
                                                             segment={selectedPieSegment || persistedGroupSegment}
                                                             transactions={transactions}
@@ -378,7 +406,6 @@ export default function Stats() {
                                                         />
                                                     </div>
                                                     <div className="hidden lg:block" id="desktop-insights-panel">
-                                                        {/* Desktop insights */}
                                                         <PieSegmentInsights
                                                             segment={selectedPieSegment || persistedGroupSegment}
                                                             transactions={transactions}
@@ -395,10 +422,33 @@ export default function Stats() {
                                                 </div>
                                             )}
                                         </div>
-                                    );
-                                })()}
+                                    )}
+                                </div>
 
-                                {/* Budget Assignment Chart*/}
+                                {/* Money Flow (Sankey) Card - subtle design */}
+                                <Link href="/stats/sankey">
+                                    <div className="stats-card group hover:border-green/40 transition-all cursor-pointer flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 bg-gradient-to-br from-blue-500/30 to-green/30 rounded-lg flex items-center justify-center">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green">
+                                                    <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-sm sm:text-base text-white">Money Flow Diagram</h3>
+                                                <p className="text-xs text-white/50">Interactive Sankey visualization</p>
+                                            </div>
+                                        </div>
+                                        <svg
+                                            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                            className="text-white/30 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all"
+                                        >
+                                            <path d="M9 18l6-6-6-6" />
+                                        </svg>
+                                    </div>
+                                </Link>
+
+                                {/* Budget Assignment Chart */}
                                 <BudgetAssignmentChart
                                     assignments={assignments}
                                     categories={categories}
@@ -411,12 +461,10 @@ export default function Stats() {
                                     showGoals={showGoals}
                                     showRollover={showRollover}
                                     onZoomRange={(start: Date, end: Date) => {
-                                        // Apply custom date range and trigger subtle animation
                                         setTimeRange('custom');
                                         setCustomStartDate(start);
                                         setCustomEndDate(end);
                                         triggerZoomAnimation();
-                                        // Smoothly scroll the line chart into view to reinforce the zoom
                                         requestAnimationFrame(() => {
                                             const chartContainer = document.getElementById('line-chart-container');
                                             if (chartContainer) {
@@ -428,8 +476,6 @@ export default function Stats() {
                                         });
                                     }}
                                 />
-
-
                             </div>
                         )}
                     </div>

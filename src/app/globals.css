@@ -332,3 +332,17 @@ select {
     transform: translateY(0);
   }
 }
+
+/* Stats page card */
+.stats-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .stats-card {
+    padding: 1.25rem;
+  }
+}
