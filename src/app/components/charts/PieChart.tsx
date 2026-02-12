@@ -648,8 +648,8 @@ export default function PieChart({
               onClick={handleNavigatePrev}
               disabled={!dateRangeInfo.canNavigatePrev}
               className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigatePrev
-                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                  : 'text-white/20 cursor-not-allowed'
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
                 }`}
               title={
                 dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
@@ -673,8 +673,8 @@ export default function PieChart({
               onClick={handleNavigateNext}
               disabled={!dateRangeInfo.canNavigateNext}
               className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigateNext
-                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                  : 'text-white/20 cursor-not-allowed'
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
                 }`}
               title={
                 dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
@@ -718,8 +718,8 @@ export default function PieChart({
             onClick={handleNavigatePrev}
             disabled={!dateRangeInfo.canNavigatePrev}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigatePrev
-                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                : 'text-white/20 cursor-not-allowed'
+              ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+              : 'text-white/20 cursor-not-allowed'
               }`}
             title={
               dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
@@ -742,8 +742,8 @@ export default function PieChart({
             onClick={handleNavigateNext}
             disabled={!dateRangeInfo.canNavigateNext}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigateNext
-                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                : 'text-white/20 cursor-not-allowed'
+              ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+              : 'text-white/20 cursor-not-allowed'
               }`}
             title={
               dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
@@ -816,10 +816,7 @@ export default function PieChart({
       {/* Chart label explainer - Always positioned at bottom */}
       <div className="text-center text-sm text-white/50 mt-3 flex-shrink-0">
         <p>
-          {shouldShowLabels
-            ? "Hover over segments for details. Click for in-depth analysis."
-            : "Tap segments for details. Segment labels hidden to maximize chart size."
-          }
+
         </p>
       </div>
     </div>

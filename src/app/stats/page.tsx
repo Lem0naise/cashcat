@@ -10,7 +10,7 @@ import { useAssignments } from '../hooks/useAssignments';
 import BudgetAssignmentChart from '../components/BudgetAssignmentChartRefactored';
 import ChartControls from '../components/chart-controls';
 import PieChart from '../components/charts/PieChart';
-import PieSegmentInsights from '../components/charts/PieSegmentInsights';
+import FilterInsights from '../components/charts/PieSegmentInsights';
 import TopCategoriesChart from '../components/charts/TopCategoriesChart';
 import TopVendorsChart from '../components/charts/TopVendorsChart';
 import SpendingOverTime from '../components/charts/SpendingOverTime';
@@ -53,12 +53,18 @@ export default function Stats() {
     const [showGoals, setShowGoals] = useState(false);
     const [showRollover, setShowRollover] = useState(false);
 
-    // Pie chart state
-    const [selectedPieSegment, setSelectedPieSegment] = useState<PieSegment | null>(null);
-    const [persistedGroupSegment, setPersistedGroupSegment] = useState<PieSegment | null>(null);
+    // Activity chart mode: 'spending' (SpendingOverTime) or 'income' (BudgetAssignmentChart)
+    const [activityChartMode, setActivityChartMode] = useState<'spending' | 'income'>('spending');
 
-    // Collapsible section state
-    const [showBreakdownChart, setShowBreakdownChart] = useState(false);
+    // Whether filters are active (group or category selected)
+    const hasActiveFilters = selectedGroups.length > 0 || selectedCategories.length > 0;
+
+    // Auto-switch to 'spending' when filters become active
+    useEffect(() => {
+        if (hasActiveFilters && activityChartMode === 'income') {
+            setActivityChartMode('spending');
+        }
+    }, [hasActiveFilters, activityChartMode]);
 
     // Memoize expensive calculations
     const categoriesWithGroupNames = useMemo(() =>
@@ -79,7 +85,7 @@ export default function Stats() {
             group: cat.groupName
         })), [categoriesWithGroupNames]);
 
-    // Quick stats
+    // Quick stats (filtered by date range + groups + categories)
     const quickStats = useMemo(() => {
         const { allTimeStart, allTimeEnd } = calculateAllTimeRange(assignments, transactions);
         const dr = calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd);
@@ -113,6 +119,30 @@ export default function Stats() {
         return { totalSpent, txnCount, dailyAvg };
     }, [transactions, assignments, timeRange, customStartDate, customEndDate, selectedGroups, selectedCategories, categories]);
 
+    // Determine what FilterInsights should show based on current filters
+    const filterInsightsConfig = useMemo(() => {
+        if (selectedCategories.length === 1) {
+            const cat = categories.find(c => c.id === selectedCategories[0]);
+            if (cat) {
+                return {
+                    filterType: 'category' as const,
+                    filterId: cat.id,
+                    filterLabel: cat.name,
+                };
+            }
+        }
+        if (selectedGroups.length === 1 && selectedCategories.length === 0) {
+            return {
+                filterType: 'group' as const,
+                filterId: selectedGroups[0],
+                filterLabel: selectedGroups[0],
+            };
+        }
+        return null;
+    }, [selectedGroups, selectedCategories, categories]);
+
+    const showTopCategories = selectedCategories.length === 0;
+
     const handleCustomDateChange = (start: Date, end: Date) => {
         setCustomStartDate(start);
         setCustomEndDate(end);
@@ -123,69 +153,14 @@ export default function Stats() {
 
     const handleGroupsChange = (groups: string[]) => {
         setSelectedGroups(groups);
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
     };
 
     const handleCategoriesChange = (categories: string[]) => {
         setSelectedCategories(categories);
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
     };
 
     const handleTimeRangeChange = (range: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom') => {
         setTimeRange(range);
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
-    };
-
-    // Pie chart handlers
-    const handlePieSegmentClick = (segment: PieSegment) => {
-        if (segment.type === 'category' && persistedGroupSegment) {
-            setPersistedGroupSegment(null);
-        }
-        setSelectedPieSegment(segment);
-
-        requestAnimationFrame(() => {
-            const insightsPanel = isDesktop
-                ? document.getElementById('desktop-insights-panel')
-                : document.getElementById('mobile-insights-panel');
-
-            if (insightsPanel) {
-                const headerHeight = 64;
-                const additionalOffset = 16;
-                const elementPosition = insightsPanel.getBoundingClientRect().top + window.pageYOffset;
-                const targetPosition = elementPosition - headerHeight - additionalOffset;
-                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-            }
-        });
-    };
-
-    const handleClosePieInsights = () => {
-        setSelectedPieSegment(null);
-        setPersistedGroupSegment(null);
-    };
-
-    const handleFilterBySegment = (segment: PieSegment) => {
-        setSelectedGroups([]);
-        setSelectedCategories([]);
-
-        if (segment.type === 'group') {
-            setSelectedGroups([segment.id]);
-            setPersistedGroupSegment(segment);
-        } else if (segment.type === 'category') {
-            const category = categories.find(cat => cat.id === segment.id);
-            if (category) {
-                const groupName = category.groups?.name || category.group || 'Uncategorized';
-                setSelectedGroups([groupName]);
-                setSelectedCategories([segment.id]);
-            }
-            setPersistedGroupSegment(null);
-            setSelectedPieSegment(null);
-        } else if (segment.type === 'vendor') {
-            setPersistedGroupSegment(null);
-            setSelectedPieSegment(null);
-        }
     };
 
     const handleSetComparisonPeriod = (start: Date, end: Date) => {
@@ -263,7 +238,7 @@ export default function Stats() {
                             </div>
                         ) : (
                             <div className={`space-y-4 sm:space-y-6 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}>
-                                {/* Chart Controls */}
+                                {/* 1. Chart Controls */}
                                 <ChartControls
                                     timeRange={timeRange}
                                     onTimeRangeChange={handleTimeRangeChange}
@@ -278,7 +253,7 @@ export default function Stats() {
                                     onCategoriesChange={handleCategoriesChange}
                                 />
 
-                                {/* Quick Stats Row */}
+                                {/* 2. Quick Stats Row */}
                                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
                                     <div className="stats-card">
                                         <div className="text-xs text-white/50 mb-0.5">Total Spent</div>
@@ -294,138 +269,171 @@ export default function Stats() {
                                     </div>
                                 </div>
 
-                                {/* Top Categories */}
-                                <div className="stats-card">
-                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
-                                            <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-                                        </svg>
-                                        Top Categories
-                                    </h2>
-                                    <div className="overflow-x-auto hide-scrollbar">
-                                        <div className="min-w-[300px]">
-                                            <TopCategoriesChart
-                                                transactions={transactions}
-                                                categories={categories}
-                                                dateRange={dateRange}
-                                                selectedGroups={selectedGroups}
-                                            />
+                                {/* 3. Filter Insights – shown when a single group or category is selected */}
+                                {filterInsightsConfig && (
+                                    <FilterInsights
+                                        filterType={filterInsightsConfig.filterType}
+                                        filterId={filterInsightsConfig.filterId}
+                                        filterLabel={filterInsightsConfig.filterLabel}
+                                        transactions={transactions}
+                                        categories={categories}
+                                        dateRange={dateRange}
+                                        timeRange={timeRange}
+                                        allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
+                                        onDateRangeChange={handleCustomDateChange}
+                                        onClose={() => {
+                                            // Clear the filter that's driving insights
+                                            if (filterInsightsConfig.filterType === 'category') {
+                                                setSelectedCategories([]);
+                                            } else {
+                                                setSelectedGroups([]);
+                                                setSelectedCategories([]);
+                                            }
+                                        }}
+                                        onSetComparisonPeriod={handleSetComparisonPeriod}
+                                    />
+                                )}
+
+                                {/* 4. Top Categories & Top Vendors – side-by-side on desktop */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                    {showTopCategories && (<div className="stats-card">
+                                        <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                                <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+                                            </svg>
+                                            Top Categories
+                                        </h2>
+                                        <div className="overflow-x-auto hide-scrollbar">
+                                            <div className="min-w-[300px]">
+                                                <TopCategoriesChart
+                                                    transactions={transactions}
+                                                    categories={categories}
+                                                    dateRange={dateRange}
+                                                    selectedGroups={selectedGroups}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>)}
+
+                                    <div className={`stats-card ${!showTopCategories ? 'lg:col-span-2' : ''}`}>
+                                        <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                                <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9" />
+                                            </svg>
+                                            Top Vendors
+                                        </h2>
+                                        <div className="overflow-x-auto hide-scrollbar">
+                                            <div className="min-w-[300px]">
+                                                <TopVendorsChart
+                                                    transactions={transactions}
+                                                    categories={categories}
+                                                    dateRange={dateRange}
+                                                    selectedGroups={selectedGroups}
+                                                    selectedCategories={selectedCategories}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Top Vendors */}
+                                {/* 5. Activity Chart – swappable between Spending Over Time and Income vs Spending */}
                                 <div className="stats-card">
-                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
-                                            <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9" />
-                                        </svg>
-                                        Top Vendors
-                                    </h2>
-                                    <div className="overflow-x-auto hide-scrollbar">
-                                        <div className="min-w-[300px]">
-                                            <TopVendorsChart
-                                                transactions={transactions}
-                                                categories={categories}
-                                                dateRange={dateRange}
-                                                selectedGroups={selectedGroups}
-                                                selectedCategories={selectedCategories}
-                                            />
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h2 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                                <path d="M3 3v18h18" /><rect x="7" y="10" width="3" height="8" rx="0.5" /><rect x="12" y="6" width="3" height="12" rx="0.5" /><rect x="17" y="13" width="3" height="5" rx="0.5" />
+                                            </svg>
+                                            Activity
+                                        </h2>
+
+                                        {/* Mode toggle – only show "Income vs Spending" when no filters are active */}
+                                        <div className="flex gap-1 bg-white/[.03] rounded-lg p-1">
+                                            <button
+                                                onClick={() => setActivityChartMode('spending')}
+                                                className={`px-3 py-1.5 text-xs rounded-md transition-all ${activityChartMode === 'spending'
+                                                    ? 'bg-green text-black font-medium'
+                                                    : 'text-white/60 hover:text-white/80'
+                                                    }`}
+                                            >
+                                                Spending
+                                            </button>
+                                            {!hasActiveFilters && (
+                                                <button
+                                                    onClick={() => setActivityChartMode('income')}
+                                                    className={`px-3 py-1.5 text-xs rounded-md transition-all ${activityChartMode === 'income'
+                                                        ? 'bg-green text-black font-medium'
+                                                        : 'text-white/60 hover:text-white/80'
+                                                        }`}
+                                                >
+                                                    Balance
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {activityChartMode === 'spending' ? (
+                                        <SpendingOverTime
+                                            transactions={transactions}
+                                            categories={categories}
+                                            dateRange={dateRange}
+                                            selectedGroups={selectedGroups}
+                                            selectedCategories={selectedCategories}
+                                        />
+                                    ) : (
+                                        <BudgetAssignmentChart
+                                            assignments={assignments}
+                                            categories={categories}
+                                            transactions={transactions}
+                                            timeRange={timeRange}
+                                            customStartDate={customStartDate}
+                                            customEndDate={customEndDate}
+                                            selectedGroups={selectedGroups}
+                                            selectedCategories={selectedCategories}
+                                            showGoals={showGoals}
+                                            showRollover={showRollover}
+                                            onZoomRange={(start: Date, end: Date) => {
+                                                setTimeRange('custom');
+                                                setCustomStartDate(start);
+                                                setCustomEndDate(end);
+                                                triggerZoomAnimation();
+                                                requestAnimationFrame(() => {
+                                                    const chartContainer = document.getElementById('line-chart-container');
+                                                    if (chartContainer) {
+                                                        const headerHeight = 64;
+                                                        const rect = chartContainer.getBoundingClientRect();
+                                                        const target = rect.top + window.pageYOffset - headerHeight - 8;
+                                                        window.scrollTo({ top: target, behavior: 'smooth' });
+                                                    }
+                                                });
+                                            }}
+                                        />
+                                    )}
                                 </div>
 
-                                {/* Spending Over Time */}
+                                {/* 6. Spending Breakdown (Pie Chart) – always visible */}
                                 <div className="stats-card">
-                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-3 flex items-center gap-2">
+                                    <h2 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
-                                            <path d="M3 3v18h18" /><rect x="7" y="10" width="3" height="8" rx="0.5" /><rect x="12" y="6" width="3" height="12" rx="0.5" /><rect x="17" y="13" width="3" height="5" rx="0.5" />
+                                            <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 019.95 9H12V2z" />
                                         </svg>
-                                        Spending Over Time
+                                        Spending Breakdown
                                     </h2>
-                                    <SpendingOverTime
+                                    <PieChart
                                         transactions={transactions}
                                         categories={categories}
                                         dateRange={dateRange}
                                         selectedGroups={selectedGroups}
                                         selectedCategories={selectedCategories}
+                                        onSegmentClick={() => { }}
+                                        showTooltip={true}
+                                        matchHeight={false}
+                                        timeRange={timeRange}
+                                        allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
+                                        onDateRangeChange={handleCustomDateChange}
                                     />
                                 </div>
 
-                                {/* Spending Breakdown (Pie Chart) - Collapsible */}
-                                <div className="stats-card">
-                                    <button
-                                        onClick={() => setShowBreakdownChart(!showBreakdownChart)}
-                                        className="w-full flex items-center justify-between text-left"
-                                    >
-                                        <h2 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
-                                                <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 019.95 9H12V2z" />
-                                            </svg>
-                                            Spending Breakdown
-                                        </h2>
-                                        <svg
-                                            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                                            className={`text-white/50 transition-transform duration-200 ${showBreakdownChart ? 'rotate-180' : ''}`}
-                                        >
-                                            <path d="M6 9l6 6 6-6" />
-                                        </svg>
-                                    </button>
-
-                                    {showBreakdownChart && (
-                                        <div className="mt-4 space-y-4">
-                                            <PieChart
-                                                transactions={transactions}
-                                                categories={categories}
-                                                dateRange={dateRange}
-                                                selectedGroups={selectedGroups}
-                                                selectedCategories={selectedCategories}
-                                                onSegmentClick={handlePieSegmentClick}
-                                                showTooltip={!selectedPieSegment}
-                                                matchHeight={false}
-                                                timeRange={timeRange}
-                                                allTimeRange={allTimeStart && allTimeEnd ? { start: allTimeStart, end: allTimeEnd } : undefined}
-                                                onDateRangeChange={handleCustomDateChange}
-                                            />
-
-                                            {/* Insights Panel */}
-                                            {(selectedPieSegment || persistedGroupSegment) && (
-                                                <div className="w-full insights-panel-enter">
-                                                    <div className="lg:hidden mobile-chart-insights" id="mobile-insights-panel">
-                                                        <PieSegmentInsights
-                                                            segment={selectedPieSegment || persistedGroupSegment}
-                                                            transactions={transactions}
-                                                            categories={categories}
-                                                            dateRange={dateRange}
-                                                            onClose={handleClosePieInsights}
-                                                            onFilterBySegment={handleFilterBySegment}
-                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
-                                                            isMobileOptimized={true}
-                                                            isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
-                                                            timeRange={timeRange}
-                                                        />
-                                                    </div>
-                                                    <div className="hidden lg:block" id="desktop-insights-panel">
-                                                        <PieSegmentInsights
-                                                            segment={selectedPieSegment || persistedGroupSegment}
-                                                            transactions={transactions}
-                                                            categories={categories}
-                                                            dateRange={dateRange}
-                                                            onClose={handleClosePieInsights}
-                                                            onFilterBySegment={handleFilterBySegment}
-                                                            onSetComparisonPeriod={handleSetComparisonPeriod}
-                                                            isMobileOptimized={false}
-                                                            isPersistedGroupView={!selectedPieSegment && !!persistedGroupSegment}
-                                                            timeRange={timeRange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Money Flow (Sankey) Card - subtle design */}
+                                {/* 7. Money Flow (Sankey) Card */}
                                 <Link href="/stats/sankey">
                                     <div className="stats-card group hover:border-green/40 transition-all cursor-pointer flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -447,35 +455,6 @@ export default function Stats() {
                                         </svg>
                                     </div>
                                 </Link>
-
-                                {/* Budget Assignment Chart */}
-                                <BudgetAssignmentChart
-                                    assignments={assignments}
-                                    categories={categories}
-                                    transactions={transactions}
-                                    timeRange={timeRange}
-                                    customStartDate={customStartDate}
-                                    customEndDate={customEndDate}
-                                    selectedGroups={selectedGroups}
-                                    selectedCategories={selectedCategories}
-                                    showGoals={showGoals}
-                                    showRollover={showRollover}
-                                    onZoomRange={(start: Date, end: Date) => {
-                                        setTimeRange('custom');
-                                        setCustomStartDate(start);
-                                        setCustomEndDate(end);
-                                        triggerZoomAnimation();
-                                        requestAnimationFrame(() => {
-                                            const chartContainer = document.getElementById('line-chart-container');
-                                            if (chartContainer) {
-                                                const headerHeight = 64;
-                                                const rect = chartContainer.getBoundingClientRect();
-                                                const target = rect.top + window.pageYOffset - headerHeight - 8;
-                                                window.scrollTo({ top: target, behavior: 'smooth' });
-                                            }
-                                        });
-                                    }}
-                                />
                             </div>
                         )}
                     </div>

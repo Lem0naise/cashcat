@@ -298,7 +298,8 @@ export default function Account() {
                                     You are on CashCat <span className="text-green font-medium">0.9.5</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
-                                    <li>A native Android app!</li>
+                                    <li>New and improved stats screen</li>
+                                    <li>A native Android app</li>
                                     <li>A publicly accessible RESTful API</li>
                                     <li>New and improved caching for snappy performance</li>
                                     <li>The ability to 'transfer' money between bank accounts</li>
