@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Account Settings - CashCat Docs',
-  description: 'Learn how to manage your account settings and preferences in CashCat.',
+    title: 'Account Settings - CashCat Docs',
+    description: 'Learn how to manage your account settings and preferences in CashCat.',
 };
 
 export default function AccountSettings() {
@@ -18,24 +18,23 @@ export default function AccountSettings() {
             {/* Data management */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Data Management</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
-                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Data Export - Coming Soon</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Data Export</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Export your financial data for backup purposes or to use with other tools. 
+                        Export your financial data for backup purposes or to use with other tools from the Transactions page.
                         Download your transactions, budgets, and account information in various formats.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1">
                         <li>• CSV export for spreadsheets</li>
                         <li>• JSON export for developers</li>
-                        <li>• PDF reports for records</li>
                     </ul>
                 </div>
 
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Account Deletion</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        If you decide to stop using CashCat, you can permanently delete your account and all associated data via the account page. 
+                        If you decide to stop using CashCat, you can permanently delete your account and all associated data via the account page.
                         This action cannot be undone, so export any data you want to keep first.
                     </p>
                     <div className="bg-red/10 p-3 rounded-lg mt-3">
