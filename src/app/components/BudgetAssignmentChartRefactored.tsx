@@ -19,29 +19,29 @@ import {
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 // Import our modular components
-import { 
-  BudgetAssignmentChartProps, 
-  Category 
+import {
+  BudgetAssignmentChartProps,
+  Category
 } from './charts/types';
-import { 
-  calculateDateRange, 
-  calculateAllTimeRange, 
+import {
+  calculateDateRange,
+  calculateAllTimeRange,
   determineTimeUnit,
-  formatCurrency 
+  formatCurrency
 } from './charts/utils';
 import { comparisonSelectionPlugin } from './charts/plugins';
 import { segmentedBarsPlugin } from './charts/plugins/segmentedBars';
-import { 
-  useFilteredTransactions, 
-  useChartData 
+import {
+  useFilteredTransactions,
+  useChartData
 } from './charts/hooks/useChartData';
 import { useComparisonAnalysis } from './charts/hooks/useComparisonAnalysis';
 import { useDistanceFromGoalData } from './charts/hooks/useDistanceFromGoalData';
 import { ComparisonAnalysis } from './charts/ComparisonAnalysis';
 import { SegmentAnalysis, SegmentHoverInfo } from './charts/SegmentAnalysis';
-import { 
-  useLineChartConfig, 
-  useVolumeChartConfig 
+import {
+  useLineChartConfig,
+  useVolumeChartConfig
 } from './charts/configs';
 
 // Register Chart.js components
@@ -62,7 +62,7 @@ ChartJS.register(
 
 // Set Chart.js global font defaults
 ChartJS.defaults.font.family = 'Gabarito, system-ui, -apple-system, sans-serif';
- 
+
 export default function BudgetAssignmentChart({
   assignments,
   categories,
@@ -102,12 +102,12 @@ export default function BudgetAssignmentChart({
           max: Math.max(s, t)
         };
         (bar as any).update('zoom');
-      } catch {}
+      } catch { }
     };
     canvas.addEventListener('preZoom', handler as EventListener);
     return () => canvas.removeEventListener('preZoom', handler as EventListener);
   }, []);
-  
+
   // Add state for segment hover information and visibility control
   const [segmentHoverInfo, setSegmentHoverInfo] = useState<SegmentHoverInfo | null>(null);
   const [lastValidSegmentInfo, setLastValidSegmentInfo] = useState<SegmentHoverInfo | null>(null);
@@ -120,28 +120,28 @@ export default function BudgetAssignmentChart({
   }, []);
 
   // Calculate date ranges with memoization for better performance
-  const { allTimeStart, allTimeEnd } = useMemo(() => 
-    calculateAllTimeRange(assignments, transactions), 
+  const { allTimeStart, allTimeEnd } = useMemo(() =>
+    calculateAllTimeRange(assignments, transactions),
     [assignments.length, transactions.length]
   );
-  
+
   // Memoize date range calculation with better dependencies
-  const dateRange = useMemo(() => 
+  const dateRange = useMemo(() =>
     calculateDateRange(timeRange, customStartDate, customEndDate, allTimeStart, allTimeEnd),
     [timeRange, customStartDate?.getTime(), customEndDate?.getTime(), allTimeStart?.getTime(), allTimeEnd?.getTime()]
   );
 
   // Filter transactions based on selected groups/categories
   const filteredTransactions = useFilteredTransactions(
-    transactions, 
-    categories, 
-    selectedGroups, 
+    transactions,
+    categories,
+    selectedGroups,
     selectedCategories
   );
 
   // Process transactions into chart data points
   // Always use ALL transactions for the main balance calculation (like original code)
-  const hasActiveFilters = useMemo(() => 
+  const hasActiveFilters = useMemo(() =>
     selectedCategories.length > 0 || selectedGroups.length > 0,
     [selectedCategories.length, selectedGroups.length]
   );
@@ -159,7 +159,7 @@ export default function BudgetAssignmentChart({
   // Get filtered categories for distance calculation - memoized with stable dependencies
   const filteredCategoriesWithGoals = useMemo(() => {
     let targetCategories: Category[] = [];
-    
+
     if (selectedCategories.length > 0) {
       // Create a set for faster lookup
       const selectedCategorySet = new Set(selectedCategories);
@@ -172,7 +172,7 @@ export default function BudgetAssignmentChart({
         return selectedGroupSet.has(categoryGroup);
       });
     }
-    
+
     // Return all selected categories - the distance from goal chart will handle
     // showing different visualizations for categories with/without goals
     return targetCategories;
@@ -204,12 +204,12 @@ export default function BudgetAssignmentChart({
     const filteredVolumePoints = chartData.volumePoints.map(originalPoint => {
       // Create a category map for quick lookups
       const categoryMap = new Map(categories.map(c => [c.id, c]));
-      
+
       // Get all transactions that fall within this time period
       // We need to compare by date only, not the full timestamp
       const periodDate = new Date(originalPoint.x);
       const periodDateString = format(periodDate, 'yyyy-MM-dd');
-      
+
       const periodTransactions = filteredTransactions.filter(t => {
         try {
           const transactionDate = new Date(t.date);
@@ -273,7 +273,7 @@ export default function BudgetAssignmentChart({
   const shouldShowDistanceFromGoal = filteredCategoriesWithGoals.length > 0;
 
   // Memoize the category IDs array to prevent infinite re-renders
-  const comparisonCategoryIds = useMemo(() => 
+  const comparisonCategoryIds = useMemo(() =>
     shouldShowDistanceFromGoal ? filteredCategoriesWithGoals.map(cat => cat.id) : selectedCategories,
     [shouldShowDistanceFromGoal, filteredCategoriesWithGoals.map(cat => cat.id).join(','), selectedCategories.join(',')]
   );
@@ -300,10 +300,10 @@ export default function BudgetAssignmentChart({
     handleHoverLeave,
     clearSelection
   } = useComparisonAnalysis(
-    comparisonCategoryIds, 
+    comparisonCategoryIds,
     categories
   );
-  
+
   // Find the correct time unit for the current range
   const diffInDays = Math.abs((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
   const xUnit = determineTimeUnit(diffInDays, true); // Force daily for line charts
@@ -345,10 +345,10 @@ export default function BudgetAssignmentChart({
     comparisonData,
     handleRealTimeUpdate,
     calculateComparisonData,
-  handleHover,
-  handleHoverLeave,
-  wrappedOnZoomRange,
-  suppressNextLineAnim
+    handleHover,
+    handleHoverLeave,
+    wrappedOnZoomRange,
+    suppressNextLineAnim
   );
 
   const volumeChartConfig = useVolumeChartConfig(
@@ -392,7 +392,7 @@ export default function BudgetAssignmentChart({
         }
         return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
       };
-      
+
       // Mouse event handlers
       const onMouseDown = (e: MouseEvent) => {
         if (isOverZoomButton(e)) { e.preventDefault(); return; }
@@ -416,7 +416,7 @@ export default function BudgetAssignmentChart({
           setComparisonData(null);
         }
       };
-      
+
       // Touch event handlers
       const onTouchStart = (e: TouchEvent) => {
         if (isOverZoomButton(e)) { e.preventDefault(); return; }
@@ -435,26 +435,26 @@ export default function BudgetAssignmentChart({
           setComparisonData(null);
         }
       };
-      
+
       // Add mouse event listeners
       canvas.addEventListener('mousedown', onMouseDown);
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseup', onMouseUp);
       canvas.addEventListener('mouseleave', onMouseLeave);
-      
+
       // Add touch event listeners
       canvas.addEventListener('touchstart', onTouchStart, { passive: false });
       canvas.addEventListener('touchmove', onTouchMove, { passive: false });
       canvas.addEventListener('touchend', onTouchEnd, { passive: false });
       canvas.addEventListener('touchcancel', onTouchCancel, { passive: false });
-      
+
       return () => {
         // Remove mouse event listeners
         canvas.removeEventListener('mousedown', onMouseDown);
         canvas.removeEventListener('mousemove', onMouseMove);
         canvas.removeEventListener('mouseup', onMouseUp);
         canvas.removeEventListener('mouseleave', onMouseLeave);
-        
+
         // Remove touch event listeners
         canvas.removeEventListener('touchstart', onTouchStart);
         canvas.removeEventListener('touchmove', onTouchMove);
@@ -467,7 +467,7 @@ export default function BudgetAssignmentChart({
   // Memoize expensive calculations to prevent unnecessary re-renders
   const chartDataLength = chartData?.dataPoints?.length || 0;
   const distanceFromGoalDatasetsLength = distanceFromGoalData?.datasets?.length || 0;
-  
+
   // Memoize default comparison data calculation
   const defaultComparisonDataMemo = useMemo(() => {
     if (chartData && chartData.dataPoints.length > 1) {
@@ -475,16 +475,16 @@ export default function BudgetAssignmentChart({
       const endIdx = chartData.dataPoints.length - 1;
       const dataToUse = chartData.dataPoints;
       const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
-      
+
       if (dataToUse && dataToUse.length > 1) {
         return calculateComparisonData(startIdx, endIdx, dataToUse, datasetsToUse);
       }
     }
     return null;
   }, [
-    chartDataLength, 
-    shouldShowDistanceFromGoal, 
-    distanceFromGoalDatasetsLength, 
+    chartDataLength,
+    shouldShowDistanceFromGoal,
+    distanceFromGoalDatasetsLength,
     calculateComparisonData,
     dateRange.start.getTime(), // Add date range dependencies
     dateRange.end.getTime()    // to ensure recalculation when dates change
@@ -500,34 +500,34 @@ export default function BudgetAssignmentChart({
       }
     }
   }, [defaultComparisonDataMemo, dragStartDataIndex, dragEndDataIndex]);
-  
+
   // Effect to set up segment hover event listener
   useEffect(() => {
     const chart = volumeChartRef.current;
     if (chart && chart.canvas) {
       const canvas = chart.canvas;
-      
+
       // Event handler for segment hover
       const handleSegmentHover = (e: Event) => {
         if (e instanceof CustomEvent && e.detail) {
           // Update current hover info
           setSegmentHoverInfo(e.detail);
-          
+
           // Save the last valid hover info for persistent display
           setLastValidSegmentInfo(e.detail);
-          
+
           // Always show segment details when we have valid data
           setShowSegmentDetails(true);
-          
+
           // Note: The plugin never dispatches events for null/empty hover states
           // So this handler will only receive events with valid segment data
           // The details will stay visible until explicitly closed via the close button
         }
       };
-      
+
       // Add event listener for segment hover
       canvas.addEventListener('segmentHover', handleSegmentHover);
-      
+
       // Cleanup
       return () => {
         canvas.removeEventListener('segmentHover', handleSegmentHover);
@@ -543,14 +543,14 @@ export default function BudgetAssignmentChart({
     if (hoverDataIndex !== null && !isDragging && chartData?.dataPoints) {
       const dataToUse = chartData.dataPoints;
       const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
-      
+
       if (dataToUse && dataToUse.length > 0) {
         const singlePointData = calculateSinglePointData(
           hoverDataIndex,
           dataToUse,
           datasetsToUse
         );
-        
+
         if (singlePointData) {
           setComparisonData(singlePointData);
         }
@@ -561,7 +561,7 @@ export default function BudgetAssignmentChart({
         // If user has made a drag selection, restore that selection's data
         const dataToUse = chartData.dataPoints;
         const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
-        
+
         if (dataToUse && dataToUse.length > 0) {
           const dragSelectionData = calculateComparisonData(
             dragStartDataIndex,
@@ -569,7 +569,7 @@ export default function BudgetAssignmentChart({
             dataToUse,
             datasetsToUse
           );
-          
+
           if (dragSelectionData) {
             setComparisonData(dragSelectionData);
           }
@@ -587,7 +587,7 @@ export default function BudgetAssignmentChart({
       // Always use chart data points for dates/structure, datasets for multi-category analysis
       const dataToUse = chartData.dataPoints;
       const datasetsToUse = shouldShowDistanceFromGoal ? distanceFromGoalData.datasets : undefined;
-      
+
       if (dataToUse && dataToUse.length > 0) {
         const comparison = calculateComparisonData(dragStartDataIndex, dragEndDataIndex, dataToUse, datasetsToUse);
         if (comparison) {
@@ -648,14 +648,16 @@ export default function BudgetAssignmentChart({
             <Line ref={lineChartRef} {...lineChartConfig} />
           </div>
 
-          {/* Volume Chart */}
-          <div className="bg-white/[.02] rounded-lg p-4 h-96">
-            <Bar ref={volumeChartRef} {...volumeChartConfig} />
-          </div>
+          {/* Volume Chart - Only show when no filters are active per user request */}
+          {!hasActiveFilters && (
+            <div className="bg-white/[.02] rounded-lg p-4 h-96">
+              <Bar ref={volumeChartRef} {...volumeChartConfig} />
+            </div>
+          )}
 
           {/* Segment Analysis - Persistent details box with close button (appears below bar chart) */}
           {showSegmentDetails && lastValidSegmentInfo && (
-            <SegmentAnalysis 
+            <SegmentAnalysis
               hoverInfo={segmentHoverInfo || lastValidSegmentInfo}
               onClose={handleCloseSegmentDetails}
             />

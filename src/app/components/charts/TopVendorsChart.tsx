@@ -120,7 +120,7 @@ export default function TopVendorsChart({
                                         className="h-full rounded-full transition-all duration-500 ease-out"
                                         style={{
                                             width: `${Math.max(pct, 2)}%`,
-                                            background: `linear-gradient(90deg, rgba(132, 214, 132, 0.5), rgba(132, 214, 132, 0.25))`,
+                                            background: `linear-gradient(90deg,  rgba(186, 194, 255, 0.6), rgba(186, 194, 255, 0.3))`,
                                         }}
                                     />
                                 </div>

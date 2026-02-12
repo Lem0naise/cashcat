@@ -59,12 +59,7 @@ export default function Stats() {
     // Whether filters are active (group or category selected)
     const hasActiveFilters = selectedGroups.length > 0 || selectedCategories.length > 0;
 
-    // Auto-switch to 'spending' when filters become active
-    useEffect(() => {
-        if (hasActiveFilters && activityChartMode === 'income') {
-            setActivityChartMode('spending');
-        }
-    }, [hasActiveFilters, activityChartMode]);
+
 
     // Memoize expensive calculations
     const categoriesWithGroupNames = useMemo(() =>
@@ -219,8 +214,8 @@ export default function Stats() {
                 <main className={`pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-4 sm:p-6 fade-in`}>
                     <div className="max-w-7xl mx-auto">
                         {/* Header */}
-                        <div className="mb-4 sm:mb-6 md:mt-8">
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-[-.01em]">Statistics</h1>
+                        <div className="mb-8 sm:mb-8 md:mt-8">
+
                         </div>
 
                         {assignments.length === 0 ? (
@@ -357,17 +352,15 @@ export default function Stats() {
                                             >
                                                 Spending
                                             </button>
-                                            {!hasActiveFilters && (
-                                                <button
-                                                    onClick={() => setActivityChartMode('income')}
-                                                    className={`px-3 py-1.5 text-xs rounded-md transition-all ${activityChartMode === 'income'
-                                                        ? 'bg-green text-black font-medium'
-                                                        : 'text-white/60 hover:text-white/80'
-                                                        }`}
-                                                >
-                                                    Balance
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={() => setActivityChartMode('income')}
+                                                className={`px-3 py-1.5 text-xs rounded-md transition-all ${activityChartMode === 'income'
+                                                    ? 'bg-green text-black font-medium'
+                                                    : 'text-white/60 hover:text-white/80'
+                                                    }`}
+                                            >
+                                                Balance
+                                            </button>
                                         </div>
                                     </div>
 

@@ -559,7 +559,8 @@ export default function PieChart({
 
   const chartOptions = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
+    aspectRatio: 1,
     animation: {
       duration: 0, // Disable animations to prevent redraw on layout changes
     },
@@ -640,7 +641,7 @@ export default function PieChart({
 
   if (pieChartData.segments.length === 0) {
     return (
-      <div className={`bg-white/[.03] rounded-lg p-4 flex flex-col ${matchHeight ? 'h-full min-h-[600px]' : 'h-[550px]'}`}>
+      <div className={`bg-white/[.03] rounded-lg p-4 flex flex-col ${matchHeight ? 'h-full' : ''}`}>
         {/* Date Range Navigation Header - Even shown when no data */}
         {onDateRangeChange && (
           <div className="flex items-center justify-between mb-4 px-2">
@@ -709,7 +710,6 @@ export default function PieChart({
     <div
       ref={containerRef}
       className={`bg-white/[.03] rounded-lg p-4 transition-all duration-300 ease-out ${matchHeight ? 'h-full flex flex-col' : ''}`}
-      style={matchHeight ? { minHeight: '600px' } : {}}
     >
       {/* Date Range Navigation Header */}
       {onDateRangeChange && (
@@ -762,13 +762,8 @@ export default function PieChart({
       <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}
         <div className="flex items-center justify-center w-full h-full transition-all duration-300 ease-out" style={{ overflow: 'visible' }}>
-          <div className="relative w-full transition-all duration-300 ease-out" style={{
-            height: matchHeight ? '100%' : '550px',
-            minHeight: matchHeight ? '500px' : '550px',
-            maxHeight: matchHeight ? 'none' : '550px',
-            maxWidth: shouldShowLabels ? (matchHeight ? '600px' : '700px') : '100%', // Full width when no labels
-          }}>
-            <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }} className="transition-all duration-300 ease-out">
+          <div className={`relative w-full ${shouldShowLabels ? (matchHeight ? 'max-w-[500px]' : 'max-w-[600px]') : 'max-w-full'}`}>
+            <div className="w-full h-full overflow-visible relative transition-all duration-300 ease-out">
               <Doughnut
                 key={chartKey}
                 ref={chartRef}
