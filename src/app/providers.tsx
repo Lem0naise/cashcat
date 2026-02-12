@@ -27,55 +27,33 @@ export function Providers({ children }: { children: React.ReactNode }) {
                         gcTime: 1000 * 60 * 60 * 24, // 24 hours - keep in cache for 24h
                         retry: 3,
                         refetchOnWindowFocus: false,
+                        networkMode: 'offlineFirst',
                     },
                 },
             })
     );
 
-    // Only initialize IndexedDB persister on client
+    // Only initialize persister on client
     useEffect(() => {
         setIsClient(true);
 
-        // Dynamically import idb-keyval to avoid SSR issues
-        Promise.all([
-            import('@tanstack/query-async-storage-persister'),
-            import('idb-keyval')
-        ]).then(([{ createAsyncStoragePersister }, { get, set, del }]) => {
-            const idbStorage = {
-                getItem: async (key: string) => {
-                    try {
-                        const value = await get(key);
-                        return value ?? null;
-                    } catch (e) {
-                        console.warn('IndexedDB getItem error:', e);
-                        return null;
-                    }
+        const localStoragePersister = createAsyncStoragePersister({
+            storage: {
+                getItem: async (key) => {
+                    const res = window.localStorage.getItem(key);
+                    return res;
                 },
-                setItem: async (key: string, value: string) => {
-                    try {
-                        await set(key, value);
-                    } catch (e) {
-                        console.warn('IndexedDB setItem error:', e);
-                    }
+                setItem: async (key, value) => {
+                    window.localStorage.setItem(key, value);
                 },
-                removeItem: async (key: string) => {
-                    try {
-                        await del(key);
-                    } catch (e) {
-                        console.warn('IndexedDB removeItem error:', e);
-                    }
+                removeItem: async (key) => {
+                    window.localStorage.removeItem(key);
                 },
-            };
-
-            const asyncPersister = createAsyncStoragePersister({
-                storage: idbStorage,
-                key: 'cashcat-query-cache',
-            });
-
-            setPersister(asyncPersister);
-        }).catch((e) => {
-            console.warn('Failed to initialize IndexedDB persister:', e);
+            },
+            key: 'cashcat-query-cache',
         });
+
+        setPersister(localStoragePersister);
     }, []);
 
     return (

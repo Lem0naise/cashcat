@@ -385,23 +385,23 @@ export default function SankeyPage() {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-[-.01em]">Money Flow</h1>
-                                    <p className="text-sm text-white/60 mt-1">
-                                        Visualize how money flows from income sources through your budget
+                                    <h1 className="text-xl sm:text-2xl font-bold tracking-[-.01em]">Money Flow</h1>
+                                    <p className="text-xs sm:text-sm text-white/50 mt-0.5">
+                                        Visualize how money flows through your budget
                                     </p>
                                 </div>
 
                                 {/* View controls */}
-                                <div className="hidden md:flex items-center gap-2">
+                                <div className="hidden md:flex items-center gap-1.5">
                                     <button
                                         onClick={handleCollapseAll}
-                                        className="px-3 py-2 text-sm bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
+                                        className="px-3 py-1.5 text-xs bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
                                     >
                                         Collapse All
                                     </button>
                                     <button
                                         onClick={handleExpandAllGroups}
-                                        className="px-3 py-2 text-sm bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
+                                        className="px-3 py-1.5 text-xs bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
                                     >
                                         Expand Groups
                                     </button>
@@ -409,26 +409,25 @@ export default function SankeyPage() {
                             </div>
                         </div>
 
-                        {/* Time Range Selection */}
-                        <div className="mb-6">
-                            <div className="bg-white/[.03] rounded-lg p-4">
-                                <h3 className="font-medium mb-3">Time Range</h3>
-                                <div className="flex flex-wrap gap-2">
+                        {/* Time Range Selection - compact scrollable pills */}
+                        <div className="mb-4">
+                            <div className="overflow-x-auto hide-scrollbar">
+                                <div className="flex gap-1.5 pb-1">
                                     {[
-                                        { value: '7d', label: 'Last 7 Days' },
-                                        { value: '30d', label: 'Last 30 Days' },
-                                        { value: 'mtd', label: 'Month to Date' },
-                                        { value: '3m', label: 'Last 3 Months' },
-                                        { value: 'ytd', label: 'Year to Date' },
-                                        { value: '12m', label: 'Last 12 Months' },
-                                        { value: 'all', label: 'All Time' },
-                                        { value: 'custom', label: 'Custom Range' }
+                                        { value: '7d', label: '7D' },
+                                        { value: '30d', label: '30D' },
+                                        { value: 'mtd', label: 'MTD' },
+                                        { value: '3m', label: '3M' },
+                                        { value: 'ytd', label: 'YTD' },
+                                        { value: '12m', label: '12M' },
+                                        { value: 'all', label: 'All' },
+                                        { value: 'custom', label: 'Custom' }
                                     ].map(option => (
                                         <button
                                             key={option.value}
                                             onClick={() => handleTimeRangeChange(option.value as any)}
-                                            className={`px-3 py-2 text-sm rounded-lg transition-all ${timeRange === option.value
-                                                ? 'bg-green text-black'
+                                            className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap shrink-0 ${timeRange === option.value
+                                                ? 'bg-green text-black font-medium'
                                                 : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
                                                 }`}
                                         >
@@ -436,37 +435,37 @@ export default function SankeyPage() {
                                         </button>
                                     ))}
                                 </div>
-
-                                {/* Custom Date Inputs */}
-                                {timeRange === 'custom' && (
-                                    <div className="mt-4 flex flex-wrap gap-3 items-center">
-                                        <div>
-                                            <label className="text-sm text-white/60 block mb-1">Start Date</label>
-                                            <input
-                                                type="date"
-                                                value={customStartDate ? format(customStartDate, 'yyyy-MM-dd') : ''}
-                                                onChange={(e) => {
-                                                    const newStart = new Date(e.target.value);
-                                                    handleCustomDateChange(newStart, customEndDate || newStart);
-                                                }}
-                                                className="px-3 py-2 bg-white/[.05] rounded-lg text-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm text-white/60 block mb-1">End Date</label>
-                                            <input
-                                                type="date"
-                                                value={customEndDate ? format(customEndDate, 'yyyy-MM-dd') : ''}
-                                                onChange={(e) => {
-                                                    const newEnd = new Date(e.target.value);
-                                                    handleCustomDateChange(customStartDate || newEnd, newEnd);
-                                                }}
-                                                className="px-3 py-2 bg-white/[.05] rounded-lg text-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
                             </div>
+
+                            {/* Custom Date Inputs */}
+                            {timeRange === 'custom' && (
+                                <div className="mt-3 flex gap-3 items-center">
+                                    <div className="flex-1">
+                                        <label className="text-xs text-white/50 block mb-1">Start</label>
+                                        <input
+                                            type="date"
+                                            value={customStartDate ? format(customStartDate, 'yyyy-MM-dd') : ''}
+                                            onChange={(e) => {
+                                                const newStart = new Date(e.target.value);
+                                                handleCustomDateChange(newStart, customEndDate || newStart);
+                                            }}
+                                            className="w-full px-3 py-1.5 bg-white/[.05] rounded-lg text-xs border border-white/10"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-white/50 block mb-1">End</label>
+                                        <input
+                                            type="date"
+                                            value={customEndDate ? format(customEndDate, 'yyyy-MM-dd') : ''}
+                                            onChange={(e) => {
+                                                const newEnd = new Date(e.target.value);
+                                                handleCustomDateChange(customStartDate || newEnd, newEnd);
+                                            }}
+                                            className="w-full px-3 py-1.5 bg-white/[.05] rounded-lg text-xs border border-white/10"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {!hasData ? (
@@ -484,51 +483,52 @@ export default function SankeyPage() {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-6">{/* Mobile view controls */}
-                                <div className="md:hidden flex items-center gap-2">
+                            <div className="space-y-4">{/* Mobile view controls */}
+                                <div className="md:hidden flex items-center gap-1.5">
                                     <button
                                         onClick={handleCollapseAll}
-                                        className="flex-1 px-3 py-2 text-sm bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
+                                        className="flex-1 px-3 py-1.5 text-xs bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
                                     >
-                                        Collapse All
+                                        Collapse
                                     </button>
                                     <button
                                         onClick={handleExpandAllGroups}
-                                        className="flex-1 px-3 py-2 text-sm bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
+                                        className="flex-1 px-3 py-1.5 text-xs bg-white/[.05] hover:bg-white/[.1] rounded-lg transition-colors"
                                     >
-                                        Expand Groups
+                                        Expand
                                     </button>
                                 </div>
 
-                                {/* Legend */}
-                                <div className="bg-white/[.03] rounded-lg p-4">
-                                    <h3 className="font-medium mb-3 text-sm">How to use:</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-white/70">
-                                        <div className="flex items-start gap-2">
-                                            <div className="w-4 h-4 bg-blue-500 rounded mt-0.5 flex-shrink-0" />
-                                            <span><strong className="text-white">Blue nodes</strong> represent income sources</span>
+                                {/* Legend - collapsible on mobile */}
+                                <details className="bg-white/[.03] rounded-lg group">
+                                    <summary className="p-3 cursor-pointer text-xs sm:text-sm font-medium text-white/70 hover:text-white/90 transition-colors flex items-center justify-between list-none">
+                                        <span>How to use</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40 group-open:rotate-180 transition-transform">
+                                            <path d="M6 9l6 6 6-6" />
+                                        </svg>
+                                    </summary>
+                                    <div className="px-3 pb-3 grid grid-cols-2 gap-2 text-xs text-white/60">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 bg-blue-500 rounded shrink-0" />
+                                            <span>Income sources</span>
                                         </div>
-                                        <div className="flex items-start gap-2">
-                                            <div className="w-4 h-4 bg-green rounded mt-0.5 flex-shrink-0" />
-                                            <span><strong className="text-white">Colored nodes</strong> represent spending groups</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 bg-green rounded shrink-0" />
+                                            <span>Spending groups</span>
                                         </div>
-                                        <div className="flex items-start gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 16 16" className="mt-0.5 flex-shrink-0">
-                                                <rect width="16" height="16" fill="currentColor" opacity="0.3" rx="2" />
-                                            </svg>
-                                            <span><strong className="text-white">Click groups</strong> to expand into categories</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-white/40">Click groups →</span>
+                                            <span>categories</span>
                                         </div>
-                                        <div className="flex items-start gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 16 16" className="mt-0.5 flex-shrink-0">
-                                                <rect width="16" height="16" fill="currentColor" opacity="0.3" rx="2" />
-                                            </svg>
-                                            <span><strong className="text-white">Click categories</strong> to expand into vendors</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-white/40">Click categories →</span>
+                                            <span>vendors</span>
                                         </div>
                                     </div>
-                                </div>
+                                </details>
 
                                 {/* Sankey Diagram */}
-                                <div className="bg-white/[.03] rounded-lg border border-green/20 overflow-hidden">
+                                <div className="bg-white/[.03] rounded-xl border border-white/[.08] overflow-hidden">
                                     {/* Date Range Navigation Header */}
                                     <div className="flex items-center justify-between px-6 py-4 border-b border-white/[.05]">
                                         <button

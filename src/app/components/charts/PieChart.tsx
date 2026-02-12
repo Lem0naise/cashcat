@@ -559,7 +559,8 @@ export default function PieChart({
 
   const chartOptions = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
+    aspectRatio: 1,
     animation: {
       duration: 0, // Disable animations to prevent redraw on layout changes
     },
@@ -640,7 +641,7 @@ export default function PieChart({
 
   if (pieChartData.segments.length === 0) {
     return (
-      <div className={`bg-white/[.03] rounded-lg p-4 flex flex-col ${matchHeight ? 'h-full min-h-[600px]' : 'h-[550px]'}`}>
+      <div className={`bg-white/[.03] rounded-lg p-4 flex flex-col ${matchHeight ? 'h-full' : ''}`}>
         {/* Date Range Navigation Header - Even shown when no data */}
         {onDateRangeChange && (
           <div className="flex items-center justify-between mb-4 px-2">
@@ -648,8 +649,8 @@ export default function PieChart({
               onClick={handleNavigatePrev}
               disabled={!dateRangeInfo.canNavigatePrev}
               className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigatePrev
-                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                  : 'text-white/20 cursor-not-allowed'
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
                 }`}
               title={
                 dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
@@ -673,8 +674,8 @@ export default function PieChart({
               onClick={handleNavigateNext}
               disabled={!dateRangeInfo.canNavigateNext}
               className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigateNext
-                  ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                  : 'text-white/20 cursor-not-allowed'
+                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+                : 'text-white/20 cursor-not-allowed'
                 }`}
               title={
                 dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
@@ -709,7 +710,6 @@ export default function PieChart({
     <div
       ref={containerRef}
       className={`bg-white/[.03] rounded-lg p-4 transition-all duration-300 ease-out ${matchHeight ? 'h-full flex flex-col' : ''}`}
-      style={matchHeight ? { minHeight: '600px' } : {}}
     >
       {/* Date Range Navigation Header */}
       {onDateRangeChange && (
@@ -718,8 +718,8 @@ export default function PieChart({
             onClick={handleNavigatePrev}
             disabled={!dateRangeInfo.canNavigatePrev}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigatePrev
-                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                : 'text-white/20 cursor-not-allowed'
+              ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+              : 'text-white/20 cursor-not-allowed'
               }`}
             title={
               dateRangeInfo.actualMode === 'mtd' ? 'Previous month (← arrow key)' :
@@ -742,8 +742,8 @@ export default function PieChart({
             onClick={handleNavigateNext}
             disabled={!dateRangeInfo.canNavigateNext}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${dateRangeInfo.canNavigateNext
-                ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
-                : 'text-white/20 cursor-not-allowed'
+              ? 'text-white/70 hover:text-white hover:bg-white/[.08] active:scale-90 active:bg-white/[.12] focus:outline-none focus:ring-2 focus:ring-green/30'
+              : 'text-white/20 cursor-not-allowed'
               }`}
             title={
               dateRangeInfo.actualMode === 'mtd' ? 'Next month (→ arrow key)' :
@@ -762,13 +762,8 @@ export default function PieChart({
       <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
         {/* Chart Section with minimal padding but maximum chart space */}
         <div className="flex items-center justify-center w-full h-full transition-all duration-300 ease-out" style={{ overflow: 'visible' }}>
-          <div className="relative w-full transition-all duration-300 ease-out" style={{
-            height: matchHeight ? '100%' : '550px',
-            minHeight: matchHeight ? '500px' : '550px',
-            maxHeight: matchHeight ? 'none' : '550px',
-            maxWidth: shouldShowLabels ? (matchHeight ? '600px' : '700px') : '100%', // Full width when no labels
-          }}>
-            <div style={{ width: '100%', height: '100%', overflow: 'visible', position: 'relative' }} className="transition-all duration-300 ease-out">
+          <div className={`relative w-full ${shouldShowLabels ? (matchHeight ? 'max-w-[500px]' : 'max-w-[600px]') : 'max-w-full'}`}>
+            <div className="w-full h-full overflow-visible relative transition-all duration-300 ease-out">
               <Doughnut
                 key={chartKey}
                 ref={chartRef}
@@ -816,10 +811,7 @@ export default function PieChart({
       {/* Chart label explainer - Always positioned at bottom */}
       <div className="text-center text-sm text-white/50 mt-3 flex-shrink-0">
         <p>
-          {shouldShowLabels
-            ? "Hover over segments for details. Click for in-depth analysis."
-            : "Tap segments for details. Segment labels hidden to maximize chart size."
-          }
+
         </p>
       </div>
     </div>

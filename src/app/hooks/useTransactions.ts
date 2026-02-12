@@ -23,9 +23,10 @@ export type TransactionWithDetails = Database['public']['Tables']['transactions'
 // Fetch all transactions for the current user
 const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const user = session?.user;
 
-    if (userError || !user) throw new Error('Not authenticated');
+    if (sessionError || !user) throw new Error('Not authenticated');
 
     // Fetch all transactions in batches to handle large datasets
     let allTransactions: TransactionWithDetails[] = [];

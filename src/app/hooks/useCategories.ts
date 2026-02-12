@@ -10,9 +10,10 @@ type CategoryWithGroup = Category & {
 // Fetch all categories for the current user
 const fetchCategories = async (): Promise<CategoryWithGroup[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const user = session?.user;
 
-    if (userError || !user) throw new Error('Not authenticated');
+    if (sessionError || !user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('categories')

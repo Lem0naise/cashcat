@@ -7,10 +7,14 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development'
 });
 
+const isMobile = process.env.CAPACITOR_BUILD === 'true';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: isMobile ? 'export' : undefined,
   // Image Optimization configuration
   images: {
+    unoptimized: isMobile,
     domains: ["avatars.githubusercontent.com"],
   },
 

@@ -7,9 +7,10 @@ type Assignment = Database['public']['Tables']['assignments']['Row'];
 // Fetch all assignments for the current user
 const fetchAssignments = async (): Promise<Assignment[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const user = session?.user;
 
-    if (userError || !user) throw new Error('Not authenticated');
+    if (sessionError || !user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('assignments')

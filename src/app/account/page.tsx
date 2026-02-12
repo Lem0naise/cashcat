@@ -12,7 +12,8 @@ import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
 import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
-import ApiKeyManager from '../components/api-key-manager';
+import { Capacitor } from '@capacitor/core';
+
 
 export default function Account() {
     const router = useRouter();
@@ -35,6 +36,19 @@ export default function Account() {
     const isPWA = typeof window !== 'undefined' &&
         (window.matchMedia('(display-mode: standalone)').matches ||
             (window.navigator as any).standalone === true);
+
+    const isNative = Capacitor.isNativePlatform();
+
+    // Dynamically import ApiKeyManager if not native
+    const [ApiKeyManager, setApiKeyManager] = useState<null | React.ComponentType>(null);
+
+    useEffect(() => {
+        if (!isNative) {
+            import('../components/api-key-manager').then(mod => {
+                setApiKeyManager(() => mod.default);
+            });
+        }
+    }, [isNative]);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -139,7 +153,7 @@ export default function Account() {
                             </div>
                         </div>
 
-                        {!isPWA && (
+                        {(!isPWA && !isNative) && (
                             isInstallable ? (
                                 <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
                                     <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
@@ -175,7 +189,7 @@ export default function Account() {
                                     {!isInstallDismissed && (
                                         <>
                                             <p className="text-sm text-white/70 mb-3">
-                                                You can install CashCat as an app for quick access:
+                                                You can install CashCat as a webapp for quick access:
                                             </p>
                                             <ul className="text-sm text-white/70 mb-3 space-y-1 list-disc list-inside">
                                                 <li><strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
@@ -187,10 +201,6 @@ export default function Account() {
                                 </div>
                             )
                         )}
-
-
-                        {/* API Keys */}
-                        <ApiKeyManager />
 
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
@@ -221,6 +231,12 @@ export default function Account() {
                                 Documentation
                             </Link>
                         </div>
+
+
+
+                        {/* API Keys */}
+                        {!isNative && ApiKeyManager && <ApiKeyManager />}
+
 
                         {/* Help & Resources */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
@@ -279,9 +295,11 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.9.3</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.9.5</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
+                                    <li>New and improved stats screen</li>
+                                    <li>A native Android app</li>
                                     <li>A publicly accessible RESTful API</li>
                                     <li>New and improved caching for snappy performance</li>
                                     <li>The ability to 'transfer' money between bank accounts</li>
