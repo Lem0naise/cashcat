@@ -21,6 +21,7 @@ import type { TransferWithAccounts } from '@/types/supabase';
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
+import { useLunchFlowSync } from '../../hooks/useLunchFlowSync';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -47,6 +48,9 @@ export default function Transactions() {
     const updateTransferMutation = useUpdateTransfer();
     const deleteTransferMutation = useDeleteTransfer();
 
+    // Lunch Flow sync
+    const { syncLunchFlow, isSyncing: isLFSyncing } = useLunchFlowSync();
+
     const [showModal, setShowModal] = useState(false);
     const [modalTransaction, setModalTransaction] = useState<TransactionWithDetails | null>(null);
     const [modalTransfer, setModalTransfer] = useState<TransferWithAccounts | null>(null);
@@ -64,6 +68,7 @@ export default function Transactions() {
     const refetch = () => {
         refetchTransactions();
         refetchTransfers();
+        syncLunchFlow();
     };
 
     const closeModalFunc = () => {

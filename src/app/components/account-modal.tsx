@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { useSupabaseClient } from '../hooks/useSupabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import MoneyInput from "./money-input";
 import ConfirmationModal from "./confirmation-modal";
 import Dropdown, { DropdownOption } from './dropdown';
@@ -15,6 +16,17 @@ type Account = {
     is_default: boolean;
     created_at: string | null;
     user_id: string;
+    lunchflow_account_id?: string | null;
+};
+
+type LFAccount = {
+    id: number;
+    name: string;
+    institution_name: string;
+    institution_logo: string;
+    provider: string;
+    currency: string;
+    status: string;
 };
 
 interface AccountModalProps {
@@ -46,6 +58,12 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     });
     const [confirmLoading, setConfirmLoading] = useState(false);
     const supabase = useSupabaseClient();
+
+    // Lunch Flow connection state
+    const [showLFConnect, setShowLFConnect] = useState(false);
+    const [lfAccounts, setLfAccounts] = useState<LFAccount[]>([]);
+    const [lfLoading, setLfLoading] = useState(false);
+    const [linkingAccountId, setLinkingAccountId] = useState<number | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -81,6 +99,98 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         }
     };
 
+    // --- Lunch Flow Connection Logic ---
+
+    const fetchLFAccounts = async () => {
+        setLfLoading(true);
+        try {
+            const authClient = createClientComponentClient();
+            const { data: { session } } = await authClient.auth.getSession();
+            if (!session?.access_token) {
+                toast.error('Not authenticated');
+                return;
+            }
+
+            const res = await fetch('/api/v1/lunchflow/accounts', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` },
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch');
+
+            setLfAccounts(data.accounts || []);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            if (msg.includes('No Lunch Flow API key')) {
+                toast.error('Lunch Flow is not configured. Add your API key in settings.');
+            } else {
+                toast.error(`Failed to fetch Lunch Flow accounts: ${msg}`);
+            }
+        } finally {
+            setLfLoading(false);
+        }
+    };
+
+    const handleLinkLFAccount = async (lfAccount: LFAccount, existingAccountId?: string) => {
+        setLinkingAccountId(lfAccount.id);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            if (existingAccountId) {
+                // Link existing CashCat account to this LF account
+                const { error } = await supabase
+                    .from('accounts')
+                    .update({ lunchflow_account_id: lfAccount.id.toString() })
+                    .eq('id', existingAccountId);
+
+                if (error) throw error;
+                toast.success(`Linked ${lfAccount.name} to your account`);
+            } else {
+                // Create new CashCat account linked to this LF account
+                const { error } = await supabase
+                    .from('accounts')
+                    .insert({
+                        name: `${lfAccount.name} (${lfAccount.institution_name})`,
+                        type: 'checking',
+                        user_id: user.id,
+                        is_active: true,
+                        is_default: false,
+                        lunchflow_account_id: lfAccount.id.toString(),
+                    });
+
+                if (error) throw error;
+                toast.success(`Created and linked ${lfAccount.name}`);
+            }
+
+            fetchAccounts();
+            onAccountsUpdated();
+            setShowLFConnect(false);
+        } catch (err) {
+            console.error('Error linking LF account:', err);
+            toast.error('Failed to link account');
+        } finally {
+            setLinkingAccountId(null);
+        }
+    };
+
+    const handleUnlinkLFAccount = async (account: Account) => {
+        try {
+            const { error } = await supabase
+                .from('accounts')
+                .update({ lunchflow_account_id: null })
+                .eq('id', account.id);
+
+            if (error) throw error;
+            toast.success('Lunch Flow connection removed');
+            fetchAccounts();
+            onAccountsUpdated();
+        } catch (err) {
+            console.error('Error unlinking LF account:', err);
+            toast.error('Failed to unlink account');
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try { // create the account in the table
@@ -101,7 +211,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             } else {
                 // Check if this is the user's first account
                 const isFirstAccount = accounts.length === 0;
-                
+
                 const { data: newAccount, error } = await supabase
                     .from('accounts')
                     .insert({
@@ -125,16 +235,16 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                         created_at: new Date().toISOString(),
                         user_id: user.id,
                     };
-                    const { error: transerror }  = await supabase
+                    const { error: transerror } = await supabase
                         .from('transactions')
                         .insert(transactionData);
-    
+
                     if (transerror) throw transerror
                 }
                 catch (error) {
                     throw error;
                 }
-                
+
                 toast.success('Account created successfully');
             }
 
@@ -163,7 +273,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     const handleBankAccountClose = async (account: Account) => {
         // Check if account has non-zero balance
         try {
-            const { data: transactions, error: transerror} = await supabase
+            const { data: transactions, error: transerror } = await supabase
                 .from('transactions')
                 .select('amount')
                 .eq('account_id', account.id);
@@ -183,7 +293,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             toast.error("Failed to check account balance");
         }
     };
-    
+
     const handleBankAccountReopen = async (account: Account) => {
         // Check if account has non-zero balance
         try {
@@ -208,13 +318,13 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     };
 
     const handleSetDefault = async (account: Account) => {
-         try {
+        try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { error: updateAllError} = await supabase
+            const { error: updateAllError } = await supabase
                 .from('accounts')
-                .update({is_default: false})
+                .update({ is_default: false })
                 .eq('user_id', user.id);
 
             if (updateAllError) throw updateAllError;
@@ -226,7 +336,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                     .eq('id', editingAccount.id);
 
                 if (setDefaultError) throw setDefaultError;
-                
+
                 // Update local state
                 setEditingAccount({ ...editingAccount, is_default: true });
                 toast.success('Default account updated successfully');
@@ -244,9 +354,9 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         setConfirmLoading(true);
         try {
             if (confirmModal.type === 'close') {
-                const {error} = await supabase
+                const { error } = await supabase
                     .from('accounts')
-                    .update({is_active: false})
+                    .update({ is_active: false })
                     .eq('id', confirmModal.account.id);
                 if (error) throw error;
 
@@ -262,7 +372,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             } else if (confirmModal.type === 'reopen') {
                 const { error } = await supabase
                     .from('accounts')
-                    .update({is_active: true})
+                    .update({ is_active: true })
                     .eq('id', confirmModal.account.id);
 
                 if (error) throw error;
@@ -292,7 +402,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 confirmText: 'Delete ⚠️',
             };
         } else if (confirmModal.type === 'reopen') {
-             return {
+            return {
                 title: 'Re-open Account',
                 message: `Are you sure you want to re-open "${confirmModal.account.name}"?`,
                 confirmText: 'Reopen',
@@ -301,11 +411,11 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         else {
             const hasBalance = confirmModal.balance !== undefined && confirmModal.balance !== 0;
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
-            
+
             if (hasBalance) {
                 message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
-            
+
             message += '\n\nYou can reopen the account later if needed.';
 
             return {
@@ -320,16 +430,17 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         setFormData({ name: '', type: 'checking' });
         setEditingAccount(null);
         setShowForm(false);
+        setShowLFConnect(false);
     };
 
     if (!isOpen) return null;
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
             onClick={onClose}
         >
-            <div 
+            <div
                 className="bg-[#1a1a1a] rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden border border-white/10"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -344,7 +455,100 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 </div>
 
                 <div className="p-6 max-h-[60vh] overflow-y-auto">
-                    {showForm ? (
+                    {showLFConnect ? (
+                        /* Lunch Flow Account Connection View */
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => setShowLFConnect(false)}
+                                className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors mb-2"
+                            >
+                                ← Back to accounts
+                            </button>
+
+                            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                <p className="text-sm text-blue-300">Select a bank account from Lunch Flow to link. You can link it to an existing CashCat account or create a new one.</p>
+                            </div>
+
+                            {lfLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            ) : lfAccounts.length === 0 ? (
+                                <div className="text-center py-8 text-white/60">
+                                    <p>No Lunch Flow accounts found</p>
+                                    <p className="text-sm mt-1">Connect your bank accounts on lunchflow.app first</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {lfAccounts.map((lfAcc) => {
+                                        const isAlreadyLinked = accounts.some(
+                                            a => a.lunchflow_account_id === lfAcc.id.toString()
+                                        );
+                                        const isLinking = linkingAccountId === lfAcc.id;
+
+                                        return (
+                                            <div
+                                                key={lfAcc.id}
+                                                className={`p-4 rounded-lg border transition-colors ${isAlreadyLinked
+                                                        ? 'bg-green/5 border-green/20'
+                                                        : 'bg-white/5 border-white/10 hover:border-blue-500/30'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {lfAcc.institution_logo && (
+                                                        <img
+                                                            src={lfAcc.institution_logo}
+                                                            alt={lfAcc.institution_name}
+                                                            className="w-8 h-8 rounded-md object-contain bg-white p-0.5"
+                                                        />
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-medium text-sm truncate">{lfAcc.name}</h4>
+                                                        <p className="text-xs text-white/50">{lfAcc.institution_name} · {lfAcc.currency}</p>
+                                                    </div>
+                                                    {isAlreadyLinked ? (
+                                                        <span className="text-xs px-2 py-1 rounded bg-green/10 text-green">Linked</span>
+                                                    ) : isLinking ? (
+                                                        <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                                    ) : null}
+                                                </div>
+
+                                                {!isAlreadyLinked && !isLinking && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <button
+                                                            onClick={() => handleLinkLFAccount(lfAcc)}
+                                                            className="flex-1 py-1.5 px-3 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/20 transition-colors"
+                                                        >
+                                                            Create New Account
+                                                        </button>
+                                                        {accounts.filter(a => a.is_active && !a.lunchflow_account_id).length > 0 && (
+                                                            <select
+                                                                className="flex-1 py-1.5 px-3 text-xs rounded-lg bg-white/5 border border-white/10 text-white/80 appearance-none cursor-pointer"
+                                                                defaultValue=""
+                                                                onChange={(e) => {
+                                                                    if (e.target.value) handleLinkLFAccount(lfAcc, e.target.value);
+                                                                }}
+                                                            >
+                                                                <option value="" disabled>Link to existing...</option>
+                                                                {accounts
+                                                                    .filter(a => a.is_active && !a.lunchflow_account_id)
+                                                                    .map(a => (
+                                                                        <option key={a.id} value={a.id} className="bg-[#1a1a1a]">
+                                                                            {a.name}
+                                                                        </option>
+                                                                    ))
+                                                                }
+                                                            </select>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    ) : showForm ? (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-white/80 mb-2">
@@ -381,22 +585,21 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
                             {editingAccount !== null && (
                                 <div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSetDefault(editingAccount)}
-                                    disabled={editingAccount.is_default}
-                                    className={`w-full p-3 rounded-lg border transition-colors ${
-                                        editingAccount?.is_default
-                                            ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
-                                    }`}
-                                >
-                                      {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}
-                                </button>
-                            </div>)}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSetDefault(editingAccount)}
+                                        disabled={editingAccount.is_default}
+                                        className={`w-full p-3 rounded-lg border transition-colors ${editingAccount?.is_default
+                                                ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
+                                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
+                                            }`}
+                                    >
+                                        {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}
+                                    </button>
+                                </div>)}
 
                             {!editingAccount && (<div>
-                                 <label className="block text-sm font-medium text-white/80 mb-2">
+                                <label className="block text-sm font-medium text-white/80 mb-2">
                                     Balance Right Now
                                 </label>
                                 <MoneyInput
@@ -408,36 +611,63 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 />
                             </div>)}
 
+                            {/* Lunch Flow link/unlink for editing */}
+                            {editingAccount && (
+                                <div className="pt-1">
+                                    {editingAccount.lunchflow_account_id ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUnlinkLFAccount(editingAccount)}
+                                            className="w-full p-3 rounded-lg border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-300 text-sm transition-colors"
+                                        >
+                                            🔗 Connected to Lunch Flow · Click to unlink
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowForm(false);
+                                                setShowLFConnect(true);
+                                                fetchLFAccounts();
+                                            }}
+                                            className="w-full p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white/60 text-sm transition-colors"
+                                        >
+                                            Connect to Lunch Flow
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
                             {editingAccount && (
                                 <div className="flex gap-3 pt-2">
-                                    
+
                                     {(editingAccount.is_active && otherAccountsAvailable) && !editingAccount.is_default && (
                                         <button
-                                        type="button"
-                                        onClick={() => handleBankAccountClose(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                            >
-                                        Close Account
-                                    </button>)}
+                                            type="button"
+                                            onClick={() => handleBankAccountClose(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                        >
+                                            Close Account
+                                        </button>)}
                                     {!editingAccount.is_active && (
                                         <button
-                                        type="button"
-                                        onClick={() => handleBankAccountReopen(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                            type="button"
+                                            onClick={() => handleBankAccountReopen(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
                                         >
-                                        Re-open Account
-                                    </button>
+                                            Re-open Account
+                                        </button>
                                     )}
 
                                     {(!editingAccount.is_active || otherAccountsAvailable) && !editingAccount.is_default && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                    >
-                                        Delete Account
-                                    </button>)}
-                                    
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDelete(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                        >
+                                            Delete Account
+                                        </button>)}
+
                                 </div>
                             )}
 
@@ -447,7 +677,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                             {editingAccount?.is_default && (
                                 <p className="text-xs text-white/60 mt-2">You cannot close or delete your default account.</p>
                             )}
-                           
+
 
                             <div className="flex gap-3 pt-4">
                                 <button
@@ -465,17 +695,29 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 </button>
                             </div>
 
-                            
+
                         </form>
                     ) : (
                         <div className="space-y-4">
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="w-full py-3 px-4 rounded-lg bg-green hover:bg-green/90 text-black font-medium transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Image src="/plus.svg" alt="Add" width={16} height={16} />
-                                Add Account
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowForm(true)}
+                                    className="flex-1 py-3 px-4 rounded-lg bg-green hover:bg-green/90 text-black font-medium transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Image src="/plus.svg" alt="Add" width={16} height={16} />
+                                    Add Account
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowLFConnect(true);
+                                        fetchLFAccounts();
+                                    }}
+                                    className="py-3 px-4 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-medium transition-colors flex items-center justify-center gap-2 border border-blue-500/20"
+                                    title="Connect via Lunch Flow"
+                                >
+                                    🔗 Lunch Flow
+                                </button>
+                            </div>
 
                             {loading ? (
                                 <div className="flex justify-center py-8">
@@ -497,10 +739,14 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                                 <h3 className={`font-medium ${account.is_active ? '' : 'text-white/50'}`}>{account.name} {!account.is_active && (<span className="ml-2 text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
                                                     CLOSED
                                                 </span>)}
-                                                {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
-                                                    DEFAULT
-                                                </span>)}</h3>
-                                               
+                                                    {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
+                                                        DEFAULT
+                                                    </span>)}
+                                                    {account.lunchflow_account_id && (<span className="ml-2 text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-300">
+                                                        🔗 LF
+                                                    </span>)}
+                                                </h3>
+
                                                 <p className="text-sm text-white/60 capitalize">{account.type}</p>
                                             </div>
                                             <div className="flex gap-2">
