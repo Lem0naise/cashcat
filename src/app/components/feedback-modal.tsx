@@ -61,7 +61,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!text.trim()) {
             toast.error('Please enter your feedback');
             return;
@@ -70,15 +70,16 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         setIsSubmitting(true);
 
         const submitPromise = async () => {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
+            const { getCachedUserId } = await import('../hooks/useAuthUserId');
+            const userId = getCachedUserId();
+            if (!userId) throw new Error('Not authenticated');
 
             const { error } = await supabase
                 .from('feedback')
                 .insert({
                     type,
                     text: text.trim(),
-                    user_id: user.id
+                    user_id: userId
                 });
 
             if (error) throw error;
@@ -126,20 +127,18 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     };
 
     return (
-        <div 
-            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
-            }`}
+        <div
+            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+                }`}
             onClick={handleBackdropClick}
         >
-            <div 
-                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${
-                    isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    }`}
             >
                 <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <h2 className="text-xl font-bold">Send Feedback</h2>
-                    <button 
+                    <button
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                     >
@@ -163,11 +162,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                                         key={feedbackType}
                                         type="button"
                                         onClick={() => setType(feedbackType)}
-                                        className={`p-3 rounded-lg border transition-colors text-sm ${
-                                            type === feedbackType
-                                                ? (feedbackType==='bug' || feedbackType==='deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
+                                        className={`p-3 rounded-lg border transition-colors text-sm ${type === feedbackType
+                                                ? (feedbackType === 'bug' || feedbackType === 'deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
                                                 : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                        }`}
+                                            }`}
                                     >
                                         {getTypeLabel(feedbackType)}
                                     </button>
@@ -186,13 +184,13 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                                 value={text}
                                 onChange={(e) => setText(e.target.value)}
                                 placeholder={
-                                    type === 'bug' 
+                                    type === 'bug'
                                         ? "Please describe the issue, what you expected to happen, and steps to reproduce it..."
                                         : type === 'feature'
-                                        ? "Tell us about the feature you'd like to see..."
-                                        : type === 'deletion_reason'
-                                        ? "We're sorry to see you go. What could we have done better?"
-                                        : "Tell us what you think about CashCat..."
+                                            ? "Tell us about the feature you'd like to see..."
+                                            : type === 'deletion_reason'
+                                                ? "We're sorry to see you go. What could we have done better?"
+                                                : "Tell us what you think about CashCat..."
                                 }
                                 className="w-full p-3 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors resize-none h-32 text-sm"
                                 maxLength={1000}

@@ -22,6 +22,7 @@ export const useDeleteTransaction = () => {
 
     return useMutation({
         mutationFn: deleteTransaction,
+        networkMode: 'offlineFirst',
 
         onMutate: async (id) => {
             await queryClient.cancelQueries({ queryKey: ['transactions'] });

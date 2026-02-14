@@ -9,25 +9,31 @@ const AUTH_PATHS = ['/login', '/signup'];
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   const path = req.nextUrl.pathname;
 
-  // Check if the path is protected and there's no session
-  if (!session && PROTECTED_PATHS.some(protectedPath => path.startsWith(protectedPath))) {
-    // Store the attempted URL to redirect back after login
-    const redirectUrl = new URL('/login', req.url);
-    redirectUrl.searchParams.set('redirectTo', path);
-    return NextResponse.redirect(redirectUrl);
+  // For protected paths, always let requests through immediately.
+  // Client-side ProtectedRoute handles auth using cached user data,
+  // so there's zero loading delay for offline/Capacitor users.
+  if (PROTECTED_PATHS.some(protectedPath => path.startsWith(protectedPath))) {
+    return res;
   }
 
-  // Redirect authenticated users away from auth pages
-  if (session && AUTH_PATHS.includes(path)) {
-    return NextResponse.redirect(new URL('/budget', req.url));
+  // For auth pages (login/signup), try to check session to redirect
+  // authenticated users away, but don't block if offline.
+  if (AUTH_PATHS.includes(path)) {
+    try {
+      const supabase = createMiddlewareClient({ req, res });
+      const result = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<null>(r => setTimeout(() => r(null), 1500)),
+      ]);
+      const session = result && 'data' in result ? result.data.session : null;
+      if (session) {
+        return NextResponse.redirect(new URL('/budget', req.url));
+      }
+    } catch {
+      // Offline — let through, user will see login page
+    }
   }
 
   return res;

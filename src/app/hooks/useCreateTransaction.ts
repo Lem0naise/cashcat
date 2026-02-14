@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { getCachedUserId } from './useAuthUserId';
 
 type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
@@ -8,13 +9,12 @@ type Transaction = Database['public']['Tables']['transactions']['Row'];
 // Create a new transaction
 const createTransaction = async (newTransaction: TransactionInsert): Promise<Transaction> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) throw new Error('Not authenticated');
+    const userId = getCachedUserId();
+    if (!userId) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('transactions')
-        .insert({ ...newTransaction, user_id: user.id })
+        .insert({ ...newTransaction, user_id: userId })
         .select()
         .single();
 
@@ -28,6 +28,7 @@ export const useCreateTransaction = () => {
 
     return useMutation({
         mutationFn: createTransaction,
+        networkMode: 'offlineFirst',
 
         // Optimistic update - immediately add to cache
         onMutate: async (newTransaction) => {

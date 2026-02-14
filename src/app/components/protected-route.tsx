@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         }
     }, [loading, user, router]);
 
-    if (loading) {
+    if (loading && !user) {
         return <LoadingScreen />;
     }
     if (!user) {

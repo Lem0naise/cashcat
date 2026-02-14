@@ -13,6 +13,7 @@ import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
 import AccountModal from '../components/account-modal';
+import { getCachedUserId } from '../hooks/useAuthUserId';
 import Link from 'next/link';
 // TanStack Query hooks for offline-first data
 import { useTransactions } from '../hooks/useTransactions';
@@ -329,12 +330,12 @@ export default function Budget() {
         ]);
     };
 
-    // Handle transaction loading errors
+    // Handle transaction loading errors - only show error if we have NO cached data
     useEffect(() => {
-        if (transactionsError) {
+        if (transactionsError && allTransactionsData.length === 0) {
             setError('Failed to load transactions.');
         }
-    }, [transactionsError]);
+    }, [transactionsError, allTransactionsData]);
 
     // On month change or data update, recalculate budget
     // BUT only if all data is loaded
@@ -343,8 +344,12 @@ export default function Budget() {
         setMonthString(newMonthString);
 
         if (transactionsLoading || categoriesLoading || assignmentsLoading) {
-            setLoading(true);
-            return;
+            // If we have cached data, calculate anyway to show it immediately
+            const hasData = allTransactionsData.length > 0 || rawCategoriesData.length > 0 || allAssignmentsData.length > 0;
+            if (!hasData) {
+                setLoading(true);
+                return;
+            }
         }
 
         if (allTransactionsData && rawCategoriesData && allAssignmentsData) {
@@ -414,13 +419,13 @@ export default function Budget() {
         const fetchReminder = async () => {
             try {
                 setReminderLoading(true);
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
+                const userId = getCachedUserId();
+                if (!userId) return;
 
                 const { data, error } = await supabase
                     .from('information')
                     .select('reminder')
-                    .eq('user_id', user.id)
+                    .eq('user_id', userId)
                     .eq('month', monthString)
                     .single();
 
@@ -440,8 +445,8 @@ export default function Budget() {
 
     const handleAssignmentUpdate = async (categoryId: string, newAmount: number, toToast: boolean = true) => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
+            const userId = getCachedUserId();
+            if (!userId) throw new Error('Not authenticated');
 
             // Get current assignment for this category/month to calculate difference
             const { data: currentAssignment } = await supabase
@@ -449,7 +454,7 @@ export default function Budget() {
                 .select('assigned')
                 .eq('category_id', categoryId)
                 .eq('month', monthString)
-                .eq('user_id', user.id)
+                .eq('user_id', userId)
                 .single();
 
             const currentAssigned = currentAssignment?.assigned || 0;
@@ -774,13 +779,13 @@ export default function Budget() {
     // Fetch reminder data
     const fetchReminderData = useCallback(async () => {
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) return;
+            const userId = getCachedUserId();
+            if (!userId) return;
 
             const { data, error } = await supabase
                 .from('information')
                 .select('reminder')
-                .eq('user_id', user.id)
+                .eq('user_id', userId)
                 .eq('month', monthString)
                 .single();
 
@@ -799,13 +804,13 @@ export default function Budget() {
     const saveReminderData = useCallback(async (text: string) => {
         try {
             setReminderLoading(true);
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
+            const userId = getCachedUserId();
+            if (!userId) throw new Error('Not authenticated');
 
             const { error } = await supabase
                 .from('information')
                 .upsert({
-                    user_id: user.id,
+                    user_id: userId,
                     month: monthString,
                     reminder: text || null
                 }, {
