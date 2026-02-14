@@ -3,27 +3,28 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
-type Assignment = Database['public']['Tables']['assignments']['Row'];
+type Vendor = Database['public']['Tables']['vendors']['Row'];
 
-// Fetch all assignments for a given user
-const fetchAssignments = async (userId: string): Promise<Assignment[]> => {
+// Fetch all vendors for a given user
+const fetchVendors = async (userId: string): Promise<Vendor[]> => {
     const supabase = createClientComponentClient<Database>();
 
     const { data, error } = await supabase
-        .from('assignments')
+        .from('vendors')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .order('name');
 
     if (error) throw error;
     return data || [];
 };
 
-// Custom hook for assignments
-export const useAssignments = () => {
+// Custom hook for vendors
+export const useVendors = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['assignments'],
-        queryFn: () => fetchAssignments(userId!),
+        queryKey: ['vendors'],
+        queryFn: () => fetchVendors(userId!),
         enabled: !!userId,
     });
 };

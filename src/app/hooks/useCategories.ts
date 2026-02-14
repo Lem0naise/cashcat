@@ -1,19 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { useAuthUserId } from './useAuthUserId';
 
 type Category = Database['public']['Tables']['categories']['Row'];
 type CategoryWithGroup = Category & {
     groups: { name: string } | null;
 };
 
-// Fetch all categories for the current user
-const fetchCategories = async (): Promise<CategoryWithGroup[]> => {
+// Fetch all categories for a given user
+const fetchCategories = async (userId: string): Promise<CategoryWithGroup[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    const user = session?.user;
-
-    if (sessionError || !user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('categories')
@@ -23,7 +20,7 @@ const fetchCategories = async (): Promise<CategoryWithGroup[]> => {
                 name
             )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('name', { ascending: true });
 
     if (error) throw error;
@@ -32,8 +29,10 @@ const fetchCategories = async (): Promise<CategoryWithGroup[]> => {
 
 // Custom hook for categories
 export const useCategories = () => {
+    const userId = useAuthUserId();
     return useQuery({
         queryKey: ['categories'],
-        queryFn: fetchCategories,
+        queryFn: () => fetchCategories(userId!),
+        enabled: !!userId,
     });
 };

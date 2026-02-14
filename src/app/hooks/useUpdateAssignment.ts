@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { getCachedUserId } from './useAuthUserId';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 
@@ -13,9 +14,8 @@ interface UpdateAssignmentParams {
 // Upsert an assignment (create or update)
 const updateAssignment = async ({ categoryId, month, assigned }: UpdateAssignmentParams): Promise<Assignment> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) throw new Error('Not authenticated');
+    const userId = getCachedUserId();
+    if (!userId) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('assignments')
@@ -23,7 +23,7 @@ const updateAssignment = async ({ categoryId, month, assigned }: UpdateAssignmen
             category_id: categoryId,
             month: month,
             assigned: assigned,
-            user_id: user.id,
+            user_id: userId,
         }, { onConflict: 'category_id,month' })
         .select()
         .single();
@@ -37,7 +37,9 @@ export const useUpdateAssignment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ['updateAssignment'],
         mutationFn: updateAssignment,
+        networkMode: 'offlineFirst',
 
         onMutate: async ({ categoryId, month, assigned }) => {
             await queryClient.cancelQueries({ queryKey: ['assignments'] });
@@ -74,10 +76,11 @@ export const useUpdateAssignment = () => {
             return { previousAssignments };
         },
 
-        onError: (_err, _variables, context) => {
+        onError: (err, _variables, context) => {
             if (context?.previousAssignments) {
                 queryClient.setQueryData(['assignments'], context.previousAssignments);
             }
+            console.log("Mutation error: " + err)
         },
 
         onSettled: () => {

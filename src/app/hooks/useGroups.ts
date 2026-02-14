@@ -3,27 +3,28 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
-type Assignment = Database['public']['Tables']['assignments']['Row'];
+type Group = Database['public']['Tables']['groups']['Row'];
 
-// Fetch all assignments for a given user
-const fetchAssignments = async (userId: string): Promise<Assignment[]> => {
+// Fetch all groups for a given user
+const fetchGroups = async (userId: string): Promise<Group[]> => {
     const supabase = createClientComponentClient<Database>();
 
     const { data, error } = await supabase
-        .from('assignments')
+        .from('groups')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .order('name');
 
     if (error) throw error;
     return data || [];
 };
 
-// Custom hook for assignments
-export const useAssignments = () => {
+// Custom hook for groups
+export const useGroups = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['assignments'],
-        queryFn: () => fetchAssignments(userId!),
+        queryKey: ['groups'],
+        queryFn: () => fetchGroups(userId!),
         enabled: !!userId,
     });
 };

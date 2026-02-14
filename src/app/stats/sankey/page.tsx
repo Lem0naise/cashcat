@@ -314,7 +314,8 @@ export default function SankeyPage() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [dateRangeInfo.canNavigatePrev, dateRangeInfo.canNavigateNext]);
 
-    if (loading) {
+    const hasNoData = assignments.length === 0 && categories.length === 0 && transactions.length === 0;
+    if (loading && hasNoData) {
         return (
             <ProtectedRoute>
                 <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">

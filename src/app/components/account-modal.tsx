@@ -1,11 +1,13 @@
 'use client';
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from 'react-hot-toast';
-import { useSupabaseClient } from '../hooks/useSupabaseClient';
 import MoneyInput from "./money-input";
 import ConfirmationModal from "./confirmation-modal";
 import Dropdown, { DropdownOption } from './dropdown';
+import { useAllAccounts } from '../hooks/useAccounts';
+import { useTransactions } from '../hooks/useTransactions';
+import { useCreateAccount, useUpdateAccount, useDeleteAccount, useSetDefaultAccount } from '../hooks/useAccountMutations';
 
 type Account = {
     id: string;
@@ -24,8 +26,16 @@ interface AccountModalProps {
 }
 
 export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: AccountModalProps) {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(false);
+    const { data: allAccountsData = [], isLoading: loading } = useAllAccounts();
+    const { data: allTransactions = [] } = useTransactions();
+
+    const createAccountMutation = useCreateAccount();
+    const updateAccountMutation = useUpdateAccount();
+    const deleteAccountMutation = useDeleteAccount();
+    const setDefaultMutation = useSetDefaultAccount();
+
+    const accounts = useMemo(() => allAccountsData as Account[], [allAccountsData]);
+
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [otherAccountsAvailable, setOtherAccountsAvailable] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -45,13 +55,6 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         account: null,
     });
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const supabase = useSupabaseClient();
-
-    useEffect(() => {
-        if (isOpen) {
-            fetchAccounts();
-        }
-    }, [isOpen]);
 
     useEffect(() => {
         // Check if the user has other accounts available (cannot have zero bank accounts open)
@@ -59,82 +62,23 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         setOtherAccountsAvailable(openAccounts.length > 1);
     }, [accounts])
 
-    const fetchAccounts = async () => {
-        try {
-            setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
-
-            const { data, error } = await supabase
-                .from('accounts')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setAccounts(data || []);
-        } catch (error) {
-            console.error('Error fetching accounts:', error);
-            toast.error('Failed to fetch accounts');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try { // create the account in the table
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
-
+        try {
             if (editingAccount) {
-                const { error } = await supabase
-                    .from('accounts')
-                    .update({
-                        name: formData.name,
-                        type: formData.type
-                    })
-                    .eq('id', editingAccount.id);
-
-                if (error) throw error;
+                await updateAccountMutation.mutateAsync({
+                    id: editingAccount.id,
+                    updates: { name: formData.name, type: formData.type },
+                });
                 toast.success('Account updated successfully');
             } else {
-                // Check if this is the user's first account
                 const isFirstAccount = accounts.length === 0;
-                
-                const { data: newAccount, error } = await supabase
-                    .from('accounts')
-                    .insert({
-                        name: formData.name,
-                        type: formData.type,
-                        user_id: user.id,
-                        is_active: true,
-                        is_default: isFirstAccount
-                    })
-                    .select()
-                    .single();
-                if (error) throw error;
-                // create starting balance transaction
-                try {
-                    const transactionData = {
-                        amount: parseFloat(startingBalance),
-                        type: 'starting',
-                        date: new Date().toISOString().split('T')[0],
-                        vendor: 'Starting Balance',
-                        account_id: newAccount.id,
-                        created_at: new Date().toISOString(),
-                        user_id: user.id,
-                    };
-                    const { error: transerror }  = await supabase
-                        .from('transactions')
-                        .insert(transactionData);
-    
-                    if (transerror) throw transerror
-                }
-                catch (error) {
-                    throw error;
-                }
-                
+                await createAccountMutation.mutateAsync({
+                    name: formData.name,
+                    type: formData.type,
+                    startingBalance: parseFloat(startingBalance),
+                    isFirstAccount,
+                });
                 toast.success('Account created successfully');
             }
 
@@ -142,7 +86,6 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             setStartingBalance('');
             setEditingAccount(null);
             setShowForm(false);
-            fetchAccounts();
             onAccountsUpdated();
         } catch (error) {
             console.error('Error saving account:', error);
@@ -161,42 +104,24 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     };
 
     const handleBankAccountClose = async (account: Account) => {
-        // Check if account has non-zero balance
-        try {
-            const { data: transactions, error: transerror} = await supabase
-                .from('transactions')
-                .select('amount')
-                .eq('account_id', account.id);
-            if (transerror) throw transerror;
+        // Calculate balance from cached transactions
+        const accountTransactions = allTransactions.filter(t => t.account_id === account.id);
+        const balance = accountTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-            const balance = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
-
-            setConfirmModal({
-                isOpen: true,
-                type: 'close',
-                account,
-                balance
-            });
-        }
-        catch (error) {
-            console.log("Error checking account balance:", error);
-            toast.error("Failed to check account balance");
-        }
+        setConfirmModal({
+            isOpen: true,
+            type: 'close',
+            account,
+            balance
+        });
     };
-    
+
     const handleBankAccountReopen = async (account: Account) => {
-        // Check if account has non-zero balance
-        try {
-            setConfirmModal({
-                isOpen: true,
-                type: 'reopen',
-                account,
-            });
-        }
-        catch (error) {
-            console.log("Error checking account balance:", error);
-            toast.error("Failed to check account balance");
-        }
+        setConfirmModal({
+            isOpen: true,
+            type: 'reopen',
+            account,
+        });
     };
 
     const handleDelete = (account: Account) => {
@@ -208,31 +133,13 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     };
 
     const handleSetDefault = async (account: Account) => {
-         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
-
-            const { error: updateAllError} = await supabase
-                .from('accounts')
-                .update({is_default: false})
-                .eq('user_id', user.id);
-
-            if (updateAllError) throw updateAllError;
-
+        try {
             if (editingAccount) {
-                const { error: setDefaultError } = await supabase
-                    .from('accounts')
-                    .update({ is_default: true })
-                    .eq('id', editingAccount.id);
-
-                if (setDefaultError) throw setDefaultError;
-                
-                // Update local state
+                await setDefaultMutation.mutateAsync(editingAccount.id);
                 setEditingAccount({ ...editingAccount, is_default: true });
                 toast.success('Default account updated successfully');
             }
-        }
-        catch (error) {
+        } catch (error) {
             console.log("Error setting default account:", error);
             toast.error("Failed to set default account");
         }
@@ -244,32 +151,22 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         setConfirmLoading(true);
         try {
             if (confirmModal.type === 'close') {
-                const {error} = await supabase
-                    .from('accounts')
-                    .update({is_active: false})
-                    .eq('id', confirmModal.account.id);
-                if (error) throw error;
-
+                await updateAccountMutation.mutateAsync({
+                    id: confirmModal.account.id,
+                    updates: { is_active: false },
+                });
                 toast.success("Account closed successfully!");
             } else if (confirmModal.type === 'delete') {
-                const { error } = await supabase
-                    .from('accounts')
-                    .delete()
-                    .eq('id', confirmModal.account.id);
-
-                if (error) throw error;
+                await deleteAccountMutation.mutateAsync(confirmModal.account.id);
                 toast.success('Account deleted successfully');
             } else if (confirmModal.type === 'reopen') {
-                const { error } = await supabase
-                    .from('accounts')
-                    .update({is_active: true})
-                    .eq('id', confirmModal.account.id);
-
-                if (error) throw error;
+                await updateAccountMutation.mutateAsync({
+                    id: confirmModal.account.id,
+                    updates: { is_active: true },
+                });
                 toast.success('Account re-opened successfully');
             }
 
-            fetchAccounts();
             onAccountsUpdated();
             setConfirmModal({ isOpen: false, type: null, account: null });
             setShowForm(false);
@@ -292,7 +189,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 confirmText: 'Delete ⚠️',
             };
         } else if (confirmModal.type === 'reopen') {
-             return {
+            return {
                 title: 'Re-open Account',
                 message: `Are you sure you want to re-open "${confirmModal.account.name}"?`,
                 confirmText: 'Reopen',
@@ -301,11 +198,11 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         else {
             const hasBalance = confirmModal.balance !== undefined && confirmModal.balance !== 0;
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
-            
+
             if (hasBalance) {
                 message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
-            
+
             message += '\n\nYou can reopen the account later if needed.';
 
             return {
@@ -325,11 +222,11 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
     if (!isOpen) return null;
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
             onClick={onClose}
         >
-            <div 
+            <div
                 className="bg-[#1a1a1a] rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden border border-white/10"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -381,22 +278,21 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
                             {editingAccount !== null && (
                                 <div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSetDefault(editingAccount)}
-                                    disabled={editingAccount.is_default}
-                                    className={`w-full p-3 rounded-lg border transition-colors ${
-                                        editingAccount?.is_default
-                                            ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
-                                    }`}
-                                >
-                                      {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}
-                                </button>
-                            </div>)}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSetDefault(editingAccount)}
+                                        disabled={editingAccount.is_default}
+                                        className={`w-full p-3 rounded-lg border transition-colors ${editingAccount?.is_default
+                                                ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
+                                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
+                                            }`}
+                                    >
+                                        {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}
+                                    </button>
+                                </div>)}
 
                             {!editingAccount && (<div>
-                                 <label className="block text-sm font-medium text-white/80 mb-2">
+                                <label className="block text-sm font-medium text-white/80 mb-2">
                                     Balance Right Now
                                 </label>
                                 <MoneyInput
@@ -410,34 +306,34 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
                             {editingAccount && (
                                 <div className="flex gap-3 pt-2">
-                                    
+
                                     {(editingAccount.is_active && otherAccountsAvailable) && !editingAccount.is_default && (
                                         <button
-                                        type="button"
-                                        onClick={() => handleBankAccountClose(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                            >
-                                        Close Account
-                                    </button>)}
+                                            type="button"
+                                            onClick={() => handleBankAccountClose(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                        >
+                                            Close Account
+                                        </button>)}
                                     {!editingAccount.is_active && (
                                         <button
-                                        type="button"
-                                        onClick={() => handleBankAccountReopen(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                            type="button"
+                                            onClick={() => handleBankAccountReopen(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
                                         >
-                                        Re-open Account
-                                    </button>
+                                            Re-open Account
+                                        </button>
                                     )}
 
                                     {(!editingAccount.is_active || otherAccountsAvailable) && !editingAccount.is_default && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(editingAccount)}
-                                        className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                    >
-                                        Delete Account
-                                    </button>)}
-                                    
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDelete(editingAccount)}
+                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
+                                        >
+                                            Delete Account
+                                        </button>)}
+
                                 </div>
                             )}
 
@@ -447,7 +343,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                             {editingAccount?.is_default && (
                                 <p className="text-xs text-white/60 mt-2">You cannot close or delete your default account.</p>
                             )}
-                           
+
 
                             <div className="flex gap-3 pt-4">
                                 <button
@@ -465,7 +361,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                 </button>
                             </div>
 
-                            
+
                         </form>
                     ) : (
                         <div className="space-y-4">
@@ -497,10 +393,10 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                                 <h3 className={`font-medium ${account.is_active ? '' : 'text-white/50'}`}>{account.name} {!account.is_active && (<span className="ml-2 text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
                                                     CLOSED
                                                 </span>)}
-                                                {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
-                                                    DEFAULT
-                                                </span>)}</h3>
-                                               
+                                                    {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
+                                                        DEFAULT
+                                                    </span>)}</h3>
+
                                                 <p className="text-sm text-white/60 capitalize">{account.type}</p>
                                             </div>
                                             <div className="flex gap-2">

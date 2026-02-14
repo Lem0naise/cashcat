@@ -1,20 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { useAuthUserId } from './useAuthUserId';
 
 type Account = Database['public']['Tables']['accounts']['Row'];
 
-// Fetch all active accounts for the current user
-const fetchAccounts = async (): Promise<Account[]> => {
+// Fetch all active accounts for a given user
+const fetchAccounts = async (userId: string): Promise<Account[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('accounts')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('is_active', true)
         .order('name');
 
@@ -22,10 +20,36 @@ const fetchAccounts = async (): Promise<Account[]> => {
     return data || [];
 };
 
-// Custom hook for accounts
+// Custom hook for active accounts
 export const useAccounts = () => {
+    const userId = useAuthUserId();
     return useQuery({
         queryKey: ['accounts'],
-        queryFn: fetchAccounts,
+        queryFn: () => fetchAccounts(userId!),
+        enabled: !!userId,
+    });
+};
+
+// Fetch ALL accounts (including inactive) for account management
+const fetchAllAccounts = async (userId: string): Promise<Account[]> => {
+    const supabase = createClientComponentClient<Database>();
+
+    const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+};
+
+// Custom hook for all accounts (including closed)
+export const useAllAccounts = () => {
+    const userId = useAuthUserId();
+    return useQuery({
+        queryKey: ['accounts', 'all'],
+        queryFn: () => fetchAllAccounts(userId!),
+        enabled: !!userId,
     });
 };

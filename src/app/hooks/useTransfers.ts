@@ -1,13 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database, TransferWithAccounts } from '@/types/supabase';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 
-// Fetch all transfers for the current user
-const fetchTransfers = async (): Promise<TransferWithAccounts[]> => {
+// Fetch all transfers for a given user
+const fetchTransfers = async (userId: string): Promise<TransferWithAccounts[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('transfers')
@@ -24,7 +22,7 @@ const fetchTransfers = async (): Promise<TransferWithAccounts[]> => {
                 type
             )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -34,9 +32,11 @@ const fetchTransfers = async (): Promise<TransferWithAccounts[]> => {
 
 // Custom hook for fetching transfers
 export const useTransfers = () => {
+    const userId = useAuthUserId();
     return useQuery({
         queryKey: ['transfers'],
-        queryFn: fetchTransfers,
+        queryFn: () => fetchTransfers(userId!),
+        enabled: !!userId,
     });
 };
 
@@ -46,6 +46,8 @@ export const useCreateTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['createTransfer'],
+        networkMode: 'offlineFirst',
         mutationFn: async (transferData: {
             from_account_id: string;
             to_account_id: string;
@@ -53,14 +55,14 @@ export const useCreateTransfer = () => {
             date: string;
             description?: string;
         }) => {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
+            const userId = getCachedUserId();
+            if (!userId) throw new Error('Not authenticated');
 
             const { data, error } = await supabase
                 .from('transfers')
                 .insert({
                     ...transferData,
-                    user_id: user.id,
+                    user_id: userId,
                 })
                 .select()
                 .single();
@@ -80,6 +82,8 @@ export const useUpdateTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['updateTransfer'],
+        networkMode: 'offlineFirst',
         mutationFn: async ({ id, updates }: {
             id: string;
             updates: {
@@ -112,6 +116,8 @@ export const useDeleteTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['deleteTransfer'],
+        networkMode: 'offlineFirst',
         mutationFn: async (id: string) => {
             const { error } = await supabase
                 .from('transfers')

@@ -1,14 +1,19 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { debounce } from 'lodash';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@/types/supabase';
-import type { Category, Group, TransferWithAccounts } from '@/types/supabase';
+import type { TransferWithAccounts } from '@/types/supabase';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import GroupedDropdown from './grouped-dropdown';
+import { useAccounts } from '../hooks/useAccounts';
+import { useCategories } from '../hooks/useCategories';
+import { useGroups } from '../hooks/useGroups';
+import { useVendors } from '../hooks/useVendors';
+import { useTransactions } from '../hooks/useTransactions';
+import { useAssignments } from '../hooks/useAssignments';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -50,34 +55,32 @@ type TransactionModalProps = {
     onDeleteTransfer?: () => void;
 };
 
-export default function TransactionModal({transaction, transfer, isOpen, onClose, onSubmit, onDelete, onSubmitTransfer, onUpdateTransfer, onDeleteTransfer }: TransactionModalProps) {
-    const supabase = createClientComponentClient();
-    
+export default function TransactionModal({ transaction, transfer, isOpen, onClose, onSubmit, onDelete, onSubmitTransfer, onUpdateTransfer, onDeleteTransfer }: TransactionModalProps) {
+    // TanStack Query hooks for cached data
+    const { data: cachedAccounts = [] } = useAccounts();
+    const { data: cachedCategories = [] } = useCategories();
+    const { data: cachedGroups = [] } = useGroups();
+    const { data: cachedVendors = [] } = useVendors();
+    const { data: cachedTransactions = [] } = useTransactions();
+    const { data: cachedAssignments = [] } = useAssignments();
+
     // Mode state - transaction or transfer
     const [mode, setMode] = useState<'transaction' | 'transfer'>('transaction');
     const isEditing = transaction !== null || transfer !== null;
-    
+
     const [type, setType] = useState<string>('payment');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [vendor, setVendor] = useState('');
-    const [allVendors, setAllVendors] = useState<Vendor[]>([]);
-    const [loadingVendors, setLoadingVendors] = useState(false);
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [accountId, setAccountId] = useState('');
-    
+
     // Transfer-specific states
     const [fromAccountId, setFromAccountId] = useState('');
     const [toAccountId, setToAccountId] = useState('');
-    
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [groups, setGroups] = useState<Group[]>([]);
-    const [accounts, setAccounts] = useState<{id: string; name: string; type: string, is_default: boolean}[]>([]);
-    const [loadingCategories, setLoadingCategories] = useState(true);
-    const [loadingAccounts, setLoadingAccounts] = useState(true);
+
     const [categoryRemaining, setCategoryRemaining] = useState<number | null>(null);
-    const [loadingCategoryRemaining, setLoadingCategoryRemaining] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [vendorSuggestions, setVendorSuggestions] = useState<Vendor[]>([]);
@@ -85,7 +88,24 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
     const vendorInputRef = useRef<HTMLInputElement>(null);
-    
+
+    // Derive loading states from hooks
+    const loadingCategories = cachedCategories.length === 0;
+    const loadingAccounts = cachedAccounts.length === 0;
+
+    // Map cached data to component format
+    const accounts = useMemo(() =>
+        cachedAccounts.map(a => ({ id: a.id, name: a.name, type: a.type, is_default: a.is_default })),
+        [cachedAccounts]
+    );
+
+    const categories = useMemo(() => cachedCategories as any[], [cachedCategories]);
+    const groups = useMemo(() => cachedGroups as any[], [cachedGroups]);
+    const allVendors = useMemo(() =>
+        cachedVendors.map(v => ({ id: v.id, name: v.name })),
+        [cachedVendors]
+    );
+
     // Clear form when switching modes
     const clearForm = () => {
         setAmount('');
@@ -98,7 +118,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
         setToAccountId('');
         setType('payment');
     };
-    
+
     // Handle mode toggle
     const handleModeToggle = (newMode: 'transaction' | 'transfer') => {
         if (newMode !== mode && !isEditing) {
@@ -107,67 +127,16 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
         }
     };
 
-    // Fetch categories and accounts
+    // Set default account when modal opens and accounts are loaded
     useEffect(() => {
-        const fetchCategoriesAndAccountsAndVendors = async () => {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) throw new Error('Not authenticated');
-
-                const [categoriesResponse, accountsResponse, vendorsResponse, groupsResponse] = await Promise.all([
-                    supabase
-                        .from('categories')
-                        .select('*')
-                        .eq('user_id', user.id)
-                        .order('name'),
-                    supabase
-                        .from('accounts')
-                        .select('id, name, type, is_default')
-                        .eq('user_id', user.id)
-                        .eq('is_active', true)
-                        .order('name'),
-                    supabase
-                        .from('vendors')
-                        .select('id, name')
-                        .eq('user_id', user.id)
-                        .order('name'),
-                    supabase
-                        .from('groups')
-                        .select('*')
-                        .eq('user_id', user.id)
-                        .order('name')
-                ]);
-                
-                if (categoriesResponse.error) throw categoriesResponse.error;
-                if (accountsResponse.error) throw accountsResponse.error;
-                if (vendorsResponse.error) throw vendorsResponse.error;
-                if (groupsResponse.error) throw groupsResponse.error;
-                
-                setCategories(categoriesResponse.data || []);
-                setAccounts(accountsResponse.data || []);
-                setAllVendors(vendorsResponse.data || []);
-                setGroups(groupsResponse.data || []);
-                
-                // Set default account from most recent transaction if creating new transaction
-                if (!transaction && accountsResponse.data.length > 0) {
-                    const defaultAccount = accountsResponse.data.find(account => account.is_default === true);
-                    setAccountId(defaultAccount?.id || accountsResponse.data[0].id);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setLoadingCategories(false);
-                setLoadingAccounts(false);
-            }
-        };
-
-        if (isOpen) {
-            fetchCategoriesAndAccountsAndVendors();
+        if (isOpen && !transaction && !transfer && accounts.length > 0 && !accountId) {
+            const defaultAccount = accounts.find(account => account.is_default === true);
+            setAccountId(defaultAccount?.id || accounts[0].id);
         }
-    }, [isOpen, transaction]);
+    }, [isOpen, transaction, transfer, accounts, accountId]);
 
     useEffect(() => {
-        if (transaction){
+        if (transaction) {
             setMode('transaction'); // Always transaction mode when editing
             setType(transaction.type || 'payment');
             setAmount((Math.abs(transaction.amount).toFixed(2)));
@@ -211,7 +180,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Debounced vendor search (now local instead of supabase)
+    // Debounced vendor search (local from cached vendors)
     const searchVendors = useCallback(
         debounce(async (searchTerm: string) => {
             if (!searchTerm.trim()) {
@@ -220,8 +189,8 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
             }
 
             const filtered = allVendors
-                .filter(vendor => 
-                    vendor.name != "Starting Balance" && 
+                .filter(vendor =>
+                    vendor.name != "Starting Balance" &&
                     vendor.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
                 )
                 .slice(0, 5);
@@ -238,181 +207,106 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
         searchVendors(value);
     };
 
-    // Fetch category remaining amount
-    const fetchCategoryRemaining = useCallback(async (categoryId: string) => {
-        if (!categoryId) {
+    // Calculate category remaining from cached data
+    const calculateCategoryRemaining = useCallback((catId: string) => {
+        if (!catId) {
             setCategoryRemaining(null);
             return;
         }
 
         try {
-            setLoadingCategoryRemaining(true);
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) throw new Error('Not authenticated');
-
-            // Get current month
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            
-            // Get first and last day of current month
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
             const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            
-            // Format dates for database query - use local timezone instead of UTC
             const startDate = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
             const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
 
-            // Fetch current month assignment, current month spending, and ALL historical data for rollover
-            const [assignmentResponse, spendingResponse, allTransactionsResponse, allAssignmentsResponse] = await Promise.all([
-                supabase
-                    .from('assignments')
-                    .select('assigned')
-                    .eq('category_id', categoryId)
-                    .eq('month', currentMonth)
-                    .eq('user_id', user.id)
-                    .single(),
-                supabase
-                    .from('transactions')
-                    .select('amount')
-                    .eq('category_id', categoryId)
-                    .eq('user_id', user.id)
-                    .eq('type', 'payment')
-                    .gte('date', startDate)
-                    .lte('date', endDate),
-                supabase
-                    .from('transactions')
-                    .select('amount, category_id, type, date')
-                    .eq('user_id', user.id),
-                supabase
-                    .from('assignments')
-                    .select('*')
-                    .eq('user_id', user.id)
-            ]);
+            // Current month assignment
+            const assignment = cachedAssignments.find(
+                a => a.category_id === catId && a.month === currentMonth
+            );
 
-            const assignment = assignmentResponse.data;
-            const transactions = spendingResponse.data || [];
-            const allTransactions = allTransactionsResponse.data || [];
-            const allAssignments = allAssignmentsResponse.data || [];
+            // Current month spending
+            const monthTransactions = cachedTransactions.filter(
+                t => t.category_id === catId && t.type === 'payment' && t.date >= startDate && t.date <= endDate
+            );
+            const totalSpent = monthTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-            // Calculate rollover using the same logic as budget page
-            const calculateRolloverForCategory = (
-                categoryId: string, 
-                targetMonth: string, 
-                allAssignments: any[], 
-                allTransactions: any[]
-            ): number => {
-                if (!categoryId) return 0;
-
-                // Get all months from category creation up to target month
-                const targetDate = new Date(targetMonth + '-01');
+            // Rollover calculation
+            const calculateRollover = (): number => {
+                const targetDate = new Date(currentMonth + '-01');
                 const months: string[] = [];
-                
-                // Start from 12 months ago to ensure we capture enough history
-                const startDate = new Date(targetDate);
-                startDate.setMonth(startDate.getMonth() - 12);
-                
-                let currentDate = new Date(startDate);
+                const rolloverStartDate = new Date(targetDate);
+                rolloverStartDate.setMonth(rolloverStartDate.getMonth() - 12);
+                let currentDate = new Date(rolloverStartDate);
                 while (currentDate <= targetDate) {
                     const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-                    if (monthStr < targetMonth) { // Only include months before target
-                        months.push(monthStr);
-                    }
+                    if (monthStr < currentMonth) months.push(monthStr);
                     currentDate.setMonth(currentDate.getMonth() + 1);
                 }
 
                 let rollover = 0;
-                
-                // Calculate rollover month by month
                 for (const month of months) {
-                    const assignment = allAssignments.find(a => a.category_id === categoryId && a.month === month);
-                    const assigned = assignment?.assigned || 0;
-                    
-                    // Calculate spending for this month
+                    const monthAssignment = cachedAssignments.find(a => a.category_id === catId && a.month === month);
+                    const assigned = monthAssignment?.assigned || 0;
                     const monthStart = month + '-01';
                     const nextMonth = new Date(monthStart);
                     nextMonth.setMonth(nextMonth.getMonth() + 1);
                     const monthEnd = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0];
-                    
-                    const monthSpent = allTransactions
-                        .filter(t => t.category_id === categoryId && 
-                                    t.date >= monthStart && 
-                                    t.date <= monthEnd &&
-                                    t.type === 'payment')
+                    const monthSpent = cachedTransactions
+                        .filter(t => t.category_id === catId && t.date >= monthStart && t.date <= monthEnd && t.type === 'payment')
                         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-                    
-                    // Add to rollover: assigned + previous rollover - spent
                     rollover = rollover + assigned - monthSpent;
                 }
-                
                 return rollover;
             };
 
-            // Calculate remaining amount with rollover
             const assigned = assignment?.assigned || 0;
-            const totalSpent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            const rollover = calculateRolloverForCategory(categoryId, currentMonth, allAssignments, allTransactions);
+            const rollover = calculateRollover();
             const remaining = assigned + rollover - totalSpent;
-
             setCategoryRemaining(remaining);
         } catch (error) {
-            console.error('Error fetching category remaining:', error);
+            console.error('Error calculating category remaining:', error);
             setCategoryRemaining(null);
-        } finally {
-            setLoadingCategoryRemaining(false);
         }
-    }, [supabase]);
+    }, [cachedAssignments, cachedTransactions]);
 
     // Update remaining amount when category changes
     useEffect(() => {
         if (type === 'payment' && categoryId) {
-            fetchCategoryRemaining(categoryId);
+            calculateCategoryRemaining(categoryId);
         } else {
             setCategoryRemaining(null);
         }
-    }, [categoryId, type, fetchCategoryRemaining]);
+    }, [categoryId, type, calculateCategoryRemaining]);
 
     const handleVendorSelect = (vendorName: string) => {
         setVendor(vendorName);
         setShowSuggestions(false);
     };
 
-    const selectVendor = async (vendorName: string) => {
+    const selectVendor = (vendorName: string) => {
         setVendor(vendorName);
         setShowSuggestions(false);
 
-        // Find the most recent transaction for this vendor
-        try {
-            const { data: transactions, error } = await supabase
-                .from('transactions')
-                .select('category_id, account_id')
-                .eq('vendor', vendorName)
-                .order('created_at', { ascending: false })
-                .limit(1);
+        // Find the most recent transaction for this vendor from cached data
+        const vendorTransactions = cachedTransactions
+            .filter(t => t.vendor === vendorName)
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-            if (error) throw error;
+        if (vendorTransactions.length > 0) {
+            const mostRecent = vendorTransactions[0];
+            setCategoryId(mostRecent.category_id ?? '');
 
-            // If we found a transaction, set its category
-            if (transactions && transactions.length > 0) {
-
-
-                setCategoryId(transactions[0].category_id);
-
-
-                // Check if the account from the transaction is still active
-                const accountExists = accounts.find(acc => acc.id === transactions[0].account_id);
-                
-                if (accountExists) {
-                    // Use the account from the previous transaction if it's still active
-                    setAccountId(transactions[0].account_id);
-                } else {
-                    // Fall back to default account if the previous account is closed
-                    const defaultAccount = accounts.find(account => account.is_default === true);
-                    setAccountId(defaultAccount?.id || accounts[0]?.id || '');
-                }
-
+            // Check if the account from the transaction is still active
+            const accountExists = accounts.find(acc => acc.id === mostRecent.account_id);
+            if (accountExists) {
+                setAccountId(mostRecent.account_id ?? '');
+            } else {
+                const defaultAccount = accounts.find(account => account.is_default === true);
+                setAccountId(defaultAccount?.id || accounts[0]?.id || '');
             }
-        } catch (error) {
-            console.error('Error fetching vendor category:', error);
         }
     };
 
@@ -437,7 +331,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const parsedAmount = parseFloat(amount);
-        
+
         if (mode === 'transfer') {
             // Transfer validation and submission
             if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -452,7 +346,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                 alert('Cannot transfer to the same account');
                 return;
             }
-            
+
             const transferData = {
                 from_account_id: fromAccountId,
                 to_account_id: toAccountId,
@@ -460,7 +354,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                 date,
                 description: description || undefined,
             };
-            
+
             // Check if editing or creating transfer
             if (transfer && onUpdateTransfer) {
                 onUpdateTransfer(transferData);
@@ -471,7 +365,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
             // Transaction validation and submission
             if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
             if (!accountId) return; // Prevent submission if no account selected
-            
+
             onSubmit({
                 amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
                 type: type || 'payment', // Ensure type is never undefined
@@ -482,7 +376,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                 category_id: type === 'payment' ? categoryId : null // Only include category for payments
             });
         }
-        
+
         // Reset form
         setAmount('');
         setVendor('');
@@ -502,52 +396,48 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
     };
 
     return (
-        <div 
-            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                isClosing ? '' : 'animate-[fadeIn_0.2s_ease-out]'
-            }`}
+        <div
+            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${isClosing ? '' : 'animate-[fadeIn_0.2s_ease-out]'
+                }`}
             onClick={handleBackdropClick}
         >
-            <div 
-                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${
-                    isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    }`}
             >
                 <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <div className="flex items-center gap-3">
                         <h2 className="text-xl font-bold">
                             {transaction ? "Edit Transaction" : transfer ? "Edit Transfer" : "New"}
                         </h2>
-                        
+
                         {!isEditing && (
                             <div className="flex gap-1 bg-white/[.05] rounded-lg p-1">
                                 <button
                                     type="button"
                                     onClick={() => handleModeToggle('transaction')}
-                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                                        mode === 'transaction'
-                                            ? 'bg-white/[.1] text-white'
-                                            : 'text-white/60 hover:text-white/80'
-                                    }`}
+                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${mode === 'transaction'
+                                        ? 'bg-white/[.1] text-white'
+                                        : 'text-white/60 hover:text-white/80'
+                                        }`}
                                 >
                                     Transaction
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleModeToggle('transfer')}
-                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                                        mode === 'transfer'
-                                            ? 'bg-white/[.1] text-white'
-                                            : 'text-white/60 hover:text-white/80'
-                                    }`}
+                                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${mode === 'transfer'
+                                        ? 'bg-white/[.1] text-white'
+                                        : 'text-white/60 hover:text-white/80'
+                                        }`}
                                 >
                                     Transfer
                                 </button>
                             </div>
                         )}
                     </div>
-                    
-                    <button 
+
+                    <button
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                     >
@@ -570,22 +460,20 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                     <button
                                         type="button"
                                         onClick={() => setType('payment')}
-                                        className={`p-3 rounded-lg border transition-colors ${
-                                            type === 'payment'
-                                                ? 'bg-reddy/20 border-reddy text-reddy'
-                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                        }`}
+                                        className={`p-3 rounded-lg border transition-colors ${type === 'payment'
+                                            ? 'bg-reddy/20 border-reddy text-reddy'
+                                            : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                            }`}
                                     >
                                         Payment
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setType('income')}
-                                        className={`p-3 rounded-lg border transition-colors ${
-                                            type === 'income'
-                                                ? 'bg-green/20 border-green text-green'
-                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
-                                        }`}
+                                        className={`p-3 rounded-lg border transition-colors ${type === 'income'
+                                            ? 'bg-green/20 border-green text-green'
+                                            : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                            }`}
                                     >
                                         Income
                                     </button>
@@ -602,7 +490,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                             setTimeout(() => {
                                                 vendorInputRef.current?.focus();
                                             }, 100);
-                                        } :  () => {}}
+                                        } : () => { }}
                                     />
                                 </div>
                             </>
@@ -619,7 +507,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                         currencySymbol={true}
                                     />
                                 </div>
-                                
+
                                 <div className="mb-4">
                                     <label className="block text-sm text-white/50 mb-1">From Account</label>
                                     <Dropdown
@@ -629,7 +517,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                         placeholder="Select account"
                                     />
                                 </div>
-                                
+
                                 <div className="mb-4">
                                     <label className="block text-sm text-white/50 mb-1">To Account</label>
                                     <Dropdown
@@ -663,17 +551,17 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                     />
                                     {showSuggestions && vendorSuggestions.length > 0 && (
                                         <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
-                                            {vendorSuggestions.filter((suggestion) => suggestion.name!= "Starting Balance")
+                                            {vendorSuggestions.filter((suggestion) => suggestion.name != "Starting Balance")
                                                 .map((suggestion) => (
-                                                <button
-                                                    key={suggestion.id}
-                                                    type="button"
-                                                    onClick={() => selectVendor(suggestion.name)}
-                                                    className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
-                                                >
-                                                    {suggestion.name}
-                                                </button>
-                                            ))}
+                                                    <button
+                                                        key={suggestion.id}
+                                                        type="button"
+                                                        onClick={() => selectVendor(suggestion.name)}
+                                                        className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
+                                                    >
+                                                        {suggestion.name}
+                                                    </button>
+                                                ))}
                                         </div>
                                     )}
                                 </div>
@@ -681,8 +569,8 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                 {type === 'payment' && (
                                     <div>
                                         <div className="flex justify-between items-center mb-0.5">
-                                            <label className={`block text-sm ${categoryRemaining && categoryRemaining <0 ? 'text-reddy' : 'text-white/50' }`}>Category</label>
-                                            
+                                            <label className={`block text-sm ${categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : 'text-white/50'}`}>Category</label>
+
                                         </div>
                                         <GroupedDropdown
                                             required={type === 'payment'}
@@ -763,7 +651,7 @@ export default function TransactionModal({transaction, transfer, isOpen, onClose
                                         setIsDeleting(true);
                                     }
                                 }}
-                                className={`${(transaction || transfer) ? 'block': 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
+                                className={`${(transaction || transfer) ? 'block' : 'hidden'} flex-1 py-4 ${isDeleting ? "bg-old-reddy" : "bg-reddy"} text-black font-medium rounded-lg hover:bg-old-reddy transition-colors`}
                             >
                                 {isDeleting ? "Are you sure?" : "Delete"}
                             </button>

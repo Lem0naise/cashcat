@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Gabarito } from "next/font/google";
 import { Providers } from './providers';
 import SupabaseProvider from './contexts/supabase-provider';
+import OfflineBadge from './components/OfflineBadge';
 import "./globals.css";
 
 const USEFont = Gabarito({
@@ -79,6 +80,7 @@ export default function RootLayout({
         <Analytics />
         <Providers>
           <SupabaseProvider>
+            <OfflineBadge />
             {children}
           </SupabaseProvider>
         </Providers>

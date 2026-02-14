@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { useAuthUserId } from './useAuthUserId';
 
 // Define the extended transaction type with joins
 export type TransactionWithDetails = Database['public']['Tables']['transactions']['Row'] & {
@@ -20,13 +21,9 @@ export type TransactionWithDetails = Database['public']['Tables']['transactions'
     } | null;
 };
 
-// Fetch all transactions for the current user
-const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
+// Fetch all transactions for a given user
+const fetchTransactions = async (userId: string): Promise<TransactionWithDetails[]> => {
     const supabase = createClientComponentClient<Database>();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    const user = session?.user;
-
-    if (sessionError || !user) throw new Error('Not authenticated');
 
     // Fetch all transactions in batches to handle large datasets
     let allTransactions: TransactionWithDetails[] = [];
@@ -54,7 +51,7 @@ const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
                     type
                 )
             `)
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .order('date', { ascending: false })
             .order('created_at', { ascending: false })
             .range(from, from + batchSize - 1);
@@ -73,8 +70,10 @@ const fetchTransactions = async (): Promise<TransactionWithDetails[]> => {
 
 // Custom hook for transactions - used across all pages
 export const useTransactions = () => {
+    const userId = useAuthUserId();
     return useQuery({
         queryKey: ['transactions'],
-        queryFn: fetchTransactions,
+        queryFn: () => fetchTransactions(userId!),
+        enabled: !!userId,
     });
 };

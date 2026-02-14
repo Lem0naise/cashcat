@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { useSupabaseClient } from '../hooks/useSupabaseClient';
+import { useAccounts } from '../hooks/useAccounts';
 
 type Account = {
     id: string;
@@ -19,15 +19,10 @@ interface AccountSelectorProps {
 }
 
 export default function AccountSelector({ selectedAccountId, onAccountChange, onManageAccounts }: AccountSelectorProps) {
-    const [accounts, setAccounts] = useState<Account[]>([]);
+    const { data: accountsData = [], isLoading: loading } = useAccounts();
+    const accounts = accountsData as Account[];
     const [isOpen, setIsOpen] = useState(false);
-    const [loading, setLoading] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const supabase = useSupabaseClient();
-
-    useEffect(() => {
-        fetchAccounts();
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -39,27 +34,6 @@ export default function AccountSelector({ selectedAccountId, onAccountChange, on
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    const fetchAccounts = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
-
-            const { data, error } = await supabase
-                .from('accounts')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('is_active', true)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setAccounts(data || []);
-        } catch (error) {
-            console.error('Error fetching accounts:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
 
@@ -101,22 +75,20 @@ export default function AccountSelector({ selectedAccountId, onAccountChange, on
                     <div className="py-2">
                         <button
                             onClick={() => handleAccountSelect(null)}
-                            className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-sm ${
-                                !selectedAccountId ? 'bg-white/5 text-green' : ''
-                            }`}
+                            className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-sm ${!selectedAccountId ? 'bg-white/5 text-green' : ''
+                                }`}
                         >
                             All Accounts
                         </button>
-                        
+
                         {accounts.length > 0 && (
                             <div className="border-t border-white/10 mt-2 pt-2">
                                 {accounts.map((account) => (
                                     <button
                                         key={account.id}
                                         onClick={() => handleAccountSelect(account.id)}
-                                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${
-                                            selectedAccountId === account.id ? 'bg-white/5 text-green' : ''
-                                        }`}
+                                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${selectedAccountId === account.id ? 'bg-white/5 text-green' : ''
+                                            }`}
                                     >
                                         <div>
                                             <div className="text-sm font-medium">{account.name}</div>
@@ -126,7 +98,7 @@ export default function AccountSelector({ selectedAccountId, onAccountChange, on
                                 ))}
                             </div>
                         )}
-                        
+
                         <div className="border-t border-white/10 mt-2 pt-2">
                             <button
                                 onClick={() => {

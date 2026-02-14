@@ -7,26 +7,23 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import type { Persister } from '@tanstack/react-query-persist-client';
 
-// Create a no-op persister for SSR (will be replaced on client)
-const createNoopPersister = (): Persister => ({
-    persistClient: async () => { },
-    restoreClient: async () => undefined,
-    removeClient: async () => { },
-});
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [isClient, setIsClient] = useState(false);
-    const [persister, setPersister] = useState<Persister>(createNoopPersister());
+    const [persister, setPersister] = useState<Persister | undefined>(undefined);
 
     const [queryClient] = useState(
         () =>
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        staleTime: 1000 * 60 * 5, // 5 minutes - data is fresh for 5 min
-                        gcTime: 1000 * 60 * 60 * 24, // 24 hours - keep in cache for 24h
+                        staleTime: 1000 * 60 * 10, // 5 minutes - data is fresh for 5 min
+                        gcTime: 1000 * 60 * 60 * 48, // 24 hours - keep in cache for 24h
                         retry: 3,
                         refetchOnWindowFocus: false,
+                        networkMode: 'offlineFirst',
+                    },
+                    mutations: {
                         networkMode: 'offlineFirst',
                     },
                 },
@@ -55,6 +52,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
         setPersister(localStoragePersister);
     }, []);
+
+
+    if (!persister) {
+        return <div className="min-h-screen bg-black" />;
+    }
 
     return (
         <PersistQueryClientProvider

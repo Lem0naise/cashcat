@@ -21,7 +21,9 @@ export const useDeleteTransaction = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ['deleteTransaction'],
         mutationFn: deleteTransaction,
+        networkMode: 'offlineFirst',
 
         onMutate: async (id) => {
             await queryClient.cancelQueries({ queryKey: ['transactions'] });
@@ -36,7 +38,8 @@ export const useDeleteTransaction = () => {
             return { previousTransactions };
         },
 
-        onError: (_err, _id, context) => {
+        onError: (err, _id, context) => {
+            console.log("Mutation error: " + err)
             if (context?.previousTransactions) {
                 queryClient.setQueryData(['transactions'], context.previousTransactions);
             }
