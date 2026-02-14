@@ -11,6 +11,7 @@ export const useCreateAccount = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['createAccount'],
         networkMode: 'offlineFirst',
         mutationFn: async (params: {
             name: string;
@@ -64,6 +65,7 @@ export const useUpdateAccount = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['updateAccount'],
         networkMode: 'offlineFirst',
         mutationFn: async ({ id, updates }: {
             id: string;
@@ -104,6 +106,7 @@ export const useDeleteAccount = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['deleteAccount'],
         networkMode: 'offlineFirst',
         mutationFn: async (id: string) => {
             const { error } = await supabase
@@ -121,7 +124,8 @@ export const useDeleteAccount = () => {
             );
             return { previous };
         },
-        onError: (_err, _id, context) => {
+        onError: (err, _id, context) => {
+            console.log("Mutation error: " + err)
             if (context?.previous) {
                 queryClient.setQueryData(['accounts'], context.previous);
             }
@@ -139,6 +143,7 @@ export const useSetDefaultAccount = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['setDefaultAccount'],
         networkMode: 'offlineFirst',
         mutationFn: async (accountId: string) => {
             const userId = getCachedUserId();
@@ -168,7 +173,8 @@ export const useSetDefaultAccount = () => {
             );
             return { previous };
         },
-        onError: (_err, _id, context) => {
+        onError: (err, _id, context) => {
+            console.log("Mutation error: " + err)
             if (context?.previous) {
                 queryClient.setQueryData(['accounts'], context.previous);
             }

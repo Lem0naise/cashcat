@@ -37,6 +37,7 @@ export const useUpdateAssignment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ['updateAssignment'],
         mutationFn: updateAssignment,
         networkMode: 'offlineFirst',
 
@@ -75,10 +76,11 @@ export const useUpdateAssignment = () => {
             return { previousAssignments };
         },
 
-        onError: (_err, _variables, context) => {
+        onError: (err, _variables, context) => {
             if (context?.previousAssignments) {
                 queryClient.setQueryData(['assignments'], context.previousAssignments);
             }
+            console.log("Mutation error: " + err)
         },
 
         onSettled: () => {

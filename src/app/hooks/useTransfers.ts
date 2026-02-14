@@ -46,6 +46,7 @@ export const useCreateTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['createTransfer'],
         networkMode: 'offlineFirst',
         mutationFn: async (transferData: {
             from_account_id: string;
@@ -81,6 +82,7 @@ export const useUpdateTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['updateTransfer'],
         networkMode: 'offlineFirst',
         mutationFn: async ({ id, updates }: {
             id: string;
@@ -114,6 +116,7 @@ export const useDeleteTransfer = () => {
     const supabase = createClientComponentClient<Database>();
 
     return useMutation({
+        mutationKey: ['deleteTransfer'],
         networkMode: 'offlineFirst',
         mutationFn: async (id: string) => {
             const { error } = await supabase

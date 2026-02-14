@@ -27,6 +27,7 @@ export const useCreateTransaction = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ['createTransaction'],
         mutationFn: createTransaction,
         networkMode: 'offlineFirst',
 
@@ -52,7 +53,8 @@ export const useCreateTransaction = () => {
         },
 
         // Rollback on error
-        onError: (_err, _newTransaction, context) => {
+        onError: (err, _newTransaction, context) => {
+            console.log("Mutation error: " + err)
             if (context?.previousTransactions) {
                 queryClient.setQueryData(['transactions'], context.previousTransactions);
             }
