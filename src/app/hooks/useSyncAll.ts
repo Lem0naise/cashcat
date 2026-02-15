@@ -51,6 +51,7 @@ export const useSyncAll = () => {
             // Optional: minimal success feedback or just stop spinning
             // User requested: "Make the sync button show the syncing progress... and THEN close... only once its done"
             // So we just finish here, and the caller handles the UI state via isSyncing.
+            toast.success('Synced successfully');
 
         } catch (error) {
             console.error('Sync failed:', error);
