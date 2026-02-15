@@ -1,41 +1,47 @@
 'use client';
 
-import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
 import { useSupabase } from '../contexts/supabase-provider';
-
-// Small helper so the native app only shows auth when truly necessary.
-const AUTH_ROUTES = ['/login', '/signup'];
+import Logo from './logo';
 
 export default function TrafficCop() {
     const router = useRouter();
-    const pathname = usePathname();
     const { user, loading } = useSupabase();
+    // Use state to track platform to ensure consistent rendering/hydrating if needed,
+    // though Capacitor.isNativePlatform() is generally safe access.
+    // For simplicity and safety with hooks:
+    const isNative = Capacitor.isNativePlatform();
 
     useEffect(() => {
-        // Only run this guard on the Capacitor shell.
-        if (!Capacitor.isNativePlatform()) return;
+        // If not native, strictly do nothing.
+        if (!isNative) return;
 
-        // Wait until we know whether a cached/active session exists.
+        // Wait for auth to load
         if (loading) return;
 
-        const onBudget = pathname?.startsWith('/budget');
-        const onAuth = pathname ? AUTH_ROUTES.includes(pathname) : false;
-
         if (user) {
-            // We have a cached/active session – always anchor the app to /budget for offline use.
-            if (!onBudget) {
-                router.replace('/budget');
-            }
-            return;
-        }
-
-        // No session found: only send the user to auth routes, otherwise default to login.
-        if (!onAuth) {
+            // User is logged in -> Go to budget
+            router.replace('/budget');
+        } else {
+            // User is NOT logged in -> Go to login
             router.replace('/login');
         }
-    }, [loading, pathname, router, user]);
+    }, [isNative, loading, router, user]);
 
-    return null;
+
+    // If we are NOT on a native platform (Capacitor), do nothing.
+    // Web users should see the landing page as normal.
+    if (!isNative) {
+        return null;
+    }
+
+    // If we ARE on Capacitor, this overlay hides the underlying Landing Page
+    // while the useEffect above handles the redirection.
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]">
+            <Logo />
+        </div>
+    );
 }

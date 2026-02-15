@@ -20,6 +20,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAssignments } from '../hooks/useAssignments';
 import { useUpdateAssignment } from '../hooks/useUpdateAssignment';
+import { useSyncAll } from '../hooks/useSyncAll';
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -47,6 +48,7 @@ export default function Budget() {
     const { data: rawCategoriesData = EMPTY_ARRAY, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
     const { data: allAssignmentsData = EMPTY_ARRAY, isLoading: assignmentsLoading, refetch: refetchAssignments } = useAssignments();
     const updateAssignmentMutation = useUpdateAssignment();
+    const { syncAll, isSyncing } = useSyncAll();
 
     // ... (state definitions)
 
@@ -866,18 +868,20 @@ export default function Budget() {
                 {/* Mobile month switcher and manage button */}
                 <div className="px-3 flex md:hidden z-50 items-center border-b border-white/[.2] min-w-screen py-2">
                     <div className="w-12 flex justify-start">
-                        <button
-                            onClick={toggleAllGroups}
-                            className="p-1.5 rounded-lg transition-all hover:bg-white/[.05] invert opacity-70 hover:opacity-100"
-                        >
-                            <Image
-                                src={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "/minus.svg" : "/plus.svg"}
-                                alt={Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? "Collapse all" : "Expand all"}
-                                width={18}
-                                height={18}
-                                className="opacity-70"
-                            />
-                        </button>
+                        <div className="w-12 flex justify-start">
+                            <button
+                                onClick={() => syncAll()}
+                                disabled={isSyncing}
+                                className={`p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100 ${isSyncing ? 'cursor-not-allowed opacity-50' : ''}`}
+                            >
+                                <svg className={`${isSyncing ? 'animate-spin' : ''}`} width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g transform="scale(-1, 1) translate(-48, 0)">
+                                        <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                        <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
+                                    </g>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div className="flex-1 flex justify-center">
                         <div className="flex items-center">
@@ -1012,11 +1016,17 @@ export default function Budget() {
                             </div>
                             <div className="flex-1 flex justify-end gap-2 min-w-0">
                                 <button
-                                    onClick={toggleAllGroups}
-                                    className="bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm whitespace-nowrap"
+                                    onClick={() => syncAll()}
+                                    disabled={isSyncing}
+                                    className={`bg-white/[.05] hover:bg-white/[.1] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all text-sm whitespace-nowrap ${isSyncing ? 'cursor-not-allowed opacity-50' : ''}`}
                                 >
-                                    <span className="hidden xl:inline">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse All' : 'Expand All'}</span>
-                                    <span className="xl:hidden">{Object.keys(groupedCategories).every(group => expandedGroups.has(group)) ? 'Collapse' : 'Expand'}</span>
+                                    <svg className={`${isSyncing ? 'animate-spin' : ''}`} width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <g transform="scale(-1, 1) translate(-48, 0)">
+                                            <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                            <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
+                                        </g>
+                                    </svg>
+                                    <span className="hidden xl:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
                                 </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
