@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Network } from '@capacitor/network';
 
 export default function OfflineBadge() {
     const [isOffline, setIsOffline] = useState(false);
     const [show, setShow] = useState(false);
 
     useEffect(() => {
-        const updateStatus = () => {
-            const offline = !navigator.onLine;
+        let networkListener: any;
+
+        const updateStatus = (status: { connected: boolean }) => {
+            const offline = !status.connected;
             setIsOffline(offline);
             if (offline) {
                 setShow(true);
@@ -18,12 +21,28 @@ export default function OfflineBadge() {
             }
         };
 
-        updateStatus();
-        window.addEventListener('offline', updateStatus);
-        window.addEventListener('online', updateStatus);
+        const initNetwork = async () => {
+            // Initial check
+            const status = await Network.getStatus();
+            updateStatus(status);
+
+            // Listen for changes
+            networkListener = await Network.addListener('networkStatusChange', updateStatus);
+        };
+
+        initNetwork();
+
+        // Web fallback
+        const handleWebOffline = () => updateStatus({ connected: false });
+        const handleWebOnline = () => updateStatus({ connected: true });
+
+        window.addEventListener('offline', handleWebOffline);
+        window.addEventListener('online', handleWebOnline);
+
         return () => {
-            window.removeEventListener('offline', updateStatus);
-            window.removeEventListener('online', updateStatus);
+            if (networkListener) networkListener.remove();
+            window.removeEventListener('offline', handleWebOffline);
+            window.removeEventListener('online', handleWebOnline);
         };
     }, []);
 
