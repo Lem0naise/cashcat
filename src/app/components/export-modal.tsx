@@ -7,6 +7,7 @@ import { useAccounts } from '@/app/hooks/useAccounts';
 import { useTransfers } from '@/app/hooks/useTransfers';
 import type { TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { format } from 'date-fns';
+import { Capacitor } from '@capacitor/core';
 
 type ExportModalProps = {
     isOpen: boolean;
@@ -236,156 +237,199 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
         categoriesByGroup[groupName].push(cat);
     });
 
-    return (
-        <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#151515]">
-                    <h2 className="text-xl font-bold text-white">Export Transactions</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white">
-                        <Image src="/plus.svg" alt="Close" width={20} height={20} className="rotate-45 invert" />
-                    </button>
-                </div>
+    if (Capacitor.isNativePlatform() || true) {
+        const handleVisit = () => {
+            window.open('https://cashcat.app', '_blank');
+        };
 
-                {/* Body */}
-                <div className="p-6 overflow-y-auto space-y-8 flex-1">
+        return (
+            <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.15s_ease-out]">
+                    <div className="p-8 flex flex-col items-center text-center space-y-6">
 
-                    {/* Date Range */}
-                    <div className="grid grid-cols-2 gap-6">
+
+                        {/* Text */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/60">From Date</label>
-                            <input
-                                type="date"
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
-                            />
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Export on Web</h2>
+                            <p className="text-white/50 text-base leading-relaxed">
+                                Transaction exports are currently available on the web. Visit
+                                <span className="text-green font-semibold"> cashcat.app </span>
+                                to download your data.
+                            </p>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/60">To Date</label>
-                            <input
-                                type="date"
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
-                            />
-                        </div>
-                    </div>
 
-                    {/* Accounts */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <label className="text-sm font-medium text-white/60">Accounts</label>
+                        {/* Buttons */}
+                        <div className="flex flex-col w-full gap-3 pt-2">
                             <button
-                                onClick={() => { setSelectAllAccounts(!selectAllAccounts); setSelectedAccountIds([]); }}
-                                className={`text-xs px-2 py-1 rounded transition-colors ${selectAllAccounts ? 'bg-green/20 text-green' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                onClick={handleVisit}
+                                className="w-full py-4 bg-green hover:bg-[#00E676] text-black rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-green/10"
                             >
-                                {selectAllAccounts ? 'All Accounts Included' : 'Select Specific'}
+                                Okay, open now
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl transition-colors"
+                            >
+                                Cancel
                             </button>
                         </div>
-
-                        {!selectAllAccounts && (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 bg-white/[0.02] rounded-lg border border-white/5 max-h-40 overflow-y-auto">
-                                {accounts.map(acc => (
-                                    <label key={acc.id} className="flex items-center gap-2 cursor-pointer group">
-                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAccountIds.includes(acc.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
-
-                                        </div>
-                                        <input
-                                            type="checkbox"
-                                            className="hidden"
-                                            checked={selectedAccountIds.includes(acc.id)}
-                                            onChange={() => handleAccountToggle(acc.id)}
-                                        />
-                                        <span className={`text-sm ${selectedAccountIds.includes(acc.id) ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>{acc.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        )}
                     </div>
-
-                    {/* Categories */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <label className="text-sm font-medium text-white/60">Categories</label>
-                            <button
-                                onClick={() => { setSelectAllCategories(!selectAllCategories); setSelectedCategoryIds([]); }}
-                                className={`text-xs px-2 py-1 rounded transition-colors ${selectAllCategories ? 'bg-green/20 text-green' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
-                            >
-                                {selectAllCategories ? 'All Categories Included' : 'Select Specific'}
-                            </button>
-                        </div>
-
-                        {!selectAllCategories && (
-                            <div className="space-y-4 p-4 bg-white/[0.02] rounded-lg border border-white/5 max-h-60 overflow-y-auto">
-                                {Object.entries(categoriesByGroup).map(([group, groupCategories]) => (
-                                    <div key={group} className="space-y-2">
-                                        <h4 className="text-xs font-semibold text-white/30 uppercase tracking-wider sticky top-0 bg-[#141414] py-1">{group}</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {groupCategories.map(cat => (
-                                                <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedCategoryIds.includes(cat.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
-
-                                                    </div>
-                                                    <input
-                                                        type="checkbox"
-                                                        className="hidden"
-                                                        checked={selectedCategoryIds.includes(cat.id)}
-                                                        onChange={() => handleCategoryToggle(cat.id)}
-                                                    />
-                                                    <span className={`text-sm truncate ${selectedCategoryIds.includes(cat.id) ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>{cat.name}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Format */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium text-white/60">Format</label>
-                        <div className="flex gap-4">
-                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${exportFormat === 'csv' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
-                                <input type="radio" name="format" value="csv" checked={exportFormat === 'csv'} onChange={() => setExportFormat('csv')} className="hidden" />
-                                <span className="font-semibold">CSV</span>
-                            </label>
-                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${exportFormat === 'json' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
-                                <input type="radio" name="format" value="json" checked={exportFormat === 'json'} onChange={() => setExportFormat('json')} className="hidden" />
-                                <span className="font-semibold">JSON</span>
-                            </label>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-white/10 bg-[#151515] flex justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-3 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleExport}
-                        disabled={isExporting}
-                        className="px-8 py-3 rounded-lg font-bold text-black bg-green hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                        {isExporting ? (
-                            <>
-                                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-                                Exporting...
-                            </>
-                        ) : (
-                            <>
-                                Export
-                            </>
-                        )}
-                    </button>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
+    else {
+        return (
+            <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+                    {/* Header */}
+                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#151515]">
+                        <h2 className="text-xl font-bold text-white">Export Transactions</h2>
+                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white">
+                            <Image src="/plus.svg" alt="Close" width={20} height={20} className="rotate-45 invert" />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6 overflow-y-auto space-y-8 flex-1">
+
+                        {/* Date Range */}
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/60">From Date</label>
+                                <input
+                                    type="date"
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/60">To Date</label>
+                                <input
+                                    type="date"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Accounts */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-white/60">Accounts</label>
+                                <button
+                                    onClick={() => { setSelectAllAccounts(!selectAllAccounts); setSelectedAccountIds([]); }}
+                                    className={`text-xs px-2 py-1 rounded transition-colors ${selectAllAccounts ? 'bg-green/20 text-green' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                >
+                                    {selectAllAccounts ? 'All Accounts Included' : 'Select Specific'}
+                                </button>
+                            </div>
+
+                            {!selectAllAccounts && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 bg-white/[0.02] rounded-lg border border-white/5 max-h-40 overflow-y-auto">
+                                    {accounts.map(acc => (
+                                        <label key={acc.id} className="flex items-center gap-2 cursor-pointer group">
+                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAccountIds.includes(acc.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
+
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                className="hidden"
+                                                checked={selectedAccountIds.includes(acc.id)}
+                                                onChange={() => handleAccountToggle(acc.id)}
+                                            />
+                                            <span className={`text-sm ${selectedAccountIds.includes(acc.id) ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>{acc.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Categories */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-white/60">Categories</label>
+                                <button
+                                    onClick={() => { setSelectAllCategories(!selectAllCategories); setSelectedCategoryIds([]); }}
+                                    className={`text-xs px-2 py-1 rounded transition-colors ${selectAllCategories ? 'bg-green/20 text-green' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                >
+                                    {selectAllCategories ? 'All Categories Included' : 'Select Specific'}
+                                </button>
+                            </div>
+
+                            {!selectAllCategories && (
+                                <div className="space-y-4 p-4 bg-white/[0.02] rounded-lg border border-white/5 max-h-60 overflow-y-auto">
+                                    {Object.entries(categoriesByGroup).map(([group, groupCategories]) => (
+                                        <div key={group} className="space-y-2">
+                                            <h4 className="text-xs font-semibold text-white/30 uppercase tracking-wider sticky top-0 bg-[#141414] py-1">{group}</h4>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {groupCategories.map(cat => (
+                                                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedCategoryIds.includes(cat.id) ? 'bg-green border-green' : 'border-white/20 group-hover:border-white/40'}`}>
+
+                                                        </div>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="hidden"
+                                                            checked={selectedCategoryIds.includes(cat.id)}
+                                                            onChange={() => handleCategoryToggle(cat.id)}
+                                                        />
+                                                        <span className={`text-sm truncate ${selectedCategoryIds.includes(cat.id) ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>{cat.name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Format */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium text-white/60">Format</label>
+                            <div className="flex gap-4">
+                                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${exportFormat === 'csv' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
+                                    <input type="radio" name="format" value="csv" checked={exportFormat === 'csv'} onChange={() => setExportFormat('csv')} className="hidden" />
+                                    <span className="font-semibold">CSV</span>
+                                </label>
+                                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${exportFormat === 'json' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
+                                    <input type="radio" name="format" value="json" checked={exportFormat === 'json'} onChange={() => setExportFormat('json')} className="hidden" />
+                                    <span className="font-semibold">JSON</span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-6 border-t border-white/10 bg-[#151515] flex justify-end gap-3">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-3 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="px-8 py-3 rounded-lg font-bold text-black bg-green hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {isExporting ? (
+                                <>
+                                    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                                    Exporting...
+                                </>
+                            ) : (
+                                <>
+                                    Export
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
