@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useCategories } from '@/app/hooks/useCategories';
 import { useAccounts } from '@/app/hooks/useAccounts';
+import { useTransfers } from '@/app/hooks/useTransfers';
 import type { TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { format } from 'date-fns';
 
@@ -16,6 +17,7 @@ type ExportModalProps = {
 export default function ExportModal({ isOpen, onClose, transactions }: ExportModalProps) {
     const { data: categories = [] } = useCategories();
     const { data: accounts = [] } = useAccounts();
+    const { data: transfers = [] } = useTransfers();
 
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
@@ -129,8 +131,53 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                 };
             });
 
+            // Process transfers
+            const processedTransfers = transfers.filter(t => {
+                const tDate = t.date;
+                if (fromDate && tDate < fromDate) return false;
+                if (toDate && tDate > toDate) return false;
+                return true;
+            }).flatMap(t => {
+                const rows = [];
+
+                // Debit (Leaving From Account)
+                if (selectAllAccounts || (t.from_account_id && selectedAccountIds.includes(t.from_account_id))) {
+                    rows.push({
+                        Date: t.date,
+                        Vendor: `Transfer to ${t.to_account?.name || 'Unknown Account'}`,
+                        Category: 'Transfer',
+                        Group: 'Transfers',
+                        Account: t.from_account?.name || '',
+                        Amount: -t.amount,
+                        Type: 'transfer',
+                        Description: t.description || ''
+                    });
+                }
+
+                // Credit (Entering To Account)
+                if (selectAllAccounts || (t.to_account_id && selectedAccountIds.includes(t.to_account_id))) {
+                    rows.push({
+                        Date: t.date,
+                        Vendor: `Transfer from ${t.from_account?.name || 'Unknown Account'}`,
+                        Category: 'Transfer',
+                        Group: 'Transfers',
+                        Account: t.to_account?.name || '',
+                        Amount: t.amount,
+                        Type: 'transfer',
+                        Description: t.description || ''
+                    });
+                }
+
+                return rows;
+            });
+
+            // Combine and sort
+            const allData = [...dataToExport, ...processedTransfers].sort((a, b) => {
+                return new Date(b.Date).getTime() - new Date(a.Date).getTime();
+            });
+
             if (exportFormat === 'json') {
-                const jsonString = JSON.stringify(dataToExport, null, 2);
+                const jsonString = JSON.stringify(allData, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -145,7 +192,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                 const headers = ['Date', 'Vendor', 'Category', 'Group', 'Account', 'Amount', 'Type', 'Description'];
                 const csvContent = [
                     headers.join(','),
-                    ...dataToExport.map(row => [
+                    ...allData.map(row => [
                         row.Date,
                         `"${row.Vendor.replace(/"/g, '""')}"`,
                         `"${row.Category.replace(/"/g, '""')}"`,
