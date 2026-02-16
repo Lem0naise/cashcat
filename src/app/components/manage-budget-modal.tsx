@@ -318,7 +318,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                     }`}
             >
                 {/* Header Section */}
-                <div className="flex-none p-6 border-b border-white/[.1]">
+                <div className="flex-none p-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] border-b border-white/[.1]">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold">Manage Budget</h2>
                         <button

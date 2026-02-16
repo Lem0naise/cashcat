@@ -237,7 +237,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
         categoriesByGroup[groupName].push(cat);
     });
 
-    if (Capacitor.isNativePlatform() || true) {
+    if (Capacitor.isNativePlatform()) {
         const handleVisit = () => {
             window.open('https://cashcat.app', '_blank');
         };

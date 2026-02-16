@@ -12,24 +12,24 @@ interface ConfirmationModalProps {
     isLoading?: boolean;
 }
 
-export default function ConfirmationModal({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    title, 
-    message, 
+export default function ConfirmationModal({
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+    message,
     confirmText = "Confirm",
     confirmButtonClass = "bg-reddy hover:bg-old-reddy",
-    isLoading = false 
+    isLoading = false
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
     return (
-        <div 
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4"
+        <div
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 pt-[calc(env(safe-area-inset-top)+1rem)]"
             onClick={onClose}
         >
-            <div 
+            <div
                 className="bg-[#1a1a1a] rounded-xl max-w-sm w-full border border-white/10"
                 onClick={(e) => e.stopPropagation()}
             >
