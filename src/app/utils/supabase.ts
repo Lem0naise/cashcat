@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
 import { Capacitor } from '@capacitor/core';
 
@@ -21,11 +21,11 @@ export const createClient = (): SupabaseClient<Database> => {
       // Capacitor: use supabase-js directly (localStorage, works under capacitor:// scheme)
       client = createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey);
     } else {
-      // Web: use auth-helpers (cookie-based, works with Next.js middleware/SSR)
-      client = createClientComponentClient<Database>({
+      // Web: use new SSR browser client (handles cookies automatically)
+      client = createBrowserClient<Database>(
         supabaseUrl,
-        supabaseKey: supabaseAnonKey,
-      }) as unknown as SupabaseClient<Database>;
+        supabaseAnonKey
+      );
     }
   }
   return client;

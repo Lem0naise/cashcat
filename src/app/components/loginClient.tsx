@@ -10,14 +10,14 @@ import Link from 'next/link';
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Validate redirectTo parameter against security threats only
   const validateRedirectTo = (redirect: string | null): string => {
     if (!redirect) return '/budget';
-    
+
     // Normalize the redirect URL for analysis (decode multiple times, normalize case)
     let normalizedRedirect = redirect.toLowerCase().trim();
-    
+
     // Decode multiple times to handle double/triple encoding
     for (let i = 0; i < 5; i++) {
       try {
@@ -28,36 +28,36 @@ export default function LoginClient() {
         return '/budget'; // Invalid encoding
       }
     }
-    
+
     // Remove common obfuscation characters
     normalizedRedirect = normalizedRedirect
       .replace(/[\s\t\n\r\x00-\x1f]/g, '') // Remove whitespace and control chars
       .replace(/[\\\/]+/g, '/') // Normalize slashes
       .replace(/\x00/g, ''); // Remove null bytes
-    
+
     // Check for dangerous protocols (comprehensive list)
     const dangerousProtocols = [
       'javascript:', 'data:', 'vbscript:', 'file:', 'ftp:', 'about:', 'chrome:',
       'livescript:', 'mocha:', 'tcl:', 'res:', 'resource:', 'chrome-extension:',
       'moz-extension:', 'ms-appx:', 'x-javascript:', 'ecmascript:'
     ];
-    
+
     if (dangerousProtocols.some(protocol => normalizedRedirect.includes(protocol))) {
       return '/budget';
     }
-    
+
     // Block external URLs more comprehensively
-    if (normalizedRedirect.match(/^https?:\/\//) || 
-        normalizedRedirect.match(/^\/\//) || 
-        normalizedRedirect.includes('://')) {
+    if (normalizedRedirect.match(/^https?:\/\//) ||
+      normalizedRedirect.match(/^\/\//) ||
+      normalizedRedirect.includes('://')) {
       return '/budget';
     }
-    
+
     // Only allow paths starting with / (no relative paths)
     if (!redirect.startsWith('/')) {
       return '/budget';
     }
-    
+
     // Block suspicious patterns (more comprehensive)
     const suspiciousPatterns = [
       // Script tags and HTML
@@ -74,32 +74,32 @@ export default function LoginClient() {
       // Expression/execution
       'expression(', 'url(', 'import(', 'require(',
     ];
-    
+
     if (suspiciousPatterns.some(pattern => normalizedRedirect.includes(pattern))) {
       return '/budget';
     }
-    
+
     // Block directory traversal more thoroughly
-    if (normalizedRedirect.includes('..') || 
-        normalizedRedirect.includes('%2e%2e') ||
-        normalizedRedirect.includes('\\') ||
-        normalizedRedirect.match(/\.{2,}/)) {
+    if (normalizedRedirect.includes('..') ||
+      normalizedRedirect.includes('%2e%2e') ||
+      normalizedRedirect.includes('\\') ||
+      normalizedRedirect.match(/\.{2,}/)) {
       return '/budget';
     }
-    
+
     // Additional safety: only allow alphanumeric, dash, underscore, slash, and query params
     if (!redirect.match(/^\/[a-zA-Z0-9\-_\/\?=&%]*$/)) {
       return '/budget';
     }
-    
+
     // Length check to prevent extremely long URLs
     if (redirect.length > 500) {
       return '/budget';
     }
-    
+
     return redirect;
   };
-  
+
   const redirectTo = validateRedirectTo(searchParams.get('redirectTo'));
   const supabase = createClient();
   const [redirectUrl, setRedirectUrl] = useState<string>('');
@@ -137,14 +137,14 @@ export default function LoginClient() {
       <div className="w-full max-w-md p-8 bg-white/[.02] rounded-lg border-b-4">
         <h1 className="text-2xl font-bold mb-8 text-center">Sign in to CashCat</h1>
 
-        <Auth 
+        <Auth
           supabaseClient={supabase}
           localization={{
             variables: {
-              sign_up : {
+              sign_up: {
                 link_text: ""
               },
-              sign_in : {
+              sign_in: {
                 link_text: ""
               }
             }

@@ -16,7 +16,7 @@ export default function SpendingActivityDemo() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Chart state - Default to shorter time range for activity view
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('30d');
     const [customStartDate, setCustomStartDate] = useState<Date>();
@@ -81,19 +81,19 @@ export default function SpendingActivityDemo() {
     }, [fetchData]);
 
     // Get available groups for filtering
-    const categoriesWithGroupNames = useMemo(() => 
+    const categoriesWithGroupNames = useMemo(() =>
         categories.map(cat => ({
             ...cat,
             groupName: (cat as any).groups?.name || cat.group || 'Uncategorized',
         })), [categories]);
-    
-    const availableGroups = useMemo(() => 
+
+    const availableGroups = useMemo(() =>
         Array.from(new Set(
             categoriesWithGroupNames.map(cat => cat.groupName)
         )).sort(), [categoriesWithGroupNames]);
 
     // Get available categories for filtering
-    const availableCategories = useMemo(() => 
+    const availableCategories = useMemo(() =>
         categoriesWithGroupNames.map(cat => ({
             id: cat.id,
             name: cat.name,
@@ -133,8 +133,8 @@ export default function SpendingActivityDemo() {
                 <div className="text-center text-white/60 py-12">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
-                            <path d="M3 3V21H21V3H3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                            <path d="M9 9L15 15M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M3 3V21H21V3H3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                            <path d="M9 9L15 15M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </div>
                     <h3 className="text-lg font-semibold mb-2 text-white">Demo Requires Transaction Data</h3>

@@ -8,6 +8,8 @@ import { Database } from '@/types/supabase';
 import TransactionModal from './transaction-modal';
 import MoneyInput from './money-input';
 import { getCachedUserId } from '../hooks/useAuthUserId';
+import { useTransfers } from '../hooks/useTransfers';
+import { TransferWithAccounts } from '@/types/supabase';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
     vendors?: {
@@ -20,6 +22,10 @@ type Transaction = Database['public']['Tables']['transactions']['Row'] & {
         group: string;
     } | null;
 };
+
+type IssueItem =
+    | { type: 'transaction'; data: Transaction }
+    | { type: 'transfer'; data: TransferWithAccounts };
 
 type BankCompareModalProps = {
     isOpen: boolean;
@@ -41,30 +47,48 @@ export default function BankCompareModal({
     const [step, setStep] = useState<'input' | 'results' | 'correction'>('input');
     const [difference, setDifference] = useState(0);
     const [budgetBalance, setBudgetBalance] = useState(0);
-    const [potentialIssues, setPotentialIssues] = useState<Transaction[]>([]);
+    const [potentialIssues, setPotentialIssues] = useState<IssueItem[]>([]);
     const [isClosing, setIsClosing] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [correctionAmount, setCorrectionAmount] = useState('');
     const [usableTransactions, setUsableTransactions] = useState(transactions);
+    const { data: transfers = [] } = useTransfers();
+    const [usableTransfers, setUsableTransfers] = useState<TransferWithAccounts[]>([]);
     const [lastReconciliation, setLastReconciliation] = useState<{
         reconciled_at: string;
         bank_balance: number;
     } | null>(null);
 
-    // Calculate budget balance from transactions
+    // Calculate budget balance from transactions and transfers
     useEffect(() => {
         // filter transactions by the current bank account
         const filteredTransactions = (transactions.filter(transaction =>
             transaction.account_id === bankAccountId
         ));
 
-        setUsableTransactions(filteredTransactions);
+        // filter transfers by the current bank account
+        const filteredTransfers = transfers.filter(transfer =>
+            transfer.from_account_id === bankAccountId || transfer.to_account_id === bankAccountId
+        );
 
-        const balance = filteredTransactions
+        setUsableTransactions(filteredTransactions);
+        setUsableTransfers(filteredTransfers);
+
+        const transactionBalance = filteredTransactions
             .reduce((total, transaction) => total + transaction.amount, 0);
-        setBudgetBalance(balance);
-    }, [transactions, bankAccountId]);
+
+        const transferBalance = filteredTransfers.reduce((total, transfer) => {
+            if (transfer.to_account_id === bankAccountId) {
+                return total + transfer.amount;
+            } else if (transfer.from_account_id === bankAccountId) {
+                return total - transfer.amount;
+            }
+            return total;
+        }, 0);
+
+        setBudgetBalance(transactionBalance + transferBalance);
+    }, [transactions, transfers, bankAccountId]);
 
     // Fetch last reconciliation data
     useEffect(() => {
@@ -130,20 +154,37 @@ export default function BankCompareModal({
             await saveReconciliation(bankAmount);
         }
 
-        // Find potential problematic transactions
+        // Find potential problematic transactions and transfers
+
+        // 1. Recent items (last 10 combined)
         const recentTransactions = usableTransactions
             .filter(t => t.type !== 'starting')
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, 10); // Last 10 transactions
+            .map(t => ({ type: 'transaction' as const, data: t, date: new Date(t.created_at) }));
 
-        // Also include transactions that match the difference amount
-        const matchingAmountTransactions = usableTransactions.filter(t =>
-            Math.abs(t.amount) === Math.abs(diff) && t.type !== 'starting'
-        );
+        const recentTransfers = usableTransfers
+            .map(t => ({ type: 'transfer' as const, data: t, date: new Date(t.created_at) }));
 
-        const combined = [...recentTransactions, ...matchingAmountTransactions];
-        const unique = combined.filter((transaction, index, self) =>
-            index === self.findIndex(t => t.id === transaction.id)
+        const allRecent = [...recentTransactions, ...recentTransfers]
+            .sort((a, b) => b.date.getTime() - a.date.getTime())
+            .slice(0, 10);
+
+        // 2. Items that match the difference amount
+        const matchingTransactions = usableTransactions
+            .filter(t => Math.abs(t.amount) === Math.abs(diff) && t.type !== 'starting')
+            .map(t => ({ type: 'transaction' as const, data: t }));
+
+        const matchingTransfers = usableTransfers.filter(t => {
+            // For transfers, we need to check the effective amount for this account
+            const amount = t.to_account_id === bankAccountId ? t.amount : -t.amount;
+            return Math.abs(amount) === Math.abs(diff);
+        }).map(t => ({ type: 'transfer' as const, data: t }));
+
+        // Combine and deduplicate
+        const combined = [...allRecent, ...matchingTransactions, ...matchingTransfers];
+
+        // Deduplicate based on ID and type
+        const unique = combined.filter((item, index, self) =>
+            index === self.findIndex(t => t.data.id === item.data.id && t.type === item.type)
         );
 
         setPotentialIssues(unique);
@@ -327,10 +368,10 @@ export default function BankCompareModal({
                 onClick={handleBackdropClick}
             >
                 <div
-                    className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-lg md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    className={`bg-black/[.7] md:rounded-lg border-b-4 w-full md:max-w-lg md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                         }`}
                 >
-                    <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
+                    <div className="flex justify-between items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                         <h2 className="text-xl font-bold">Compare with Bank</h2>
                         <button
                             onClick={handleClose}
@@ -414,33 +455,66 @@ export default function BankCompareModal({
                                             <div>
                                                 <h4 className="font-medium mb-3">Recent Transactions to Review:</h4>
                                                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                                                    {potentialIssues.map((transaction) => (
-                                                        <div key={transaction.id} className="bg-white/[.05] rounded-lg p-3">
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <div>
-                                                                    <p className="font-medium">{transaction.vendor}</p>
-                                                                    <p className="text-sm text-white/60">{new Date(transaction.date).toLocaleDateString()}</p>
+                                                    {potentialIssues.map((item) => {
+                                                        const isTransfer = item.type === 'transfer';
+                                                        const id = item.data.id;
+                                                        const date = new Date(item.data.date);
+
+                                                        let title = '';
+                                                        let amount = 0;
+
+                                                        if (isTransfer) {
+                                                            const t = item.data as TransferWithAccounts;
+                                                            if (t.to_account_id === bankAccountId) {
+                                                                title = `Transfer from ${t.from_account?.name || 'Unknown'}`;
+                                                                amount = t.amount;
+                                                            } else {
+                                                                title = `Transfer to ${t.to_account?.name || 'Unknown'}`;
+                                                                amount = -t.amount;
+                                                            }
+                                                        } else {
+                                                            const t = item.data as Transaction;
+                                                            title = t.vendor;
+                                                            amount = t.amount;
+                                                        }
+
+                                                        return (
+                                                            <div key={`${item.type}-${id}`} className="bg-white/[.05] rounded-lg p-3">
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <div>
+                                                                        <p className="font-medium">{title}</p>
+                                                                        <p className="text-sm text-white/60">{date.toLocaleDateString()}</p>
+                                                                    </div>
+                                                                    <p className={`font-medium ${amount < 0 ? 'text-reddy' : 'text-green'}`}>
+                                                                        {formatCurrency(amount)}
+                                                                    </p>
                                                                 </div>
-                                                                <p className={`font-medium ${transaction.amount < 0 ? 'text-reddy' : 'text-green'}`}>
-                                                                    {formatCurrency(transaction.amount)}
-                                                                </p>
+                                                                {!isTransfer && (
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => handleTransactionEdit(item.data as Transaction)}
+                                                                            className="px-3 py-1 bg-blue/20 text-blue rounded text-xs hover:bg-blue/30 transition-colors"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleTransactionDelete(id)}
+                                                                            className="px-3 py-1 bg-reddy/20 text-reddy rounded text-xs hover:bg-reddy/30 transition-colors"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                                {isTransfer && (
+                                                                    <div className="flex gap-2">
+                                                                        <p className="text-xs text-white/40 italic">
+                                                                            Transfers can be edited in the Transactions page
+                                                                        </p>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleTransactionEdit(transaction)}
-                                                                    className="px-3 py-1 bg-blue/20 text-blue rounded text-xs hover:bg-blue/30 transition-colors"
-                                                                >
-                                                                    Edit
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleTransactionDelete(transaction.id)}
-                                                                    className="px-3 py-1 bg-reddy/20 text-reddy rounded text-xs hover:bg-reddy/30 transition-colors"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
 
@@ -463,21 +537,7 @@ export default function BankCompareModal({
                                         </>
                                     )}
 
-                                    {Math.abs(difference) >= 0.01 && lastReconciliation && (
-                                        <div className="bg-blue/10 border border-blue/20 rounded-lg p-4 mb-4">
-                                            <h4 className="font-medium text-blue mb-2">Search Tip</h4>
-                                            <p className="text-sm text-white/70">
-                                                Your last successful reconciliation was on{' '}
-                                                <span className="font-medium">
-                                                    {new Date(lastReconciliation.reconciled_at).toLocaleDateString('en-GB', {
-                                                        day: 'numeric',
-                                                        month: 'long'
-                                                    })}
-                                                </span>
-                                                . Check transactions after this date to find the discrepancy.
-                                            </p>
-                                        </div>
-                                    )}
+
 
                                     <button
                                         onClick={() => setStep('input')}

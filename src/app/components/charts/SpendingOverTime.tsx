@@ -184,6 +184,15 @@ export default function SpendingOverTime({
         };
     }, [transactions, categories, dateRange, selectedGroups, selectedCategories, entityType, entityId, granularity]);
 
+    const changeEntityId = (id: string) => {
+        if (entityId === id) {
+            setEntityId('');
+            setEntityType('all');
+        }
+        else {
+            setEntityId(id);
+        }
+    };
     const options: any = {
         responsive: true,
         maintainAspectRatio: false,
@@ -297,7 +306,7 @@ export default function SpendingOverTime({
                         ).map((item: { id: string; name: string }) => (
                             <button
                                 key={item.id}
-                                onClick={() => setEntityId(item.id)}
+                                onClick={() => changeEntityId(item.id)}
                                 className={`px-3 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap shrink-0 ${entityId === item.id
                                     ? 'bg-green text-black font-medium'
                                     : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'

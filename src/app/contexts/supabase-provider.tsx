@@ -1,8 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/auth-helpers-nextjs';
+import { User } from '@supabase/supabase-js';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+
 import { createClient } from '../utils/supabase';
 import { supabaseUrl, supabaseAnonKey } from '../utils/supabase';
 
@@ -71,9 +72,9 @@ export default function SupabaseProvider({
           userId: session.user.id,
           supabaseUrl,
           supabaseAnonKey,
-        }).catch(() => {});
+        }).catch(() => { });
       } else {
-        AuthBridge.clearSession().catch(() => {});
+        AuthBridge.clearSession().catch(() => { });
       }
     };
 

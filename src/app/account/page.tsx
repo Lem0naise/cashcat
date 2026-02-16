@@ -124,7 +124,7 @@ export default function Account() {
                     }}
                 />
 
-                <main className="pt-16 pb-28 md:pb-6 p-6 sm:ml-20 lg:ml-[max(16.66%,100px)] fade-in">
+                <main className="pt-[env(safe-area-inset-top)] md:pt-16 pb-28 md:pb-6 p-6 sm:ml-20 lg:ml-[max(16.66%,100px)] fade-in">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between mb-8 mt-3 md:mt-6">
                             <h1 className="text-2xl font-bold tracking-[-.01em]">Account & Settings</h1>
@@ -295,7 +295,7 @@ export default function Account() {
                             <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.9.10</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">0.10.0</span>. The latest features include:
                                 </p>
                                 <ul className="list-disc ml-4">
                                     <li>New and improved stats screen</li>

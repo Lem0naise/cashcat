@@ -405,7 +405,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                 className={`bg-white/[.03] md:rounded-lg border-b-4 w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
                     }`}
             >
-                <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
+                <div className="flex justify-between items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <div className="flex items-center gap-3">
                         <h2 className="text-xl font-bold">
                             {transaction ? "Edit Transaction" : transfer ? "Edit Transfer" : "New"}

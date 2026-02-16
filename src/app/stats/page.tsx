@@ -179,7 +179,7 @@ export default function Stats() {
                     <Navbar />
                     <Sidebar />
                     <MobileNav />
-                    <main className="pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
+                    <main className="pt-[env(safe-area-inset-top)] md:pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-6 fade-in">
                         <div className="max-w-7xl mx-auto">
                             <div className="flex items-center justify-center min-h-[400px]">
                                 <div className="w-8 h-8 border-2 border-green border-t-transparent rounded-full animate-spin" />
@@ -212,7 +212,7 @@ export default function Stats() {
                     }}
                 />
 
-                <main className={`pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-4 sm:p-6 fade-in`}>
+                <main className={`pt-[env(safe-area-inset-top)] md:pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-4 sm:p-6 fade-in`}>
                     <div className="max-w-7xl mx-auto">
                         {/* Header */}
                         <div className="mb-8 sm:mb-8 md:mt-8">
