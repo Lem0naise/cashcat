@@ -280,10 +280,16 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
         setError("");
     }, [activeTab]); // clear error if active tab
 
+    // Reset isClosing when opening
+    useEffect(() => {
+        if (isOpen) {
+            setIsClosing(false);
+        }
+    }, [isOpen]);
+
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(() => {
-            setIsClosing(false);
             onClose();
             // Reset all form states
             setEditingGroup(null);
@@ -309,12 +315,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     return (
         <div
-            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out_forwards]' : 'animate-[fadeIn_0.2s_ease-out]'
                 }`}
             onClick={handleBackdropClick}
         >
             <div
-                className={`relative bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                className={`relative bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'
                     }`}
             >
                 {/* Header Section */}
