@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import { Database } from '@/types/supabase';
 import { getCachedUserId } from '../hooks/useAuthUserId';
 
@@ -23,7 +23,7 @@ export type Transaction = Omit<NewTransaction, 'category_id'> & {
 export async function submitTransaction(
     transaction: NewTransaction
 ): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const userId = getCachedUserId();
     if (!userId) throw new Error("User not authenticated");
 
@@ -50,7 +50,7 @@ export async function updateTransaction(
     id: string,
     transaction: NewTransaction
 ): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const userId = getCachedUserId();
     if (!userId) throw new Error("User not authenticated");
 
@@ -74,7 +74,7 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const userId = getCachedUserId();
     if (!userId) throw new Error("User not authenticated");
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ type FeedbackModalProps = {
 type FeedbackType = 'feedback' | 'feature' | 'bug' | 'deletion_reason';
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const [type, setType] = useState<FeedbackType>('feedback');
     const [text, setText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -163,8 +163,8 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                                         type="button"
                                         onClick={() => setType(feedbackType)}
                                         className={`p-3 rounded-lg border transition-colors text-sm ${type === feedbackType
-                                                ? (feedbackType === 'bug' || feedbackType === 'deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
-                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                            ? (feedbackType === 'bug' || feedbackType === 'deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
+                                            : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
                                             }`}
                                     >
                                         {getTypeLabel(feedbackType)}

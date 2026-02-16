@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database, TransferWithAccounts } from '@/types/supabase';
 import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 
 // Fetch all transfers for a given user
 const fetchTransfers = async (userId: string): Promise<TransferWithAccounts[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('transfers')
@@ -43,7 +43,7 @@ export const useTransfers = () => {
 // Create transfer mutation
 export const useCreateTransfer = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['createTransfer'],
@@ -79,7 +79,7 @@ export const useCreateTransfer = () => {
 // Update transfer mutation
 export const useUpdateTransfer = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['updateTransfer'],
@@ -113,7 +113,7 @@ export const useUpdateTransfer = () => {
 // Delete transfer mutation
 export const useDeleteTransfer = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['deleteTransfer'],

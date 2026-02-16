@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
@@ -7,7 +7,7 @@ type Group = Database['public']['Tables']['groups']['Row'];
 
 // Fetch all groups for a given user
 const fetchGroups = async (userId: string): Promise<Group[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('groups')

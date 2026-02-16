@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -13,7 +13,7 @@ type DeleteAccountModalProps = {
 };
 
 export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }: DeleteAccountModalProps) {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const [reason, setReason] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -60,7 +60,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!confirmDelete) {
             setConfirmDelete(true);
             return;
@@ -97,7 +97,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
             });
 
             if (error) throw error;
-            
+
             return data;
         };
 
@@ -110,7 +110,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
 
             // Account deletion successful
             setTimeout(onAccountDeleted, 500);
-            
+
         } catch (error) {
             console.error('Error deleting account:', error);
             setConfirmDelete(false); // Reset confirmation on error
@@ -126,20 +126,18 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
     };
 
     return (
-        <div 
-            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${
-                isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
-            }`}
+        <div
+            className={`fixed inset-0 bg-black md:bg-black/50 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center md:p-4 font-[family-name:var(--font-suse)] ${isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+                }`}
             onClick={handleBackdropClick}
         >
-            <div 
-                className={`bg-white/[.03] md:rounded-lg border-b-4 border-b-reddy w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${
-                    isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`bg-white/[.03] md:rounded-lg border-b-4 border-b-reddy w-full md:max-w-md md:p-6 min-h-[100dvh] md:min-h-0 ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    }`}
             >
                 <div className="flex justify-between items-center p-4 md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
                     <h2 className="text-xl font-bold text-reddy">Delete Account</h2>
-                    <button 
+                    <button
                         onClick={handleClose}
                         className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                     >
@@ -166,8 +164,8 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
                                 <div className="text-sm">
                                     <p className="font-medium text-reddy mb-2">This action cannot be undone</p>
                                     <p className="text-white/70">
-                                        All your account data including budget categories, transactions, assignments, 
-                                        and settings will be permanently deleted. You will need to create a new account 
+                                        All your account data including budget categories, transactions, assignments,
+                                        and settings will be permanently deleted. You will need to create a new account
                                         to use CashCat again.
                                     </p>
                                 </div>
@@ -217,10 +215,10 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
                                 disabled={isDeleting || !reason.trim()}
                                 className="flex-1 py-4 bg-reddy text-white font-medium rounded-lg hover:bg-old-reddy transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isDeleting 
-                                    ? 'Deleting...' 
-                                    : confirmDelete 
-                                        ? 'Yes, Delete Forever' 
+                                {isDeleting
+                                    ? 'Deleting...'
+                                    : confirmDelete
+                                        ? 'Yes, Delete Forever'
                                         : 'Delete Account'
                                 }
                             </button>

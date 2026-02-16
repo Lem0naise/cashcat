@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
@@ -23,7 +23,7 @@ export type TransactionWithDetails = Database['public']['Tables']['transactions'
 
 // Fetch all transactions for a given user
 const fetchTransactions = async (userId: string): Promise<TransactionWithDetails[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     // Fetch all transactions in batches to handle large datasets
     let allTransactions: TransactionWithDetails[] = [];

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
@@ -7,7 +7,7 @@ type Account = Database['public']['Tables']['accounts']['Row'];
 
 // Fetch all active accounts for a given user
 const fetchAccounts = async (userId: string): Promise<Account[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('accounts')
@@ -32,7 +32,7 @@ export const useAccounts = () => {
 
 // Fetch ALL accounts (including inactive) for account management
 const fetchAllAccounts = async (userId: string): Promise<Account[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('accounts')
