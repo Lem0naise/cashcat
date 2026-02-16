@@ -2,7 +2,25 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/auth-helpers-nextjs';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { createClient } from '../utils/supabase';
+import { supabaseUrl, supabaseAnonKey } from '../utils/supabase';
+
+interface AuthBridgePlugin {
+  syncSession(options: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    userId: string;
+    supabaseUrl: string;
+    supabaseAnonKey: string;
+  }): Promise<void>;
+  clearSession(): Promise<void>;
+}
+
+const AuthBridge = Capacitor.isNativePlatform()
+  ? registerPlugin<AuthBridgePlugin>('AuthBridge')
+  : null;
 
 type SupabaseContext = {
   user: User | null;
@@ -43,6 +61,22 @@ export default function SupabaseProvider({
   const supabase = createClient();
 
   useEffect(() => {
+    const syncToNative = (session: { access_token: string; refresh_token: string; expires_at?: number; user: { id: string } } | null) => {
+      if (!AuthBridge) return;
+      if (session) {
+        AuthBridge.syncSession({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at ?? 0,
+          userId: session.user.id,
+          supabaseUrl,
+          supabaseAnonKey,
+        }).catch(() => {});
+      } else {
+        AuthBridge.clearSession().catch(() => {});
+      }
+    };
+
     // Background auth check — updates user if online, no-op if offline
     const getSession = async () => {
       try {
@@ -54,6 +88,7 @@ export default function SupabaseProvider({
         } else {
           localStorage.removeItem(USER_CACHE_KEY);
         }
+        syncToNative(session);
       } catch {
         // Offline — cached user is already loaded, nothing to do
       } finally {
@@ -71,6 +106,7 @@ export default function SupabaseProvider({
       } else {
         localStorage.removeItem(USER_CACHE_KEY);
       }
+      syncToNative(session);
       setLoading(false);
     });
 

@@ -15,7 +15,49 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		AA1000010000000000000001 /* AuthBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000001 /* AuthBridgePlugin.swift */; };
+		AA1000010000000000000002 /* AuthBridgePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000002 /* AuthBridgePlugin.m */; };
+		AA1000010000000000000003 /* SharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000003 /* SharedConstants.swift */; };
+		AA1000010000000000000004 /* SharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000003 /* SharedConstants.swift */; };
+		AA1000010000000000000005 /* CashCatWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000005 /* CashCatWidgetBundle.swift */; };
+		AA1000010000000000000006 /* CashCatWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000006 /* CashCatWidget.swift */; };
+		AA1000010000000000000007 /* Intent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000007 /* Intent.swift */; };
+		AA1000010000000000000008 /* SpendingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000008 /* SpendingData.swift */; };
+		AA1000010000000000000009 /* SpendingEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000009 /* SpendingEntry.swift */; };
+		AA100001000000000000000A /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000A /* AuthManager.swift */; };
+		AA100001000000000000000B /* SupabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000B /* SupabaseClient.swift */; };
+		AA100001000000000000000C /* SmallWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000C /* SmallWidgetView.swift */; };
+		AA100001000000000000000D /* MediumWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000D /* MediumWidgetView.swift */; };
+		AA100001000000000000000E /* LargeWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000E /* LargeWidgetView.swift */; };
+		AA100001000000000000000F /* WidgetStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000000F /* WidgetStyles.swift */; };
+		AA1000010000000000000010 /* ErrorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000010 /* ErrorViews.swift */; };
+		AA1000010000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000011 /* Assets.xcassets */; };
+		AA1000010000000000000012 /* CashCatWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000014 /* CashCatWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA2000010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA3000010000000000000001;
+			remoteInfo = CashCatWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA4000010000000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA1000010000000000000012 /* CashCatWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -28,6 +70,26 @@
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		AA0000010000000000000001 /* AuthBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthBridgePlugin.swift; sourceTree = "<group>"; };
+		AA0000010000000000000002 /* AuthBridgePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AuthBridgePlugin.m; sourceTree = "<group>"; };
+		AA0000010000000000000003 /* SharedConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedConstants.swift; sourceTree = "<group>"; };
+		AA0000010000000000000004 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		AA0000010000000000000005 /* CashCatWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashCatWidgetBundle.swift; sourceTree = "<group>"; };
+		AA0000010000000000000006 /* CashCatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashCatWidget.swift; sourceTree = "<group>"; };
+		AA0000010000000000000007 /* Intent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intent.swift; sourceTree = "<group>"; };
+		AA0000010000000000000008 /* SpendingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingData.swift; sourceTree = "<group>"; };
+		AA0000010000000000000009 /* SpendingEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingEntry.swift; sourceTree = "<group>"; };
+		AA000001000000000000000A /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		AA000001000000000000000B /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
+		AA000001000000000000000C /* SmallWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallWidgetView.swift; sourceTree = "<group>"; };
+		AA000001000000000000000D /* MediumWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumWidgetView.swift; sourceTree = "<group>"; };
+		AA000001000000000000000E /* LargeWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeWidgetView.swift; sourceTree = "<group>"; };
+		AA000001000000000000000F /* WidgetStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetStyles.swift; sourceTree = "<group>"; };
+		AA0000010000000000000010 /* ErrorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorViews.swift; sourceTree = "<group>"; };
+		AA0000010000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000010000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0000010000000000000013 /* CashCatWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CashCatWidget.entitlements; sourceTree = "<group>"; };
+		AA0000010000000000000014 /* CashCatWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CashCatWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +101,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA5000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -47,6 +116,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				AA6000010000000000000005 /* Shared */,
+				AA6000010000000000000001 /* CashCatWidget */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -55,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				AA0000010000000000000014 /* CashCatWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -62,8 +134,11 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000010000000000000004 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				AA0000010000000000000001 /* AuthBridgePlugin.swift */,
+				AA0000010000000000000002 /* AuthBridgePlugin.m */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -72,6 +147,60 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		AA6000010000000000000001 /* CashCatWidget */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000013 /* CashCatWidget.entitlements */,
+				AA0000010000000000000005 /* CashCatWidgetBundle.swift */,
+				AA0000010000000000000006 /* CashCatWidget.swift */,
+				AA0000010000000000000007 /* Intent.swift */,
+				AA6000010000000000000002 /* Models */,
+				AA6000010000000000000003 /* Networking */,
+				AA6000010000000000000004 /* Views */,
+				AA0000010000000000000011 /* Assets.xcassets */,
+				AA0000010000000000000012 /* Info.plist */,
+			);
+			path = CashCatWidget;
+			sourceTree = "<group>";
+		};
+		AA6000010000000000000002 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000008 /* SpendingData.swift */,
+				AA0000010000000000000009 /* SpendingEntry.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA6000010000000000000003 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				AA000001000000000000000A /* AuthManager.swift */,
+				AA000001000000000000000B /* SupabaseClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		AA6000010000000000000004 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA000001000000000000000F /* WidgetStyles.swift */,
+				AA000001000000000000000C /* SmallWidgetView.swift */,
+				AA000001000000000000000D /* MediumWidgetView.swift */,
+				AA000001000000000000000E /* LargeWidgetView.swift */,
+				AA0000010000000000000010 /* ErrorViews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AA6000010000000000000005 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000003 /* SharedConstants.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -84,10 +213,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				AA4000010000000000000001 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AA2000010000000000000002 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -96,6 +227,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		AA3000010000000000000001 /* CashCatWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA7000010000000000000003 /* Build configuration list for PBXNativeTarget "CashCatWidgetExtension" */;
+			buildPhases = (
+				AA5000010000000000000002 /* Sources */,
+				AA5000010000000000000001 /* Frameworks */,
+				AA5000010000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CashCatWidgetExtension;
+			productName = CashCatWidgetExtension;
+			productReference = AA0000010000000000000014 /* CashCatWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -109,6 +257,10 @@
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
+						ProvisioningStyle = Automatic;
+					};
+					AA3000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -130,6 +282,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				AA3000010000000000000001 /* CashCatWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -148,6 +301,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA5000010000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1000010000000000000011 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -156,10 +317,41 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				AA1000010000000000000001 /* AuthBridgePlugin.swift in Sources */,
+				AA1000010000000000000002 /* AuthBridgePlugin.m in Sources */,
+				AA1000010000000000000003 /* SharedConstants.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA5000010000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1000010000000000000004 /* SharedConstants.swift in Sources */,
+				AA1000010000000000000005 /* CashCatWidgetBundle.swift in Sources */,
+				AA1000010000000000000006 /* CashCatWidget.swift in Sources */,
+				AA1000010000000000000007 /* Intent.swift in Sources */,
+				AA1000010000000000000008 /* SpendingData.swift in Sources */,
+				AA1000010000000000000009 /* SpendingEntry.swift in Sources */,
+				AA100001000000000000000A /* AuthManager.swift in Sources */,
+				AA100001000000000000000B /* SupabaseClient.swift in Sources */,
+				AA100001000000000000000C /* SmallWidgetView.swift in Sources */,
+				AA100001000000000000000D /* MediumWidgetView.swift in Sources */,
+				AA100001000000000000000E /* LargeWidgetView.swift in Sources */,
+				AA100001000000000000000F /* WidgetStyles.swift in Sources */,
+				AA1000010000000000000010 /* ErrorViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA2000010000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA3000010000000000000001 /* CashCatWidgetExtension */;
+			targetProxy = AA2000010000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -295,8 +487,10 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4KN23A7K8;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -317,8 +511,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4KN23A7K8;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -329,6 +525,62 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lemonaise.cashcat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AA7000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CashCatWidget/CashCatWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4KN23A7K8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CashCatWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lemonaise.cashcat.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA7000010000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CashCatWidget/CashCatWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4KN23A7K8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CashCatWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lemonaise.cashcat.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -351,6 +603,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA7000010000000000000003 /* Build configuration list for PBXNativeTarget "CashCatWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA7000010000000000000001 /* Debug */,
+				AA7000010000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

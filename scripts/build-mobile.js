@@ -67,5 +67,18 @@ restoreFiles();
 console.log('Syncing with Android/iOS...');
 shell.exec('npx cap sync');
 
+// --- STEP 6: REGISTER LOCAL PLUGINS ---
+// cap sync regenerates capacitor.config.json, so we must re-add local plugins
+const iosConfigPath = 'ios/App/App/capacitor.config.json';
+if (shell.test('-f', iosConfigPath)) {
+  const config = JSON.parse(shell.cat(iosConfigPath));
+  if (!config.packageClassList) config.packageClassList = [];
+  if (!config.packageClassList.includes('AuthBridgePlugin')) {
+    config.packageClassList.push('AuthBridgePlugin');
+    shell.ShellString(JSON.stringify(config, null, '\t')).to(iosConfigPath);
+    console.log('Added AuthBridgePlugin to iOS packageClassList');
+  }
+}
+
 console.log('Mobile build complete!');
 console.log('Run npx cap open android to open Android Studio.')
