@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -13,7 +13,7 @@ type ManageBudgetModalProps = {
 };
 
 export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModalProps) {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const [activeTab, setActiveTab] = useState<'categories'|'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -91,7 +91,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 .order('created_at', { ascending: true });
             
             if (error) throw error;
-            setCategories(data || []);
+            setCategories((data as any) || []);
         } catch (error) {
             console.error('Error fetching categories:', error);
             setError('Failed to load categories');
@@ -209,7 +209,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
             const promise = (async () => {
                 const {error} = await supabase
                 .from('categories')
-                .update(categoryData)
+                .update(categoryData as any)
                 .eq('id', id);
                 if (error) throw error;
             })();

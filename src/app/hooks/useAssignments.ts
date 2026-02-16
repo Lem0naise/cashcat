@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
 
@@ -7,7 +7,7 @@ type Assignment = Database['public']['Tables']['assignments']['Row'];
 
 // Fetch all assignments for a given user
 const fetchAssignments = async (userId: string): Promise<Assignment[]> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('assignments')

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Database } from '@/types/supabase';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -42,7 +42,7 @@ const EMPTY_ARRAY: any[] = [];
 
 export default function Budget() {
     const router = useRouter();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data: allTransactionsData = EMPTY_ARRAY, isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useTransactions();
     const { data: rawCategoriesData = EMPTY_ARRAY, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();

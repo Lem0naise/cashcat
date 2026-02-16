@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -36,7 +36,7 @@ export default function BankCompareModal({
     transactions,
     onTransactionUpdated,
 }: BankCompareModalProps) {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const [bankBalance, setBankBalance] = useState('');
     const [step, setStep] = useState<'input' | 'results' | 'correction'>('input');
     const [difference, setDifference] = useState(0);
@@ -224,8 +224,8 @@ export default function BankCompareModal({
                     date: transaction.date,
                     vendor: transaction.vendor,
                     account_id: transaction.account_id,
-                    description: transaction.description || null,
-                    category_id: transaction.category_id || null
+                    description: transaction.description || undefined,
+                    category_id: transaction.category_id || undefined
                 })
                 .eq('id', selectedTransaction.id);
 

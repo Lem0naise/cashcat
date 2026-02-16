@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
@@ -12,7 +12,7 @@ interface UpdateTransactionParams {
 
 // Update an existing transaction
 const updateTransaction = async ({ id, updates }: UpdateTransactionParams): Promise<Transaction> => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     const { data, error } = await supabase
         .from('transactions')

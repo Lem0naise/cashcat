@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { getCachedUserId } from './useAuthUserId';
 
@@ -8,7 +8,7 @@ type Account = Database['public']['Tables']['accounts']['Row'];
 // Create account mutation
 export const useCreateAccount = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['createAccount'],
@@ -62,7 +62,7 @@ export const useCreateAccount = () => {
 // Update account mutation
 export const useUpdateAccount = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['updateAccount'],
@@ -103,7 +103,7 @@ export const useUpdateAccount = () => {
 // Delete account mutation
 export const useDeleteAccount = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['deleteAccount'],
@@ -140,7 +140,7 @@ export const useDeleteAccount = () => {
 // Set default account mutation
 export const useSetDefaultAccount = () => {
     const queryClient = useQueryClient();
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     return useMutation({
         mutationKey: ['setDefaultAccount'],

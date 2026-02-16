@@ -1,6 +1,6 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ type FeedbackModalProps = {
 type FeedbackType = 'feedback' | 'feature' | 'bug' | 'deletion_reason';
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     const [type, setType] = useState<FeedbackType>('feedback');
     const [text, setText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
