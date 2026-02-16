@@ -1,40 +1,73 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 // Define arrays of public and protected paths
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/learn', '/about', '/terms', '/docs'];
-const PROTECTED_PATHS = ['/budget', '/stats', '/account'];
-const AUTH_PATHS = ['/login', '/signup'];
+const PROTECTED_PATHS = ['/budget', '/stats', '/account']
+const AUTH_PATHS = ['/login', '/signup']
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const path = req.nextUrl.pathname;
+export async function middleware(request: NextRequest) {
+  // 1. Create an initial response that we can attach cookies to
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  // For protected paths, always let requests through immediately.
-  // Client-side ProtectedRoute handles auth using cached user data,
-  // so there's zero loading delay for offline/Capacitor users.
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          // This represents the session update.
+          // We need to update BOTH the request and the response
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          )
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const path = request.nextUrl.pathname
+
+  // 2. Refresh session if needed (crucial for keeping users logged in)
+  // This call updates the cookies in the background if the token is close to expiring
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 3. User Logic: Skip server-side checks for protected paths (relying on client cache)
   if (PROTECTED_PATHS.some(protectedPath => path.startsWith(protectedPath))) {
-    return res;
+    return response
   }
 
-  // For auth pages (login/signup), try to check session to redirect
-  // authenticated users away, but don't block if offline.
+  // 4. User Logic: Redirect logged-in users away from auth pages
   if (AUTH_PATHS.includes(path)) {
-    try {
-      const supabase = createMiddlewareClient({ req, res });
-      const result = await Promise.race([
-        supabase.auth.getSession(),
-        new Promise<null>(r => setTimeout(() => r(null), 1500)),
-      ]);
-      const session = result && 'data' in result ? result.data.session : null;
-      if (session) {
-        return NextResponse.redirect(new URL('/budget', req.url));
-      }
-    } catch {
-      // Offline — let through, user will see login page
+    if (user) {
+      return NextResponse.redirect(new URL('/budget', request.url))
     }
   }
 
-  return res;
+  return response
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

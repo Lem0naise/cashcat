@@ -14,7 +14,7 @@ type ManageBudgetModalProps = {
 
 export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModalProps) {
     const supabase = createClient();
-    const [activeTab, setActiveTab] = useState<'categories'|'settings'>('categories');
+    const [activeTab, setActiveTab] = useState<'categories' | 'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,12 +51,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const toggleHideBudgetValues = () => {
         const newValue = !hideBudgetValues;
         setHideBudgetValues(newValue);
-        
+
         if (typeof window !== 'undefined') {
             localStorage.setItem('hideBudgetValues', newValue.toString());
             // Dispatch custom event to notify other components
-            window.dispatchEvent(new CustomEvent('hideBudgetValuesChanged', { 
-                detail: { hideBudgetValues: newValue } 
+            window.dispatchEvent(new CustomEvent('hideBudgetValuesChanged', {
+                detail: { hideBudgetValues: newValue }
             }));
         }
     };
@@ -68,7 +68,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 .from('groups')
                 .select('*')
                 .order('created_at', { ascending: true });
-            
+
             if (error) throw error;
             setGroups(data || []);
         } catch (error) {
@@ -89,7 +89,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                     )
                 `)
                 .order('created_at', { ascending: true });
-            
+
             if (error) throw error;
             setCategories((data as any) || []);
         } catch (error) {
@@ -101,20 +101,20 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     // Group CRUD operations
     const createGroup = async (name: string) => {
         try {
-            
+
             const promise = (async () => {
-                const {error} = await supabase
-                .from('groups')
-                .insert({ name });
+                const { error } = await supabase
+                    .from('groups')
+                    .insert({ name });
                 if (error) throw error;
             })();
-            
+
             await toast.promise(promise, {
                 loading: 'Creating group...',
                 success: 'Group created successfully!',
                 error: 'Failed to create group'
             });
-            
+
             await fetchGroups();
             setNewGroupName('');
         } catch (error) {
@@ -124,12 +124,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     };
 
     const updateGroup = async (id: string, name: string) => {
-        try {            
+        try {
             const promise = (async () => {
-                const {error} = await supabase
-                .from('groups')
-                .update({ name })
-                .eq('id', id);
+                const { error } = await supabase
+                    .from('groups')
+                    .update({ name })
+                    .eq('id', id);
                 if (error) throw error;
             })();
 
@@ -138,7 +138,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                 success: 'Group updated successfully!',
                 error: 'Failed to update group'
             });
-            
+
             await fetchGroups();
             setEditingGroup(null);
         } catch (error) {
@@ -150,19 +150,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const deleteGroup = async (id: string) => {
         try {
             const promise = (async () => {
-                const {error} = await supabase
-                .from('groups')
-                .delete()
-                .eq('id', id);
+                const { error } = await supabase
+                    .from('groups')
+                    .delete()
+                    .eq('id', id);
                 if (error) throw error;
             })();
-            
+
             await toast.promise(promise, {
                 loading: 'Deleting group...',
                 success: 'Group deleted successfully!',
                 error: 'Failed to delete group - make sure you delete or reassign all categories in this group first'
             });
-            
+
             await fetchGroups();
             await fetchCategories(); // Refresh categories as they might be affected
         } catch (error) {
@@ -174,23 +174,23 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const createCategoryForGroup = async (groupId: string, categoryData: typeof newGroupCategoryData) => {
         try {
             const promise = (async () => {
-                const {error} = await supabase
-                .from('categories')
-                .insert({
-                    name: categoryData.name,
-                    group: groupId,
-                    goal: categoryData.goal ? parseFloat(categoryData.goal) : null,
-                    timeframe: { type: 'monthly' as const }
-                })
+                const { error } = await supabase
+                    .from('categories')
+                    .insert({
+                        name: categoryData.name,
+                        group: groupId,
+                        goal: categoryData.goal ? parseFloat(categoryData.goal) : null,
+                        timeframe: { type: 'monthly' as const }
+                    })
                 if (error) throw error;
             })();
-            
+
             await toast.promise(promise, {
                 loading: 'Creating category...',
                 success: 'Category created successfully!',
                 error: 'Failed to create category'
             });
-            
+
             await fetchCategories();
             setNewGroupCategoryData({
                 name: '',
@@ -207,19 +207,19 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     const updateCategory = async (id: string, categoryData: Partial<Category>) => {
         try {
             const promise = (async () => {
-                const {error} = await supabase
-                .from('categories')
-                .update(categoryData as any)
-                .eq('id', id);
+                const { error } = await supabase
+                    .from('categories')
+                    .update(categoryData as any)
+                    .eq('id', id);
                 if (error) throw error;
             })();
-            
+
             await toast.promise(promise, {
                 loading: 'Updating category...',
                 success: 'Category updated successfully!',
                 error: 'Failed to update category'
             });
-            
+
             await fetchCategories();
             setEditingCategory(null);
         } catch (error) {
@@ -230,22 +230,22 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
 
     const deleteCategory = async (id: string) => {
         try {
-        
+
             const promise = (async () => {
-                const {error} = await supabase
-                .from('categories')
-                .delete()
-                .eq('id', id);
+                const { error } = await supabase
+                    .from('categories')
+                    .delete()
+                    .eq('id', id);
                 if (error) throw error;
             })();
-            
-            
+
+
             await toast.promise(promise, {
                 loading: 'Deleting category...',
                 success: 'Category deleted successfully!',
                 error: 'Failed to delete category - make sure all transactions in this category are reassigned first'
             });
-            
+
             await fetchCategories();
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -253,7 +253,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
         }
     };
 
-    
+
 
     // Initial data fetch
     useEffect(() => {
@@ -308,22 +308,20 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
     if (!isOpen) return null;
 
     return (
-        <div 
-            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${
-                isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
-            }`}
+        <div
+            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'
+                }`}
             onClick={handleBackdropClick}
         >
-            <div 
-                className={`relative bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${
-                    isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
-                }`}
+            <div
+                className={`relative bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out]' : 'animate-[slideIn_0.2s_ease-out]'
+                    }`}
             >
                 {/* Header Section */}
                 <div className="flex-none p-6 border-b border-white/[.1]">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold">Manage Budget</h2>
-                        <button 
+                        <button
                             onClick={handleClose}
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
                         >
@@ -338,28 +336,26 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                     </div>
 
                     <div className="flex gap-4 mt-6">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('categories')}
-                            className={`px-4 py-2 transition-all duration-200 ${
-                                activeTab === 'categories'
-                                ? 'text-green border-b-2 border-green' 
+                            className={`px-4 py-2 transition-all duration-200 ${activeTab === 'categories'
+                                ? 'text-green border-b-2 border-green'
                                 : 'text-white/60 hover:text-white'
-                            }`}
+                                }`}
                         >
                             Categories & Groups
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('settings')}
-                            className={`px-4 py-2 transition-all duration-200 ${
-                                activeTab === 'settings' 
-                                ? 'text-green border-b-2 border-green' 
+                            className={`px-4 py-2 transition-all duration-200 ${activeTab === 'settings'
+                                ? 'text-green border-b-2 border-green'
                                 : 'text-white/60 hover:text-white'
-                            }`}
+                                }`}
                         >
                             Other Settings
                         </button>
-                         
-                        
+
+
                     </div>
                 </div>
 
@@ -376,7 +372,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                     {error}
                                 </div>
                             )}
-                            
+
                             {activeTab === 'settings' ? (
                                 <div className="space-y-6">
                                     <div className="bg-white/[.03] rounded-lg p-6">
@@ -391,14 +387,12 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                 </div>
                                                 <button
                                                     onClick={toggleHideBudgetValues}
-                                                    className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${
-                                                        hideBudgetValues ? 'bg-green' : 'bg-white/20'
-                                                    }`}
+                                                    className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${hideBudgetValues ? 'bg-green' : 'bg-white/20'
+                                                        }`}
                                                 >
                                                     <div
-                                                        className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${
-                                                            hideBudgetValues ? 'translate-x-5' : 'translate-x-0.5'
-                                                        }`}
+                                                        className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${hideBudgetValues ? 'translate-x-5' : 'translate-x-0.5'
+                                                            }`}
                                                     />
                                                 </button>
                                             </div>
@@ -406,7 +400,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                 <p className="block font-medium text-white mb-2">Currency</p>
                                                 <Dropdown
                                                     value="GBP"
-                                                    onChange={() => {}}
+                                                    onChange={() => { }}
                                                     options={[
                                                         { value: "GBP", label: "£ GBP (Coming Soon)", disabled: true },
                                                         { value: "USD", label: "$ USD (Coming Soon)", disabled: true },
@@ -418,9 +412,9 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                         </div>
                                     </div>
 
-                                     {/* Budget Settings */}
+                                    {/* Budget Settings */}
                                     <div className="bg-white/[.03] rounded-lg p-6">
-                                         <h3 className="text-lg font-medium text-green mb-4">Import</h3>
+                                        <h3 className="text-lg font-medium text-green mb-4">Import</h3>
                                         <div className="flex flex-col gap-4">
                                             <div className="flex text-left justify-between p-4 bg-white/[.03] rounded-lg flex-col">
                                                 <p className="block font-medium text-white mb-2">Import Transactions</p>
@@ -434,7 +428,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                         </div>
                                     </div>
 
-                                    
+
                                 </div>
                             ) : (
                                 <div className="space-y-6">
@@ -491,7 +485,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                         <h3 className="text-lg font-medium text-white/80">Your Groups & Categories</h3>
                                         {groups.map(group => {
                                             const groupCategories = categories.filter(cat => cat.group === group.id);
-                                            
+
                                             return (
                                                 <div key={group.id} className="bg-white/[.03] rounded-lg p-4">
                                                     {/* Group header */}
@@ -501,9 +495,9 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                 <input
                                                                     type="text"
                                                                     value={editingGroup.name}
-                                                                    onChange={(e) => setEditingGroup({...editingGroup, name: e.target.value})}
+                                                                    onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
                                                                     className="flex-1 p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                    
+
                                                                 />
                                                                 <button
                                                                     onClick={() => updateGroup(group.id, editingGroup.name)}
@@ -556,7 +550,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             <input
                                                                                 type="text"
                                                                                 value={newGroupCategoryData.name}
-                                                                                onChange={(e) => setNewGroupCategoryData({...newGroupCategoryData, name: e.target.value})}
+                                                                                onChange={(e) => setNewGroupCategoryData({ ...newGroupCategoryData, name: e.target.value })}
                                                                                 placeholder="Category name"
                                                                                 className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                                                 autoFocus
@@ -566,7 +560,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                             <label className="block text-sm text-white/50 mb-1">Monthly Goal (Optional)</label>
                                                                             <MoneyInput
                                                                                 value={newGroupCategoryData.goal}
-                                                                                onChange={(value) => setNewGroupCategoryData({...newGroupCategoryData, goal: value})}
+                                                                                onChange={(value) => setNewGroupCategoryData({ ...newGroupCategoryData, goal: value })}
                                                                                 placeholder="0.00"
                                                                                 currencySymbol={true}
                                                                                 className="text-lg"
@@ -578,7 +572,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                 type="button"
                                                                                 onClick={() => {
                                                                                     setShowAddCategoryForGroup(null);
-                                                                                    setNewGroupCategoryData({name: '', goal: '', timeframe: 'monthly' as const});
+                                                                                    setNewGroupCategoryData({ name: '', goal: '', timeframe: 'monthly' as const });
                                                                                 }}
                                                                                 className="px-3 py-1 rounded-lg hover:bg-white/[.05] transition-colors text-sm text-white/70"
                                                                             >
@@ -631,14 +625,14 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                     <input
                                                                                         type="text"
                                                                                         value={editingCategory.name}
-                                                                                        onChange={(e) => setEditingCategory({...editingCategory, name: e.target.value})}
+                                                                                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
                                                                                         className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
-                                                                                        
+
                                                                                     />
                                                                                 </div>
                                                                                 <Dropdown
                                                                                     value={editingCategory.group || ''}
-                                                                                    onChange={(value) => setEditingCategory({...editingCategory, group: value})}
+                                                                                    onChange={(value) => setEditingCategory({ ...editingCategory, group: value })}
                                                                                     options={groups.map((g): DropdownOption => ({
                                                                                         value: g.id,
                                                                                         label: g.name,
@@ -658,7 +652,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                         className="text-lg"
                                                                                         inline={true}
                                                                                     />
-                                                                                    
+
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex justify-end gap-2">
@@ -686,7 +680,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                                                     Goal: £{category.goal || 0}
                                                                                 </span>
                                                                             </div>
-                                                                            
+
                                                                             <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                                                 <button
                                                                                     onClick={() => handleEditCategory(category)}
@@ -710,7 +704,7 @@ export default function ManageBudgetModal({ isOpen, onClose }: ManageBudgetModal
                                                 </div>
                                             );
                                         })}
-                                        
+
                                         {groups.length === 0 && (
                                             <p className="text-white/40 text-center py-8">No groups created yet. Add your first group above to get started.</p>
                                         )}

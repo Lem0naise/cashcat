@@ -163,8 +163,8 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                                         type="button"
                                         onClick={() => setType(feedbackType)}
                                         className={`p-3 rounded-lg border transition-colors text-sm ${type === feedbackType
-                                                ? (feedbackType === 'bug' || feedbackType === 'deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
-                                                : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
+                                            ? (feedbackType === 'bug' || feedbackType === 'deletion_reason' ? 'bg-reddy/20 text-reddy border-reddy' : 'bg-green/20 border-green text-green')
+                                            : 'bg-white/[.05] border-white/[.15] hover:bg-white/[.1]'
                                             }`}
                                     >
                                         {getTypeLabel(feedbackType)}
