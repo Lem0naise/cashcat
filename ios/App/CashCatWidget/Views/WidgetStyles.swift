@@ -146,6 +146,13 @@ struct BudgetProgressBar: View {
     }
 }
 
+func compactAmount(_ value: Double) -> String {
+    if value >= 1000 {
+        return String(format: "£%.1fk", value / 1000)
+    }
+    return String(format: "£%.0f", value)
+}
+
 func formatCurrency(_ value: Double) -> String {
     let formatter = NumberFormatter()
     formatter.numberStyle = .currency

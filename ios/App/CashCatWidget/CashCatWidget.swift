@@ -153,7 +153,7 @@ struct CashCatWidget: Widget {
         }
         .configurationDisplayName("Spending")
         .description("View your spending statistics.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 
@@ -162,23 +162,34 @@ struct CashCatWidgetEntryView: View {
     let entry: SpendingEntry
 
     var body: some View {
-        switch entry.state {
-        case .notSignedIn:
-            NotSignedInView()
-        case .noData:
-            NoDataView(periodLabel: entry.periodLabel)
-        case .error(let message):
-            ErrorView(message: message)
-        case .loaded:
-            switch family {
-            case .systemSmall:
-                SmallWidgetView(entry: entry)
-            case .systemMedium:
-                MediumWidgetView(entry: entry)
-            case .systemLarge:
-                LargeWidgetView(entry: entry)
-            default:
-                SmallWidgetView(entry: entry)
+        // Accessory families get their own compact views for all states
+        switch family {
+        case .accessoryCircular:
+            AccessoryCircularView(entry: entry)
+        case .accessoryRectangular:
+            AccessoryRectangularView(entry: entry)
+        case .accessoryInline:
+            AccessoryInlineView(entry: entry)
+        default:
+            // System families use full-sized views
+            switch entry.state {
+            case .notSignedIn:
+                NotSignedInView()
+            case .noData:
+                NoDataView(periodLabel: entry.periodLabel)
+            case .error(let message):
+                ErrorView(message: message)
+            case .loaded:
+                switch family {
+                case .systemSmall:
+                    SmallWidgetView(entry: entry)
+                case .systemMedium:
+                    MediumWidgetView(entry: entry)
+                case .systemLarge:
+                    LargeWidgetView(entry: entry)
+                default:
+                    SmallWidgetView(entry: entry)
+                }
             }
         }
     }

@@ -1,45 +1,9 @@
-import Foundation
-
-struct SupabaseTransaction: Codable {
-    let id: String
-    let amount: Double
-    let date: String
-    let category_id: String
-}
-
-struct SupabaseCategory: Codable {
-    let id: String
-    let name: String
-    let group: SupabaseGroup?
-}
-
-struct SupabaseGroup: Codable {
-    let id: String
-    let name: String
-}
-
-struct SupabaseAssignment: Codable {
-    let category_id: String
-    let month: String
-    let assigned: Double
-    let rollover: Double?
-}
-
-struct CategorySpending: Identifiable {
-    let id: String
-    let name: String
-    let groupName: String?
-    let amount: Double
-    let percentage: Double
-}
-
-struct BudgetSummary {
-    let totalAssigned: Double
-    let totalSpent: Double
-
-    var isOverBudget: Bool { totalSpent > totalAssigned }
-    var progress: Double {
-        guard totalAssigned > 0 else { return 0 }
-        return min(totalSpent / totalAssigned, 1.5)
-    }
-}
+// This file is intentionally left as a thin wrapper.
+// The actual data models have been moved to:
+//   Shared/Models/SpendingData.swift
+//
+// In Xcode, remove this file from the CashCatWidgetExtension target
+// and instead add Shared/Models/SpendingData.swift to both targets.
+//
+// Keeping this file temporarily to avoid build breakage until
+// you update the Xcode project target membership.

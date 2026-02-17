@@ -1,5 +1,6 @@
 import Foundation
 import Capacitor
+import WidgetKit
 
 @objc(AuthBridgePlugin)
 public class AuthBridgePlugin: CAPPlugin {
@@ -34,6 +35,7 @@ public class AuthBridgePlugin: CAPPlugin {
         defaults.synchronize()
 
         print("[AuthBridge] Session synced for user: \(userId)")
+        WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
     }
 
@@ -55,6 +57,7 @@ public class AuthBridgePlugin: CAPPlugin {
         defaults.synchronize()
 
         print("[AuthBridge] Session cleared")
+        WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
     }
 }
