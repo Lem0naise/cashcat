@@ -7,8 +7,16 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
-import type { Category, Group } from '@/types/supabase';
+import type { Category, Group, GoalType } from '@/types/supabase';
+import type { Database } from '@/types/supabase';
 import { useTransactions } from '@/app/hooks/useTransactions';
+
+// Category as returned by the query (includes joined groups row)
+type CategoryWithGroup = Category & {
+    groups: { id: string; name: string } | null;
+};
+
+type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 
 type ManageBudgetModalProps = {
     isOpen: boolean;
@@ -29,57 +37,230 @@ type WizardCategory = {
     id: string;
     name: string;
     goal: string;
+    goal_type: GoalType;
 };
 
-const TEMPLATES: { label: string; groups: { name: string; categories: string[]; ratio: number }[] }[] = [
+// Per-category goal types for templates
+type TemplateCategory = { name: string; goal_type: GoalType };
+type TemplateGroup = { name: string; categories: TemplateCategory[]; ratio: number };
+type Template = { label: string; groups: TemplateGroup[] };
+
+const TEMPLATES: Template[] = [
     {
         label: 'Student',
         groups: [
-            { name: 'Fixed Costs', categories: ['Rent / Halls', 'Tuition Fees', 'Phone Bill', 'Utilities '], ratio: 0.50 },
-            { name: 'Essentials', categories: ['Supplies', 'Tech', 'Laundry'], ratio: 0.10 },
-            { name: 'Living', categories: ['Groceries', 'Toiletries', 'Campus Lunch', 'Coffee'], ratio: 0.20 },
-            { name: 'Social', categories: ['Nights Out', 'Society Memberships', 'Subscriptions', 'Clothing'], ratio: 0.15 },
-            { name: 'Transport', categories: ['Bus Pass', 'Uber / Taxi', 'Travel Home'], ratio: 0.05 },
+            {
+                name: 'Fixed Costs', ratio: 0.50, categories: [
+                    { name: 'Rent / Halls', goal_type: 'spending' },
+                    { name: 'Tuition Fees', goal_type: 'spending' },
+                    { name: 'Phone Bill', goal_type: 'spending' },
+                    { name: 'Utilities', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Essentials', ratio: 0.10, categories: [
+                    { name: 'Supplies', goal_type: 'spending' },
+                    { name: 'Tech', goal_type: 'spending' },
+                    { name: 'Laundry', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Living', ratio: 0.20, categories: [
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Toiletries', goal_type: 'spending' },
+                    { name: 'Campus Lunch', goal_type: 'spending' },
+                    { name: 'Coffee', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Social', ratio: 0.15, categories: [
+                    { name: 'Nights Out', goal_type: 'spending' },
+                    { name: 'Society Memberships', goal_type: 'spending' },
+                    { name: 'Subscriptions', goal_type: 'spending' },
+                    { name: 'Clothing', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Transport', ratio: 0.05, categories: [
+                    { name: 'Bus Pass', goal_type: 'spending' },
+                    { name: 'Uber / Taxi', goal_type: 'spending' },
+                    { name: 'Travel Home', goal_type: 'savings' },
+                ]
+            },
         ],
     },
     {
         label: 'Young Professional',
         groups: [
-            { name: 'Home', categories: ['Rent', 'Council Tax', 'Electric & Gas', 'Water', 'Internet'], ratio: 0.45 },
-            { name: 'Food & Drink', categories: ['Groceries', 'Work Lunches', 'Dining Out', 'Household Supplies'], ratio: 0.15 },
-            { name: 'Getting Around', categories: ['Car Payment / Lease', 'Fuel', 'Car Insurance', 'Public Transport'], ratio: 0.10 },
-            { name: 'Personal', categories: ['Gym / Wellness', 'Subscriptions', 'Hobbies', 'Personal Care'], ratio: 0.10 },
-            { name: 'Financial Goals', categories: ['Emergency Fund', 'Lisa / ISA', 'Student Loan Repayment'], ratio: 0.20 },
+            {
+                name: 'Home', ratio: 0.45, categories: [
+                    { name: 'Rent', goal_type: 'spending' },
+                    { name: 'Council Tax', goal_type: 'spending' },
+                    { name: 'Electric & Gas', goal_type: 'spending' },
+                    { name: 'Water', goal_type: 'spending' },
+                    { name: 'Internet', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Food & Drink', ratio: 0.15, categories: [
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Work Lunches', goal_type: 'spending' },
+                    { name: 'Dining Out', goal_type: 'spending' },
+                    { name: 'Household Supplies', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Getting Around', ratio: 0.10, categories: [
+                    { name: 'Car Payment / Lease', goal_type: 'spending' },
+                    { name: 'Fuel', goal_type: 'spending' },
+                    { name: 'Car Insurance', goal_type: 'spending' },
+                    { name: 'Public Transport', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Personal', ratio: 0.10, categories: [
+                    { name: 'Gym / Wellness', goal_type: 'spending' },
+                    { name: 'Subscriptions', goal_type: 'spending' },
+                    { name: 'Hobbies', goal_type: 'spending' },
+                    { name: 'Personal Care', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Financial Goals', ratio: 0.20, categories: [
+                    { name: 'Emergency Fund', goal_type: 'emergency_fund' },
+                    { name: 'Lisa / ISA', goal_type: 'savings' },
+                    { name: 'Student Loan Repayment', goal_type: 'savings' },
+                ]
+            },
         ],
     },
     {
         label: 'Family / Homeowner',
         groups: [
-            { name: 'Housing', categories: ['Mortgage', 'Property Tax / Rates', 'Home Insurance', 'Utilities', 'Home Maintenance'], ratio: 0.40 },
-            { name: 'Family', categories: ['Childcare / School Fees', 'Kids Activities / Clubs', 'Clothing / Uniforms', 'Pocket Money'], ratio: 0.20 },
-            { name: 'Food & Consumables', categories: ['Supermarket Shop', 'School Lunches', 'Pet Food / Care', 'Takeaways'], ratio: 0.15 },
-            { name: 'Health', categories: ['Life Insurance', 'Health Insurance', 'Pharmacy / Medical', 'Dental'], ratio: 0.05 },
-            { name: 'Transport', categories: ['Car Finance', 'Fuel', 'Service & MOT', 'Parking / Tolls'], ratio: 0.10 },
+            {
+                name: 'Housing', ratio: 0.40, categories: [
+                    { name: 'Mortgage', goal_type: 'spending' },
+                    { name: 'Property Tax / Rates', goal_type: 'spending' },
+                    { name: 'Home Insurance', goal_type: 'spending' },
+                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Home Maintenance', goal_type: 'savings' },
+                ]
+            },
+            {
+                name: 'Family', ratio: 0.20, categories: [
+                    { name: 'Childcare / School Fees', goal_type: 'spending' },
+                    { name: 'Kids Activities / Clubs', goal_type: 'spending' },
+                    { name: 'Clothing / Uniforms', goal_type: 'spending' },
+                    { name: 'Pocket Money', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Food & Consumables', ratio: 0.15, categories: [
+                    { name: 'Supermarket Shop', goal_type: 'spending' },
+                    { name: 'School Lunches', goal_type: 'spending' },
+                    { name: 'Pet Food / Care', goal_type: 'spending' },
+                    { name: 'Takeaways', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Health', ratio: 0.05, categories: [
+                    { name: 'Life Insurance', goal_type: 'spending' },
+                    { name: 'Health Insurance', goal_type: 'spending' },
+                    { name: 'Pharmacy / Medical', goal_type: 'spending' },
+                    { name: 'Dental', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Transport', ratio: 0.10, categories: [
+                    { name: 'Car Finance', goal_type: 'spending' },
+                    { name: 'Fuel', goal_type: 'spending' },
+                    { name: 'Service & MOT', goal_type: 'savings' },
+                    { name: 'Parking / Tolls', goal_type: 'spending' },
+                ]
+            },
         ],
     },
     {
         label: 'Debt Crusher',
         groups: [
-            { name: 'The Four Walls', categories: ['Rent / Mortgage', 'Utilities', 'Basic Groceries', 'Transport to Work'], ratio: 0.60 },
-            { name: 'Debt Payments', categories: ['Credit Card 1', 'Credit Card 2', 'Personal Loan', 'Overdraft Payoff'], ratio: 0.30 },
-            { name: 'Insurance & Tax', categories: ['Council Tax', 'Health / Life Insurance', 'Car Insurance'], ratio: 0.05 },
-            { name: 'Modest Lifestyle', categories: ['Internet / Phone', 'Fun', 'Miscellaneous Buffer'], ratio: 0.03 },
-            { name: 'Emergency Fund', categories: ['Starter Emergency Fund (Savings)'], ratio: 0.02 },
+            {
+                name: 'The Four Walls', ratio: 0.60, categories: [
+                    { name: 'Rent / Mortgage', goal_type: 'spending' },
+                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Basic Groceries', goal_type: 'spending' },
+                    { name: 'Transport to Work', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Debt Payments', ratio: 0.30, categories: [
+                    { name: 'Credit Card 1', goal_type: 'spending' },
+                    { name: 'Credit Card 2', goal_type: 'spending' },
+                    { name: 'Personal Loan', goal_type: 'spending' },
+                    { name: 'Overdraft Payoff', goal_type: 'savings' },
+                ]
+            },
+            {
+                name: 'Insurance & Tax', ratio: 0.05, categories: [
+                    { name: 'Council Tax', goal_type: 'spending' },
+                    { name: 'Health / Life Insurance', goal_type: 'spending' },
+                    { name: 'Car Insurance', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Modest Lifestyle', ratio: 0.03, categories: [
+                    { name: 'Internet / Phone', goal_type: 'spending' },
+                    { name: 'Fun', goal_type: 'spending' },
+                    { name: 'Miscellaneous Buffer', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Emergency Fund', ratio: 0.02, categories: [
+                    { name: 'Starter Emergency Fund', goal_type: 'emergency_fund' },
+                ]
+            },
         ],
     },
     {
         label: 'Freelancer / Gig Worker',
         groups: [
-            { name: 'Business Obligations', categories: ['Tax Set Aside (25-30%)', 'Software / Tools', 'Accountant Fees', 'Workspace Costs'], ratio: 0.30 },
-            { name: 'Personal Basics', categories: ['Rent / Mortgage', 'Utilities', 'Groceries', 'Phone & Internet'], ratio: 0.40 },
-            { name: 'Health & Wealth', categories: ['Private Pension', 'Health Insurance', 'Emergency Fund (3-6 Months)'], ratio: 0.15 },
-            { name: 'Transport', categories: ['Business Travel', 'Personal Fuel', 'Vehicle Maintenance'], ratio: 0.05 },
-            { name: 'Lifestyle', categories: ['Dining Out', 'Entertainment', 'Holiday Fund', 'Personal Shopping'], ratio: 0.10 },
+            {
+                name: 'Business Obligations', ratio: 0.30, categories: [
+                    { name: 'Tax Set Aside (25-30%)', goal_type: 'savings' },
+                    { name: 'Software / Tools', goal_type: 'spending' },
+                    { name: 'Accountant Fees', goal_type: 'savings' },
+                    { name: 'Workspace Costs', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Personal Basics', ratio: 0.40, categories: [
+                    { name: 'Rent / Mortgage', goal_type: 'spending' },
+                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Phone & Internet', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Health & Wealth', ratio: 0.15, categories: [
+                    { name: 'Private Pension', goal_type: 'savings' },
+                    { name: 'Health Insurance', goal_type: 'spending' },
+                    { name: 'Emergency Fund (3-6 Months)', goal_type: 'emergency_fund' },
+                ]
+            },
+            {
+                name: 'Transport', ratio: 0.05, categories: [
+                    { name: 'Business Travel', goal_type: 'spending' },
+                    { name: 'Personal Fuel', goal_type: 'spending' },
+                    { name: 'Vehicle Maintenance', goal_type: 'savings' },
+                ]
+            },
+            {
+                name: 'Lifestyle', ratio: 0.10, categories: [
+                    { name: 'Dining Out', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
+                    { name: 'Holiday Fund', goal_type: 'savings' },
+                    { name: 'Personal Shopping', goal_type: 'spending' },
+                ]
+            },
         ],
     },
 ];
@@ -87,6 +268,18 @@ const TEMPLATES: { label: string; groups: { name: string; categories: string[]; 
 function uid() {
     return Math.random().toString(36).slice(2);
 }
+
+const GOAL_TYPE_OPTIONS = [
+    { value: 'spending', label: 'Spending' },
+    { value: 'emergency_fund', label: 'Emergency' },
+    { value: 'savings', label: 'Savings' },
+];
+
+const GOAL_TYPE_DESCRIPTIONS: Record<string, string> = {
+    spender: 'Fill to goal and spend throughout the month (e.g. Groceries, Rent).',
+    emergency_fund: 'Save to a target and keep it there.',
+    savings: 'Save a fixed amount each month.',
+};
 
 // ─── Onboarding Wizard ───────────────────────────────────────────────────────
 
@@ -132,14 +325,13 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
     const [monthlyIncome, setMonthlyIncome] = useState<string>('');
     const [incomeLocked, setIncomeLocked] = useState(false);
 
-    const applyTemplate = (tpl: typeof TEMPLATES[0]) => {
+    const applyTemplate = (tpl: Template) => {
         const groups: WizardGroup[] = tpl.groups.map(g => ({
             id: uid(),
             name: g.name,
-            categories: g.categories.map(c => ({ id: uid(), name: c, goal: '' })),
-            ratio: g.ratio // Store the ratio for later distribution
+            categories: g.categories.map(c => ({ id: uid(), name: c.name, goal: '', goal_type: c.goal_type })),
+            ratio: g.ratio
         }));
-        setWizardGroups(groups);
         setWizardGroups(groups);
         setStep(3);
     };
@@ -190,10 +382,10 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
 
     const addCategory = (gid: string) =>
         setWizardGroups(prev => prev.map(g =>
-            g.id === gid ? { ...g, categories: [...g.categories, { id: uid(), name: '', goal: '' }] } : g
+            g.id === gid ? { ...g, categories: [...g.categories, { id: uid(), name: '', goal: '', goal_type: 'spending' as GoalType }] } : g
         ));
 
-    const updateCategory = (gid: string, cid: string, field: 'name' | 'goal', value: string) =>
+    const updateCategory = (gid: string, cid: string, field: 'name' | 'goal' | 'goal_type', value: string) =>
         setWizardGroups(prev => prev.map(g =>
             g.id === gid ? {
                 ...g,
@@ -226,6 +418,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                             name: c.name.trim(),
                             group: groupData.id,
                             goal: c.goal ? parseFloat(c.goal) : null,
+                            goal_type: c.goal_type || 'spending',
                             timeframe: { type: 'monthly' as const },
                         })));
                     if (catErr) throw catErr;
@@ -513,36 +706,50 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                                     {/* Categories */}
                                     <div className="p-3 space-y-2">
                                         {group.categories.map(cat => (
-                                            <div key={cat.id} className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green/40 flex-shrink-0" />
-                                                <input
-                                                    type="text"
-                                                    value={cat.name}
-                                                    onChange={e => updateCategory(group.id, cat.id, 'name', e.target.value)}
-                                                    placeholder="Category name"
-                                                    className="flex-1 text-sm bg-white/[.04] border border-white/[.08] focus:border-green/40 rounded-lg px-2 py-1.5 focus:outline-none transition-colors placeholder-white/30"
-                                                />
-                                                <div className="w-24 flex-shrink-0 flex flex-col items-end">
-                                                    <MoneyInput
-                                                        value={cat.goal}
-                                                        onChange={v => updateCategory(group.id, cat.id, 'goal', v)}
-                                                        placeholder="Goal"
-                                                        currencySymbol={true}
-                                                        className="text-xs"
-                                                        inline={true}
-                                                    />
-                                                    {(() => {
-                                                        // This part is in Wizard, no category IDs yet to match history easily
-                                                        // So we skip per-category stats here unless we do name matching which is unreliable
-                                                        return null;
-                                                    })()}
+                                            <div key={cat.id} className="flex items-start gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-green/40 flex-shrink-0 mt-2.5" />
+                                                <div className="flex-1 min-w-0 space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={cat.name}
+                                                            onChange={e => updateCategory(group.id, cat.id, 'name', e.target.value)}
+                                                            placeholder="Category name"
+                                                            className="flex-1 text-sm bg-white/[.04] border border-white/[.08] focus:border-green/40 rounded-lg px-2 py-1.5 focus:outline-none transition-colors placeholder-white/30"
+                                                        />
+                                                        <div className="w-20 flex-shrink-0">
+                                                            <MoneyInput
+                                                                value={cat.goal}
+                                                                onChange={v => updateCategory(group.id, cat.id, 'goal', v)}
+                                                                placeholder="Goal"
+                                                                currencySymbol={true}
+                                                                className="text-xs"
+                                                                inline={true}
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            onClick={() => removeCategory(group.id, cat.id)}
+                                                            className="p-1 rounded hover:bg-white/[.08] text-white/20 hover:text-reddy transition-colors flex-shrink-0"
+                                                        >
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {GOAL_TYPE_OPTIONS.map(opt => (
+                                                            <button
+                                                                key={opt.value}
+                                                                type="button"
+                                                                onClick={() => updateCategory(group.id, cat.id, 'goal_type', opt.value)}
+                                                                className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${cat.goal_type === opt.value
+                                                                    ? 'bg-green/20 border-green/40 text-green'
+                                                                    : 'border-white/[.1] text-white/40 hover:text-white/70 hover:border-white/30'
+                                                                    }`}
+                                                            >
+                                                                {opt.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => removeCategory(group.id, cat.id)}
-                                                    className="p-1 rounded hover:bg-white/[.08] text-white/20 hover:text-reddy transition-colors flex-shrink-0"
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                                                </button>
                                             </div>
                                         ))}
                                         <button
@@ -672,13 +879,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
     const supabase = createClient();
     const [activeTab, setActiveTab] = useState<'categories' | 'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<CategoryWithGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
 
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [editingCategory, setEditingCategory] = useState<CategoryWithGroup | null>(null);
     const [newGroupName, setNewGroupName] = useState('');
     const [showAddGroup, setShowAddGroup] = useState(false);
     const [editingGoalAsString, setEditingGoalAsString] = useState('');
@@ -686,6 +893,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
     const [newGroupCategoryData, setNewGroupCategoryData] = useState({
         name: '',
         goal: '',
+        goal_type: 'spending' as GoalType,
         timeframe: 'monthly' as const,
     });
 
@@ -698,7 +906,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
         }
     }, []);
 
-    const handleEditCategory = (category: Category) => {
+    const handleEditCategory = (category: CategoryWithGroup) => {
         setEditingCategory(category);
         setEditingGoalAsString(category.goal?.toFixed(2) || '');
     };
@@ -724,7 +932,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             .select('*, groups(id, name)')
             .order('created_at', { ascending: true });
         if (error) { setError('Failed to load categories'); return; }
-        setCategories((data as any) || []);
+        setCategories((data as unknown as CategoryWithGroup[]) || []);
     };
 
     useEffect(() => {
@@ -735,7 +943,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
     useEffect(() => { setError(''); }, [activeTab]);
 
     const stats = useMemo(() => {
-        const totalGoals = categories.reduce((sum, cat) => sum + (cat.goal || 0), 0);
+        // Only count 'spending' categories for goals vs spend comparison
+        const spenderCategories = categories.filter(cat => (cat.goal_type || 'spending') === 'spending');
+        const totalGoals = spenderCategories.reduce((sum, cat) => sum + (cat.goal || 0), 0);
 
         const incomeMonths = new Set();
         let totalIncome = 0;
@@ -766,11 +976,10 @@ function EditMode({ onClose }: { onClose: () => void }) {
             if (t.type === 'payment') {
                 // Only include if in last 3 months
                 if (last3Months.has(key)) {
+
                     totalSpendLast3Months += t.amount;
-                    // Track category spend
-                    if (t.category_id) {
-                        categoryStats.set(t.category_id, (categoryStats.get(t.category_id) || 0) + t.amount);
-                    }
+                    categoryStats.set(t.category_id, (categoryStats.get(t.category_id) || 0) + t.amount);
+
                 }
             } else if (t.type === 'income') {
                 // Income uses all history as base (or could do 3 months too, usually cleaner to use all for income avg)
@@ -844,6 +1053,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                     name: data.name,
                     group: groupId,
                     goal: data.goal ? parseFloat(data.goal) : null,
+                    goal_type: data.goal_type || 'spending',
                     timeframe: { type: 'monthly' as const },
                 });
                 if (error) throw error;
@@ -851,14 +1061,14 @@ function EditMode({ onClose }: { onClose: () => void }) {
             { loading: 'Creating category…', success: 'Category created!', error: 'Failed to create category' }
         );
         await fetchCategories();
-        setNewGroupCategoryData({ name: '', goal: '', timeframe: 'monthly' });
+        setNewGroupCategoryData({ name: '', goal: '', goal_type: 'spending', timeframe: 'monthly' });
         setShowAddCategoryForGroup(null);
     };
 
-    const updateCategory = async (id: string, data: Partial<Category>) => {
+    const updateCategory = async (id: string, data: CategoryUpdate) => {
         await toast.promise(
             (async () => {
-                const { error } = await supabase.from('categories').update(data as any).eq('id', id);
+                const { error } = await supabase.from('categories').update(data).eq('id', id);
                 if (error) throw error;
             })(),
             { loading: 'Updating…', success: 'Category updated!', error: 'Failed to update category' }
@@ -911,7 +1121,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                     <div className="space-y-4">
                         {error && <div className="bg-reddy/20 text-reddy p-3 rounded-lg text-sm mb-4">{error}</div>}
                         {/* 
-                        Todo, only count 'frequent spender' categories here, including when showing if each category in Category.tsx is over or under */}
+                        Todo, only count 'frequent spender' categories when  showing if each category in Category.tsx is over or under */}
                         {/* Budget vs Expenses Summary for Categories Tab */}
                         {activeTab === 'categories' && !loadingTransactions && (
                             <div className="flex sm:flex-row flex-col gap-2 mb-6">
@@ -931,8 +1141,8 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                     {/* Over/Under spending indicator */}
                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
                                         {stats.avgMonthlySpend > stats.totalGoals
-                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goal`
-                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goal`
+                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
+                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
                                         }
                                     </p>
                                 </div>
@@ -1048,8 +1258,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                 <div className="flex items-baseline gap-3">
                                                                     <h4 className="font-medium text-lg text-green">{group.name}</h4>
                                                                     {(() => {
-                                                                        const groupGoal = groupCategories.reduce((sum, c) => sum + (c.goal || 0), 0);
-                                                                        const groupAvgSpend = groupCategories.reduce((sum, c) => sum + (stats.categoryAverages.get(c.id) || 0), 0);
+                                                                        const spenderCats = groupCategories.filter(c => (c.goal_type || 'spending') === 'spending');
+                                                                        const groupGoal = spenderCats.reduce((sum, c) => sum + (c.goal || 0), 0);
+                                                                        const groupAvgSpend = spenderCats.reduce((sum, c) => sum + (stats.categoryAverages.get(c.id) || 0), 0);
 
                                                                         if (groupGoal > 0) {
                                                                             const diff = groupAvgSpend - groupGoal;
@@ -1100,8 +1311,17 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                             inline={true}
                                                                         />
                                                                     </div>
+                                                                    <div>
+                                                                        <label className="block text-sm text-white/50 mb-1">Goal Type</label>
+                                                                        <Dropdown
+                                                                            value={newGroupCategoryData.goal_type}
+                                                                            onChange={v => setNewGroupCategoryData({ ...newGroupCategoryData, goal_type: v as GoalType })}
+                                                                            options={GOAL_TYPE_OPTIONS}
+                                                                        />
+                                                                        <p className="text-xs text-white/40 mt-1">{GOAL_TYPE_DESCRIPTIONS[newGroupCategoryData.goal_type]}</p>
+                                                                    </div>
                                                                     <div className="flex justify-end gap-2">
-                                                                        <button type="button" onClick={() => { setShowAddCategoryForGroup(null); setNewGroupCategoryData({ name: '', goal: '', timeframe: 'monthly' }); }} className="px-3 py-1 rounded-lg hover:bg-white/[.05] text-sm text-white/70">Cancel</button>
+                                                                        <button type="button" onClick={() => { setShowAddCategoryForGroup(null); setNewGroupCategoryData({ name: '', goal: '', goal_type: 'spending', timeframe: 'monthly' }); }} className="px-3 py-1 rounded-lg hover:bg-white/[.05] text-sm text-white/70">Cancel</button>
                                                                         <button type="submit" disabled={!newGroupCategoryData.name.trim()} className="px-3 py-1 rounded-lg bg-green/20 hover:bg-green/30 text-green text-sm disabled:opacity-50">Add Category</button>
                                                                     </div>
                                                                 </form>
@@ -1130,6 +1350,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                             name: editingCategory.name,
                                                                             group: editingCategory.group,
                                                                             goal: parseFloat(editingGoalAsString) || null,
+                                                                            goal_type: editingCategory.goal_type || 'spending',
                                                                         });
                                                                     }} className="space-y-3">
                                                                         <div className="flex gap-4">
@@ -1138,7 +1359,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                                     type="text"
                                                                                     value={editingCategory.name}
                                                                                     onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                                                                                    className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none text-sm"
+                                                                                    className="w-full p-2 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors text-sm"
                                                                                 />
                                                                             </div>
                                                                             <Dropdown
@@ -1160,6 +1381,15 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                                 inline={true}
                                                                             />
                                                                         </div>
+                                                                        <div>
+                                                                            <label className="block text-sm text-white/50 mb-1">Goal Type</label>
+                                                                            <Dropdown
+                                                                                value={editingCategory.goal_type || 'spending'}
+                                                                                onChange={v => setEditingCategory({ ...editingCategory, goal_type: v as GoalType })}
+                                                                                options={GOAL_TYPE_OPTIONS}
+                                                                            />
+                                                                            <p className="text-xs text-white/40 mt-1">{GOAL_TYPE_DESCRIPTIONS[editingCategory.goal_type || 'spending']}</p>
+                                                                        </div>
                                                                         <div className="flex justify-end gap-2">
                                                                             <button type="button" onClick={() => setEditingCategory(null)} className="px-3 py-1 rounded-lg hover:bg-white/[.05] text-sm">Cancel</button>
                                                                             <button type="submit" disabled={!editingCategory.name.trim() || !editingCategory.group} className="px-3 py-1 rounded-lg bg-green/20 hover:bg-green/30 text-green text-sm disabled:opacity-50">Save Changes</button>
@@ -1170,7 +1400,8 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                         <div>
                                                                             <div className="flex items-baseline gap-2">
                                                                                 <span className="block font-medium">{category.name}</span>
-                                                                                {(() => {
+
+                                                                                {(category.goal_type || 'spending') === 'spending' && (() => {
                                                                                     const goal = category.goal || 0;
                                                                                     const avg = stats.categoryAverages.get(category.id) || 0;
                                                                                     if (goal > 0) {

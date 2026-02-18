@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MoneyInput from '../components/money-input';
+import type { GoalType } from '@/types/supabase';
 
 interface CategoryProps {
     name: string;
@@ -9,6 +10,7 @@ interface CategoryProps {
     rollover: number | 0;
     spent: number;
     goalAmount: number | null;
+    goalType?: GoalType;
     group?: string;
     showGroup?: boolean;
     forceFlipMassAssign?: boolean;
@@ -22,7 +24,7 @@ interface CategoryProps {
     underfundedAmount?: number;
 }
 
-export default function Category({ name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose = false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft, draftAssigned, onDraftChange, underfundedAmount }: CategoryProps) {
+export default function Category({ name, assigned, rollover, spent, goalAmount, goalType = 'spending', group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose = false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft, draftAssigned, onDraftChange, underfundedAmount }: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
@@ -167,7 +169,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
                 </div>
                 <div className="text-right flex-shrink-0">
                     <div className="flex items-baseline gap-1.5">
-                        {dailyLeft !== undefined && Math.round(dailyLeft * 100) / 100 > 0 && displayAvailable > 0 && (
+                        {goalType === 'spending' && dailyLeft !== undefined && Math.round(dailyLeft * 100) / 100 > 0 && displayAvailable > 0 && (
                             <span className="text-xs text-white/50">
                                 ({formatCurrency(dailyLeft)}/day)
                             </span>
@@ -193,8 +195,14 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
                             Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned + rollover)}</span>
                         </span>
                         <span>
-                            {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal - (assigned + rollover))}</span></>}
-                            {goal > 0 && (assigned + rollover) > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency((rollover + assigned) - goal)}</span></>}
+                            {goal > 0 && (() => {
+                                // 'savings': compare only this month's assignment to goal (ignore rollover/cumulative)
+                                // 'spending' / 'emergency_fund': compare total funded (assigned + rollover) to goal
+                                const funded = goalType === 'savings' ? assigned : (assigned + rollover);
+                                if (funded < goal) return <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal - funded)}</span></>;
+                                if (funded > goal) return <>Extra: <span className="text-white/70 font-medium">{formatCurrency(funded - goal)}</span></>;
+                                return null;
+                            })()}
                         </span>
                     </div>
                 </div>

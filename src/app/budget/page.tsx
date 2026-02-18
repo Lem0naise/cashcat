@@ -1,6 +1,7 @@
 'use client';
 
 import type { Database } from '@/types/supabase';
+import type { GoalType } from '@/types/supabase';
 import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -31,10 +32,11 @@ type Category = {
     assigned: number;
     spent: number;
     goalAmount: CategoryFromDB['goal'];
+    goal_type: GoalType;
     group: string;
     rollover: number;
     available: number;
-    dailyLeft?: number; // Amount available per day for rest of month
+    dailyLeft?: number; // Amount available per day for rest of month (spender only)
 };
 
 
@@ -109,10 +111,12 @@ export default function Budget() {
     }, [balanceInfo, draftDifference]);
 
     // Calculate underfunded amount for each category (considering rollover)
-    // A category is underfunded if goal > (assigned + rollover), meaning it actually needs more
+    // For spender: underfunded = goal - (assigned + rollover)
+    // For other types: underfunded = goal - assigned (fill to full goal each month, ignore rollover)
     const getUnderfundedAmount = useCallback((cat: Category): number => {
         if (!cat.goalAmount || cat.goalAmount <= 0) return 0;
-        const currentFunded = cat.assigned + cat.rollover;
+        const isFrequentSpender = cat.goal_type === 'spending';
+        const currentFunded = isFrequentSpender ? cat.assigned + cat.rollover : cat.assigned;
         const needed = cat.goalAmount - currentFunded;
         return needed > 0 ? Math.round(needed * 100) / 100 : 0;
     }, []);
@@ -120,8 +124,9 @@ export default function Budget() {
     // Get underfunded amount considering draft assignments
     const getDraftUnderfundedAmount = useCallback((cat: Category): number => {
         if (!cat.goalAmount || cat.goalAmount <= 0) return 0;
+        const isFrequentSpender = cat.goal_type === 'spending';
         const draftAmount = draftAssignments.get(cat.id) ?? cat.assigned;
-        const currentFunded = draftAmount + cat.rollover;
+        const currentFunded = isFrequentSpender ? draftAmount + cat.rollover : draftAmount;
         const needed = cat.goalAmount - currentFunded;
         return needed > 0 ? Math.round(needed * 100) / 100 : 0;
     }, [draftAssignments]);
@@ -279,13 +284,18 @@ export default function Budget() {
                 const rollover = Math.round((Number(calculateRolloverForCategory(category.id, queryMonthString, allAssignments || []))) * 100) / 100;
                 const available = Math.round((assigned + rollover - spent) * 100) / 100;
                 const daysRemaining = getDaysRemainingInMonth();
-                const dailyLeft = daysRemaining > 0 ? Math.round((available / daysRemaining) * 100) / 100 : 0;
+                const goal_type: GoalType = (category.goal_type as GoalType) || 'spending';
+                // Only show daily-left for frequent spenders
+                const dailyLeft = (goal_type === 'spending' && daysRemaining > 0)
+                    ? Math.round((available / daysRemaining) * 100) / 100
+                    : 0;
                 return {
                     id: category.id,
                     name: category.name,
                     assigned,
                     spent,
                     goalAmount: category.goal || 0,
+                    goal_type,
                     group: category.groups?.name || category.group || 'Uncategorized',
                     rollover,
                     available,
@@ -1420,6 +1430,7 @@ export default function Budget() {
                                                                 rollover={category.rollover}
                                                                 spent={category.spent}
                                                                 goalAmount={category.goalAmount}
+                                                                goalType={category.goal_type}
                                                                 group={category.group}
                                                                 showGroup={false}
                                                                 forceFlipMassAssign={isMassAssigning}
