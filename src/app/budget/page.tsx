@@ -298,9 +298,19 @@ export default function Budget() {
                 ?.filter(t => t.date <= endDate)
                 ?.reduce((total, transaction) => total + transaction.amount, 0) || 0;
             // Calculate total available in all categories including future assignments
-            const futureAssignments = allAssignments
-                ?.filter(assignment => assignment.month > queryMonthString)
-                ?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0;
+            // FIX: "Future Usage" Logic
+            // For CURRENT/FUTURE months: We subtract future assignments from "Left to Assign" (by adding them to 'assigned') 
+            // to ensure the user doesn't spend money today that is needed for tomorrow.
+            // For PAST months: We want a historical snapshot. The "Left to Assign" should reflect 
+            // (Income up to that month) - (Assignments up to that month). 
+            // Future assignments (made in later months) should not retroactively reduce the available amount for a past month.
+            const isPastMonth = new Date(queryMonthString + '-01') < new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+            const futureAssignments = isPastMonth
+                ? 0
+                : (allAssignments
+                    ?.filter(assignment => assignment.month > queryMonthString)
+                    ?.reduce((total, assignment) => total + (assignment.assigned || 0), 0) || 0);
 
             const totalAvailableInCategories = categoriesWithSpent.reduce((total, cat) => total + cat.available, 0) + futureAssignments;
 
