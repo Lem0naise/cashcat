@@ -44,6 +44,7 @@ interface PieChartProps {
   timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
   allTimeRange?: { start: Date; end: Date };
   onDateRangeChange?: (start: Date, end: Date) => void;
+  onBack?: () => void;
 }
 
 export default function PieChart({
@@ -57,7 +58,8 @@ export default function PieChart({
   matchHeight = false,
   timeRange,
   allTimeRange,
-  onDateRangeChange
+  onDateRangeChange,
+  onBack
 }: PieChartProps) {
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -765,7 +767,6 @@ export default function PieChart({
           <div className={`relative w-full ${shouldShowLabels ? (matchHeight ? 'max-w-[500px]' : 'max-w-[600px]') : 'max-w-full'}`}>
             <div className="w-full h-full overflow-visible relative transition-all duration-300 ease-out">
               <Doughnut
-                key={chartKey}
                 ref={chartRef}
                 data={chartData}
                 options={chartOptions}
@@ -798,8 +799,8 @@ export default function PieChart({
                     </div>
                     <div className={`text-white/40 mt-1 ${shouldShowLabels ? 'text-xs' : 'text-xs'}`}>
                       {chartMode === 'group' && 'All Groups'}
-                      {chartMode === 'category' && (selectedGroups.length > 0 ? `${selectedGroups.length} Group${selectedGroups.length > 1 ? 's' : ''}` : 'All Categories')}
-                      {chartMode === 'vendor' && 'Selected Categories'}
+                      {chartMode === 'category' && (selectedGroups.length > 0 ? selectedGroups[0] : '')}
+                      {chartMode === 'vendor' && (selectedCategories.length > 0 ? categories.find(c => c.id === selectedCategories[0])?.name : 'Breakdown')}
                     </div>
                   </>
                 )}
@@ -808,12 +809,24 @@ export default function PieChart({
           </div>
         </div>
       </div>
-      {/* Chart label explainer - Always positioned at bottom */}
-      <div className="text-center text-sm text-white/50 mt-3 flex-shrink-0">
-        <p>
 
-        </p>
-      </div>
+      {/* Back Button for Drill-down */}
+      {onBack && (chartMode === 'category' || chartMode === 'vendor') && (
+        <div className="flex justify-center mt-2 mb-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onBack?.();
+            }}
+            className="flex items-center gap-2 px-4 py-1.5 bg-white/[.08] hover:bg-white/[.12] active:bg-white/[.15] text-white/80 hover:text-white rounded-full text-sm font-medium transition-all duration-200 border border-white/[.05]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+            Return
+          </button>
+        </div>
+      )}
     </div>
   );
 }

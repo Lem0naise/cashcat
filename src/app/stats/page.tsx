@@ -415,7 +415,21 @@ export default function Stats() {
                                         dateRange={dateRange}
                                         selectedGroups={selectedGroups}
                                         selectedCategories={selectedCategories}
-                                        onSegmentClick={() => { }}
+                                        onSegmentClick={(segment) => {
+                                            if (segment.type === 'group') {
+                                                setSelectedGroups([segment.id]);
+                                                setSelectedCategories([]);
+                                            } else if (segment.type === 'category') {
+                                                setSelectedCategories([segment.id]);
+                                            }
+                                        }}
+                                        onBack={() => {
+                                            if (selectedCategories.length > 0) {
+                                                setSelectedCategories([]);
+                                            } else if (selectedGroups.length > 0) {
+                                                setSelectedGroups([]);
+                                            }
+                                        }}
                                         showTooltip={true}
                                         matchHeight={false}
                                         timeRange={timeRange}
