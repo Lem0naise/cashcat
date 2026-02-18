@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Getting Started - CashCat Docs',
-  description: 'Quick start guide for CashCat budgeting app.',
+    title: 'Getting Started - CashCat Docs',
+    description: 'Quick start guide for CashCat budgeting app.',
 };
 
 export default function GettingStarted() {
@@ -33,7 +33,7 @@ export default function GettingStarted() {
                             >
                                 Create Account
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-2 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -56,7 +56,7 @@ export default function GettingStarted() {
                             >
                                 Learn about Bank Accounts
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -79,7 +79,7 @@ export default function GettingStarted() {
                             >
                                 Create First Budget
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -102,7 +102,7 @@ export default function GettingStarted() {
                             >
                                 Learn about Transactions
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -112,7 +112,10 @@ export default function GettingStarted() {
 
             {/* Tips section */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">💡 Pro Tips for Success</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4 flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z" /></svg>
+                    <span>Pro Tips for Success</span>
+                </h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>

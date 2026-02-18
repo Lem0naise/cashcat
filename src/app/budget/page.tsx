@@ -70,6 +70,8 @@ export default function Budget() {
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
+    const [isOnboarding, setIsOnboarding] = useState(false);
+    const [hasAutoOpenedOnboarding, setHasAutoOpenedOnboarding] = useState(false);
     // Combine all loading states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -358,6 +360,16 @@ export default function Budget() {
             calculateBudgetData(newMonthString);
         }
     }, [currentMonth, allTransactionsData, rawCategoriesData, allAssignmentsData, transactionsLoading, categoriesLoading, assignmentsLoading, calculateBudgetData]);
+
+    // Auto-open onboarding for new users (no categories, data loaded)
+    useEffect(() => {
+        if (hasAutoOpenedOnboarding) return;
+        if (transactionsLoading || categoriesLoading || assignmentsLoading) return;
+        if (rawCategoriesData.length === 0 && !loading) {
+            setHasAutoOpenedOnboarding(true);
+            setShowAccountModal(true);
+        }
+    }, [rawCategoriesData, loading, transactionsLoading, categoriesLoading, assignmentsLoading, hasAutoOpenedOnboarding]);
 
 
     // Listen for hide budget values changes
@@ -1450,20 +1462,29 @@ export default function Budget() {
 
                 <ManageBudgetModal
                     isOpen={showManageModal}
+                    isOnboarding={isOnboarding}
                     onClose={() => {
                         if (monthString && allTransactionsData) {
                             calculateBudgetData(monthString);
                         }
+                        setIsOnboarding(false);
                         setShowManageModal(false);
                     }}
                 />
 
                 <AccountModal
                     isOpen={showAccountModal}
-                    onClose={() => setShowAccountModal(false)}
-                    onAccountsUpdated={() => {
+                    onClose={() => {
                         setShowAccountModal(false);
-                        setShowManageModal(true);
+                        // Open budget wizard on close if user has no categories yet
+                        if (rawCategoriesData.length === 0) {
+                            setIsOnboarding(true);
+                            setShowManageModal(true);
+                        }
+                    }}
+                    onAccountsUpdated={() => {
+                        // Just refresh data — do NOT close modal or open budget wizard
+                        refreshData();
                     }}
                 />
             </div>

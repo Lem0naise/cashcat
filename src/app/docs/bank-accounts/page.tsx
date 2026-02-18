@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Bank Accounts - CashCat Docs',
-  description: 'Learn how to set up and manage bank accounts in CashCat.',
+    title: 'Bank Accounts - CashCat Docs',
+    description: 'Learn how to set up and manage bank accounts in CashCat.',
 };
 
 export default function BankAccounts() {
@@ -19,12 +19,12 @@ export default function BankAccounts() {
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Account Types</h2>
                 <p className="text-white/70 text-sm md:text-base mb-3">
-                        The names of these accounts can vary depending on which country you live in. For the purpose of the documentation, we are using UK terminology. For US residents, a 'current' account is a 'checking' account.
+                    The names of these accounts can vary depending on which country you live in. For the purpose of the documentation, we are using UK terminology. For US residents, a 'current' account is a 'checking' account.
                 </p>
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Current Accounts</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Your primary spending account where most transactions occur. This includes debit card purchases, 
+                        Your primary spending account where most transactions occur. This includes debit card purchases,
                         bill payments, and direct credits.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1">
@@ -37,7 +37,7 @@ export default function BankAccounts() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Savings Accounts</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Accounts for building your emergency fund, saving for goals, or earning interest on money 
+                        Accounts for building your emergency fund, saving for goals, or earning interest on money
                         you don't need immediate access to.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1">
@@ -50,7 +50,7 @@ export default function BankAccounts() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Credit Cards</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Track credit card spending and balances. Remember that credit card purchases should still 
+                        Track credit card spending and balances. Remember that credit card purchases should still
                         come from your budgeted categories. We do not encourage using credit you cannot pay back.
                     </p>
                 </div>
@@ -59,7 +59,7 @@ export default function BankAccounts() {
             {/* Adding accounts */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Adding Accounts</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <div className="flex items-start gap-3 md:gap-4">
                         <div className="w-6 h-6 md:w-8 md:h-8 bg-green text-black rounded-full flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0">
@@ -105,7 +105,7 @@ export default function BankAccounts() {
 
             {/* Best practices */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">💡 Account Management Tips</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">Account Management Tips</h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>

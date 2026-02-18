@@ -74,7 +74,7 @@ export default function DocsLayout({
 							/>
 						</svg>
 					</button>
-					<div className="w-32">
+					<div className="w-32 pl-8 hidden sm:block">
 						<Logo />
 					</div>
 					<div className="flex items-center gap-4">

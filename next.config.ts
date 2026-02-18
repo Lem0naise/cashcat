@@ -15,7 +15,12 @@ const nextConfig = {
   // Image Optimization configuration
   images: {
     unoptimized: isMobile,
-    domains: ["avatars.githubusercontent.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+    ],
   },
 
   // Asynchronous function to define redirects
