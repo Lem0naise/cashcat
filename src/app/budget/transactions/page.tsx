@@ -461,29 +461,29 @@ export default function Transactions() {
                 onClose={() => setShowExportModal(false)}
                 transactions={transactions}
             />
-            <Toaster
-                containerClassName='mb-[15dvh]'
-                position="bottom-center"
-                toastOptions={{
-                    style: {
-                        background: '#333',
-                        color: '#fff',
-                    },
-                    success: {
-                        iconTheme: {
-                            primary: '#bac2ff',
-                            secondary: '#fff',
-                        },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: '#EF4444',
-                            secondary: '#fff',
-                        },
-                    }
-                }}
-            />
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
+                <Toaster
+                    containerClassName='mb-[15dvh]'
+                    position="bottom-center"
+                    toastOptions={{
+                        style: {
+                            background: '#333',
+                            color: '#fff',
+                        },
+                        success: {
+                            iconTheme: {
+                                primary: '#bac2ff',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            iconTheme: {
+                                primary: '#EF4444',
+                                secondary: '#fff',
+                            },
+                        }
+                    }}
+                />
                 <div className="hidden md:block"><Navbar /></div>
                 <Sidebar />
                 <MobileNav />

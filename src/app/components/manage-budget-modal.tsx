@@ -151,7 +151,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
     const progressPct = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto">
             {/* Progress bar */}
             <div className="flex-none px-6 pt-6 pb-4 border-b border-white/[.1]">
                 <div className="flex items-center justify-between mb-3">
@@ -934,8 +934,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
+import { useSyncAll } from '@/app/hooks/useSyncAll';
+
+
+
 export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = false }: ManageBudgetModalProps) {
     const [isClosing, setIsClosing] = useState(false);
+    const { syncAll } = useSyncAll();
 
     useEffect(() => {
         if (isOpen) {
@@ -949,6 +954,7 @@ export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = fals
 
     const handleClose = () => {
         setIsClosing(true);
+        syncAll();
         setTimeout(() => {
             onClose();
         }, 200);
