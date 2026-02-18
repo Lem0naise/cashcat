@@ -31,30 +31,53 @@ type WizardCategory = {
 
 const TEMPLATES: { label: string; groups: { name: string; categories: string[] }[] }[] = [
     {
-        label: 'Essential Budget',
+        label: 'Student',
         groups: [
-            { name: 'Housing', categories: ['Rent / Mortgage', 'Council Tax', 'Utilities', 'Internet'] },
-            { name: 'Food', categories: ['Groceries', 'Eating Out'] },
-            { name: 'Transport', categories: ['Fuel', 'Public Transport', 'Car Insurance'] },
-            { name: 'Savings', categories: ['Emergency Fund', 'General Savings'] },
+            { name: 'Fixed Costs', categories: ['Rent / Halls', 'Tuition Fees', 'Phone Bill', 'Utilities '] },
+            { name: 'Essentials', categories: ['Supplies', 'Tech', 'Laundry'] },
+            { name: 'Living', categories: ['Groceries', 'Toiletries', 'Campus Lunch', 'Coffee'] },
+            { name: 'Social', categories: ['Nights Out', 'Society Memberships', 'Subscriptions', 'Clothing'] },
+            { name: 'Transport', categories: ['Bus Pass', 'Uber / Taxi', 'Travel Home'] },
         ],
     },
     {
-        label: 'Lifestyle Budget',
+        label: 'Young Professional',
         groups: [
-            { name: 'Entertainment', categories: ['Subscriptions', 'Hobbies', 'Nights Out'] },
-            { name: 'Health', categories: ['Gym', 'Healthcare', 'Pharmacy'] },
-            { name: 'Shopping', categories: ['Clothing', 'Electronics', 'Personal Care'] },
-            { name: 'Savings', categories: ['Holiday Fund', 'Investments'] },
+            { name: 'Home', categories: ['Rent', 'Council Tax', 'Electric & Gas', 'Water', 'Internet'] },
+            { name: 'Food & Drink', categories: ['Groceries', 'Work Lunches', 'Dining Out', 'Household Supplies'] },
+            { name: 'Getting Around', categories: ['Car Payment / Lease', 'Fuel', 'Car Insurance', 'Public Transport'] },
+            { name: 'Personal', categories: ['Gym / Wellness', 'Subscriptions', 'Hobbies', 'Personal Care'] },
+            { name: 'Financial Goals', categories: ['Emergency Fund', 'Lisa / ISA', 'Student Loan Repayment'] },
         ],
     },
     {
-        label: 'Student Budget',
+        label: 'Family / Homeowner',
         groups: [
-            { name: 'Essentials', categories: ['Rent', 'Groceries', 'Bills'] },
-            { name: 'Study', categories: ['Books & Supplies', 'Software'] },
-            { name: 'Social', categories: ['Eating Out', 'Nights Out', 'Hobbies'] },
-            { name: 'Savings', categories: ['Emergency Fund'] },
+            { name: 'Housing', categories: ['Mortgage', 'Property Tax / Rates', 'Home Insurance', 'Utilities', 'Home Maintenance'] },
+            { name: 'Family', categories: ['Childcare / School Fees', 'Kids Activities / Clubs', 'Clothing / Uniforms', 'Pocket Money'] },
+            { name: 'Food & Consumables', categories: ['Supermarket Shop', 'School Lunches', 'Pet Food / Care', 'Takeaways'] },
+            { name: 'Health', categories: ['Life Insurance', 'Health Insurance', 'Pharmacy / Medical', 'Dental'] },
+            { name: 'Transport', categories: ['Car Finance', 'Fuel', 'Service & MOT', 'Parking / Tolls'] },
+        ],
+    },
+    {
+        label: 'Debt Crusher',
+        groups: [
+            { name: 'The Four Walls', categories: ['Rent / Mortgage', 'Utilities', 'Basic Groceries', 'Transport to Work'] },
+            { name: 'Debt Payments', categories: ['Credit Card 1', 'Credit Card 2', 'Personal Loan', 'Overdraft Payoff'] },
+            { name: 'Insurance & Tax', categories: ['Council Tax', 'Health / Life Insurance', 'Car Insurance'] },
+            { name: 'Modest Lifestyle', categories: ['Internet / Phone', 'Fun', 'Miscellaneous Buffer'] },
+            { name: 'Emergency Fund', categories: ['Starter Emergency Fund (Savings)'] },
+        ],
+    },
+    {
+        label: 'Freelancer / Gig Worker',
+        groups: [
+            { name: 'Business Obligations', categories: ['Tax Set Aside (25-30%)', 'Software / Tools', 'Accountant Fees', 'Workspace Costs'] },
+            { name: 'Personal Basics', categories: ['Rent / Mortgage', 'Utilities', 'Groceries', 'Phone & Internet'] },
+            { name: 'Health & Wealth', categories: ['Private Pension', 'Health Insurance', 'Emergency Fund (3-6 Months)'] },
+            { name: 'Transport', categories: ['Business Travel', 'Personal Fuel', 'Vehicle Maintenance'] },
+            { name: 'Lifestyle', categories: ['Dining Out', 'Entertainment', 'Holiday Fund', 'Personal Shopping'] },
         ],
     },
 ];
@@ -151,7 +174,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
     const progressPct = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto">
+        <div className="flex flex-col h-full overflow-y-scroll">
             {/* Progress bar */}
             <div className="flex-none px-6 pt-6 pb-4 border-b border-white/[.1]">
                 <div className="flex items-center justify-between mb-3">
@@ -662,7 +685,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-scroll">
             {/* Header */}
             <div className="flex-none p-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] border-b border-white/[.1]">
                 <div className="flex justify-between items-center">

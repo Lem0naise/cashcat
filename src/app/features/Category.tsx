@@ -12,7 +12,7 @@ interface CategoryProps {
     group?: string;
     showGroup?: boolean;
     forceFlipMassAssign?: boolean;
-    wasMassAssigningSoShouldClose? : boolean;
+    wasMassAssigningSoShouldClose?: boolean;
     onAssignmentUpdate?: (amount: number) => Promise<void>;
     onAssignmentStateChange?: (isAssigning: boolean) => void;
     available?: number;
@@ -22,7 +22,7 @@ interface CategoryProps {
     underfundedAmount?: number;
 }
 
-export default function Category({name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose= false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft, draftAssigned, onDraftChange, underfundedAmount}: CategoryProps) {
+export default function Category({ name, assigned, rollover, spent, goalAmount, group, showGroup = true, forceFlipMassAssign = false, wasMassAssigningSoShouldClose = false, onAssignmentStateChange, onAssignmentUpdate, available, dailyLeft, draftAssigned, onDraftChange, underfundedAmount }: CategoryProps) {
     const [progress, setProgress] = useState<number>(0);
     const [isAssigning, setIsAssigning] = useState(false);
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
@@ -32,7 +32,8 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     const displayAvailable = available !== undefined ? Math.round(available * 100) / 100 : Math.round((assigned + rollover - spent) * 100) / 100;
     const goal = goalAmount || 0;
     const inputRef = useRef<HTMLInputElement>(null);
-    
+    const lastEmittedDraftValue = useRef<number | undefined>(undefined);
+
     useEffect(() => {
         onAssignmentStateChange?.(isAssigning);
     }, [isAssigning, onAssignmentStateChange]);
@@ -63,14 +64,18 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     // Sync editedAmount when draftAssigned changes from parent (e.g. quick actions)
     useEffect(() => {
         if (forceFlipMassAssign && draftAssigned !== undefined) {
-            setEditedAmount(draftAssigned.toFixed(2));
+            // Only update if the value coming from parent is different from what we just emitted
+            // This prevents the "jumping" effect while typing
+            if (lastEmittedDraftValue.current !== draftAssigned) {
+                setEditedAmount(draftAssigned.toFixed(2));
+            }
         }
     }, [draftAssigned, forceFlipMassAssign]);
 
     // Keep values in sync with props using debounce to prevent flashing
     useEffect(() => {
         const timeout = setTimeout(() => {
-            setProgress(goal ? assigned/goal : 0);
+            setProgress(goal ? assigned / goal : 0);
             // Don't overwrite editedAmount from assigned prop when in mass assign mode
             if ((!isAssigning || !isUpdating) && !forceFlipMassAssign) {
                 setEditedAmount(assigned.toFixed(2));
@@ -130,6 +135,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
         if (forceFlipMassAssign && onDraftChange) {
             const parsed = parseFloat(value);
             if (!isNaN(parsed)) {
+                lastEmittedDraftValue.current = parsed;
                 onDraftChange(parsed);
             }
         }
@@ -146,7 +152,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
     };
 
     return (
-        <div 
+        <div
             className={`relative p-2 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all touch-manipulation ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
             onClick={!isAssigning ? handleCardClick : undefined}
         >
@@ -161,7 +167,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 </div>
                 <div className="text-right flex-shrink-0">
                     <div className="flex items-baseline gap-1.5">
-                        {dailyLeft !== undefined && Math.round(dailyLeft*100)/100 > 0 && displayAvailable > 0 && (
+                        {dailyLeft !== undefined && Math.round(dailyLeft * 100) / 100 > 0 && displayAvailable > 0 && (
                             <span className="text-xs text-white/50">
                                 ({formatCurrency(dailyLeft)}/day)
                             </span>
@@ -169,38 +175,36 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                         <p className={`text-base text-lg md:text-xl font-bold ${displayAvailable >= -0.01 ? 'text-green' : 'text-reddy'}`}>
                             {formatCurrency(displayAvailable)}
                         </p>
-                        
+
                     </div>
                 </div>
             </div>
 
             <div className="relative h-[32px] md:h-[40px]">
                 {/* Normal view */}
-                <div 
-                    className={`absolute inset-x-0 transition-all duration-300 ${
-                        isAssigning 
-                        ? 'opacity-0 translate-y-2 pointer-events-none' 
-                        : 'opacity-100 translate-y-0'
-                    }`}
+                <div
+                    className={`absolute inset-x-0 transition-all duration-300 ${isAssigning
+                            ? 'opacity-0 translate-y-2 pointer-events-none'
+                            : 'opacity-100 translate-y-0'
+                        }`}
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
                         <span>
-                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned+rollover)}</span>
+                            Spent <span className="text-white/70 font-medium">{formatCurrency(spent)}</span> of <span className="text-white/70 font-medium">{formatCurrency(assigned + rollover)}</span>
                         </span>
                         <span>
-                            {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal-(assigned+rollover))}</span></>}
-                            {goal > 0 && (assigned + rollover) > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency((rollover+assigned)-goal)}</span></>}
+                            {goal > 0 && (assigned + rollover) < goal && <>Need: <span className="text-white/70 font-medium">{formatCurrency(goal - (assigned + rollover))}</span></>}
+                            {goal > 0 && (assigned + rollover) > goal && <>Extra: <span className="text-white/70 font-medium">{formatCurrency((rollover + assigned) - goal)}</span></>}
                         </span>
                     </div>
                 </div>
 
                 {/* Assignment mode view */}
-                <div 
-                    className={`absolute inset-x-0 transition-all duration-300 ${
-                        isAssigning 
-                        ? 'opacity-100 translate-y-0 delay-150' 
-                        : 'opacity-0 -translate-y-2 pointer-events-none'
-                    }`}
+                <div
+                    className={`absolute inset-x-0 transition-all duration-300 ${isAssigning
+                            ? 'opacity-100 translate-y-0 delay-150'
+                            : 'opacity-0 -translate-y-2 pointer-events-none'
+                        }`}
                 >
                     <div className={`pb-10 flex items-center justify-between mt-0.5 md:mt-2.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
                         <div className="flex items-center gap-1">
@@ -211,7 +215,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                                     <span className="text-white/50 text-sm xl:text-md font-medium">+</span>
                                 </>
                             ) : null}
-                         
+
 
                             <div className="w-14 lg:w-16 flex items-center gap-1">
                                 <span className="text-white/70 text-sm xl:text-md font-medium inline">£</span>
@@ -227,11 +231,11 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                             </div>
                             {goal != 0 && (
                                 <>
-                                <span className="text-white/50 text-sm md:text-base">of</span>
-                                <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
-                            </>)
+                                    <span className="text-white/50 text-sm md:text-base">of</span>
+                                    <span className="text-green text-sm xl:text-lg font-medium">{formatCurrency(goal)}</span>
+                                </>)
                             }
-                            
+
                         </div>
                         <div className={`flex gap-1 md:gap-2 ${forceFlipMassAssign ? "hidden" : ""}`}>
                             <button
@@ -258,11 +262,11 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
                 <div className={`rounded bg-green-dark/20 w-full transition-[height, margin] duration-300 will-change-[height, margin] ${isAssigning ? "h-0 mb-2 md:mb-3" : "h-2 md:h-3"}`}>
                     {/* Main progress bar - only show positive progress */}
                     {(assigned + rollover) > 0 && (
-                        <div 
+                        <div
                             className="rounded h-full bg-green will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
                             style={{
-                                width: goal > 0 
-                                    ? `${Math.max(Math.min(((assigned + rollover) / goal), 1), 0) * 100}%` 
+                                width: goal > 0
+                                    ? `${Math.max(Math.min(((assigned + rollover) / goal), 1), 0) * 100}%`
                                     : '100%'
                             }}
                         />
@@ -270,7 +274,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
 
                     {/* Negative indicator - show red bar from left when assigned is negative */}
                     {(assigned + rollover) < 0 && goal > 0 && (
-                        <div 
+                        <div
                             className="rounded h-full bg-reddy/60 will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0"
                             style={{
                                 width: `${Math.min(Math.abs((assigned + rollover) / goal), 1) * 100}%`,
@@ -281,16 +285,15 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
 
                     {/* Spent overlay - adjusted for negative values */}
                     {spent > 0 && (
-                        <div 
-                            className={`rounded h-full will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0 ${
-                                displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
-                            }`}
+                        <div
+                            className={`rounded h-full will-change-[width] transition-[width] duration-1000 ease-out absolute top-0 left-0 ${displayAvailable >= 0 ? 'bg-gray-500/100' : 'bg-red-700/70'
+                                }`}
                             style={{
-                                width: goal 
-                                ? `${Math.max(Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1), 0) * 100}%` 
-                                : (assigned + rollover > 0
-                                    ? `${Math.max(Math.min(spent / (assigned + rollover), 1), 0) * 100}%`
-                                    : '0%'),
+                                width: goal
+                                    ? `${Math.max(Math.min(Math.min(spent / goal, (assigned + rollover) / goal), 1), 0) * 100}%`
+                                    : (assigned + rollover > 0
+                                        ? `${Math.max(Math.min(spent / (assigned + rollover), 1), 0) * 100}%`
+                                        : '0%'),
                                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)'
                             }}
                         />
@@ -300,7 +303,7 @@ export default function Category({name, assigned, rollover, spent, goalAmount, g
 
             {!isAssigning && (
                 <div className="hidden justify-between items-baseline mt-1">
-                    
+
                     <div className="flex gap-1 items-baseline ml-auto">
                         <span className="text-xs text-white/50">Goal:</span>
                         <p className="text-sm font-medium">{formatCurrency(goal)}</p>
