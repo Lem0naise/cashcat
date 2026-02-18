@@ -257,6 +257,31 @@ select {
   border-radius: 15px;
 }
 
+.glass-card-hover {
+  transition: all 0.3s ease;
+}
+
+.glass-card-hover:hover {
+  background: rgba(186, 194, 255, 0.15);
+  border: 1px solid rgba(186, 194, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(186, 194, 255, 0.15);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #bac2ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-green {
+  background: linear-gradient(135deg, #84D684 0%, #246644 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .left-envelope-card {
   background-color: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
