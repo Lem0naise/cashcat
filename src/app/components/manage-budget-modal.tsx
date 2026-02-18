@@ -3,11 +3,12 @@
 import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group } from '@/types/supabase';
+import { useTransactions } from '@/app/hooks/useTransactions';
 
 type ManageBudgetModalProps = {
     isOpen: boolean;
@@ -21,6 +22,7 @@ type WizardGroup = {
     id: string; // temp client-side id
     name: string;
     categories: WizardCategory[];
+    ratio?: number;
 };
 
 type WizardCategory = {
@@ -29,55 +31,55 @@ type WizardCategory = {
     goal: string;
 };
 
-const TEMPLATES: { label: string; groups: { name: string; categories: string[] }[] }[] = [
+const TEMPLATES: { label: string; groups: { name: string; categories: string[]; ratio: number }[] }[] = [
     {
         label: 'Student',
         groups: [
-            { name: 'Fixed Costs', categories: ['Rent / Halls', 'Tuition Fees', 'Phone Bill', 'Utilities '] },
-            { name: 'Essentials', categories: ['Supplies', 'Tech', 'Laundry'] },
-            { name: 'Living', categories: ['Groceries', 'Toiletries', 'Campus Lunch', 'Coffee'] },
-            { name: 'Social', categories: ['Nights Out', 'Society Memberships', 'Subscriptions', 'Clothing'] },
-            { name: 'Transport', categories: ['Bus Pass', 'Uber / Taxi', 'Travel Home'] },
+            { name: 'Fixed Costs', categories: ['Rent / Halls', 'Tuition Fees', 'Phone Bill', 'Utilities '], ratio: 0.50 },
+            { name: 'Essentials', categories: ['Supplies', 'Tech', 'Laundry'], ratio: 0.10 },
+            { name: 'Living', categories: ['Groceries', 'Toiletries', 'Campus Lunch', 'Coffee'], ratio: 0.20 },
+            { name: 'Social', categories: ['Nights Out', 'Society Memberships', 'Subscriptions', 'Clothing'], ratio: 0.15 },
+            { name: 'Transport', categories: ['Bus Pass', 'Uber / Taxi', 'Travel Home'], ratio: 0.05 },
         ],
     },
     {
         label: 'Young Professional',
         groups: [
-            { name: 'Home', categories: ['Rent', 'Council Tax', 'Electric & Gas', 'Water', 'Internet'] },
-            { name: 'Food & Drink', categories: ['Groceries', 'Work Lunches', 'Dining Out', 'Household Supplies'] },
-            { name: 'Getting Around', categories: ['Car Payment / Lease', 'Fuel', 'Car Insurance', 'Public Transport'] },
-            { name: 'Personal', categories: ['Gym / Wellness', 'Subscriptions', 'Hobbies', 'Personal Care'] },
-            { name: 'Financial Goals', categories: ['Emergency Fund', 'Lisa / ISA', 'Student Loan Repayment'] },
+            { name: 'Home', categories: ['Rent', 'Council Tax', 'Electric & Gas', 'Water', 'Internet'], ratio: 0.45 },
+            { name: 'Food & Drink', categories: ['Groceries', 'Work Lunches', 'Dining Out', 'Household Supplies'], ratio: 0.15 },
+            { name: 'Getting Around', categories: ['Car Payment / Lease', 'Fuel', 'Car Insurance', 'Public Transport'], ratio: 0.10 },
+            { name: 'Personal', categories: ['Gym / Wellness', 'Subscriptions', 'Hobbies', 'Personal Care'], ratio: 0.10 },
+            { name: 'Financial Goals', categories: ['Emergency Fund', 'Lisa / ISA', 'Student Loan Repayment'], ratio: 0.20 },
         ],
     },
     {
         label: 'Family / Homeowner',
         groups: [
-            { name: 'Housing', categories: ['Mortgage', 'Property Tax / Rates', 'Home Insurance', 'Utilities', 'Home Maintenance'] },
-            { name: 'Family', categories: ['Childcare / School Fees', 'Kids Activities / Clubs', 'Clothing / Uniforms', 'Pocket Money'] },
-            { name: 'Food & Consumables', categories: ['Supermarket Shop', 'School Lunches', 'Pet Food / Care', 'Takeaways'] },
-            { name: 'Health', categories: ['Life Insurance', 'Health Insurance', 'Pharmacy / Medical', 'Dental'] },
-            { name: 'Transport', categories: ['Car Finance', 'Fuel', 'Service & MOT', 'Parking / Tolls'] },
+            { name: 'Housing', categories: ['Mortgage', 'Property Tax / Rates', 'Home Insurance', 'Utilities', 'Home Maintenance'], ratio: 0.40 },
+            { name: 'Family', categories: ['Childcare / School Fees', 'Kids Activities / Clubs', 'Clothing / Uniforms', 'Pocket Money'], ratio: 0.20 },
+            { name: 'Food & Consumables', categories: ['Supermarket Shop', 'School Lunches', 'Pet Food / Care', 'Takeaways'], ratio: 0.15 },
+            { name: 'Health', categories: ['Life Insurance', 'Health Insurance', 'Pharmacy / Medical', 'Dental'], ratio: 0.05 },
+            { name: 'Transport', categories: ['Car Finance', 'Fuel', 'Service & MOT', 'Parking / Tolls'], ratio: 0.10 },
         ],
     },
     {
         label: 'Debt Crusher',
         groups: [
-            { name: 'The Four Walls', categories: ['Rent / Mortgage', 'Utilities', 'Basic Groceries', 'Transport to Work'] },
-            { name: 'Debt Payments', categories: ['Credit Card 1', 'Credit Card 2', 'Personal Loan', 'Overdraft Payoff'] },
-            { name: 'Insurance & Tax', categories: ['Council Tax', 'Health / Life Insurance', 'Car Insurance'] },
-            { name: 'Modest Lifestyle', categories: ['Internet / Phone', 'Fun', 'Miscellaneous Buffer'] },
-            { name: 'Emergency Fund', categories: ['Starter Emergency Fund (Savings)'] },
+            { name: 'The Four Walls', categories: ['Rent / Mortgage', 'Utilities', 'Basic Groceries', 'Transport to Work'], ratio: 0.60 },
+            { name: 'Debt Payments', categories: ['Credit Card 1', 'Credit Card 2', 'Personal Loan', 'Overdraft Payoff'], ratio: 0.30 },
+            { name: 'Insurance & Tax', categories: ['Council Tax', 'Health / Life Insurance', 'Car Insurance'], ratio: 0.05 },
+            { name: 'Modest Lifestyle', categories: ['Internet / Phone', 'Fun', 'Miscellaneous Buffer'], ratio: 0.03 },
+            { name: 'Emergency Fund', categories: ['Starter Emergency Fund (Savings)'], ratio: 0.02 },
         ],
     },
     {
         label: 'Freelancer / Gig Worker',
         groups: [
-            { name: 'Business Obligations', categories: ['Tax Set Aside (25-30%)', 'Software / Tools', 'Accountant Fees', 'Workspace Costs'] },
-            { name: 'Personal Basics', categories: ['Rent / Mortgage', 'Utilities', 'Groceries', 'Phone & Internet'] },
-            { name: 'Health & Wealth', categories: ['Private Pension', 'Health Insurance', 'Emergency Fund (3-6 Months)'] },
-            { name: 'Transport', categories: ['Business Travel', 'Personal Fuel', 'Vehicle Maintenance'] },
-            { name: 'Lifestyle', categories: ['Dining Out', 'Entertainment', 'Holiday Fund', 'Personal Shopping'] },
+            { name: 'Business Obligations', categories: ['Tax Set Aside (25-30%)', 'Software / Tools', 'Accountant Fees', 'Workspace Costs'], ratio: 0.30 },
+            { name: 'Personal Basics', categories: ['Rent / Mortgage', 'Utilities', 'Groceries', 'Phone & Internet'], ratio: 0.40 },
+            { name: 'Health & Wealth', categories: ['Private Pension', 'Health Insurance', 'Emergency Fund (3-6 Months)'], ratio: 0.15 },
+            { name: 'Transport', categories: ['Business Travel', 'Personal Fuel', 'Vehicle Maintenance'], ratio: 0.05 },
+            { name: 'Lifestyle', categories: ['Dining Out', 'Entertainment', 'Holiday Fund', 'Personal Shopping'], ratio: 0.10 },
         ],
     },
 ];
@@ -98,14 +100,81 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
     const [newGroupName, setNewGroupName] = useState('');
     const [saving, setSaving] = useState(false);
 
+    // Fetch transactions for historical insights
+    const { data: transactions = [] } = useTransactions();
+
+    const historicalStats = useMemo(() => {
+        const incomeMonths = new Set<string>();
+        const spendMonths = new Set<string>();
+        let totalIncome = 0;
+        let totalSpend = 0;
+
+        transactions.forEach(t => {
+            const date = new Date(t.date);
+            const key = `${date.getFullYear()}-${date.getMonth()}`;
+
+            if (t.type === 'income') {
+                incomeMonths.add(key);
+                totalIncome += t.amount;
+            } else if (t.type === 'payment') {
+                spendMonths.add(key);
+                totalSpend += t.amount; // assuming payment is positive amount in DB
+            }
+        });
+
+        const avgIncome = totalIncome / Math.max(1, incomeMonths.size);
+        const avgSpend = totalSpend / Math.max(1, spendMonths.size);
+
+        return { avgIncome, avgSpend, hasData: transactions.length > 0 };
+    }, [transactions]);
+
+    // New: Monthly income for auto-distribution
+    const [monthlyIncome, setMonthlyIncome] = useState<string>('');
+    const [incomeLocked, setIncomeLocked] = useState(false);
+
     const applyTemplate = (tpl: typeof TEMPLATES[0]) => {
         const groups: WizardGroup[] = tpl.groups.map(g => ({
             id: uid(),
             name: g.name,
             categories: g.categories.map(c => ({ id: uid(), name: c, goal: '' })),
+            ratio: g.ratio // Store the ratio for later distribution
         }));
         setWizardGroups(groups);
+        setWizardGroups(groups);
         setStep(3);
+    };
+
+    const distributeIncome = (incomeStr: string) => {
+        const income = parseFloat(incomeStr);
+        if (isNaN(income) || income <= 0) return;
+
+        setWizardGroups(prev => prev.map(group => {
+            // If group has a ratio, calculate its share
+            if (group.ratio && group.categories.length > 0) {
+                const groupTotal = income * group.ratio;
+                const perCategory = (groupTotal / group.categories.length).toFixed(2);
+
+                return {
+                    ...group,
+                    categories: group.categories.map(cat => ({ ...cat, goal: perCategory }))
+                };
+            }
+            return group;
+        }));
+    };
+
+    const handleIncomeChange = (val: string) => {
+        setMonthlyIncome(val);
+        // Removed auto-distribution on every keystroke
+    };
+
+    const handleAutofill = () => {
+        distributeIncome(monthlyIncome);
+        setIncomeLocked(true);
+    };
+
+    const handleEditIncome = () => {
+        setIncomeLocked(false);
     };
 
     const addGroup = () => {
@@ -365,6 +434,56 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                             </p>
                         </div>
 
+                        {/* Monthly Income Input for Auto-Distribution */}
+                        {/* Monthly Income Input for Auto-Distribution */}
+                        <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-4">
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-sm font-medium text-white/90">
+                                    Est. Monthly Income / Expenses
+                                </label>
+                            </div>
+                            <div className="flex gap-3 items-center">
+                                <div className="flex-1 relative">
+                                    <MoneyInput
+                                        value={monthlyIncome}
+                                        onChange={handleIncomeChange}
+                                        placeholder="0.00"
+                                        currencySymbol={true}
+                                        disabled={incomeLocked}
+                                        className={`bg-black/20 border-white/[.15] focus:border-green ${incomeLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    />
+                                </div>
+                                <button
+                                    onClick={incomeLocked ? handleEditIncome : handleAutofill}
+                                    className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${incomeLocked
+                                        ? 'border-white/20 text-white/70 hover:bg-white/[.05] hover:text-white'
+                                        : 'border-green/20 bg-green/10 text-green hover:bg-green/20'
+                                        }`}
+                                >
+                                    {incomeLocked ? 'Edit' : 'Autofill'}
+                                </button>
+                            </div>
+                            <p className="text-xs text-white/40 mt-2">
+                                {incomeLocked
+                                    ? 'Income locked. Categories have been auto-filled.'
+                                    : 'Enter your total income and click Autofill to distribute it across groups.'}
+                            </p>
+                        </div>
+
+                        {/* Historical Insights */}
+                        {historicalStats.hasData && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
+                                    <p className="text-sm font-bold text-green">£{historicalStats.avgIncome.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
+                                    <p className="text-sm font-bold text-white">£{historicalStats.avgSpend.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {wizardGroups.length === 0 && (
                             <div className="text-center py-8 text-white/40 text-sm">
                                 No groups yet. Add one below to get started.
@@ -403,7 +522,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                                                     placeholder="Category name"
                                                     className="flex-1 text-sm bg-white/[.04] border border-white/[.08] focus:border-green/40 rounded-lg px-2 py-1.5 focus:outline-none transition-colors placeholder-white/30"
                                                 />
-                                                <div className="w-24 flex-shrink-0">
+                                                <div className="w-24 flex-shrink-0 flex flex-col items-end">
                                                     <MoneyInput
                                                         value={cat.goal}
                                                         onChange={v => updateCategory(group.id, cat.id, 'goal', v)}
@@ -412,6 +531,11 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                                                         className="text-xs"
                                                         inline={true}
                                                     />
+                                                    {(() => {
+                                                        // This part is in Wizard, no category IDs yet to match history easily
+                                                        // So we skip per-category stats here unless we do name matching which is unreliable
+                                                        return null;
+                                                    })()}
                                                 </div>
                                                 <button
                                                     onClick={() => removeCategory(group.id, cat.id)}
@@ -565,6 +689,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
         timeframe: 'monthly' as const,
     });
 
+    // Fetch transactions for stats comparison
+    const { data: transactions = [], isLoading: loadingTransactions } = useTransactions();
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setHideBudgetValues(localStorage.getItem('hideBudgetValues') === 'true');
@@ -606,6 +733,56 @@ function EditMode({ onClose }: { onClose: () => void }) {
     }, []);
 
     useEffect(() => { setError(''); }, [activeTab]);
+
+    const stats = useMemo(() => {
+        const totalGoals = categories.reduce((sum, cat) => sum + (cat.goal || 0), 0);
+
+        const months = new Set();
+        const incomeMonths = new Set();
+        let totalSpend = 0;
+        let totalIncome = 0;
+
+        // Category specific stats
+        const categoryStats = new Map<string, number>();
+
+        transactions.forEach(t => {
+            const date = new Date(t.date);
+            const key = `${date.getFullYear()}-${date.getMonth()}`;
+
+            if (t.type === 'payment') {
+                months.add(key);
+                totalSpend += t.amount;
+
+                // Track category spend
+                if (t.category_id) {
+                    categoryStats.set(t.category_id, (categoryStats.get(t.category_id) || 0) + t.amount);
+                }
+            } else if (t.type === 'income') {
+                incomeMonths.add(key);
+                totalIncome += t.amount;
+            }
+        });
+
+        const numMonths = Math.max(1, months.size);
+        const numIncomeMonths = Math.max(1, incomeMonths.size);
+        const avgMonthlySpend = -(totalSpend / numMonths);
+        const avgMonthlyIncome = totalIncome / numIncomeMonths;
+
+        // Calculate avg per category
+        const categoryAverages = new Map<string, number>();
+        categoryStats.forEach((amount, catId) => {
+            categoryAverages.set(catId, amount / numMonths);
+        });
+
+        return {
+            totalGoals,
+            avgMonthlySpend,
+            avgMonthlyIncome,
+            numMonths,
+            categoryAverages
+        };
+    }, [categories, transactions]);
+
 
     const createGroup = async (name: string) => {
         await toast.promise(
@@ -716,6 +893,31 @@ function EditMode({ onClose }: { onClose: () => void }) {
                 ) : (
                     <div className="space-y-4">
                         {error && <div className="bg-reddy/20 text-reddy p-3 rounded-lg text-sm mb-4">{error}</div>}
+
+                        {/* Budget vs Expenses Summary for Categories Tab */}
+                        {activeTab === 'categories' && !loadingTransactions && (
+                            <div className="flex sm:flex-row flex-col gap-2 mb-6">
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goal</p>
+                                    <p className="text-xl font-bold text-green">£{stats.totalGoals.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
+                                    <p className="text-xl font-bold text-white">£{stats.avgMonthlyIncome.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Spend</p>
+                                    <p className="text-xl font-bold text-reddy">£{stats.avgMonthlySpend.toFixed(2)}</p>
+                                    {/* Over/Under spending indicator */}
+                                    <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
+                                        {stats.avgMonthlySpend > stats.totalGoals
+                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over`
+                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {activeTab === 'settings' ? (
                             <div className="space-y-6">
@@ -991,11 +1193,11 @@ export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = fals
 
     return (
         <div
-            className={`fixed inset-0 bg-black md:bg-black/70 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out_forwards]' : 'animate-[fadeIn_0.2s_ease-out]'}`}
+            className={`fixed inset-0 bg-black md:bg-black/60 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out_forwards]' : 'animate-[fadeIn_0.2s_ease-out]'}`}
             onClick={handleBackdropClick}
         >
             <div
-                className={`relative bg-[#111] md:bg-white/[.09] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'}`}
+                className={`relative bg-black md:bg-black/[.95] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'}`}
             >
                 {isOnboarding ? (
                     <OnboardingWizard onClose={handleClose} />
