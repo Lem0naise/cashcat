@@ -737,48 +737,65 @@ function EditMode({ onClose }: { onClose: () => void }) {
     const stats = useMemo(() => {
         const totalGoals = categories.reduce((sum, cat) => sum + (cat.goal || 0), 0);
 
-        const months = new Set();
         const incomeMonths = new Set();
-        let totalSpend = 0;
         let totalIncome = 0;
 
-        // Category specific stats
+        // 1. Collect all transaction months for payments
+        const paymentMonths = new Set<string>();
+        transactions.forEach(t => {
+            if (t.type === 'payment') {
+                const date = new Date(t.date);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                paymentMonths.add(key);
+            }
+        });
+
+        // 2. Sort months and take the last 3
+        const sortedMonths = Array.from(paymentMonths).sort();
+        const last3Months = new Set(sortedMonths.slice(-4, -1));
+
+        // 3. Calculate spend based on last 3 months
+        let totalSpendLast3Months = 0;
+        // Category specific stats (last 3 months)
         const categoryStats = new Map<string, number>();
 
         transactions.forEach(t => {
             const date = new Date(t.date);
-            const key = `${date.getFullYear()}-${date.getMonth()}`;
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
             if (t.type === 'payment') {
-                months.add(key);
-                totalSpend += t.amount;
-
-                // Track category spend
-                if (t.category_id) {
-                    categoryStats.set(t.category_id, (categoryStats.get(t.category_id) || 0) + t.amount);
+                // Only include if in last 3 months
+                if (last3Months.has(key)) {
+                    totalSpendLast3Months += t.amount;
+                    // Track category spend
+                    if (t.category_id) {
+                        categoryStats.set(t.category_id, (categoryStats.get(t.category_id) || 0) + t.amount);
+                    }
                 }
             } else if (t.type === 'income') {
+                // Income uses all history as base (or could do 3 months too, usually cleaner to use all for income avg)
                 incomeMonths.add(key);
                 totalIncome += t.amount;
             }
         });
 
-        const numMonths = Math.max(1, months.size);
+        const numMonthsForSpend = Math.max(1, last3Months.size);
         const numIncomeMonths = Math.max(1, incomeMonths.size);
-        const avgMonthlySpend = -(totalSpend / numMonths);
+
+        const avgMonthlySpend = -(totalSpendLast3Months / numMonthsForSpend);
         const avgMonthlyIncome = totalIncome / numIncomeMonths;
 
         // Calculate avg per category
         const categoryAverages = new Map<string, number>();
         categoryStats.forEach((amount, catId) => {
-            categoryAverages.set(catId, amount / numMonths);
+            categoryAverages.set(catId, -(amount / numMonthsForSpend)); // Convert to positive for display
         });
 
         return {
             totalGoals,
             avgMonthlySpend,
             avgMonthlyIncome,
-            numMonths,
+            numMonths: numMonthsForSpend,
             categoryAverages
         };
     }, [categories, transactions]);
@@ -893,26 +910,29 @@ function EditMode({ onClose }: { onClose: () => void }) {
                 ) : (
                     <div className="space-y-4">
                         {error && <div className="bg-reddy/20 text-reddy p-3 rounded-lg text-sm mb-4">{error}</div>}
-
+                        {/* 
+                        Todo, only count 'frequent spender' categories here, including when showing if each category in Category.tsx is over or under */}
                         {/* Budget vs Expenses Summary for Categories Tab */}
                         {activeTab === 'categories' && !loadingTransactions && (
                             <div className="flex sm:flex-row flex-col gap-2 mb-6">
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goal</p>
-                                    <p className="text-xl font-bold text-green">£{stats.totalGoals.toFixed(2)}</p>
-                                </div>
+
                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
                                     <p className="text-xl font-bold text-white">£{stats.avgMonthlyIncome.toFixed(2)}</p>
                                 </div>
                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Spend</p>
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
+                                    <p className="text-xl font-bold text-green">£{stats.totalGoals.toFixed(2)}</p>
+                                </div>
+
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
                                     <p className="text-xl font-bold text-reddy">£{stats.avgMonthlySpend.toFixed(2)}</p>
                                     {/* Over/Under spending indicator */}
                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
                                         {stats.avgMonthlySpend > stats.totalGoals
-                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over`
-                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under`
+                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goal`
+                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goal`
                                         }
                                     </p>
                                 </div>
@@ -1024,8 +1044,28 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                         </div>
                                                     ) : (
                                                         <>
-                                                            <div>
-                                                                <h4 className="font-medium text-lg text-green">{group.name}</h4>
+                                                            <div className="flex-1">
+                                                                <div className="flex items-baseline gap-3">
+                                                                    <h4 className="font-medium text-lg text-green">{group.name}</h4>
+                                                                    {(() => {
+                                                                        const groupGoal = groupCategories.reduce((sum, c) => sum + (c.goal || 0), 0);
+                                                                        const groupAvgSpend = groupCategories.reduce((sum, c) => sum + (stats.categoryAverages.get(c.id) || 0), 0);
+
+                                                                        if (groupGoal > 0) {
+                                                                            const diff = groupAvgSpend - groupGoal;
+                                                                            // Tolerance of 1 to avoid rounding noise
+                                                                            if (Math.abs(diff) > 1) {
+                                                                                const isOver = diff > 0;
+                                                                                return (
+                                                                                    <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
+                                                                                        £{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
+                                                                                    </span>
+                                                                                );
+                                                                            }
+                                                                        }
+                                                                        return null;
+                                                                    })()}
+                                                                </div>
                                                                 <p className="text-sm text-white/50">{groupCategories.length} categories</p>
                                                             </div>
                                                             <div className="flex items-center gap-2">
@@ -1128,8 +1168,29 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                 ) : (
                                                                     <div className="flex items-center justify-between">
                                                                         <div>
-                                                                            <span className="block font-medium">{category.name}</span>
-                                                                            <span className="text-sm text-white/50">Goal: £{category.goal || 0}</span>
+                                                                            <div className="flex items-baseline gap-2">
+                                                                                <span className="block font-medium">{category.name}</span>
+                                                                                {(() => {
+                                                                                    const goal = category.goal || 0;
+                                                                                    const avg = stats.categoryAverages.get(category.id) || 0;
+                                                                                    if (goal > 0) {
+                                                                                        const diff = avg - goal;
+                                                                                        if (Math.abs(diff) > 1) {
+                                                                                            const isOver = diff > 0;
+                                                                                            return (
+                                                                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${isOver ? 'text-reddy' : 'text-green'}`}>
+                                                                                                    {isOver ? 'Over' : 'Under'}
+                                                                                                </span>
+                                                                                            );
+                                                                                        }
+                                                                                    }
+                                                                                    return null;
+                                                                                })()}
+                                                                            </div>
+                                                                            <div className="flex gap-3 text-sm text-white/50">
+                                                                                <span>Goal: £{category.goal || 0}</span>
+                                                                                <span>Avg: £{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                                             <button onClick={() => handleEditCategory(category)} className="p-2 rounded-lg hover:bg-white/[.05] text-sm">Edit</button>

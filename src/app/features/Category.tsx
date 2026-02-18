@@ -184,8 +184,8 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
                 {/* Normal view */}
                 <div
                     className={`absolute inset-x-0 transition-all duration-300 ${isAssigning
-                            ? 'opacity-0 translate-y-2 pointer-events-none'
-                            : 'opacity-100 translate-y-0'
+                        ? 'opacity-0 translate-y-2 pointer-events-none'
+                        : 'opacity-100 translate-y-0'
                         }`}
                 >
                     <div className="text-xs md:text-sm text-white/50 mt-0.5 md:mt-1 mb-1 flex w-full justify-between">
@@ -202,8 +202,8 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
                 {/* Assignment mode view */}
                 <div
                     className={`absolute inset-x-0 transition-all duration-300 ${isAssigning
-                            ? 'opacity-100 translate-y-0 delay-150'
-                            : 'opacity-0 -translate-y-2 pointer-events-none'
+                        ? 'opacity-100 translate-y-0 delay-150'
+                        : 'opacity-0 -translate-y-2 pointer-events-none'
                         }`}
                 >
                     <div className={`pb-10 flex items-center justify-between mt-0.5 md:mt-2.5 ${!isAssigning ? 'pointer-events-none' : ''}`}>
