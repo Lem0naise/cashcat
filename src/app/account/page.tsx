@@ -153,54 +153,7 @@ export default function Account() {
                             </div>
                         </div>
 
-                        {(!isPWA && !isNative) && (
-                            isInstallable ? (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
-                                    <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
-                                    <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access.</p>
-                                    <button
-                                        onClick={promptToInstall}
-                                        className="px-8 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
-                                    >
-                                        Install App
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
-                                    <div className="flex items-center justify-between mb-0">
-                                        <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
-                                        <button
-                                            onClick={toggleInstallInstructions}
-                                            className="p-1 hover:bg-white/[.05] rounded transition-colors"
-                                            aria-label={isInstallDismissed ? "Show install instructions" : "Hide install instructions"}
-                                        >
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path
-                                                    d={isInstallDismissed ? "M9 18L15 12L9 6 " : "M15 18L9 12L15 6"}
-                                                    stroke="white"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    className="opacity-70 hover:opacity-100 transition-opacity"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    {!isInstallDismissed && (
-                                        <>
-                                            <p className="text-sm text-white/70 mb-3">
-                                                You can install CashCat as a webapp for quick access:
-                                            </p>
-                                            <ul className="text-sm text-white/70 mb-3 space-y-1 list-disc list-inside">
-                                                <li><strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
-                                                <li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li><strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
-                                            </ul>
-                                        </>
-                                    )}
-                                </div>
-                            )
-                        )}
+
 
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">

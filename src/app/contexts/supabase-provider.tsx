@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '../utils/supabase';
 
 type SupabaseContext = {
@@ -41,6 +42,7 @@ export default function SupabaseProvider({
     }
   });
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Background auth check — updates user if online, no-op if offline
@@ -63,13 +65,17 @@ export default function SupabaseProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
         localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
       } else {
         localStorage.removeItem(USER_CACHE_KEY);
+        // Clear all cached query data so a new user starts fresh
+        if (event === 'SIGNED_OUT') {
+          queryClient.clear();
+        }
       }
       setLoading(false);
     });
