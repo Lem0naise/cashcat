@@ -299,6 +299,7 @@ export default function Landing() {
                     <div className="flex flex-wrap justify-center gap-8 mb-8 text-sm font-medium text-white/60">
                         <Link href="/about" className="hover:text-green transition-colors">About Us</Link>
                         <Link href="/learn" className="hover:text-green transition-colors">How it Works</Link>
+                        <Link href="/updates" className="hover:text-green transition-colors">Changelog</Link>
                         <Link href="/docs" className="hover:text-green transition-colors">Documentation</Link>
                         <Link href="/terms" className="hover:text-green transition-colors">Terms & Privacy</Link>
                     </div>

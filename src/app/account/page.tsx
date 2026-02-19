@@ -13,6 +13,7 @@ import { createClient } from '../utils/supabase';
 import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 import { Capacitor } from '@capacitor/core';
+import { currentVersion } from '../../lib/changelog';
 
 
 export default function Account() {
@@ -245,18 +246,23 @@ export default function Account() {
                         {/* Patch Notes*/}
                         {/*This is the CashCat semantic version number. It should be updated with each update.*/}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold">Update Notes</h2>
+                                <Link href="/updates" className="text-sm text-green hover:underline">
+                                    View all updates
+                                </Link>
+                            </div>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.10.2</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">{currentVersion.version}</span>. The latest features include:
                                 </p>
-                                <ul className="list-disc ml-4">
-                                    <li>New and improved stats screen</li>
-                                    <li>A native Android app</li>
-                                    <li>A publicly accessible RESTful API</li>
-                                    <li>New and improved caching for snappy performance</li>
-                                    <li>The ability to 'transfer' money between bank accounts</li>
-                                    <li>Routine bug fixes as always</li>
+                                <ul className="list-disc ml-4 space-y-1">
+                                    {currentVersion.features?.map((feature, i) => (
+                                        <li key={i}>{feature}</li>
+                                    ))}
+                                    {currentVersion.bugfixes?.map((fix, i) => (
+                                        <li key={`fix-${i}`}>{fix}</li>
+                                    ))}
                                 </ul>
                             </div>
                         </div>
