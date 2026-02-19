@@ -13,6 +13,7 @@ import { createClient } from '../utils/supabase';
 import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 import { Capacitor } from '@capacitor/core';
+import { currentVersion } from '../../lib/changelog';
 
 
 export default function Account() {
@@ -153,54 +154,7 @@ export default function Account() {
                             </div>
                         </div>
 
-                        {(!isPWA && !isNative) && (
-                            isInstallable ? (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
-                                    <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
-                                    <p className="text-sm text-white/70 mb-3">Install CashCat as an app for quick access.</p>
-                                    <button
-                                        onClick={promptToInstall}
-                                        className="px-8 py-3 bg-white/[.05] text-white/90 font-medium rounded-lg hover:bg-white/[.08] transition-all"
-                                    >
-                                        Install App
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="mb-6 p-4 bg-white/[.02] rounded-lg border-b-4 xl:hidden">
-                                    <div className="flex items-center justify-between mb-0">
-                                        <h2 className="text-lg font-semibold mb-4">Install CashCat</h2>
-                                        <button
-                                            onClick={toggleInstallInstructions}
-                                            className="p-1 hover:bg-white/[.05] rounded transition-colors"
-                                            aria-label={isInstallDismissed ? "Show install instructions" : "Hide install instructions"}
-                                        >
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path
-                                                    d={isInstallDismissed ? "M9 18L15 12L9 6 " : "M15 18L9 12L15 6"}
-                                                    stroke="white"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    className="opacity-70 hover:opacity-100 transition-opacity"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    {!isInstallDismissed && (
-                                        <>
-                                            <p className="text-sm text-white/70 mb-3">
-                                                You can install CashCat as a webapp for quick access:
-                                            </p>
-                                            <ul className="text-sm text-white/70 mb-3 space-y-1 list-disc list-inside">
-                                                <li><strong>Safari (iOS):</strong> Tap the share button → "Add to Home Screen"</li>
-                                                <li><strong>Safari (Mac):</strong> File menu → "Add to Dock"</li>
-                                                <li><strong>Firefox / Chrome: </strong> Menu (⋯) → "Install" or "Add to Home Screen"</li>
-                                            </ul>
-                                        </>
-                                    )}
-                                </div>
-                            )
-                        )}
+
 
                         {/* Discord Account */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
@@ -292,18 +246,23 @@ export default function Account() {
                         {/* Patch Notes*/}
                         {/*This is the CashCat semantic version number. It should be updated with each update.*/}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <h2 className="text-lg font-semibold mb-4">Update Notes</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold">Update Notes</h2>
+                                <Link href="/updates" className="text-sm text-green hover:underline">
+                                    View all updates
+                                </Link>
+                            </div>
                             <div className="flex flex-col gap-4 text-sm text-white/70">
                                 <p className="">
-                                    You are on CashCat <span className="text-green font-medium">0.10.0</span>. The latest features include:
+                                    You are on CashCat <span className="text-green font-medium">{currentVersion.version}</span>. The latest features include:
                                 </p>
-                                <ul className="list-disc ml-4">
-                                    <li>New and improved stats screen</li>
-                                    <li>A native Android app</li>
-                                    <li>A publicly accessible RESTful API</li>
-                                    <li>New and improved caching for snappy performance</li>
-                                    <li>The ability to 'transfer' money between bank accounts</li>
-                                    <li>Routine bug fixes as always</li>
+                                <ul className="list-disc ml-4 space-y-1">
+                                    {currentVersion.features?.map((feature, i) => (
+                                        <li key={i}>{feature}</li>
+                                    ))}
+                                    {currentVersion.bugfixes?.map((fix, i) => (
+                                        <li key={`fix-${i}`}>{fix}</li>
+                                    ))}
                                 </ul>
                             </div>
                         </div>

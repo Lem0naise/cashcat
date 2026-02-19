@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Gabarito } from "next/font/google";
 import { Providers } from './providers';
+import { SyncInitializer } from './components/sync-initializer';
 import SupabaseProvider from './contexts/supabase-provider';
 import OfflineBadge from './components/OfflineBadge';
 import "./globals.css";
@@ -83,6 +84,7 @@ export default function RootLayout({
         <Providers>
           <SupabaseProvider>
             <OfflineBadge />
+            <SyncInitializer />
             {children}
           </SupabaseProvider>
         </Providers>

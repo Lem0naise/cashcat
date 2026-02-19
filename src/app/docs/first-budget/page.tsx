@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'First Budget - CashCat Docs',
-  description: 'Learn how to create your first zero-based budget with CashCat.',
+    title: 'First Budget - CashCat Docs',
+    description: 'Learn how to create your first zero-based budget with CashCat.',
 };
 
 export default function FirstBudget() {
@@ -46,7 +46,7 @@ export default function FirstBudget() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Create Budget Categories</h3>
                             <p className="text-white/70 text-sm md:text-base mb-3 md:mb-4">
-                                Set up categories for your expenses like housing, food, transportation, and entertainment. You can group related categories together. 
+                                Set up categories for your expenses like housing, food, transportation, and entertainment. You can group related categories together.
                             </p>
                             <Link
                                 href="/docs/categories-groups"
@@ -54,7 +54,7 @@ export default function FirstBudget() {
                             >
                                 Learn about recommended Categories & Groups
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -77,7 +77,7 @@ export default function FirstBudget() {
                             >
                                 Learn Zero-Based Budgeting
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -100,7 +100,7 @@ export default function FirstBudget() {
                             >
                                 Go to Budget
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-2 md:w-4 md:h-4">
-                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Link>
                         </div>
@@ -110,7 +110,7 @@ export default function FirstBudget() {
 
             {/* Tips section */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">💡 First Budget Tips</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">First Budget Tips</h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>

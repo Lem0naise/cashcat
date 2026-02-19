@@ -184,9 +184,9 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
         if (confirmModal.type === 'delete') {
             return {
-                title: '⚠️ Delete Account',
-                message: `⚠️ This is not a recommended action. We highly recommend 'closing' the account instead. If you delete "${confirmModal.account.name}", this cannot be undone. The account, together with all transactions and balances, will be deleted from your account forever. This will create inconsistencies in past budgeting, and make it overall more difficult to manage your money.`,
-                confirmText: 'Delete ⚠️',
+                title: 'Delete Account',
+                message: `This is not a recommended action. We highly recommend 'closing' the account instead. If you delete "${confirmModal.account.name}", this cannot be undone. The account, together with all transactions and balances, will be deleted from your account forever. This will create inconsistencies in past budgeting, and make it overall more difficult to manage your money.`,
+                confirmText: 'Delete Account',
             };
         } else if (confirmModal.type === 'reopen') {
             return {
@@ -283,8 +283,8 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                         onClick={() => handleSetDefault(editingAccount)}
                                         disabled={editingAccount.is_default}
                                         className={`w-full p-3 rounded-lg border transition-colors ${editingAccount?.is_default
-                                                ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
-                                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
+                                            ? 'bg-white/5 border-white/10 text-white/50 cursor-not-allowed'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-green'
                                             }`}
                                     >
                                         {editingAccount?.is_default ? 'Already Your Default Account' : 'Set as Default Account'}

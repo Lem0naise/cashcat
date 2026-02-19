@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Transactions - CashCat Docs',
-  description: 'Learn how to track and manage transactions in CashCat.',
+    title: 'Transactions - CashCat Docs',
+    description: 'Learn how to track and manage transactions in CashCat.',
 };
 
 export default function Transactions() {
@@ -18,11 +18,11 @@ export default function Transactions() {
             {/* What are transactions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Understanding Transactions</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What is a Transaction?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        A transaction is any money movement - whether it's spending money (like buying groceries) or 
+                        A transaction is any money movement - whether it's spending money (like buying groceries) or
                         receiving money (like your paycheck). Each transaction should be assigned to a budget category.
                     </p>
                 </div>
@@ -55,7 +55,7 @@ export default function Transactions() {
             {/* Recording transactions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Recording Transactions</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <div className="flex items-start gap-3 md:gap-4">
                         <div className="w-6 h-6 md:w-8 md:h-8 bg-green text-black rounded-full flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0">
@@ -64,7 +64,7 @@ export default function Transactions() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Enter Transaction Details</h3>
                             <p className="text-white/70 text-sm md:text-base">
-                                Record the amount, vendor, and date of your transaction. We recommend adding a description so 
+                                Record the amount, vendor, and date of your transaction. We recommend adding a description so
                                 that you'll remember what it was for later.
                             </p>
                         </div>
@@ -79,7 +79,7 @@ export default function Transactions() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Select Account</h3>
                             <p className="text-white/70 text-sm md:text-base">
-                                Choose which bank account or credit card was used for this transaction. 
+                                Choose which bank account or credit card was used for this transaction.
                                 This keeps your account balances accurate.
                             </p>
                         </div>
@@ -94,7 +94,7 @@ export default function Transactions() {
                         <div className="flex-1">
                             <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Assign to Category</h3>
                             <p className="text-white/70 text-sm md:text-base">
-                                Choose the budget category this transaction belongs to. This is how your 
+                                Choose the budget category this transaction belongs to. This is how your
                                 spending gets tracked against your budget plan.
                             </p>
                         </div>
@@ -105,11 +105,11 @@ export default function Transactions() {
             {/* Transaction tips */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Smart Transaction Habits</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Record Transactions Quickly</h3>
                     <p className="text-white/70 text-sm md:text-base">
-                        Enter transactions as soon as possible after making them. The longer you wait, 
+                        Enter transactions as soon as possible after making them. The longer you wait,
                         the harder it becomes to remember details and categorize accurately. We recommend logging transactions immediately after making them if online or in-store purchases, and if that's not possible, in the evening of the same day.
                     </p>
                 </div>
@@ -117,7 +117,7 @@ export default function Transactions() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Split Complex Transactions</h3>
                     <p className="text-white/70 text-sm md:text-base">
-                        If one purchase covers multiple categories (like buying groceries AND household items at Aldi), 
+                        If one purchase covers multiple categories (like buying groceries AND household items at Aldi),
                         split it into separate transactions for accurate category tracking.
                     </p>
                 </div>
@@ -125,7 +125,7 @@ export default function Transactions() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Include Transfers</h3>
                     <p className="text-white/70 text-sm md:text-base">
-                        Record transfers between accounts (like moving money to savings) as transactions. 
+                        Record transfers between accounts (like moving money to savings) as transactions.
                         This keeps all your account balances accurate in CashCat. If the other account is also in CashCat, the inflow as a 'refund' will cancel out the 'outflow' and it won't affect your budget.
                     </p>
                 </div>
@@ -133,7 +133,7 @@ export default function Transactions() {
 
             {/* Tips section */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">💡 Transaction Tracking Tips</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">Transaction Tracking Tips</h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>

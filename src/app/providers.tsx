@@ -17,8 +17,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        staleTime: 1000 * 60 * 10, // 5 minutes - data is fresh for 5 min
-                        gcTime: 1000 * 60 * 60 * 48, // 24 hours - keep in cache for 24h
+                        staleTime: 1000 * 60 * 10, // 10 minutes - data is fresh for 10 min
+                        gcTime: 1000 * 60 * 60 * 24 * 365, // Never garbage collect - keep in cache indefinitely for offline support
                         retry: 3,
                         refetchOnWindowFocus: false,
                         networkMode: 'offlineFirst',

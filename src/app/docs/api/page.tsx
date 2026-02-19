@@ -308,7 +308,7 @@ export default function ApiDocs() {
                                         <td className="py-2 px-4 font-mono text-green">type</td>
                                         <td className="py-2 px-4">string</td>
                                         <td className="py-2 px-4 text-white/50">No</td>
-                                        <td className="py-2 px-4 text-white/60">'income' or 'expense'. Defaults to 'expense'.</td>
+                                        <td className="py-2 px-4 text-white/60">'income' or 'payment'. Defaults to 'payment'.</td>
                                     </tr>
                                 </tbody>
                             </table>

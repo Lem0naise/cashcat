@@ -52,49 +52,49 @@ export default function DocsLayout({
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 	return (
 		<div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
-			{/* Header */}
-			<header className="sticky top-0 z-30 border-b border-white/10 bg-gray-950">
-				<div className="container min-w-screen px-4 md:pl-4 md:pr-20 py-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							{/* Mobile menu button */}
-							<button
-								onClick={() => setIsMobileMenuOpen(true)}
-								className="md:hidden p-2 text-white/70 hover:text-white"
-							>
-								<svg
-									width="24"
-									height="24"
-									viewBox="0 0 24 24"
-									fill="none"
-								>
-									<path
-										d="M3 12H21M3 6H21M3 18H21"
-										stroke="currentColor"
-										strokeWidth="2"
-										strokeLinecap="round"
-									/>
-								</svg>
-							</button>
-
-							<Link href="/" className="hidden md:flex">
-								<div className="scale-75">
-									<Logo />
-								</div>
-
-							</Link><span className="hidden md:block scale-75 text-7xl"><strong>Docs</strong></span>
-						</div>
-						<div className="flex items-center gap-4">
-							<Link
-								href="/budget"
-								className="px-4 py-2 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-all"
-							>
-								Open CashCat
-							</Link>
-						</div>
+			{/* Navbar */}
+			<nav className="z-50 px-6 py-4 glass-card-blue border-b border-white/5 rounded-none bg-black/20 backdrop-blur-md">
+				<div className="max-w-7xl mx-auto flex items-center justify-between">
+					{/* Mobile menu button */}
+					<button
+						onClick={() => setIsMobileMenuOpen(true)}
+						className="md:hidden p-2 text-white/70 hover:text-white"
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+						>
+							<path
+								d="M3 12H21M3 6H21M3 18H21"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+							/>
+						</svg>
+					</button>
+					<div className="w-32 pl-8 hidden sm:block">
+						<Logo />
+					</div>
+					<div className="flex items-center gap-4">
+						<Link
+							href="/login"
+							className="text-white/80 hover:text-white font-medium transition-colors hidden sm:block"
+						>
+							Log In
+						</Link>
+						<Link
+							href="/signup"
+							className="bg-green text-black px-4 py-2 rounded-lg font-bold hover:bg-green-dark transition-all text-sm"
+						>
+							Get Started
+						</Link>
 					</div>
 				</div>
-			</header>
+			</nav>
+
+
 
 			{/* Mobile sidebar backdrop */}
 			{isMobileMenuOpen && (
@@ -144,8 +144,8 @@ export default function DocsLayout({
 												href={item.href}
 												onClick={() => setIsMobileMenuOpen(false)}
 												className={`block px-3 py-2 rounded-lg text-sm transition-colors ${pathname === item.href
-														? 'bg-green/20 text-green font-medium'
-														: 'text-white/70 hover:text-white hover:bg-white/[.05]'
+													? 'bg-green/20 text-green font-medium'
+													: 'text-white/70 hover:text-white hover:bg-white/[.05]'
 													}`}
 											>
 												{item.name}
@@ -206,8 +206,8 @@ export default function DocsLayout({
 													<Link
 														href={item.href}
 														className={`block px-3 py-2 rounded-lg text-sm transition-colors ${pathname === item.href
-																? 'bg-green/20 text-green font-medium'
-																: 'text-white/70 hover:text-white hover:bg-white/[.05]'
+															? 'bg-green/20 text-green font-medium'
+															: 'text-white/70 hover:text-white hover:bg-white/[.05]'
 															}`}
 													>
 														{item.name}

@@ -461,38 +461,38 @@ export default function Transactions() {
                 onClose={() => setShowExportModal(false)}
                 transactions={transactions}
             />
-            <Toaster
-                containerClassName='mb-[15dvh]'
-                position="bottom-center"
-                toastOptions={{
-                    style: {
-                        background: '#333',
-                        color: '#fff',
-                    },
-                    success: {
-                        iconTheme: {
-                            primary: '#bac2ff',
-                            secondary: '#fff',
-                        },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: '#EF4444',
-                            secondary: '#fff',
-                        },
-                    }
-                }}
-            />
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
+                <Toaster
+                    containerClassName='mb-[15dvh]'
+                    position="bottom-center"
+                    toastOptions={{
+                        style: {
+                            background: '#333',
+                            color: '#fff',
+                        },
+                        success: {
+                            iconTheme: {
+                                primary: '#bac2ff',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            iconTheme: {
+                                primary: '#EF4444',
+                                secondary: '#fff',
+                            },
+                        }
+                    }}
+                />
                 <div className="hidden md:block"><Navbar /></div>
                 <Sidebar />
                 <MobileNav />
 
-                {/*Mobile add transactions*/}
-                <div className="md:hidden flex items-center justify-between mb-0 sticky pt-3 pb-2 top-0 bg-background z-31 px-4 border-b border-white/[.2] min-w-screen">
+                {/* Mobile top bar */}
+                <div className="md:hidden flex items-center justify-between mb-0 sticky pt-8 pb-2 top-0 bg-background z-31 px-4 border-b border-white/[.2] min-w-screen">
                     <div className="flex items-center gap-3">
                         {showMobileSearch ? (
-                            <div className="absolute inset-x-0 top-0 bg-background pt-3 pb-2 px-8 border-b border-white/[.2] z-40 animate-[slideIn_0.2s_ease-out]">
+                            <div className="absolute inset-x-0 top-0 bg-background pt-8 pb-2 px-8 border-b border-white/[.2] z-40 animate-[slideIn_0.2s_ease-out]">
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => { setSearchQuery(''), setShowMobileSearch(false) }}
@@ -764,7 +764,7 @@ export default function Transactions() {
                                 {groupTransactionsByMonth(filteredTransactions.slice(0, visibleCount), filteredTransfers, selectedAccountId).map(monthGroup => (
                                     <div key={monthGroup.monthKey} className={`space-y-4 ${monthGroup.monthKey === 'starting-balance' ? 'mt-8 pt-8 border-t border-white/[.15]' : ''}`}>
                                         {/* Month Header */}
-                                        <div className="flex justify-between items-center sticky top-15 md:top-[8.5rem] bg-background z-28 md:pb-1">
+                                        <div className="flex justify-between items-center sticky top-20 md:top-[8.5rem] bg-background z-28 md:pb-1">
                                             <h2 className="text-lg font-semibold text-white/80">
                                                 {monthGroup.monthName}
                                             </h2>
@@ -779,7 +779,7 @@ export default function Transactions() {
                                         <div className="space-y-6">
                                             {monthGroup.dayGroups.map(group => (
                                                 <div key={group.date} className="space-y-2">
-                                                    <div className="flex justify-between items-center sticky top-22 pt-0 px-3 md:top-[10.5rem] bg-background z-20">
+                                                    <div className="flex justify-between items-center sticky top-26 pt-0 px-3 md:top-[10.5rem] bg-background z-20">
                                                         <h3 className="text-sm font-medium text-white/40">
                                                             {group.date === 'starting-balance' ? 'Starting Balance' : formatDate(group.date)}
                                                         </h3>

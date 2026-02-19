@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Best Practices - CashCat Docs',
-  description: 'Learn budgeting best practices and tips for success with CashCat.',
+    title: 'Best Practices - CashCat Docs',
+    description: 'Learn budgeting best practices and tips for success with CashCat.',
 };
 
 export default function BestPractices() {
@@ -18,22 +18,22 @@ export default function BestPractices() {
             {/* Foundation practices */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Foundation Practices</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Start with Reality, Not Dreams</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Base your first budget on actual spending history, not what you wish you spent. 
+                        Base your first budget on actual spending history, not what you wish you spent.
                         Look at your last 2-3 months of expenses to create realistic category amounts. Don't lie to yourself - there is no need, CashCat is a low-judgment environment. This is for <strong>you</strong>.
                     </p>
                     <div className="bg-green/10 p-3 rounded-lg mt-3">
-                        <p className="text-green text-sm font-medium">💡 It's better to budget £300 for dining out and stick to it than budget £200 and overspend</p>
+                        <p className="text-green text-sm font-medium">It's better to budget £300 for dining out and stick to it than budget £200 and overspend</p>
                     </div>
                 </div>
 
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Pay Yourself First</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Budget for savings and debt payments before discretionary spending. Treat these as 
+                        Budget for savings and debt payments before discretionary spending. Treat these as
                         non-negotiable expenses, just like rent or utilities.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1 mt-3">
@@ -46,7 +46,7 @@ export default function BestPractices() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Build in Flexibility</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Life happens. Include buffer categories for unexpected expenses and don't make your 
+                        Life happens. Include buffer categories for unexpected expenses and don't make your
                         budget so tight that any deviation feels like failure.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1 mt-3">
@@ -60,11 +60,11 @@ export default function BestPractices() {
             {/* Behavioral practices */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Building Good Habits</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Track Spending Immediately</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Record transactions as soon as possible after making them. The longer you wait, 
+                        Record transactions as soon as possible after making them. The longer you wait,
                         the more details you'll forget and the less accurate your budget becomes.
                     </p>
                     <div className="bg-blue/10 p-3 rounded-lg mt-3">
@@ -75,7 +75,7 @@ export default function BestPractices() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Weekly Check-ins</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Schedule a weekly 15-minute budget review. Check your progress, catch any missed 
+                        Schedule a weekly 15-minute budget review. Check your progress, catch any missed
                         transactions, and make small adjustments before problems become big.
                     </p>
                     <ul className="text-white/60 text-sm space-y-1 mt-3">
@@ -89,7 +89,7 @@ export default function BestPractices() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Use the Envelope Method</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Think of each budget category as an envelope with cash. When the envelope is empty, 
+                        Think of each budget category as an envelope with cash. When the envelope is empty,
                         you're done spending in that category (or you need to move money from another envelope).
                     </p>
                 </div>
@@ -98,7 +98,7 @@ export default function BestPractices() {
             {/* Common mistakes */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Avoid These Common Mistakes</h2>
-                
+
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="p-4 md:p-6 glass-card rounded-lg">
                         <h3 className="text-lg font-semibold text-red mb-3">❌ Making It Too Complicated</h3>
@@ -132,7 +132,7 @@ export default function BestPractices() {
 
             {/* Success indicators */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">🎯 Signs of Budgeting Success</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">Signs of Budgeting Success</h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
