@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import TrafficCop from './components/traffic-cop';
 
 export const metadata = {
-    title: 'CashCat - Stop Wondering Where Your Money Went',
+    title: 'CashCat - Give Every Penny a Purpose',
     description: 'The free zero-based budgeting app that gives you total control. Manage your money with confidence.',
     keywords: [
         'budgeting app',
@@ -20,7 +20,7 @@ export const metadata = {
     authors: [{ name: 'Indigo Nolan' }, { name: 'Josh Wilcox' }],
     openGraph: {
         title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Stop wondering where your money went. Tell it where to go with CashCat.',
+        description: 'Give every penny a purpose. Budget easily with CashCat.',
         url: 'https://cashcat.app',
         siteName: 'CashCat',
         locale: 'en_GB',
@@ -37,7 +37,7 @@ export const metadata = {
     twitter: {
         card: 'summary_large_image',
         title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Stop wondering where your money went. Tell it where to go.',
+        description: 'Give every penny a purpose. Budget easily with CashCat.',
         images: ['https://cashcat.app/media/og.png'],
     },
 };
