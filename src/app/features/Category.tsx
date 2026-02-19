@@ -155,12 +155,23 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
 
     return (
         <div
-            className={`relative p-2 md:p-4 border-b-4 border-white/70 flex flex-col bg-white/[.05] rounded-lg cursor-pointer transition-all touch-manipulation ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
+            className={`relative p-2 md:p-4 border-b-4 flex flex-col rounded-lg cursor-pointer transition-all touch-manipulation ${goalType === 'emergency_fund'
+                ? 'bg-amber-500/[.04] border-amber-500/60'
+                : goalType === 'savings'
+                    ? 'bg-sky-500/[.04] border-sky-500/60'
+                    : 'bg-white/[.05] border-white/70'
+                } ${onAssignmentUpdate ? 'hover:bg-white/[.08]' : ''}`}
             onClick={!isAssigning ? handleCardClick : undefined}
         >
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
                     <h3 className="text-sm md:text-lg font-medium leading-tight truncate">{name}</h3>
+                    {goalType === 'emergency_fund' && (
+                        <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">Fund</span>
+                    )}
+                    {goalType === 'savings' && (
+                        <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded-full">Savings</span>
+                    )}
                     {forceFlipMassAssign && underfundedAmount !== undefined && underfundedAmount > 0 && (
                         <span className="flex-shrink-0 text-[10px] md:text-xs font-medium bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                             Needs {formatCurrency(underfundedAmount)}

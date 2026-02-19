@@ -43,6 +43,69 @@ export default function CategoriesGroups() {
                 </div>
             </div>
 
+            {/* Category goal types */}
+            <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Category Goal Types</h2>
+                <p className="text-white/60 text-sm md:text-base mb-4">
+                    Every category has a <strong>goal type</strong> that controls how CashCat tracks your progress against the goal and what
+                    the &quot;Need&quot; / &quot;Extra&quot; labels mean. Set it when creating or editing a category.
+                </p>
+
+                {/* Spending */}
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg border-l-4 border-white/40">
+                    <h3 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-3 flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wide bg-white/10 text-white/70 px-2 py-0.5 rounded-full">Spending</span>
+                        The default - fill and spend
+                    </h3>
+                    <p className="text-white/70 text-sm md:text-base mb-2">
+                        The standard type for any category where you regularly spend money against a monthly limit.
+                        CashCat compares your total funded amount (assigned this month <em>plus</em> any rollover from previous months)
+                        against the goal.
+                    </p>
+                    <ul className="text-white/60 text-sm space-y-1">
+                        <li>• A <strong>/day</strong> figure appears when there&apos;s money left and days remaining in the month</li>
+                        <li>• Underfunded alerts and over/under indicators apply to Spending categories</li>
+                        <li>• Good for: Groceries, Rent, Fuel, Dining Out, Subscriptions, Bills</li>
+                    </ul>
+                </div>
+
+                {/* Savings */}
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg border-l-4 border-sky-500/60">
+                    <h3 className="text-lg md:text-xl font-semibold text-sky-400 mb-2 md:mb-3 flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wide bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-full">Savings</span>
+                        Contribute a fixed amount each month
+                    </h3>
+                    <p className="text-white/70 text-sm md:text-base mb-2">
+                        Designed for categories where you build up a balance over time — holiday funds, car maintenance, annual bills.
+                        The key difference: <strong>Need / Extra is calculated against this month&apos;s assignment only</strong>, not the total balance.
+                    </p>
+                    <p className="text-white/60 text-sm mb-2">
+                        Example: goal is £20/month. You already have £500 saved in the category. If you assign £30 this month, it shows <strong>Extra £10</strong> — not £490 extra.
+                    </p>
+                    <ul className="text-white/60 text-sm space-y-1">
+                        <li>• Not counted in spending comparisons or over/under indicators</li>
+                        <li>• Good for: Holiday Fund, Car Maintenance, Christmas Savings, Annual Bills</li>
+                    </ul>
+                </div>
+
+                {/* Emergency Fund */}
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg border-l-4 border-amber-500/60">
+                    <h3 className="text-lg md:text-xl font-semibold text-amber-400 mb-2 md:mb-3 flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Fund</span>
+                        Build to a target and keep it there
+                    </h3>
+                    <p className="text-white/70 text-sm md:text-base mb-2">
+                        For your emergency fund or any category where the goal is to reach a target balance and maintain it.
+                        Like Spending, progress is measured against the total funded amount (assigned + rollover), so the category shows
+                        as fully funded once you&apos;ve reached the target — and stays that way.
+                    </p>
+                    <ul className="text-white/60 text-sm space-y-1">
+                        <li>• Not counted in spending comparisons or over/under indicators</li>
+                        <li>• Good for: Emergency Fund, Minimum Account Buffer</li>
+                    </ul>
+                </div>
+            </div>
+
             {/* Common group examples */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Common Budget Groups</h2>
