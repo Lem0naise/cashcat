@@ -1,7 +1,7 @@
 import Logo from "../components/logo";
 import Link from 'next/link';
 
-// If change the terms of service, change supabase 'database function' from v1.1
+// If change the terms of service, change supabase 'database function' from v1.2
 
 export const metadata = {
     title: 'Terms - CashCat',
@@ -24,7 +24,7 @@ export default function Terms() {
                 {/* Add this summary section */}
                 <div className="bg-blue-500/[.1] border border-blue-500/[.2] rounded-lg p-6 mb-6 text-white/90">
                     <h2 className="text-xl font-semibold text-green">Quick Summary</h2>
-                    <span className="text-xs text-white/60 mb-3">Effective: October 22, 2025, v1.1</span>
+                    <span className="text-xs text-white/60 mb-3">Effective: February 19, 2026, v1.2</span>
                     <ul className="space-y-2 text-sm list-disc list-inside">
                         <li>CashCat is a budgeting tool only - we don't handle your real money in any way</li>
                         <li>We only collect your email and any budget data you enter - we don't track you</li>
@@ -40,7 +40,7 @@ export default function Terms() {
 
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Terms of Service</h2>
-                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on October 22nd, 2025.</h3>
+                    <h3 className="text-md mb-3 text-white/70">These Terms of Service were last updated on February 19th, 2026.</h3>
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">Acceptance of Terms</h2>
                         <p>By accessing and using CashCat, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service.</p>
@@ -81,12 +81,12 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">7. Intellectual Property</h2>
-                        <p>CashCat and all related content, features, and functionality are owned by us and are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of our service or software without our express written consent.</p>
+                        <p>CashCat is open-source software. The source code is available under the GNU Affero General Public License v3.0 (AGPL-3.0). You are free to allow copy, modify, and distribute the application under the terms of this license. The full source code is available on our public repository. All original content, branding, and assets remain the property of Indigo Nolan unless otherwise specified.</p>
                     </section>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">8. Service Availability and Modifications</h2>
-                        <p>We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time, without prior notice. We will strive to provide reasonable notice, but this may not always be possible. We are not liable for any interruption or discontinuation of service.</p>
+                        <p>CashCat is operated by an individual developer. We do not guarantee that CashCat will always be available or uninterrupted. We will make all reasonable effort to keep the service online and available. We may modify, suspend, or discontinue the service at any time, without prior notice. We will strive to provide reasonable notice, but this may not always be possible. We are not liable for any interruption or discontinuation of service.</p>
                         <p>
                             In the unlikely event of a data breach that affects your personal information, we will notify you and any applicable supervisory authority within 72 hours of becoming aware of the breach, as required by GDPR. Notification will be sent to your registered email address and will include the nature of the breach, potential consequences, and measures taken to address it.
                         </p>
@@ -110,7 +110,7 @@ export default function Terms() {
 
                 <div className="bg-white/[.02] rounded-lg p-6 space-y-6 text-white/80">
                     <h2 className="text-2xl font-semibold mb-3 text-white">Privacy Policy</h2>
-                    <h2 className="text-md mb-3 text-white/70">This Privacy Policy was last updated on October 22nd, 2025.</h2>
+                    <h2 className="text-md mb-3 text-white/70">This Privacy Policy was last updated on February 19th, 2026.</h2>
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">Data Controller Information</h2>
