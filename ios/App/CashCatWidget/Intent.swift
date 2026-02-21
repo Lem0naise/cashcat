@@ -30,13 +30,24 @@ enum TimePeriod: String, AppEnum {
     var previousDateRange: (start: Date, end: Date) {
         let calendar = Calendar.current
         let current = dateRange
-        let prevMonth = calendar.date(byAdding: .month, value: -1, to: current.start)!
-        let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-        return (prevMonth, end)
+        let currentStartDay = calendar.startOfDay(for: current.start)
+        let currentEndDay = calendar.startOfDay(for: current.end)
+        let elapsedDays = max(1, (calendar.dateComponents([.day], from: currentStartDay, to: currentEndDay).day ?? 0) + 1)
+
+        let prevMonthStart = calendar.date(byAdding: .month, value: -1, to: current.start)!
+        let prevMonthInterval = calendar.dateInterval(of: .month, for: prevMonthStart)!
+        let prevStartDay = calendar.startOfDay(for: prevMonthInterval.start)
+
+        let prevEndCandidate = calendar.date(byAdding: .day, value: elapsedDays - 1, to: prevStartDay) ?? prevStartDay
+        let prevMonthLastDay = calendar.startOfDay(for: prevMonthInterval.end.addingTimeInterval(-1))
+        let prevEndDay = min(prevEndCandidate, prevMonthLastDay)
+        let prevEnd = prevEndDay.addingTimeInterval(86399)
+
+        return (prevStartDay, prevEnd)
     }
 
     var previousLabel: String {
-        "last month"
+        "same days last month"
     }
 }
 

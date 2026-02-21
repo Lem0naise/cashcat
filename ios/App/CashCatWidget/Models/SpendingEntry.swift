@@ -4,6 +4,7 @@ import Foundation
 struct SpendingEntry: TimelineEntry {
     let date: Date
     let totalSpent: Double
+    let balanceChange: Double?
     let dailyAverage: Double
     let periodLabel: String
     let topCategories: [CategorySpending]
@@ -22,6 +23,7 @@ struct SpendingEntry: TimelineEntry {
         SpendingEntry(
             date: Date(),
             totalSpent: 1234.56,
+            balanceChange: 210.44,
             dailyAverage: 41.15,
             periodLabel: "This Month",
             topCategories: [
@@ -41,6 +43,7 @@ struct SpendingEntry: TimelineEntry {
         SpendingEntry(
             date: Date(),
             totalSpent: 0,
+            balanceChange: nil,
             dailyAverage: 0,
             periodLabel: "",
             topCategories: [],
@@ -54,6 +57,7 @@ struct SpendingEntry: TimelineEntry {
         SpendingEntry(
             date: Date(),
             totalSpent: 0,
+            balanceChange: nil,
             dailyAverage: 0,
             periodLabel: periodLabel,
             topCategories: [],
@@ -67,6 +71,7 @@ struct SpendingEntry: TimelineEntry {
         SpendingEntry(
             date: Date(),
             totalSpent: 0,
+            balanceChange: nil,
             dailyAverage: 0,
             periodLabel: "",
             topCategories: [],

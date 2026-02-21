@@ -5,22 +5,25 @@ struct SmallWidgetView: View {
     let entry: SpendingEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(entry.periodLabel)
                 .font(.caption2)
                 .fontWeight(.medium)
                 .foregroundStyle(WidgetColors.textTertiary)
                 .textCase(.uppercase)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
-            Spacer()
+            SpentAmountText(amount: entry.totalSpent, size: .title3)
 
-            SpentAmountText(amount: entry.totalSpent, size: .title2)
-
-            Text("spent")
-                .font(.caption)
+            Text("Spent")
+                .font(.caption2)
                 .foregroundStyle(WidgetColors.textSecondary)
+                .lineLimit(1)
 
-            Spacer()
+            if let balanceChange = entry.balanceChange {
+                BalanceChangeView(change: balanceChange, previousLabel: entry.previousPeriodLabel, compact: true)
+            }
 
             if let change = entry.spendingChange, let prevLabel = entry.previousPeriodLabel {
                 SpendingChangeView(change: change, previousLabel: prevLabel)
@@ -36,9 +39,9 @@ struct SmallWidgetView: View {
                     .foregroundStyle(WidgetColors.textTertiary)
             }
             .lineLimit(1)
-            .fixedSize()
+            .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(12)
     }
 }

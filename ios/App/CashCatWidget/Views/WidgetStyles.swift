@@ -52,28 +52,43 @@ struct SpendingChangeView: View {
     var body: some View {
         let isUp = change >= 0
         let pct = Int(abs(change * 100))
-        let arrow = isUp ? "\u{2191}" : "\u{2193}"
-        let color = isUp ? WidgetColors.orange : WidgetColors.green
+        let direction = isUp ? "higher" : "lower"
+        let color: Color = change > 0 ? WidgetColors.orange : (change < 0 ? WidgetColors.green : WidgetColors.textTertiary)
+        let text = "Spending: \(pct)% \(direction)"
 
         if compact {
-            Text("\(arrow)\(pct)% vs \(previousLabel)")
+            Text(text)
                 .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         } else {
-            HStack(spacing: 4) {
-                Text("\(arrow)\(pct)%")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(color)
-                Text("vs \(previousLabel)")
-                    .font(.caption2)
-                    .foregroundStyle(WidgetColors.textTertiary)
-            }
+            Text(text)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(color)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
         }
+    }
+}
+
+struct BalanceChangeView: View {
+    let change: Double
+    var previousLabel: String? = nil
+    var compact: Bool = false
+
+    var body: some View {
+        let color: Color = change > 0 ? WidgetColors.green : (change < 0 ? WidgetColors.orange : WidgetColors.textTertiary)
+        let text = "Balance: \(formatSignedCurrency(change))"
+
+        Text(text)
+            .font(compact ? .caption2 : .caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 }
 
@@ -111,10 +126,7 @@ struct CategoryBar: View {
     }
 
     private var barColor: Color {
-        if category.isOverBudget {
-            return WidgetColors.orange
-        }
-        return category.hasBudget ? WidgetColors.green : WidgetColors.accent
+        WidgetColors.accent
     }
 
     private var barFraction: Double {
@@ -175,4 +187,16 @@ func formatCurrency(_ value: Double) -> String {
     formatter.currencyCode = "GBP"
     formatter.maximumFractionDigits = value >= 1000 ? 0 : 2
     return formatter.string(from: NSNumber(value: value)) ?? "£0"
+}
+
+func formatSignedCurrency(_ value: Double) -> String {
+    let absValue = abs(value)
+    let sign = value >= 0 ? "+" : "-"
+    return "\(sign)\(formatCurrency(absValue))"
+}
+
+func compactSignedAmount(_ value: Double) -> String {
+    let absValue = abs(value)
+    let sign = value >= 0 ? "+" : "-"
+    return "\(sign)\(compactAmount(absValue))"
 }

@@ -12,10 +12,7 @@
 		D0CFE17A5330482B891E69D2 /* CheckBudgetIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCB703DAAD14A70B79E35A6 /* CheckBudgetIntent.swift */; };
 		53139D19576F45B6AA32BF5A /* CashCatShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606583A1612541B698B568A7 /* CashCatShortcuts.swift */; };
 		B0212223A3934D3EBFF8568E /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155DD28763B14FA6B8C6BCAE /* SpotlightIndexer.swift */; };
-		E700C03C2249488794E05EA9 /* LiveActivityBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774B7944163542E4AC4DB036 /* LiveActivityBridgePlugin.swift */; };
-		11840A6D0ADA446CB6CE2BA0 /* LiveActivityBridgePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 89D657D53C1941F8B2382616 /* LiveActivityBridgePlugin.m */; };
 		214F2762D6ED4E6987E4C3D3 /* AccessoryWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6723BFD6D404EFCBA96B2E7 /* AccessoryWidgetViews.swift */; };
-		9F82362E93924F2EB87DFA58 /* CashCatLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB6A1376E0B431A803308B5 /* CashCatLiveActivity.swift */; };
 		F44B8BB28C1D4C0CB8CBAFFC /* QuickAddControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FE43EA5D2604170BAC35350 /* QuickAddControl.swift */; };
 		6E9EC09C46284A139ABABA8C /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE582F0475D4A6F9DE278BE /* AuthManager.swift */; };
 		1C6EE27E20644C77974D3055 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE582F0475D4A6F9DE278BE /* AuthManager.swift */; };
@@ -47,8 +44,6 @@
 		AA1000010000000000000010 /* ErrorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000010 /* ErrorViews.swift */; };
 		AA1000010000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000011 /* Assets.xcassets */; };
 		AA1000010000000000000012 /* CashCatWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000014 /* CashCatWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		CC1000010000000000000001 /* CashCatActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000010000000000000001 /* CashCatActivityAttributes.swift */; };
-		CC1000010000000000000002 /* CashCatActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000010000000000000001 /* CashCatActivityAttributes.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,10 +76,7 @@
 		EBCB703DAAD14A70B79E35A6 /* CheckBudgetIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CheckBudgetIntent.swift; sourceTree = "<group>"; };
 		606583A1612541B698B568A7 /* CashCatShortcuts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CashCatShortcuts.swift; sourceTree = "<group>"; };
 		155DD28763B14FA6B8C6BCAE /* SpotlightIndexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
-		774B7944163542E4AC4DB036 /* LiveActivityBridgePlugin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiveActivityBridgePlugin.swift; sourceTree = "<group>"; };
-		89D657D53C1941F8B2382616 /* LiveActivityBridgePlugin.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LiveActivityBridgePlugin.m; sourceTree = "<group>"; };
 		E6723BFD6D404EFCBA96B2E7 /* AccessoryWidgetViews.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccessoryWidgetViews.swift; sourceTree = "<group>"; };
-		9EB6A1376E0B431A803308B5 /* CashCatLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CashCatLiveActivity.swift; sourceTree = "<group>"; };
 		7FE43EA5D2604170BAC35350 /* QuickAddControl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickAddControl.swift; sourceTree = "<group>"; };
 		AAE582F0475D4A6F9DE278BE /* AuthManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		2340DB5EBC424D88BA11C3ED /* SupabaseClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
@@ -117,7 +109,6 @@
 		AA0000010000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000010000000000000013 /* CashCatWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CashCatWidget.entitlements; sourceTree = "<group>"; };
 		AA0000010000000000000014 /* CashCatWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CashCatWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC0000010000000000000001 /* CashCatActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashCatActivityAttributes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -158,14 +149,6 @@
 			path = Spotlight;
 			sourceTree = "<group>";
 		};
-		BB1001001001001001001003 /* LiveActivity */ = {
-			isa = PBXGroup;
-			children = (
-				9EB6A1376E0B431A803308B5 /* CashCatLiveActivity.swift */,
-			);
-			path = LiveActivity;
-			sourceTree = "<group>";
-		};
 		BB1001001001001001001004 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
@@ -187,7 +170,6 @@
 			isa = PBXGroup;
 			children = (
 				761039A5D08C4B399A0C07F3 /* SpendingData.swift */,
-				CC0000010000000000000001 /* CashCatActivityAttributes.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -220,8 +202,6 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				AA0000010000000000000001 /* AuthBridgePlugin.swift */,
 				AA0000010000000000000002 /* AuthBridgePlugin.m */,
-				774B7944163542E4AC4DB036 /* LiveActivityBridgePlugin.swift */,
-				89D657D53C1941F8B2382616 /* LiveActivityBridgePlugin.m */,
 				BB1001001001001001001001 /* AppIntents */,
 				BB1001001001001001001002 /* Spotlight */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -243,7 +223,6 @@
 				AA0000010000000000000007 /* Intent.swift */,
 				AA6000010000000000000002 /* Models */,
 				AA6000010000000000000004 /* Views */,
-				BB1001001001001001001003 /* LiveActivity */,
 				BB1001001001001001001004 /* Controls */,
 				AA0000010000000000000011 /* Assets.xcassets */,
 				AA0000010000000000000012 /* Info.plist */,
@@ -405,12 +384,9 @@
 				D0CFE17A5330482B891E69D2 /* CheckBudgetIntent.swift in Sources */,
 				53139D19576F45B6AA32BF5A /* CashCatShortcuts.swift in Sources */,
 				B0212223A3934D3EBFF8568E /* SpotlightIndexer.swift in Sources */,
-				E700C03C2249488794E05EA9 /* LiveActivityBridgePlugin.swift in Sources */,
-				11840A6D0ADA446CB6CE2BA0 /* LiveActivityBridgePlugin.m in Sources */,
 				6E9EC09C46284A139ABABA8C /* AuthManager.swift in Sources */,
 				5C6610CECF5F4C2FAA75DDED /* SupabaseClient.swift in Sources */,
 				44F0ED58587E416F82F98D5E /* SpendingData.swift in Sources */,
-				CC1000010000000000000001 /* CashCatActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,9 +408,7 @@
 				7E79E6B357AF49D3A06C7A1F /* SupabaseClient.swift in Sources */,
 				3EF22785C2C7404289B30140 /* SpendingData.swift in Sources */,
 				214F2762D6ED4E6987E4C3D3 /* AccessoryWidgetViews.swift in Sources */,
-				9F82362E93924F2EB87DFA58 /* CashCatLiveActivity.swift in Sources */,
 				F44B8BB28C1D4C0CB8CBAFFC /* QuickAddControl.swift in Sources */,
-				CC1000010000000000000002 /* CashCatActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

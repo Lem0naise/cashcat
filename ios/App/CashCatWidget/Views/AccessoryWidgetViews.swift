@@ -89,6 +89,8 @@ struct AccessoryRectangularView: View {
                         Text("\(isUp ? "↑" : "↓")\(Int(abs(change * 100)))%")
                             .font(.caption2)
                             .fontWeight(.semibold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
 
@@ -98,15 +100,24 @@ struct AccessoryRectangularView: View {
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
 
+                if let balanceChange = entry.balanceChange {
+                    BalanceChangeView(change: balanceChange, compact: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+
                 HStack(spacing: 4) {
                     Text("\(formatCurrency(entry.dailyAverage))/day")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     if let top = entry.topCategories.first {
                         Text("· Top: \(top.name)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
             }
@@ -122,7 +133,11 @@ struct AccessoryInlineView: View {
         switch entry.state {
         case .loaded:
             Label {
-                Text("\(formatCurrency(entry.totalSpent)) spent \(entry.periodLabel.lowercased())")
+                if let balanceChange = entry.balanceChange {
+                    Text("\(compactAmount(entry.totalSpent)) · \(compactSignedAmount(balanceChange))")
+                } else {
+                    Text("\(compactAmount(entry.totalSpent)) spent")
+                }
             } icon: {
                 Image(systemName: "sterlingsign.circle.fill")
             }

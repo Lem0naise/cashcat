@@ -4,38 +4,105 @@ import AppIntents
 struct CashCatShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: CheckSpendingIntent(),
+            intent: ListAccountsIntent(),
             phrases: [
-                "How much have I spent with \(.applicationName)?",
-                "Check my spending in \(.applicationName)",
-                "What's my spending in \(.applicationName)?",
-                "\(.applicationName) spending summary",
+                "Show my accounts in \(.applicationName)",
+                "List accounts in \(.applicationName)",
+                "What are my account balances in \(.applicationName)?",
             ],
-            shortTitle: "Check Spending",
-            systemImageName: "sterlingsign.circle"
+            shortTitle: "Accounts",
+            systemImageName: "creditcard"
         )
 
         AppShortcut(
-            intent: AddTransactionIntent(),
+            intent: ListTransactionsIntent(),
             phrases: [
-                "Add a transaction in \(.applicationName)",
-                "Log an expense in \(.applicationName)",
-                "Record spending in \(.applicationName)",
+                "List transactions in \(.applicationName)",
+                "Show recent transactions in \(.applicationName)",
             ],
-            shortTitle: "Add Transaction",
+            shortTitle: "Transactions",
+            systemImageName: "list.bullet.rectangle"
+        )
+
+        AppShortcut(
+            intent: CreateTransactionFromShortcutIntent(),
+            phrases: [
+                "Create a transaction in \(.applicationName)",
+                "Record a payment in \(.applicationName)",
+                "Add income in \(.applicationName)",
+            ],
+            shortTitle: "Create Tx",
             systemImageName: "plus.circle"
         )
 
         AppShortcut(
-            intent: CheckBudgetIntent(),
+            intent: ListTransfersIntent(),
             phrases: [
-                "How is my budget in \(.applicationName)?",
-                "Check my budget with \(.applicationName)",
-                "Am I on budget in \(.applicationName)?",
-                "\(.applicationName) budget summary",
+                "List transfers in \(.applicationName)",
+                "Show my transfers in \(.applicationName)",
             ],
-            shortTitle: "Check Budget",
-            systemImageName: "chart.bar"
+            shortTitle: "Transfers",
+            systemImageName: "arrow.left.arrow.right"
+        )
+
+        AppShortcut(
+            intent: CreateTransferFromShortcutIntent(),
+            phrases: [
+                "Create a transfer in \(.applicationName)",
+                "Move money between accounts in \(.applicationName)",
+            ],
+            shortTitle: "Create Transfer",
+            systemImageName: "arrow.right.circle"
+        )
+
+        AppShortcut(
+            intent: UpdateTransferFromShortcutIntent(),
+            phrases: [
+                "Update a transfer in \(.applicationName)",
+                "Change transfer details in \(.applicationName)",
+            ],
+            shortTitle: "Update Transfer",
+            systemImageName: "pencil.circle"
+        )
+
+        AppShortcut(
+            intent: DeleteTransferFromShortcutIntent(),
+            phrases: [
+                "Delete a transfer in \(.applicationName)",
+                "Remove transfer in \(.applicationName)",
+            ],
+            shortTitle: "Delete Transfer",
+            systemImageName: "trash.circle"
+        )
+
+        AppShortcut(
+            intent: ListGroupsIntent(),
+            phrases: [
+                "List groups in \(.applicationName)",
+                "Show category groups in \(.applicationName)",
+            ],
+            shortTitle: "Groups",
+            systemImageName: "square.grid.2x2"
+        )
+
+        AppShortcut(
+            intent: ListCategoriesIntent(),
+            phrases: [
+                "List categories in \(.applicationName)",
+                "Show categories in \(.applicationName)",
+            ],
+            shortTitle: "Categories",
+            systemImageName: "tag"
+        )
+
+        AppShortcut(
+            intent: ListAssignmentsIntent(),
+            phrases: [
+                "List assignments in \(.applicationName)",
+                "Show monthly assignments in \(.applicationName)",
+            ],
+            shortTitle: "Assignments",
+            systemImageName: "calendar"
         )
     }
 }

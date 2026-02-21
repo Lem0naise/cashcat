@@ -14,7 +14,12 @@ struct LargeWidgetView: View {
                         .fontWeight(.medium)
                         .foregroundStyle(WidgetColors.textTertiary)
                         .textCase(.uppercase)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     SpentAmountText(amount: entry.totalSpent, size: .title2)
+                    if let balanceChange = entry.balanceChange {
+                        BalanceChangeView(change: balanceChange, previousLabel: entry.previousPeriodLabel, compact: true)
+                    }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
@@ -28,10 +33,15 @@ struct LargeWidgetView: View {
                             .foregroundStyle(WidgetColors.textTertiary)
                     }
                     .lineLimit(1)
-                    .fixedSize()
+                    .minimumScaleFactor(0.75)
 
                     if let change = entry.spendingChange, let prevLabel = entry.previousPeriodLabel {
                         SpendingChangeView(change: change, previousLabel: prevLabel, compact: true)
+                        Text("vs \(prevLabel)")
+                            .font(.system(size: 9))
+                            .foregroundStyle(WidgetColors.textTertiary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
             }
@@ -84,7 +94,7 @@ struct LargeWidgetView: View {
                 }
             }
         }
-        .padding(14)
+        .padding(12)
     }
 
     private func barFraction(for category: CategorySpending, maxAmount: Double) -> CGFloat {
@@ -102,10 +112,7 @@ struct LargeWidgetView: View {
     }
 
     private func barColor(for category: CategorySpending) -> Color {
-        if category.isOverBudget {
-            return WidgetColors.orange
-        }
-        return category.hasBudget ? WidgetColors.green : WidgetColors.accent
+        WidgetColors.accent
     }
 
     private func secondaryLabel(for category: CategorySpending) -> String {

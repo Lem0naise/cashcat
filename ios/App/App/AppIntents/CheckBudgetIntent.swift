@@ -1,119 +1,213 @@
 import AppIntents
 import Foundation
 
-@available(iOS 16.0, *)
-struct CheckBudgetIntent: AppIntent {
-    static var title: LocalizedStringResource = "Check Budget"
-    static var description = IntentDescription("Check how your budget is doing this month.")
+struct IntentAssignmentRow: Decodable {
+    let id: String?
+    let category_id: String
+    var month: String
+    let assigned: Double?
+    let rollover: Double?
+}
 
+@available(iOS 16.0, *)
+struct AssignmentEntity: AppEntity {
+    static var defaultQuery = AssignmentEntityQuery()
+    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Assignment")
+
+    let id: String
+    @Property(title: "Month")
+    var month: String
+    @Property(title: "Category ID")
+    var categoryId: String
+    @Property(title: "Category")
+    var categoryName: String
+    @Property(title: "Assigned")
+    var assigned: Double
+    @Property(title: "Rollover")
+    var rollover: Double
+    @Property(title: "Activity")
+    var activity: Double
+    @Property(title: "Available")
+    var available: Double
+
+    init(
+        id: String,
+        month: String,
+        categoryId: String,
+        categoryName: String,
+        assigned: Double,
+        rollover: Double,
+        activity: Double,
+        available: Double
+    ) {
+        self.id = id
+        self.month = month
+        self.categoryId = categoryId
+        self.categoryName = categoryName
+        self.assigned = assigned
+        self.rollover = rollover
+        self.activity = activity
+        self.available = available
+    }
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(
+            title: "\(categoryName)",
+            subtitle: "\(month) • \(AppIntentSupport.formatAmount(available)) available"
+        )
+    }
+}
+
+@available(iOS 16.0, *)
+struct AssignmentEntityQuery: EntityQuery {
+    func entities(for identifiers: [String]) async throws -> [AssignmentEntity] {
+        guard !identifiers.isEmpty else { return [] }
+        let current = try await fetchCurrentMonthAssignments()
+        return current.filter { identifiers.contains($0.id) }
+    }
+
+    func suggestedEntities() async throws -> [AssignmentEntity] {
+        try await fetchCurrentMonthAssignments()
+    }
+
+    private func fetchCurrentMonthAssignments() async throws -> [AssignmentEntity] {
+        let ctx = try await AppIntentSupport.requireContext()
+        let month = AppIntentSupport.currentMonthString()
+        return try await assignmentEntities(ctx: ctx, selectedMonth: month)
+    }
+}
+
+@available(iOS 16.0, *)
+struct ListGroupsIntent: AppIntent {
+    static var title: LocalizedStringResource = "List Groups"
+    static var description = IntentDescription("Return all category group objects.")
     static var openAppWhenRun: Bool = false
 
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let authManager = AuthManager()
-        guard let creds = await authManager.getValidCredentials() else {
-            return .result(dialog: "You need to sign in to CashCat first.")
+    func perform() async throws -> some IntentResult & ReturnsValue<[GroupEntity]> {
+        let ctx = try await AppIntentSupport.requireContext()
+
+        let groups: [IntentGroupRow] = try await ctx.client.fetch("groups", query: [
+            URLQueryItem(name: "select", value: "id,name"),
+            URLQueryItem(name: "user_id", value: "eq.\(ctx.creds.userId)"),
+            URLQueryItem(name: "order", value: "name.asc"),
+        ])
+
+        return .result(value: groups.map { GroupEntity(id: $0.id, name: $0.name) })
+    }
+}
+
+@available(iOS 16.0, *)
+struct ListCategoriesIntent: AppIntent {
+    static var title: LocalizedStringResource = "List Categories"
+    static var description = IntentDescription("Return category objects, optionally filtered by group.")
+    static var openAppWhenRun: Bool = false
+
+    @Parameter(title: "Group")
+    var group: GroupEntity?
+
+    func perform() async throws -> some IntentResult & ReturnsValue<[CategoryEntity]> {
+        let ctx = try await AppIntentSupport.requireContext()
+
+        var query: [URLQueryItem] = [
+            URLQueryItem(name: "select", value: "id,name,group"),
+            URLQueryItem(name: "user_id", value: "eq.\(ctx.creds.userId)"),
+            URLQueryItem(name: "order", value: "name.asc"),
+        ]
+        if let group {
+            query.append(URLQueryItem(name: "group", value: "eq.\(group.id)"))
         }
 
-        let client = SupabaseClient(
-            baseUrl: creds.supabaseUrl,
-            anonKey: creds.supabaseAnonKey,
-            accessToken: creds.accessToken
-        )
+        let categories: [IntentCategoryRow] = try await ctx.client.fetch("categories", query: query)
+        let entities = categories.map { CategoryEntity(id: $0.id, name: $0.name, groupId: $0.group) }
+        return .result(value: entities)
+    }
+}
 
-        let calendar = Calendar.current
-        let now = Date()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+@available(iOS 16.0, *)
+struct ListAssignmentsIntent: AppIntent {
+    static var title: LocalizedStringResource = "List Assignments"
+    static var description = IntentDescription("Return assignment objects for a month.")
+    static var openAppWhenRun: Bool = false
 
-        // Get current month range
-        let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
-        let endOfDay = calendar.startOfDay(for: now).addingTimeInterval(86399)
-        let startStr = dateFormatter.string(from: monthStart)
-        let endStr = dateFormatter.string(from: endOfDay)
+    @Parameter(title: "Month (YYYY-MM)")
+    var month: String?
 
-        // Month string for assignments (yyyy-MM)
-        let monthFormatter = DateFormatter()
-        monthFormatter.locale = Locale(identifier: "en_US_POSIX")
-        monthFormatter.timeZone = TimeZone.current
-        monthFormatter.dateFormat = "yyyy-MM"
-        let monthStr = monthFormatter.string(from: now)
+    func perform() async throws -> some IntentResult & ReturnsValue<[AssignmentEntity]> {
+        let ctx = try await AppIntentSupport.requireContext()
+        let selectedMonth = AppIntentSupport.parseMonth(month) ?? AppIntentSupport.currentMonthString()
+        let entities = try await assignmentEntities(ctx: ctx, selectedMonth: selectedMonth)
+        return .result(value: entities)
+    }
+}
 
-        // Fetch data
-        async let transactionsReq = client.fetchTransactions(
-            userId: creds.userId, startDate: startStr, endDate: endStr
-        )
-        async let assignmentsReq = client.fetchAssignments(
-            userId: creds.userId, startMonth: monthStr, endMonth: monthStr
-        )
-        async let categoriesReq = client.fetchCategories(userId: creds.userId)
+@available(iOS 16.0, *)
+private func assignmentEntities(
+    ctx: AppIntentSupport.Context,
+    selectedMonth: String
+) async throws -> [AssignmentEntity] {
+    let monthStart = "\(selectedMonth)-01"
+    let monthEnd = endOfMonthDateString(monthStart)
 
-        let (transactions, assignments, categories) = try await (transactionsReq, assignmentsReq, categoriesReq)
-        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+    let assignments: [IntentAssignmentRow] = try await ctx.client.fetch("assignments", query: [
+        URLQueryItem(name: "select", value: "id,category_id,month,assigned,rollover"),
+        URLQueryItem(name: "user_id", value: "eq.\(ctx.creds.userId)"),
+        URLQueryItem(name: "month", value: "eq.\(selectedMonth)"),
+    ])
 
-        // Calculate totals
-        let totalSpent = transactions.reduce(0.0) { $0 + abs($1.amount) }
-        let totalAssigned = assignments.reduce(0.0) { $0 + $1.assigned }
+    guard !assignments.isEmpty else { return [] }
 
-        let remaining = totalAssigned - totalSpent
-        let percentUsed = totalAssigned > 0 ? Int((totalSpent / totalAssigned) * 100) : 0
+    let categories: [IntentCategoryRow] = try await ctx.client.fetch("categories", query: [
+        URLQueryItem(name: "select", value: "id,name,group"),
+        URLQueryItem(name: "user_id", value: "eq.\(ctx.creds.userId)"),
+    ])
+    let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) })
 
-        // Find over-budget categories
-        var spentByCategory: [String: Double] = [:]
-        for tx in transactions {
-            spentByCategory[tx.category_id, default: 0] += abs(tx.amount)
-        }
+    let monthTransactions: [IntentTransactionRow] = try await ctx.client.fetch("transactions", query: [
+        URLQueryItem(name: "select", value: "id,amount,date,description,category_id,account_id,type"),
+        URLQueryItem(name: "user_id", value: "eq.\(ctx.creds.userId)"),
+        URLQueryItem(name: "type", value: "eq.payment"),
+        URLQueryItem(name: "date", value: "gte.\(monthStart)"),
+        URLQueryItem(name: "date", value: "lte.\(monthEnd)"),
+    ])
 
-        var assignedByCategory: [String: Double] = [:]
-        for a in assignments {
-            assignedByCategory[a.category_id, default: 0] += a.assigned
-        }
-
-        let overBudgetCategories = spentByCategory.compactMap { (catId, spent) -> String? in
-            guard let assigned = assignedByCategory[catId], assigned > 0, spent > assigned else { return nil }
-            let name = categoryMap[catId]?.name ?? "Unknown"
-            return "\(name) (\(formatAmount(spent - assigned)) over)"
-        }.prefix(3)
-
-        let topSpendingCategories = spentByCategory
-            .sorted { $0.value > $1.value }
-            .prefix(2)
-            .map { (catId, spent) in
-                let name = categoryMap[catId]?.name ?? "Unknown"
-                return "\(name): \(formatAmount(spent))"
-            }
-
-        let unbudgetedSpent = spentByCategory.reduce(0.0) { total, item in
-            let assigned = assignedByCategory[item.key] ?? 0
-            return assigned <= 0 ? total + item.value : total
-        }
-
-        var response: String
-        if totalAssigned == 0 {
-            response = "You've spent \(formatAmount(totalSpent)) this month, but you haven't set up a budget yet."
-        } else if remaining >= 0 {
-            response = "You've used \(percentUsed)% of your budget — \(formatAmount(totalSpent)) of \(formatAmount(totalAssigned)). You have \(formatAmount(remaining)) remaining."
-        } else {
-            response = "You're over budget! You've spent \(formatAmount(totalSpent)) against a budget of \(formatAmount(totalAssigned)) — that's \(formatAmount(abs(remaining))) over."
-        }
-
-        if !overBudgetCategories.isEmpty {
-            response += " Over-budget: \(overBudgetCategories.joined(separator: ", "))."
-        }
-        if unbudgetedSpent > 0 {
-            response += " Unbudgeted spending: \(formatAmount(unbudgetedSpent))."
-        }
-        if !topSpendingCategories.isEmpty {
-            response += " Top spend: \(topSpendingCategories.joined(separator: ", "))."
-        }
-
-        return .result(dialog: "\(response)")
+    var spentByCategory: [String: Double] = [:]
+    for tx in monthTransactions {
+        guard let categoryId = tx.category_id else { continue }
+        spentByCategory[categoryId, default: 0] += abs(tx.amount)
     }
 
-    private func formatAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "GBP"
-        formatter.maximumFractionDigits = value >= 1000 ? 0 : 2
-        return formatter.string(from: NSNumber(value: value)) ?? "£0"
+    return assignments.map { assignment in
+        let assigned = assignment.assigned ?? 0
+        let rollover = assignment.rollover ?? 0
+        let spent = spentByCategory[assignment.category_id] ?? 0
+        let activity = -spent
+        let available = assigned + rollover - spent
+        return AssignmentEntity(
+            id: assignment.id ?? "\(assignment.month)-\(assignment.category_id)",
+            month: assignment.month,
+            categoryId: assignment.category_id,
+            categoryName: categoryMap[assignment.category_id] ?? "Unknown",
+            assigned: assigned,
+            rollover: rollover,
+            activity: activity,
+            available: available
+        )
     }
+}
+
+private func endOfMonthDateString(_ monthStart: String) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone.current
+    formatter.dateFormat = "yyyy-MM-dd"
+
+    guard let start = formatter.date(from: monthStart) else {
+        return monthStart
+    }
+    let calendar = Calendar.current
+    guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: start),
+          let end = calendar.date(byAdding: .day, value: -1, to: nextMonth) else {
+        return monthStart
+    }
+    return formatter.string(from: end)
 }

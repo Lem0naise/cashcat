@@ -46,6 +46,71 @@ struct SupabaseClient {
         }
     }
 
+    func postReturning<T: Encodable, R: Decodable>(_ path: String, body: T, query: [URLQueryItem] = []) async throws -> [R] {
+        var components = URLComponents(string: "\(baseUrl)/rest/v1/\(path)")!
+        components.queryItems = query
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw SupabaseError.httpError(statusCode)
+        }
+
+        return try JSONDecoder().decode([R].self, from: data)
+    }
+
+    func patchReturning<T: Encodable, R: Decodable>(_ path: String, body: T, query: [URLQueryItem]) async throws -> [R] {
+        var components = URLComponents(string: "\(baseUrl)/rest/v1/\(path)")!
+        components.queryItems = query
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "PATCH"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw SupabaseError.httpError(statusCode)
+        }
+
+        return try JSONDecoder().decode([R].self, from: data)
+    }
+
+    func delete(_ path: String, query: [URLQueryItem]) async throws {
+        var components = URLComponents(string: "\(baseUrl)/rest/v1/\(path)")!
+        components.queryItems = query
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "DELETE"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw SupabaseError.httpError(statusCode)
+        }
+    }
+
     func fetchTransactions(userId: String, startDate: String, endDate: String, categoryIds: [String]? = nil) async throws -> [SupabaseTransaction] {
         var query: [URLQueryItem] = [
             URLQueryItem(name: "select", value: "id,amount,date,category_id"),

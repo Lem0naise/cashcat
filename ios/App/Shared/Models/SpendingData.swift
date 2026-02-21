@@ -59,7 +59,7 @@ struct BudgetSummary {
     }
 }
 
-/// Used by AddTransactionIntent to POST a new transaction
+/// Payload used by shortcut intents to POST a new transaction
 struct NewTransaction: Encodable {
     let amount: Double
     let date: String

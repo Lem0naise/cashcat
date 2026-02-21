@@ -5,6 +5,10 @@ struct CashCatWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = SpendingEntry
     typealias Intent = SpendingWidgetIntent
 
+    private struct BalanceDeltaRow: Decodable {
+        let amount: Double
+    }
+
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -84,8 +88,19 @@ struct CashCatWidgetProvider: AppIntentTimelineProvider {
                 userId: creds.userId, startDate: prevStartStr, endDate: prevEndStr
             )
             async let categoriesReq = client.fetchCategories(userId: creds.userId)
+            async let monthlyBalanceChangeReq = fetchMonthlyBalanceChange(
+                client: client,
+                userId: creds.userId,
+                startDate: startStr,
+                endDate: endStr
+            )
 
-            let (transactions, prevTransactions, categories) = try await (transactionsReq, prevTransactionsReq, categoriesReq)
+            let (transactions, prevTransactions, categories, monthlyBalanceChange) = try await (
+                transactionsReq,
+                prevTransactionsReq,
+                categoriesReq,
+                monthlyBalanceChangeReq
+            )
 
             // Build category lookup
             let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
@@ -131,6 +146,7 @@ struct CashCatWidgetProvider: AppIntentTimelineProvider {
             let spendingChange: Double? = prevTotalSpent > 0
                 ? (totalSpent - prevTotalSpent) / prevTotalSpent
                 : nil
+            let balanceChange: Double? = monthlyBalanceChange
 
             let topCategoryTuples = Array(
                 categoryTotals
@@ -173,6 +189,7 @@ struct CashCatWidgetProvider: AppIntentTimelineProvider {
             return SpendingEntry(
                 date: Date(),
                 totalSpent: totalSpent,
+                balanceChange: balanceChange,
                 dailyAverage: dailyAvg,
                 periodLabel: period.label,
                 topCategories: topCategories,
@@ -284,6 +301,25 @@ struct CashCatWidgetProvider: AppIntentTimelineProvider {
         }
 
         return snapshots
+    }
+
+    private func fetchMonthlyBalanceChange(
+        client: SupabaseClient,
+        userId: String,
+        startDate: String,
+        endDate: String
+    ) async throws -> Double {
+        let rows: [BalanceDeltaRow] = try await client.fetch("transactions", query: [
+            URLQueryItem(name: "select", value: "amount"),
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "date", value: "gte.\(startDate)"),
+            URLQueryItem(name: "date", value: "lte.\(endDate)"),
+            URLQueryItem(name: "type", value: "in.(payment,income)"),
+        ])
+
+        return rows.reduce(0.0) { partial, row in
+            partial + row.amount
+        }
     }
 
     private func proratedAssignment(assigned: Double, month: String, range: (start: Date, end: Date)) -> Double {
