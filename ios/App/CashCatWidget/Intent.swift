@@ -2,54 +2,24 @@ import AppIntents
 import WidgetKit
 
 enum TimePeriod: String, AppEnum {
-    case thisWeek = "this_week"
     case thisMonth = "this_month"
-    case last30Days = "last_30_days"
-    case last90Days = "last_90_days"
-    case thisYear = "this_year"
 
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Time Period")
 
     static var caseDisplayRepresentations: [TimePeriod: DisplayRepresentation] = [
-        .thisWeek: "This Week",
-        .thisMonth: "This Month",
-        .last30Days: "Last 30 Days",
-        .last90Days: "Last 90 Days",
-        .thisYear: "This Year",
+        .thisMonth: "This Month"
     ]
 
     var label: String {
-        switch self {
-        case .thisWeek: return "This Week"
-        case .thisMonth: return "This Month"
-        case .last30Days: return "Last 30 Days"
-        case .last90Days: return "Last 90 Days"
-        case .thisYear: return "This Year"
-        }
+        "This Month"
     }
 
     var dateRange: (start: Date, end: Date) {
         let calendar = Calendar.current
         let now = Date()
         let endOfDay = calendar.startOfDay(for: now).addingTimeInterval(86399)
-
-        switch self {
-        case .thisWeek:
-            let start = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
-            return (start, endOfDay)
-        case .thisMonth:
-            let start = calendar.dateInterval(of: .month, for: now)?.start ?? now
-            return (start, endOfDay)
-        case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -29, to: calendar.startOfDay(for: now))!
-            return (start, endOfDay)
-        case .last90Days:
-            let start = calendar.date(byAdding: .day, value: -89, to: calendar.startOfDay(for: now))!
-            return (start, endOfDay)
-        case .thisYear:
-            let start = calendar.dateInterval(of: .year, for: now)?.start ?? now
-            return (start, endOfDay)
-        }
+        let start = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        return (start, endOfDay)
     }
 
     var dayCount: Int {
@@ -60,39 +30,13 @@ enum TimePeriod: String, AppEnum {
     var previousDateRange: (start: Date, end: Date) {
         let calendar = Calendar.current
         let current = dateRange
-
-        switch self {
-        case .thisWeek:
-            let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-            let start = calendar.date(byAdding: .day, value: -7, to: current.start)!
-            return (start, end)
-        case .thisMonth:
-            let prevMonth = calendar.date(byAdding: .month, value: -1, to: current.start)!
-            let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-            return (prevMonth, end)
-        case .last30Days:
-            let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-            let start = calendar.date(byAdding: .day, value: -30, to: current.start)!
-            return (start, end)
-        case .last90Days:
-            let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-            let start = calendar.date(byAdding: .day, value: -90, to: current.start)!
-            return (start, end)
-        case .thisYear:
-            let prevYear = calendar.date(byAdding: .year, value: -1, to: current.start)!
-            let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
-            return (prevYear, end)
-        }
+        let prevMonth = calendar.date(byAdding: .month, value: -1, to: current.start)!
+        let end = calendar.date(byAdding: .second, value: -1, to: current.start)!
+        return (prevMonth, end)
     }
 
     var previousLabel: String {
-        switch self {
-        case .thisWeek: return "last week"
-        case .thisMonth: return "last month"
-        case .last30Days: return "prev 30 days"
-        case .last90Days: return "prev 90 days"
-        case .thisYear: return "last year"
-        }
+        "last month"
     }
 }
 
@@ -183,8 +127,8 @@ struct CategoryEntityQuery: EntityQuery {
 }
 
 struct SpendingWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Spending Statistics"
-    static var description = IntentDescription("View your spending statistics for a time period.")
+    static var title: LocalizedStringResource = "Monthly Spending"
+    static var description = IntentDescription("View your monthly spending statistics.")
 
     @Parameter(title: "Time Period", default: .thisMonth)
     var timePeriod: TimePeriod

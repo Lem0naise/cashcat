@@ -17,11 +17,14 @@ import { useTransactions, TransactionWithDetails } from '../../hooks/useTransact
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
 import type { TransferWithAccounts } from '@/types/supabase';
+import { useAssignments } from '../../hooks/useAssignments';
+import { useCategories } from '../../hooks/useCategories';
 
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
+import { useLiveActivity } from '../../hooks/useLiveActivity';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -34,6 +37,8 @@ export default function Transactions() {
     // TanStack Query Hooks
     const { data: allTransactions = [], isLoading: loadingTransactions, refetch: refetchTransactions } = useTransactions();
     const { data: allTransfers = [], isLoading: loadingTransfers, refetch: refetchTransfers } = useTransfers();
+    const { data: assignments = [] } = useAssignments();
+    const { data: categories = [] } = useCategories();
 
     // Client-side pagination state
     const [visibleCount, setVisibleCount] = useState(50);
@@ -62,6 +67,7 @@ export default function Transactions() {
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
+    const { startOrUpdate: startOrUpdateLiveActivity } = useLiveActivity();
 
     const refetch = () => {
         refetchTransactions();
@@ -195,19 +201,65 @@ export default function Transactions() {
         description?: string;
         category_id?: string | null;
     }) => {
+        const toLocalDateString = (date: Date): string => (
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+        );
+
+        const updateLiveActivity = async (createdTransaction: {
+            amount: number;
+            date: string;
+            type: string;
+            category_id?: string | null;
+        }) => {
+            if (createdTransaction.type !== 'payment') return;
+
+            const today = new Date();
+            const todayKey = toLocalDateString(today);
+            if (createdTransaction.date !== todayKey) return;
+            const monthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+            const categoryName = categories.find(c => c.id === createdTransaction.category_id)?.name ?? 'Uncategorized';
+
+            const todaysPayments = [
+                ...transactions,
+                createdTransaction as TransactionWithDetails,
+            ].filter(tx => tx.type === 'payment' && tx.date === todayKey);
+
+            const totalSpentToday = todaysPayments.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+            const transactionCountToday = todaysPayments.length;
+
+            const totalAssignedThisMonth = assignments
+                .filter(assignment => assignment.month === monthKey)
+                .reduce((sum, assignment) => sum + (assignment.assigned || 0), 0);
+            const dailyBudget = totalAssignedThisMonth > 0
+                ? (totalAssignedThisMonth / Math.max(daysInMonth, 1))
+                : 0;
+
+            await startOrUpdateLiveActivity({
+                totalSpent: totalSpentToday,
+                transactionCount: transactionCountToday,
+                lastCategoryName: categoryName,
+                lastAmount: Math.abs(createdTransaction.amount),
+                dailyBudget,
+            });
+        };
+
         try {
             const promise = createMutation.mutateAsync({
                 ...transactionData,
                 category_id: transactionData.category_id || undefined
             });
 
-            await toast.promise(promise, {
+            const createdTransaction = await toast.promise(promise, {
                 loading: 'Creating transaction...',
                 success: 'Transaction created successfully',
                 error: 'Failed to create transaction'
             });
 
             setShowModal(false);
+
+            await updateLiveActivity(createdTransaction);
         } catch (error) {
             console.error('Error saving transaction:', error);
         }

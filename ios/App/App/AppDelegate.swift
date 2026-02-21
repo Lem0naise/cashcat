@@ -36,33 +36,68 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Called when the app was launched with a url.
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+        let handledByDeepLink = handleCashCatURL(url)
+        let handledByCapacitor = ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+        return handledByDeepLink || handledByCapacitor
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        var handledBySpotlight = false
+
         // Handle Spotlight search result taps
         if userActivity.activityType == CSSearchableItemActionType,
            let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
             // Deep link to the category or group in the app
             // Format: "category:{id}" or "group:{id}"
-            if let bridge = self.window?.rootViewController as? CAPBridgeViewController {
-                let parts = identifier.split(separator: ":")
-                if parts.count == 2 {
-                    let type = String(parts[0])
-                    let id = String(parts[1])
-                    // Navigate to budget page with the category focused
-                    let deepLinkUrl = "cashcat://\(type)/\(id)"
-                    bridge.bridge?.webView?.evaluateJavaScript(
-                        "window.location.href = '/budget';"
-                    )
+            let parts = identifier.split(separator: ":")
+            if parts.count == 2 {
+                let type = String(parts[0])
+                let id = String(parts[1])
+                if let deepLinkUrl = URL(string: "cashcat://\(type)/\(id)") {
+                    handledBySpotlight = handleCashCatURL(deepLinkUrl)
                     print("[Spotlight] Deep linking to \(deepLinkUrl)")
                 }
             }
         }
 
         // Also handle default Capacitor behavior
-        return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+        let handledByCapacitor = ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+        return handledBySpotlight || handledByCapacitor
+    }
+
+    @discardableResult
+    private func handleCashCatURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "cashcat" else { return false }
+
+        let route = routeForDeepLink(url)
+        navigateWebView(to: route)
+        return true
+    }
+
+    private func routeForDeepLink(_ url: URL) -> String {
+        let host = (url.host ?? "").lowercased()
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+
+        if host == "add-transaction" {
+            return "/budget/transactions?showModal=true"
+        }
+
+        if host == "budget", pathComponents.first?.lowercased() == "transactions" {
+            return "/budget/transactions?showModal=true"
+        }
+
+        if host == "category" || host == "group" {
+            return "/budget"
+        }
+
+        return "/budget"
+    }
+
+    private func navigateWebView(to route: String) {
+        let script = "window.location.href = '\(route)'"
+        DispatchQueue.main.async { [weak self] in
+            guard let bridge = self?.window?.rootViewController as? CAPBridgeViewController else { return }
+            bridge.bridge?.webView?.evaluateJavaScript(script)
+        }
     }
 }
-

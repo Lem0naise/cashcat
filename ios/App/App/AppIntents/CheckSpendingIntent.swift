@@ -40,14 +40,35 @@ struct CheckSpendingIntent: AppIntent {
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
 
         var filtered = transactions
-        if let categoryName = category {
-            let matchingCatIds = Set(categories.filter { $0.name.lowercased() == categoryName.lowercased() }.map(\.id))
+        if let categoryName = category?.trimmingCharacters(in: .whitespacesAndNewlines), !categoryName.isEmpty {
+            let matchingCategories = categories.filter {
+                $0.name.localizedCaseInsensitiveContains(categoryName)
+            }
+
+            if matchingCategories.isEmpty {
+                let suggestions = categories
+                    .prefix(5)
+                    .map(\.name)
+                    .joined(separator: ", ")
+                return .result(dialog: "I couldn't find a category matching \"\(categoryName)\". Try: \(suggestions).")
+            }
+
+            let matchingCatIds = Set(matchingCategories.map(\.id))
             filtered = filtered.filter { matchingCatIds.contains($0.category_id) }
         }
 
         let totalSpent = filtered.reduce(0.0) { $0 + abs($1.amount) }
         let dayCount = max(1, Calendar.current.dateComponents([.day], from: range.start, to: range.end).day ?? 1)
         let dailyAvg = totalSpent / Double(dayCount)
+
+        if filtered.isEmpty {
+            var response = "No spending recorded for \(timePeriod.label.lowercased())"
+            if let catName = category, !catName.isEmpty {
+                response += " in \(catName)"
+            }
+            response += "."
+            return .result(dialog: "\(response)")
+        }
 
         // Top 3 categories
         var categoryTotals: [String: Double] = [:]

@@ -31,6 +31,20 @@ struct CategorySpending: Identifiable {
     let groupName: String?
     let amount: Double
     let percentage: Double
+    let budgetAmount: Double?
+    let budgetRemaining: Double?
+    let budgetProgress: Double?
+
+    var hasBudget: Bool { budgetAmount != nil }
+    var isOverBudget: Bool {
+        if let budgetRemaining {
+            return budgetRemaining < 0
+        }
+        if let budgetAmount {
+            return budgetAmount <= 0 && amount > 0
+        }
+        return false
+    }
 }
 
 struct BudgetSummary {

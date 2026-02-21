@@ -31,9 +31,11 @@ struct CheckBudgetIntent: AppIntent {
         let startStr = dateFormatter.string(from: monthStart)
         let endStr = dateFormatter.string(from: endOfDay)
 
-        // Month string for assignments (yyyy-MM-01)
+        // Month string for assignments (yyyy-MM)
         let monthFormatter = DateFormatter()
-        monthFormatter.dateFormat = "yyyy-MM-01"
+        monthFormatter.locale = Locale(identifier: "en_US_POSIX")
+        monthFormatter.timeZone = TimeZone.current
+        monthFormatter.dateFormat = "yyyy-MM"
         let monthStr = monthFormatter.string(from: now)
 
         // Fetch data
@@ -72,6 +74,19 @@ struct CheckBudgetIntent: AppIntent {
             return "\(name) (\(formatAmount(spent - assigned)) over)"
         }.prefix(3)
 
+        let topSpendingCategories = spentByCategory
+            .sorted { $0.value > $1.value }
+            .prefix(2)
+            .map { (catId, spent) in
+                let name = categoryMap[catId]?.name ?? "Unknown"
+                return "\(name): \(formatAmount(spent))"
+            }
+
+        let unbudgetedSpent = spentByCategory.reduce(0.0) { total, item in
+            let assigned = assignedByCategory[item.key] ?? 0
+            return assigned <= 0 ? total + item.value : total
+        }
+
         var response: String
         if totalAssigned == 0 {
             response = "You've spent \(formatAmount(totalSpent)) this month, but you haven't set up a budget yet."
@@ -83,6 +98,12 @@ struct CheckBudgetIntent: AppIntent {
 
         if !overBudgetCategories.isEmpty {
             response += " Over-budget: \(overBudgetCategories.joined(separator: ", "))."
+        }
+        if unbudgetedSpent > 0 {
+            response += " Unbudgeted spending: \(formatAmount(unbudgetedSpent))."
+        }
+        if !topSpendingCategories.isEmpty {
+            response += " Top spend: \(topSpendingCategories.joined(separator: ", "))."
         }
 
         return .result(dialog: "\(response)")

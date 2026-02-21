@@ -102,17 +102,33 @@ struct CategoryBar: View {
                         .fill(Color.white.opacity(0.08))
                         .frame(height: 6)
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(WidgetColors.accent)
-                        .frame(width: max(4, geo.size.width * barFraction), height: 6)
+                        .fill(barColor)
+                        .frame(width: fillWidth(in: geo.size.width), height: 6)
                 }
             }
             .frame(height: 6)
         }
     }
 
-    private var barFraction: CGFloat {
+    private var barColor: Color {
+        if category.isOverBudget {
+            return WidgetColors.orange
+        }
+        return category.hasBudget ? WidgetColors.green : WidgetColors.accent
+    }
+
+    private var barFraction: Double {
+        if let budgetProgress = category.budgetProgress {
+            return min(max(budgetProgress, 0), 1)
+        }
         guard maxAmount > 0 else { return 0 }
-        return CGFloat(category.amount / maxAmount)
+        return min(max(category.amount / maxAmount, 0), 1)
+    }
+
+    private func fillWidth(in totalWidth: CGFloat) -> CGFloat {
+        let width = totalWidth * CGFloat(barFraction)
+        if width <= 0 { return 0 }
+        return max(4, width)
     }
 }
 

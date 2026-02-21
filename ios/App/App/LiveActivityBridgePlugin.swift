@@ -58,6 +58,11 @@ public class LiveActivityBridgePlugin: CAPPlugin {
             return
         }
 
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            call.reject("Live Activities are not enabled")
+            return
+        }
+
         let totalSpent = call.getDouble("totalSpent") ?? 0
         let transactionCount = call.getInt("transactionCount") ?? 0
         let lastCategoryName = call.getString("lastCategoryName") ?? "Unknown"
@@ -75,7 +80,24 @@ public class LiveActivityBridgePlugin: CAPPlugin {
         let content = ActivityContent(state: state, staleDate: nil)
 
         Task {
-            for activity in Activity<CashCatActivityAttributes>.activities {
+            let activities = Activity<CashCatActivityAttributes>.activities
+            if activities.isEmpty {
+                let attributes = CashCatActivityAttributes(startDate: Date())
+                do {
+                    let activity = try Activity.request(
+                        attributes: attributes,
+                        content: content,
+                        pushType: nil
+                    )
+                    print("[LiveActivityBridge] No active activity found; started new: \(activity.id)")
+                    call.resolve(["activityId": activity.id])
+                } catch {
+                    call.reject("Failed to start Live Activity: \(error.localizedDescription)")
+                }
+                return
+            }
+
+            for activity in activities {
                 await activity.update(content)
                 print("[LiveActivityBridge] Updated activity: \(activity.id)")
             }

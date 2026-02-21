@@ -58,9 +58,9 @@ struct LargeWidgetView: View {
                                         .fill(Color.white.opacity(0.08))
                                         .frame(height: 6)
                                     RoundedRectangle(cornerRadius: 3)
-                                        .fill(WidgetColors.accent)
+                                        .fill(barColor(for: category))
                                         .frame(
-                                            width: max(4, geo.size.width * CGFloat(category.amount / maxAmount)),
+                                            width: fillWidth(for: category, maxAmount: maxAmount, totalWidth: geo.size.width),
                                             height: 6
                                         )
                                 }
@@ -74,9 +74,9 @@ struct LargeWidgetView: View {
                                     .foregroundStyle(WidgetColors.textPrimary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
-                                Text("\(Int(category.percentage * 100))%")
+                                Text(secondaryLabel(for: category))
                                     .font(.system(size: 9))
-                                    .foregroundStyle(WidgetColors.textTertiary)
+                                    .foregroundStyle(secondaryColor(for: category))
                             }
                             .frame(width: 55, alignment: .trailing)
                         }
@@ -85,5 +85,43 @@ struct LargeWidgetView: View {
             }
         }
         .padding(14)
+    }
+
+    private func barFraction(for category: CategorySpending, maxAmount: Double) -> CGFloat {
+        if let budgetProgress = category.budgetProgress {
+            return CGFloat(min(max(budgetProgress, 0), 1))
+        }
+        guard maxAmount > 0 else { return 0 }
+        return CGFloat(min(max(category.amount / maxAmount, 0), 1))
+    }
+
+    private func fillWidth(for category: CategorySpending, maxAmount: Double, totalWidth: CGFloat) -> CGFloat {
+        let width = totalWidth * barFraction(for: category, maxAmount: maxAmount)
+        if width <= 0 { return 0 }
+        return max(4, width)
+    }
+
+    private func barColor(for category: CategorySpending) -> Color {
+        if category.isOverBudget {
+            return WidgetColors.orange
+        }
+        return category.hasBudget ? WidgetColors.green : WidgetColors.accent
+    }
+
+    private func secondaryLabel(for category: CategorySpending) -> String {
+        if let remaining = category.budgetRemaining {
+            if remaining >= 0 {
+                return "\(compactAmount(remaining)) left"
+            }
+            return "\(compactAmount(abs(remaining))) over"
+        }
+        return "\(Int(category.percentage * 100))%"
+    }
+
+    private func secondaryColor(for category: CategorySpending) -> Color {
+        if let remaining = category.budgetRemaining {
+            return remaining >= 0 ? WidgetColors.textTertiary : WidgetColors.orange
+        }
+        return WidgetColors.textTertiary
     }
 }

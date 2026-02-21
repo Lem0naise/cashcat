@@ -1,4 +1,5 @@
 import AppIntents
+import Foundation
 import SwiftUI
 import WidgetKit
 
@@ -20,9 +21,7 @@ struct QuickAddControlIntent: AppIntent {
     static let title: LocalizedStringResource = "Add Transaction"
     static let description = IntentDescription("Opens CashCat to add a transaction.")
 
-    static let openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        .result()
+    func perform() async throws -> some IntentResult & OpensIntent {
+        .result(opensIntent: OpenURLIntent(URL(string: "cashcat://add-transaction")!))
     }
 }

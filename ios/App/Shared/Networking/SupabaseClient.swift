@@ -46,14 +46,21 @@ struct SupabaseClient {
         }
     }
 
-    func fetchTransactions(userId: String, startDate: String, endDate: String) async throws -> [SupabaseTransaction] {
-        try await fetch("transactions", query: [
+    func fetchTransactions(userId: String, startDate: String, endDate: String, categoryIds: [String]? = nil) async throws -> [SupabaseTransaction] {
+        var query: [URLQueryItem] = [
             URLQueryItem(name: "select", value: "id,amount,date,category_id"),
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
             URLQueryItem(name: "type", value: "eq.payment"),
             URLQueryItem(name: "date", value: "gte.\(startDate)"),
             URLQueryItem(name: "date", value: "lte.\(endDate)"),
-        ])
+        ]
+
+        if let categoryIds, !categoryIds.isEmpty {
+            let encodedIds = categoryIds.joined(separator: ",")
+            query.append(URLQueryItem(name: "category_id", value: "in.(\(encodedIds))"))
+        }
+
+        return try await fetch("transactions", query: query)
     }
 
     func fetchCategories(userId: String) async throws -> [SupabaseCategory] {
