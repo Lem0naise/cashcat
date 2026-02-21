@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Budget Management - CashCat Docs',
-  description: 'Advanced techniques for managing and optimizing your budget in CashCat.',
+    title: 'Budget Management - CashCat Docs',
+    description: 'Advanced techniques for managing and optimizing your budget in CashCat.',
 };
 
 export default function BudgetManagement() {
@@ -18,20 +18,20 @@ export default function BudgetManagement() {
             {/* Core management concepts */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Core Management Principles</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Budget Flexibility</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Your budget isn't set in stone. When you overspend in one category, move money from another 
+                        Your budget isn't set in stone. When you overspend in one category, move money from another
                         category to cover it. The key is keeping your total budget balanced. You don't need to feel guilty about adjusting your budget - as long as you try to stick to it while making purchases.
                     </p>
-                  
+
                 </div>
 
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Monthly Reviews</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        At the end of each month, review your spending patterns. Look for categories where you 
+                        At the end of each month, review your spending patterns. Look for categories where you
                         consistently over or underspend and adjust next month's budget accordingly. You should <strong>adjust goals over time as you learn your habits.</strong>
                     </p>
                 </div>
@@ -39,7 +39,7 @@ export default function BudgetManagement() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Emergency Adjustments</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        When unexpected expenses arise, don't abandon your budget. Instead, temporarily adjust 
+                        When unexpected expenses arise, don't abandon your budget. Instead, temporarily adjust
                         other categories to accommodate the emergency while staying within your total income. This keeps you in control even when life inevitably throws curveballs at you.
                     </p>
                 </div>
@@ -48,11 +48,11 @@ export default function BudgetManagement() {
             {/* Advanced techniques */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Key Techniques</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Sinking Funds</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Set aside small amounts each month for large, irregular expenses like car maintenance, 
+                        Set aside small amounts each month for large, irregular expenses like car maintenance,
                         holiday gifts, or annual subscriptions. This prevents these expenses from derailing your budget.
                     </p>
                     <div className="bg-green/10 p-3 rounded-lg mt-3">
@@ -63,7 +63,7 @@ export default function BudgetManagement() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">The Buffer Category</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Create a "Buffer" or "Miscellaneous" category for small, unexpected expenses, whatever they could be. This prevents 
+                        Create a "Buffer" or "Miscellaneous" category for small, unexpected expenses, whatever they could be. This prevents
                         minor overspending from throwing off your entire budget. You should always be prepared for anything.
                     </p>
                     <div className="bg-green/10 p-3 rounded-lg mt-3">
@@ -74,7 +74,7 @@ export default function BudgetManagement() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Income Allocation Strategy</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Consider the 50/30/20 rule as a starting framework: 50% for needs, 30% for wants, 
+                        Consider the 50/30/20 rule as a starting framework: 50% for needs, 30% for wants,
                         and 20% for savings and debt repayment. Adjust based on your specific situation.
                     </p>
                     <div className="grid gap-2 mt-3 text-sm">
@@ -97,11 +97,11 @@ export default function BudgetManagement() {
             {/* Future budgeting */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Future Month Planning</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card-blue rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-blue mb-2 md:mb-3">Why Plan Future Months</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        <strong>Future budgeting is highly recommended</strong> and is one of the most effective ways to gain financial control. 
+                        <strong>Future budgeting is highly recommended</strong> and is one of the most effective ways to gain financial control.
                         Planning 1-3 months ahead helps you anticipate expenses, reduce stress, and make better financial decisions.
                     </p>
                     <div className="bg-blue/10 p-3 rounded-lg mt-3">
@@ -112,7 +112,7 @@ export default function BudgetManagement() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Multi-Month Planning Strategy</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Look at your calendar 2-3 months ahead and identify upcoming expenses. This allows you to save gradually 
+                        Look at your calendar 2-3 months ahead and identify upcoming expenses. This allows you to save gradually
                         rather than scrambling when large expenses arrive.
                     </p>
                     <ul className="space-y-2 text-sm md:text-base text-white/70 mt-3">
@@ -164,11 +164,11 @@ export default function BudgetManagement() {
             {/* Common challenges */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Common Challenges & Solutions</h2>
-                
+
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Irregular Income</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        If your income varies month to month, budget based on your lowest expected monthly income. 
+                        If your income varies month to month, budget based on your lowest expected monthly income.
                         Use higher-income months to build buffers and save for leaner periods. You'll thank yourself later when you find more than you expected in your savings category.
                     </p>
                 </div>
@@ -176,23 +176,16 @@ export default function BudgetManagement() {
                 <div className="p-4 md:p-6 glass-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Overspending Patterns</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        If you consistently overspend in certain categories, either increase the budget for those 
+                        If you consistently overspend in certain categories, either increase the budget for those
                         categories or find ways to reduce spending. Your budget should reflect reality, not wishful thinking. This is <strong>very important - don't routinely overspend.</strong>
                     </p>
                 </div>
 
-                <div className="p-4 md:p-6 glass-card rounded-lg">
-                    <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Partner Coordination</h3>
-                    <p className="text-white/70 text-sm md:text-base mb-3">
-                        If you share finances with a partner or friend, have regular budget meetings to review spending, 
-                        discuss upcoming expenses, and make adjustments together. Transparency is key.
-                    </p>
-                </div>
             </div>
 
             {/* Tips section */}
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
-                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">💡 Management Pro Tips</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">Management Pro Tips</h3>
                 <ul className="space-y-2 md:space-y-3 text-white/70 text-sm md:text-base">
                     <li className="flex items-start gap-2 md:gap-3">
                         <div className="w-2 h-2 bg-green rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
