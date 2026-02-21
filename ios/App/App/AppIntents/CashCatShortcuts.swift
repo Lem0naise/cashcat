@@ -96,13 +96,14 @@ struct CashCatShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
-            intent: ListAssignmentsIntent(),
+            intent: ListCategoryBudgetLeftIntent(),
             phrases: [
-                "List assignments in \(.applicationName)",
-                "Show monthly assignments in \(.applicationName)",
+                "List budget left in \(.applicationName)",
+                "Show category budget left in \(.applicationName)",
+                "How much budget is left per category in \(.applicationName)?",
             ],
-            shortTitle: "Assignments",
-            systemImageName: "calendar"
+            shortTitle: "Budget Left",
+            systemImageName: "chart.bar.xaxis"
         )
     }
 }
