@@ -128,6 +128,133 @@ export default function ApiDocs() {
                         </pre>
                     </div>
 
+                    {/* GET Category Budget Left */}
+                    <div className="mb-12 border-b border-white/5 pb-10">
+                        <h3 className="text-xl font-medium mb-3 flex items-center gap-3">
+                            <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">GET</span>
+                            <code>/api/v1/categories/budget-left</code>
+                        </h3>
+                        <p className="mb-4 text-white/70">
+                            Returns the remaining budget in each category for a month, including rollover and spending.
+                        </p>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Query Parameters</h4>
+                        <div className="overflow-x-auto mb-6">
+                            <table className="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-white/60">
+                                        <th className="py-2 px-4">Param</th>
+                                        <th className="py-2 px-4">Type</th>
+                                        <th className="py-2 px-4">Default</th>
+                                        <th className="py-2 px-4">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">month</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">Current month</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Format <code>YYYY-MM</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">category_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4">All categories</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Return only one category.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">group_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4">All groups</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Return categories in one group.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">goal_type</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">All goal types</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. One of <code>spending</code>, <code>savings</code>, <code>emergency_fund</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">only_overspent</td>
+                                        <td className="py-2 px-4">boolean</td>
+                                        <td className="py-2 px-4">false</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. If true, only returns categories where <code>budget_left &lt; 0</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">include_zero</td>
+                                        <td className="py-2 px-4">boolean</td>
+                                        <td className="py-2 px-4">true</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. If false, hides categories with zero assigned, spent, and rollover.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">min_budget_left</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Inclusive minimum for <code>budget_left</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">max_budget_left</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Inclusive maximum for <code>budget_left</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">sort</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. One of <code>budget_left</code>, <code>spent</code>, <code>assigned</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">order</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">asc</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. <code>asc</code> or <code>desc</code>. Used with <code>sort</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">limit</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Max records returned (1-1000).</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">offset</td>
+                                        <td className="py-2 px-4">number</td>
+                                        <td className="py-2 px-4">0</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Records to skip before returning rows.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Example Request</h4>
+                        <pre className="bg-black/30 p-4 rounded-lg border border-white/10 overflow-x-auto text-sm text-white/80 mb-6">
+                            {`curl -H "Authorization: Bearer cc_live_..." \\
+  "https://cashcat.app/api/v1/categories/budget-left?month=2026-02"`}
+                        </pre>
+
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Example Response</h4>
+                        <pre className="bg-black/30 p-4 rounded-lg border border-white/10 overflow-x-auto text-sm text-white/80">
+                            {`{
+  "data": [
+    {
+      "category_id": "uuid-string",
+      "category_name": "Groceries",
+      "month": "2026-02",
+      "assigned": 400,
+      "rollover": 25,
+      "spent": 130,
+      "budget_left": 295
+    }
+  ],
+  "meta": {
+    "month": "2026-02",
+    "start_date": "2026-02-01",
+    "end_date": "2026-02-28"
+  }
+}`}
+                        </pre>
+                    </div>
+
                     {/* GET Categories */}
                     <div className="mb-12 border-b border-white/5 pb-10">
                         <h3 className="text-xl font-medium mb-3 flex items-center gap-3">
@@ -224,6 +351,42 @@ export default function ApiDocs() {
                                         <td className="py-2 px-4">0</td>
                                         <td className="py-2 px-4 text-white/60">Number of records to skip.</td>
                                     </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">start_date</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Format <code>YYYY-MM-DD</code>. Inclusive lower date bound.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">end_date</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Format <code>YYYY-MM-DD</code>. Inclusive upper date bound.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">month</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">None</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Format <code>YYYY-MM</code>. Applies a full-month date filter. Cannot be combined with <code>start_date</code>/<code>end_date</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">type</td>
+                                        <td className="py-2 px-4">string</td>
+                                        <td className="py-2 px-4">All types</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. One of <code>income</code>, <code>payment</code>, <code>starting</code>.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">account_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4">All accounts</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Filter to a specific account.</td>
+                                    </tr>
+                                    <tr className="border-b border-white/5">
+                                        <td className="py-2 px-4 font-mono text-green">category_id</td>
+                                        <td className="py-2 px-4">string (uuid)</td>
+                                        <td className="py-2 px-4">All categories</td>
+                                        <td className="py-2 px-4 text-white/60">Optional. Filter to a specific category.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -231,7 +394,7 @@ export default function ApiDocs() {
                         <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Example Request</h4>
                         <pre className="bg-black/30 p-4 rounded-lg border border-white/10 overflow-x-auto text-sm text-white/80 mb-6">
                             {`curl -H "Authorization: Bearer cc_live_..." \\
-  "https://cashcat.app/api/v1/transactions?limit=5"`}
+  "https://cashcat.app/api/v1/transactions?start_date=2026-02-01&end_date=2026-02-15&limit=5"`}
                         </pre>
 
                         <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Example Response</h4>
@@ -245,7 +408,7 @@ export default function ApiDocs() {
       "date": "2024-02-03",
       "category_id": "uuid-string",
       "account_id": "uuid-string",
-      "type": "expense"
+      "type": "payment"
     }
   ]
 }`}
