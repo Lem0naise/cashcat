@@ -10,6 +10,7 @@ CashCat is currently in early access for testers.
 
 * Zero-based budgeting
 * Custom monthly goals
+* HTTP MCP endpoint for AI agent integrations
 
 ---
 
@@ -41,6 +42,16 @@ Pull requests, issues, and feature suggestions are welcome!
 * Report bugs via GitHub Issues
 * Suggest features via Discussions or Issues
 * Help with translations or accessibility improvements
+
+---
+
+## MCP Integration
+
+CashCat now ships with an HTTP MCP endpoint at `/api/mcp` for AI agent tooling.
+
+- Deployment is automatic with normal GitHub -> Vercel flow.
+- Use your API key with `Authorization: Bearer cc_live_...`.
+- Full setup and usage examples: [docs/mcp.md](docs/mcp.md)
 
 ---
 
