@@ -65,7 +65,7 @@ struct LargeWidgetView: View {
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 3)
-                                        .fill(Color.white.opacity(0.08))
+                                        .fill(WidgetColors.trackBackground)
                                         .frame(height: 6)
                                     RoundedRectangle(cornerRadius: 3)
                                         .fill(barColor(for: category))

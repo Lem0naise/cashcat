@@ -1,15 +1,59 @@
 import SwiftUI
+import UIKit
 
 enum WidgetColors {
-    static let background = Color(red: 10/255, green: 10/255, blue: 10/255)
-    static let accent = Color(red: 186/255, green: 194/255, blue: 255/255)
-    static let green = Color(red: 132/255, green: 214/255, blue: 132/255)
-    static let orange = Color(red: 242/255, green: 96/255, blue: 47/255)
-    static let cardBackground = Color.white.opacity(0.06)
-    static let cardBorder = Color.white.opacity(0.1)
-    static let textPrimary = Color.white
-    static let textSecondary = Color.white.opacity(0.7)
-    static let textTertiary = Color.white.opacity(0.5)
+    static let background = Color.clear
+    static var accent: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor(red: 186/255, green: 194/255, blue: 255/255, alpha: 1)
+            }
+            return UIColor(red: 90/255, green: 104/255, blue: 245/255, alpha: 1)
+        })
+    }
+    static var green: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor(red: 132/255, green: 214/255, blue: 132/255, alpha: 1)
+            }
+            return UIColor(red: 45/255, green: 160/255, blue: 84/255, alpha: 1)
+        })
+    }
+    static var orange: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor(red: 242/255, green: 96/255, blue: 47/255, alpha: 1)
+            }
+            return UIColor(red: 220/255, green: 86/255, blue: 39/255, alpha: 1)
+        })
+    }
+    static var cardBackground: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor.white.withAlphaComponent(0.06)
+            }
+            return UIColor.black.withAlphaComponent(0.08)
+        })
+    }
+    static var cardBorder: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor.white.withAlphaComponent(0.1)
+            }
+            return UIColor.black.withAlphaComponent(0.12)
+        })
+    }
+    static var trackBackground: Color {
+        Color(uiColor: UIColor { traits in
+            if traits.userInterfaceStyle == .dark {
+                return UIColor.white.withAlphaComponent(0.08)
+            }
+            return UIColor.black.withAlphaComponent(0.12)
+        })
+    }
+    static let textPrimary = Color(uiColor: .label)
+    static let textSecondary = Color(uiColor: .secondaryLabel)
+    static let textTertiary = Color(uiColor: .tertiaryLabel)
 }
 
 struct GlassCard: ViewModifier {
@@ -114,7 +158,7 @@ struct CategoryBar: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(WidgetColors.trackBackground)
                         .frame(height: 6)
                     RoundedRectangle(cornerRadius: 3)
                         .fill(barColor)
@@ -162,7 +206,7 @@ struct BudgetProgressBar: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(WidgetColors.trackBackground)
                         .frame(height: 8)
                     RoundedRectangle(cornerRadius: 4)
                         .fill(budget.isOverBudget ? WidgetColors.orange : WidgetColors.green)

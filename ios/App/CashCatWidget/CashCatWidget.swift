@@ -400,7 +400,7 @@ struct CashCatWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: SpendingWidgetIntent.self, provider: CashCatWidgetProvider()) { entry in
             CashCatWidgetEntryView(entry: entry)
-                .containerBackground(WidgetColors.background, for: .widget)
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("Spending")
         .description("View your spending statistics.")
