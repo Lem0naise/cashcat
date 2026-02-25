@@ -6,8 +6,8 @@ import TrafficCop from './components/traffic-cop';
 import WaitlistForm from './components/waitlist-form';
 
 export const metadata = {
-    title: 'CashCat - Give Every Penny a Purpose',
-    description: 'The free zero-based budgeting app that gives you total control. Manage your money with confidence.',
+    title: 'CashCat - The Budgeting App for Data Nerds',
+    description: 'The free zero-based budgeting app that gives you total control over your own data. Manage your money with confidence.',
     keywords: [
         'budgeting app',
         'zero-based budgeting',
@@ -20,8 +20,8 @@ export const metadata = {
     ],
     authors: [{ name: 'Indigo Nolan' }, { name: 'Josh Wilcox' }],
     openGraph: {
-        title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Give every penny a purpose. Budget easily with CashCat.',
+        title: 'CashCat - The Budgeting App for Data Nerds',
+        description: 'The budgeting app for data nerds who want ultimate control over their own data.',
         url: 'https://cashcat.app',
         siteName: 'CashCat',
         locale: 'en_GB',
@@ -37,8 +37,8 @@ export const metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Give every penny a purpose. Budget easily with CashCat.',
+        title: 'CashCat - The Budgeting App for Data Nerds',
+        description: 'The budgeting app for data nerds who want ultimate control over their own data.',
         images: ['https://cashcat.app/media/og.png'],
     },
 };
@@ -81,8 +81,8 @@ export default function Landing() {
                     </div>
 
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                        Give Every Penny <br className="hidden md:block" />
-                        <span className="text-gradient">a Purpose</span>
+                        The Budgeting App <br className="hidden md:block" />
+                        <span className="text-gradient">for Data Nerds</span>
                     </h1>
 
                     <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
@@ -167,9 +167,9 @@ export default function Landing() {
                         <div className="md:col-span-2 glass-card-blue p-8 md:p-12 glass-card-hover flex flex-col md:flex-row items-center gap-8">
                             <div className="flex-1">
                                 <span className="inline-block px-3 py-1 bg-green/20 text-green rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-green/20">Data Rich</span>
-                                <h3 className="text-3xl font-bold text-white mb-4">Visualise Your Financial Health</h3>
+                                <h3 className="text-3xl font-bold text-white mb-4">Ultimate Control Over Your Data</h3>
                                 <p className="text-white/70 text-lg mb-6">
-                                    We provide the detailed stats and analytics you actually want. See exactly where your money goes with beautiful charts and graphs.
+                                    We provide the detailed stats, analytics, and raw data access developers and power users crave. See exactly where your money goes with beautiful charts, or export everything to JSON and query it yourself.
                                 </p>
                                 <ul className="space-y-3">
                                     <li className="flex items-center gap-3 text-white/80">
@@ -184,11 +184,11 @@ export default function Landing() {
                                         </svg>
                                         Net Worth Tracking
                                     </li>
-                                    <li className="flex items-center gap-3 text-white/80">
+                                    <li className="flex items-center gap-3 text-white font-medium">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green">
                                             <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        Export to CSV & JSON
+                                        Raw JSON & CSV Export anytime
                                     </li>
                                 </ul>
                             </div>
