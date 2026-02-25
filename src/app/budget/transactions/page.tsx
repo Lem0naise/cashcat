@@ -22,6 +22,7 @@ import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
+import QuickAddRow from '../../components/quick-add-row';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -59,9 +60,25 @@ export default function Transactions() {
     const [showExportModal, setShowExportModal] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
+    const quickAddAmountRef = useRef<HTMLInputElement>(null);
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
+
+    // Global 'N' hotkey — focus the quick-add amount field on desktop
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement).tagName;
+            const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable;
+            if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !isEditable) {
+                e.preventDefault();
+                quickAddAmountRef.current?.focus();
+                quickAddAmountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, []);
 
     const refetch = () => {
         refetchTransactions();
@@ -716,7 +733,7 @@ export default function Transactions() {
 
 
                         {/* Balance Section */}
-                        <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-6 mb-3 mt-0">
+                        <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-4 mb-3 mt-0">
                             <div>
                                 <h2 className="text-lg font-medium text-white/90">{!selectedAccountId && ("Total ")}Balance</h2>
                                 <button
@@ -729,6 +746,17 @@ export default function Transactions() {
                             <span className={`text-2xl font-bold tabular-nums ${calculateTotalBalance(filteredTransactions, filteredTransfers, selectedAccountId) < 0 ? 'text-reddy' : 'text-green'}`}>
                                 {formatAmount(calculateTotalBalance(filteredTransactions, filteredTransfers, selectedAccountId))}
                             </span>
+                        </div>
+
+                        {/* Quick-add row — desktop only */}
+                        <div className="hidden md:block mb-4">
+                            <QuickAddRow
+                                amountInputRef={quickAddAmountRef}
+                                onSubmit={handleSubmit}
+                            />
+                            <p className="text-xs text-white/20 mt-1.5 px-1">
+                                Tab between fields · Enter to add · <kbd className="font-mono bg-white/[.06] px-1 rounded">N</kbd> to focus from anywhere
+                            </p>
                         </div>
 
                         {loading && transactions.length === 0 && transfers.length === 0 ? (
