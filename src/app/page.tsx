@@ -75,21 +75,21 @@ export default function Landing() {
             <main className="container mx-auto px-4 pt-32 pb-20">
                 {/* Hero Section */}
                 <div className="flex flex-col items-center justify-center text-center max-w-5xl mx-auto mb-24 md:mb-32">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green text-xs font-bold uppercase tracking-wider mb-8">
                         <span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>
                         YOUR MONEY. YOUR RULES.
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight">
                         The Budgeting App <br className="hidden md:block" />
                         <span className="text-gradient">for Data Nerds</span>
                     </h1>
 
-                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed">
                         The zero-based budgeting app that gives you total control. Available on <span className="text-green font-bold">Web, Android, and iOS</span>.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                         <Link
                             href="/signup"
                             className="px-8 py-4 bg-green text-black font-bold rounded-xl hover:bg-green-dark transition-all text-lg shadow-[0_0_20px_rgba(132,214,132,0.3)] hover:shadow-[0_0_30px_rgba(132,214,132,0.5)] transform hover:-translate-y-1"
@@ -104,7 +104,7 @@ export default function Landing() {
                         </Link>
                     </div>
 
-                    <div className="mt-8 text-white/40 text-sm animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
+                    <div className="mt-8 text-white/40 text-sm">
                         No credit card required.
                     </div>
                 </div>
