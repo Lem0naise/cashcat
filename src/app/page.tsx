@@ -21,7 +21,7 @@ export const metadata = {
     authors: [{ name: 'Indigo Nolan' }, { name: 'Josh Wilcox' }],
     openGraph: {
         title: 'CashCat - The Budgeting App for Data Nerds',
-        description: 'The budgeting app for data nerds who want ultimate control over their own data.',
+        description: 'Your money. Your rules. The budgeting app for data nerds who want ultimate control over their own data.',
         url: 'https://cashcat.app',
         siteName: 'CashCat',
         locale: 'en_GB',
@@ -38,7 +38,7 @@ export const metadata = {
     twitter: {
         card: 'summary_large_image',
         title: 'CashCat - The Budgeting App for Data Nerds',
-        description: 'The budgeting app for data nerds who want ultimate control over their own data.',
+        description: 'Your money. Your rules. The budgeting app for data nerds who want ultimate control over their own data.',
         images: ['https://cashcat.app/media/og.png'],
     },
 };
@@ -77,7 +77,7 @@ export default function Landing() {
                 <div className="flex flex-col items-center justify-center text-center max-w-5xl mx-auto mb-24 md:mb-32">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>
-                        Trusted by smart budgeters
+                        YOUR MONEY. YOUR RULES.
                     </div>
 
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
