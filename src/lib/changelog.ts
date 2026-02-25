@@ -23,6 +23,29 @@ export const changelog: Major[] = [
         minors: [
 
             {
+                version: "12",
+                patches: [
+                    {
+                        version: "0.12.1",
+                        date: "February 25, 2026",
+                        features: [
+                            "Added Google login",
+                            "Overhauled desktop transaction view",
+                        ],
+                        bugfixes: [
+                        ]
+                    },
+                    {
+                        version: "0.12.0",
+                        date: "February 24, 2026",
+                        features: [
+                            "Added Pro subscription!",
+                            "Added waitlist"
+                        ]
+                    }
+                ]
+            },
+            {
                 version: "11",
                 patches: [
                     {

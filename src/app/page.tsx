@@ -3,10 +3,11 @@ import Link from 'next/link';
 import FloatingIconsBackground from './components/floating-icon-background';
 import { Capacitor } from '@capacitor/core';
 import TrafficCop from './components/traffic-cop';
+import WaitlistForm from './components/waitlist-form';
 
 export const metadata = {
-    title: 'CashCat - Give Every Penny a Purpose',
-    description: 'The free zero-based budgeting app that gives you total control. Manage your money with confidence.',
+    title: 'CashCat - The Budgeting App for Data Nerds',
+    description: 'Your money. Your rules. The free zero-based budgeting app that gives you total control over your own data. Manage your money with confidence.',
     keywords: [
         'budgeting app',
         'zero-based budgeting',
@@ -19,8 +20,8 @@ export const metadata = {
     ],
     authors: [{ name: 'Indigo Nolan' }, { name: 'Josh Wilcox' }],
     openGraph: {
-        title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Give every penny a purpose. Budget easily with CashCat.',
+        title: 'CashCat - The Budgeting App for Data Nerds',
+        description: 'Your money. Your rules. The budgeting app for data nerds who want ultimate control over their own data.',
         url: 'https://cashcat.app',
         siteName: 'CashCat',
         locale: 'en_GB',
@@ -36,8 +37,8 @@ export const metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'CashCat - Free Zero-Based Budgeting',
-        description: 'Give every penny a purpose. Budget easily with CashCat.',
+        title: 'CashCat - The Budgeting App for Data Nerds',
+        description: 'Your money. Your rules. The budgeting app for data nerds who want ultimate control over their own data.',
         images: ['https://cashcat.app/media/og.png'],
     },
 };
@@ -74,21 +75,21 @@ export default function Landing() {
             <main className="container mx-auto px-4 pt-32 pb-20">
                 {/* Hero Section */}
                 <div className="flex flex-col items-center justify-center text-center max-w-5xl mx-auto mb-24 md:mb-32">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green text-xs font-bold uppercase tracking-wider mb-8">
                         <span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>
-                        Trusted by smart budgeters
+                        YOUR MONEY. YOUR RULES.
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                        Give Every Penny <br className="hidden md:block" />
-                        <span className="text-gradient">a Purpose</span>
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight tracking-tight">
+                        The Budgeting App <br className="hidden md:block" />
+                        <span className="text-gradient">for Data Nerds</span>
                     </h1>
 
-                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed">
                         The zero-based budgeting app that gives you total control. Available on <span className="text-green font-bold">Web, Android, and iOS</span>.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                         <Link
                             href="/signup"
                             className="px-8 py-4 bg-green text-black font-bold rounded-xl hover:bg-green-dark transition-all text-lg shadow-[0_0_20px_rgba(132,214,132,0.3)] hover:shadow-[0_0_30px_rgba(132,214,132,0.5)] transform hover:-translate-y-1"
@@ -96,14 +97,14 @@ export default function Landing() {
                             Start Budgeting Free
                         </Link>
                         <Link
-                            href="#mobile-app"
+                            href="#waitlist"
                             className="px-8 py-4 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all text-lg border border-white/10 backdrop-blur-sm"
                         >
-                            Mobile Apps Coming Soon
+                            Join the Waitlist
                         </Link>
                     </div>
 
-                    <div className="mt-8 text-white/40 text-sm animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
+                    <div className="mt-8 text-white/40 text-sm">
                         No credit card required.
                     </div>
                 </div>
@@ -166,9 +167,9 @@ export default function Landing() {
                         <div className="md:col-span-2 glass-card-blue p-8 md:p-12 glass-card-hover flex flex-col md:flex-row items-center gap-8">
                             <div className="flex-1">
                                 <span className="inline-block px-3 py-1 bg-green/20 text-green rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-green/20">Data Rich</span>
-                                <h3 className="text-3xl font-bold text-white mb-4">Visualise Your Financial Health</h3>
+                                <h3 className="text-3xl font-bold text-white mb-4">Ultimate Control Over Your Data</h3>
                                 <p className="text-white/70 text-lg mb-6">
-                                    We provide the detailed stats and analytics you actually want. See exactly where your money goes with beautiful charts and graphs.
+                                    We provide the detailed stats, analytics, and raw data access developers and power users crave. See exactly where your money goes with beautiful charts, or export everything to JSON and query it yourself.
                                 </p>
                                 <ul className="space-y-3">
                                     <li className="flex items-center gap-3 text-white/80">
@@ -183,11 +184,11 @@ export default function Landing() {
                                         </svg>
                                         Net Worth Tracking
                                     </li>
-                                    <li className="flex items-center gap-3 text-white/80">
+                                    <li className="flex items-center gap-3 text-white font-medium">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green">
                                             <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        Export to CSV & JSON
+                                        Raw JSON & CSV Export anytime
                                     </li>
                                 </ul>
                             </div>
@@ -201,7 +202,7 @@ export default function Landing() {
                 </div>
 
                 {/* Mobile App Section */}
-                <div id="mobile-app" className="py-24 max-w-6xl mx-auto border-t border-white/10">
+                <div id="waitlist" className="py-24 max-w-6xl mx-auto border-t border-white/10">
                     <div className="flex flex-col md:flex-row items-center gap-16">
                         <div className=" hidden md:block w-full md:w-1/2 relative">
                             {/* Phone Mockup Placeholder */}
@@ -241,11 +242,8 @@ export default function Landing() {
                             <p className="text-lg text-white/70 mb-8 leading-relaxed">
                                 CashCat is built for every device and platform. Use our fully-featured web app on any computer, or budget on the go with Android and iOS.
                             </p>
-                            <p className="text-lg text-white/70 mb-8 leading-relaxed">
-                                We are putting the finishing touches on our <span className="text-green font-semibold">native mobile apps</span>. In the meantime, you can install CashCat as a PWA for an app-like experience today.
-                            </p>
 
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-12">
                                 <button disabled className="flex items-center gap-3 bg-white/10 px-6 py-3 rounded-xl border border-white/10 opacity-70 cursor-not-allowed">
                                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" className="text-white">
                                         <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
@@ -265,6 +263,13 @@ export default function Landing() {
                                         <div className="text-sm font-bold text-white">Google Play</div>
                                     </div>
                                 </button>
+                            </div>
+
+                            <div className="pt-8 border-t border-white/10">
+                                <p className="text-lg text-white/70 mb-8 leading-relaxed">
+                                    While we put the finishing touches on our <span className="text-green font-semibold">native mobile apps</span>, join our waitlist to be the first to know when they drop.
+                                </p>
+                                <WaitlistForm />
                             </div>
                         </div>
                     </div>

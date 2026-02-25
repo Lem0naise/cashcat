@@ -14,6 +14,9 @@ import Link from 'next/link';
 import { usePwaPrompt } from '@/app/components/usePwaPrompt';
 import { Capacitor } from '@capacitor/core';
 import { currentVersion } from '../../lib/changelog';
+import { UpgradeButton } from '../components/upgrade-button';
+import { ProBadge } from '../components/pro-badge';
+import { useSubscription } from '@/hooks/useSubscription';
 
 
 export default function Account() {
@@ -26,6 +29,9 @@ export default function Account() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmStep, setDeleteConfirmStep] = useState(0); // 0: normal, 1: are you sure
     const [contactConfirmStep, setContactConfirmStep] = useState(0); // 0: normal, 1: click again to email
+
+    // Subscription state
+    const { subscription: subscriptionStatus, loading: subscriptionLoading } = useSubscription();
 
     // Load dismissed state from localStorage
     useEffect(() => {
@@ -154,6 +160,70 @@ export default function Account() {
                             </div>
                         </div>
 
+
+
+                        {/* CashCat Pro Subscription */}
+                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="flex items-center gap-3 mb-3">
+                                <h2 className="text-lg font-semibold">CashCat Pro</h2>
+                                {subscriptionStatus?.isActive && <ProBadge />}
+                            </div>
+
+                            {subscriptionLoading ? (
+                                <div className="flex items-center gap-2 text-sm text-white/50">
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                                    Loading subscription…
+                                </div>
+                            ) : subscriptionStatus?.isActive ? (
+                                <div className="space-y-3">
+                                    <p className="text-sm text-white/70">
+                                        You&apos;re on CashCat Pro! Thanks for your support!
+                                    </p>
+                                    {subscriptionStatus.renewsAt && (
+                                        <p className="text-xs text-white/40">
+                                            Renews on {new Date(subscriptionStatus.renewsAt).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-white/40">
+                                        To manage your subscription, visit your{' '}
+                                        <a
+                                            href="https://app.lemonsqueezy.com/my-orders"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-green hover:underline"
+                                        >
+                                            Lemon Squeezy customer portal
+                                        </a>.
+                                    </p>
+                                </div>
+                            ) : isNative ? (
+                                /* Native: no payment/upgrade links for Google Play compliance */
+                                <div className="space-y-2">
+                                    <p className="text-sm text-white/70">
+                                        To subscribe to CashCat Pro, please visit{' '}
+                                        <span className="text-green font-semibold">cashcat.app</span>{' '}
+                                        on your browser.
+                                    </p>
+                                    <p className="text-xs text-white/40">
+                                        Already subscribed on the web? Your Pro access will appear here automatically.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-sm text-white/70">
+                                        Unlock advanced analytics and more with CashCat Pro.
+                                    </p>
+                                    <ul className="text-sm text-white/60 space-y-1.5">
+                                        {['Money Flow Diagram', 'Advanced spending insights', 'More features coming soon'].map(f => (
+                                            <li key={f} className="flex items-center gap-2">
+                                                <span className="text-green text-xs">✓</span>{f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <UpgradeButton />
+                                </div>
+                            )}
+                        </div>
 
 
                         {/* Discord Account */}

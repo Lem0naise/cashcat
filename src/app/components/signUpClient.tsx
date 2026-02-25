@@ -105,7 +105,7 @@ export default function SignUpClient() {
   const [redirectUrl, setRedirectUrl] = useState<string>('');
 
   useEffect(() => {
-    setRedirectUrl(`${window.location.origin}${redirectTo}`);
+    setRedirectUrl(`${window.location.origin}/auth/callback?next=${redirectTo}`);
   }, [redirectTo]);
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function SignUpClient() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        if (session.user?.app_metadata.provider === 'email') {
+        if (session.user?.app_metadata.provider === 'email' || session.user?.app_metadata.provider === 'google') {
           router.push(redirectTo);
         }
       }
@@ -187,7 +187,7 @@ export default function SignUpClient() {
               },
             }}
             theme="dark"
-            providers={[]}
+            providers={['google']}
             redirectTo={redirectUrl}
             onlyThirdPartyProviders={false}
             view="sign_up"
