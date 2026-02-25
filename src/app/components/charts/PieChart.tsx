@@ -760,10 +760,14 @@ export default function PieChart({
         </div>
       )}
 
-      {/* Maximized chart container */}
-      <div className={`w-full flex items-center justify-center transition-all duration-300 ease-out ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
-        {/* Chart Section with minimal padding but maximum chart space */}
-        <div className="flex items-center justify-center w-full h-full transition-all duration-300 ease-out" style={{ overflow: 'visible' }}>
+      {/* Main content: centred donut chart */}
+      <div className={`w-full flex items-center justify-center ${matchHeight ? 'flex-1' : ''}`} style={{ overflow: 'visible' }}>
+
+        {/* Donut chart */}
+        <div
+          className="flex items-center justify-center w-full"
+          style={{ overflow: 'visible' }}
+        >
           <div className={`relative w-full ${shouldShowLabels ? (matchHeight ? 'max-w-[500px]' : 'max-w-[600px]') : 'max-w-full'}`}>
             <div className="w-full h-full overflow-visible relative transition-all duration-300 ease-out">
               <Doughnut
@@ -771,7 +775,7 @@ export default function PieChart({
                 data={chartData}
                 options={chartOptions}
                 plugins={[ChartDataLabels]}
-                redraw={false} // Prevent unnecessary redraws
+                redraw={false}
               />
             </div>
             {/* Center Total or Hovered Segment */}
@@ -785,7 +789,7 @@ export default function PieChart({
                     <div className={`font-bold text-white ${shouldShowLabels ? 'text-2xl' : 'text-lg'}`}>
                       {formatCurrency(hoveredSegment.value)}
                     </div>
-                    <div className={`text-white/40 mt-1 ${shouldShowLabels ? 'text-xs' : 'text-xs'}`}>
+                    <div className={`text-white/40 mt-1 text-xs`}>
                       {hoveredSegment.percentage.toFixed(1)}% of total
                     </div>
                   </>
@@ -797,7 +801,7 @@ export default function PieChart({
                     <div className={`font-bold text-white ${shouldShowLabels ? 'text-2xl' : 'text-lg'}`}>
                       {formatCurrency(pieChartData.total)}
                     </div>
-                    <div className={`text-white/40 mt-1 ${shouldShowLabels ? 'text-xs' : 'text-xs'}`}>
+                    <div className={`text-white/40 mt-1 text-xs`}>
                       {chartMode === 'group' && 'All Groups'}
                       {chartMode === 'category' && (selectedGroups.length > 0 ? selectedGroups[0] : '')}
                       {chartMode === 'vendor' && (selectedCategories.length > 0 ? categories.find(c => c.id === selectedCategories[0])?.name : 'Breakdown')}

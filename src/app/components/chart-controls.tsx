@@ -89,7 +89,7 @@ export default function ChartControls({
                   setShowCustomDates(false);
                 }
               }}
-              className={`px-3 py-2 text-sm rounded-lg transition-all ${
+              className={`px-3 py-1 text-sm rounded-lg transition-all ${
                 timeRange === option.value
                   ? 'bg-green text-black'
                   : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
