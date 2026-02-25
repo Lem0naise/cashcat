@@ -537,32 +537,6 @@ export default function FilterInsights({
         ))}
       </div>
 
-      {/* Top breakdown */}
-      {insights.breakdown.length > 0 && (
-        <div className="bg-white/[.03] rounded-lg p-3 mb-3">
-          <h4 className="text-xs font-medium text-white/50 uppercase tracking-wide mb-2">Top {breakdownLabel}</h4>
-          <div className="space-y-1.5">
-            {insights.breakdown.map((item, i) => {
-              const maxAmt = insights.breakdown[0]?.amount || 1;
-              const pct = (item.amount / maxAmt) * 100;
-              return (
-                <div key={item.name + i}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs text-white/80 truncate flex-1 mr-2">{item.name}</span>
-                    <span className="text-xs font-medium text-white shrink-0 tabular-nums">{formatCurrency(item.amount)}</span>
-                  </div>
-                  <div className="w-full bg-white/[.05] rounded-full h-1 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%`, backgroundColor: accentColor }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* "View previous period" footer */}
       {insights.hasFullCompCoverage && (

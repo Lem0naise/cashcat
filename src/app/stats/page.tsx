@@ -347,25 +347,25 @@ export default function Stats() {
                                                 </div>
                                             </div>
 
-                                            {/* 5-KPI grid */}
-                                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                                                <div className="bg-white/[.03] rounded-lg p-2.5">
+                                            {/* 5-KPI flex row – stays horizontal, wraps only when needed */}
+                                            <div className="flex flex-wrap gap-2">
+                                                <div className="bg-white/[.03] rounded-lg p-2.5 flex-1 min-w-[80px]">
                                                     <div className="text-xs text-white/50 mb-0.5">Spent</div>
                                                     <div className="text-sm font-bold text-white tabular-nums">{formatCurrency(quickStats.totalSpent)}</div>
                                                 </div>
-                                                <div className="bg-white/[.03] rounded-lg p-2.5">
+                                                <div className="bg-white/[.03] rounded-lg p-2.5 flex-1 min-w-[80px]">
                                                     <div className="text-xs text-white/50 mb-0.5">Transactions</div>
                                                     <div className="text-sm font-bold text-white tabular-nums">{quickStats.txnCount}</div>
                                                 </div>
-                                                <div className="bg-white/[.03] rounded-lg p-2.5">
+                                                <div className="bg-white/[.03] rounded-lg p-2.5 flex-1 min-w-[80px]">
                                                     <div className="text-xs text-white/50 mb-0.5">Daily Avg</div>
                                                     <div className="text-sm font-bold text-white tabular-nums">{formatCurrency(quickStats.dailyAvg)}</div>
                                                 </div>
-                                                <div className="bg-white/[.03] rounded-lg p-2.5">
+                                                <div className="bg-white/[.03] rounded-lg p-2.5 flex-1 min-w-[80px]">
                                                     <div className="text-xs text-white/50 mb-0.5">Largest</div>
                                                     <div className="text-sm font-bold text-white tabular-nums">{formatCurrency(quickStats.largestTxn)}</div>
                                                 </div>
-                                                <div className="bg-white/[.03] rounded-lg p-2.5">
+                                                <div className="bg-white/[.03] rounded-lg p-2.5 flex-1 min-w-[80px]">
                                                     <div className="text-xs text-white/50 mb-0.5">Per Txn</div>
                                                     <div className="text-sm font-bold text-white tabular-nums">
                                                         {quickStats.txnCount > 0 ? formatCurrency(quickStats.totalSpent / quickStats.txnCount) : '—'}

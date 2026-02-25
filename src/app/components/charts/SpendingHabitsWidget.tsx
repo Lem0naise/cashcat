@@ -185,7 +185,7 @@ export default function SpendingHabitsWidget({
     const bullets: Bullet[] = maybeBullets.filter((b): b is Bullet => b !== null);
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {bullets.map((b: Bullet, i: number) => (
                 <div key={i} className="bg-white/[.03] rounded-lg p-3 flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-white/40 mb-0.5">
