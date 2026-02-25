@@ -26,12 +26,13 @@ export const changelog: Major[] = [
                 version: "12",
                 patches: [
                     {
-                        version: "0.12.2",
+                        version: "0.12.4",
                         date: "February 25, 2026",
                         features: [
-                            "Redirected for mobile Google login fixed."
+
                         ],
                         bugfixes: [
+                            "Redirecting for mobile Google login fixed."
                         ]
                     },
                     {

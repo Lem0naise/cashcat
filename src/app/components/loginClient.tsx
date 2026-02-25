@@ -6,6 +6,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Capacitor } from '@capacitor/core';
 
 export default function LoginClient() {
   const router = useRouter();
@@ -105,7 +106,10 @@ export default function LoginClient() {
   const [redirectUrl, setRedirectUrl] = useState<string>('');
 
   useEffect(() => {
-    setRedirectUrl(`${window.location.origin}/auth/callback?next=${redirectTo}`);
+    const origin = Capacitor.isNativePlatform()
+      ? 'https://cashcat.app'
+      : window.location.origin;
+    setRedirectUrl(`${origin}/auth/callback?next=${redirectTo}`);
   }, [redirectTo]);
 
   useEffect(() => {

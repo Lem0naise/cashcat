@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '../utils/supabase';
+import { useRouter } from 'next/navigation';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 
 type SupabaseContext = {
   user: User | null;
@@ -43,6 +46,7 @@ export default function SupabaseProvider({
   });
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
     // Background auth check — updates user if online, no-op if offline
@@ -82,8 +86,42 @@ export default function SupabaseProvider({
 
     getSession();
 
+    // On native Capacitor, handle the OAuth deep link redirect back into the app
+    let appUrlOpenListener: Awaited<ReturnType<typeof App.addListener>> | null = null;
+
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', async (event) => {
+        const url = new URL(event.url);
+
+        // PKCE flow: ?code= → navigate to /auth/callback which exchanges it server-side
+        const code = url.searchParams.get('code');
+        if (code) {
+          const next = url.searchParams.get('next') ?? '/budget';
+          router.push(`/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
+          return;
+        }
+
+        // Implicit flow: #access_token=...&refresh_token=...
+        const hash = url.hash;
+        if (hash && hash.includes('access_token')) {
+          const params = new URLSearchParams(hash.slice(1));
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (!error) {
+              router.push('/budget');
+            }
+          }
+        }
+      }).then(listener => {
+        appUrlOpenListener = listener;
+      });
+    }
+
     return () => {
       subscription.unsubscribe();
+      appUrlOpenListener?.remove();
     };
   }, []);
 
