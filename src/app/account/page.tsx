@@ -16,6 +16,7 @@ import { Capacitor } from '@capacitor/core';
 import { currentVersion } from '../../lib/changelog';
 import { UpgradeButton } from '../components/upgrade-button';
 import { ProBadge } from '../components/pro-badge';
+import { useSubscription } from '@/hooks/useSubscription';
 
 
 export default function Account() {
@@ -30,26 +31,12 @@ export default function Account() {
     const [contactConfirmStep, setContactConfirmStep] = useState(0); // 0: normal, 1: click again to email
 
     // Subscription state
-    const [subscriptionStatus, setSubscriptionStatus] = useState<{
-        isActive: boolean;
-        status: string | null;
-        renewsAt: string | null;
-    } | null>(null);
-    const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+    const { subscription: subscriptionStatus, loading: subscriptionLoading } = useSubscription();
 
     // Load dismissed state from localStorage
     useEffect(() => {
         const dismissed = localStorage.getItem('install-instructions-dismissed');
         setIsInstallDismissed(dismissed === 'true');
-    }, []);
-
-    // Fetch subscription status
-    useEffect(() => {
-        fetch('/api/subscription/status')
-            .then(r => r.json())
-            .then(data => setSubscriptionStatus(data))
-            .catch(() => setSubscriptionStatus(null))
-            .finally(() => setSubscriptionLoading(false));
     }, []);
 
     // Check if running in PWA mode
@@ -233,7 +220,7 @@ export default function Account() {
                                             </li>
                                         ))}
                                     </ul>
-                                    <UpgradeButton className="w-full justify-center" />
+                                    <UpgradeButton />
                                 </div>
                             )}
                         </div>

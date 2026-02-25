@@ -39,7 +39,7 @@ export function UpgradeButton({
                 hover:bg-green-dark hover:text-white
                 disabled:opacity-50 disabled:cursor-not-allowed
                 active:scale-[0.98]
-                font-[family-name:var(--font-suse)]
+                font-[family-name:var(--font-suse)]  w-full justify-center
                 ${className}`}
         >
             {isPending ? (
