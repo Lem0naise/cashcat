@@ -7,7 +7,7 @@ import WaitlistForm from './components/waitlist-form';
 
 export const metadata = {
     title: 'CashCat - The Budgeting App for Data Nerds',
-    description: 'The free zero-based budgeting app that gives you total control over your own data. Manage your money with confidence.',
+    description: 'Your money. Your rules. The free zero-based budgeting app that gives you total control over your own data. Manage your money with confidence.',
     keywords: [
         'budgeting app',
         'zero-based budgeting',

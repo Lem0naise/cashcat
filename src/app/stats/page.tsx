@@ -23,6 +23,8 @@ import Sidebar from "../components/sidebar";
 import { useMobileViewportStability } from '../hooks/useMobileViewportStability';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import Link from 'next/link';
+import { ProBadge } from '../components/pro-badge';
+import { Capacitor } from '@capacitor/core';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -43,6 +45,7 @@ export default function Stats() {
 
     // Responsive breakpoint detection
     const isDesktop = useIsDesktop();
+    const isNative = Capacitor.isNativePlatform();
 
     // Chart state
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom'>('3m');
@@ -448,7 +451,10 @@ export default function Stats() {
                                                 </svg>
                                             </div>
                                             <div>
-                                                <h3 className="font-semibold text-sm sm:text-base text-white">Money Flow Diagram</h3>
+                                                <h3 className="font-semibold text-sm sm:text-base text-white flex items-center gap-2">
+                                                    Money Flow Diagram
+                                                    {!isNative && <ProBadge />}
+                                                </h3>
                                                 <p className="text-xs text-white/50">Interactive Sankey visualization</p>
                                             </div>
                                         </div>

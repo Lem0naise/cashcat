@@ -30,11 +30,11 @@ export const changelog: Major[] = [
                         date: "February 25, 2026",
                         features: [
                             "Added Google login",
+                            "Added Pro subscription!",
                             "Overhauled desktop transaction view",
                             "Added waitlist"
                         ],
                         bugfixes: [
-                            ""
                         ]
                     }
                 ]
