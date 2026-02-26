@@ -23,8 +23,8 @@ import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
 import { useMobileViewportStability } from '../hooks/useMobileViewportStability';
 import { useIsDesktop } from '../hooks/useIsDesktop';
-import Link from 'next/link';
-import { ProBadge } from '../components/pro-badge';
+import { ProGate } from '../components/pro-gate';
+import SankeyInline from './sankey/sankey-inline';
 import { Capacitor } from '@capacitor/core';
 import { subDays, startOfMonth, subMonths, endOfMonth, startOfYear, subYears, endOfYear } from 'date-fns';
 
@@ -592,29 +592,23 @@ export default function Stats() {
                                     </div>
                                 )}
 
-                                {/* ── 7. Money Flow (Sankey) card ─────────────────────────────────── */}
-                                <Link href="/stats/sankey">
-                                    <div className="stats-card group hover:border-green/40 transition-all cursor-pointer flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 bg-gradient-to-br from-blue-500/30 to-green/30 rounded-lg flex items-center justify-center">
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green">
-                                                    <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-sm sm:text-base text-white flex items-center gap-2">
-                                                    Money Flow Diagram
-                                                    {!isNative && <ProBadge />}
-                                                </h3>
-                                                <p className="text-xs text-white/50">Interactive Sankey visualization</p>
-                                            </div>
-                                        </div>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                                            className="text-white/30 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all">
-                                            <path d="M9 18l6-6-6-6" />
+                                {/* ── 7. Money Flow (Sankey) — inline pro-gated ───────────────── */}
+                                <div className="stats-card">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green shrink-0">
+                                            <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
                                         </svg>
+                                        <h2 className="text-sm font-semibold text-white">Money Flow Diagram</h2>
+                                        {!isNative && <span className="ml-1 text-[10px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-green/15 text-green border border-green/25">Pro</span>}
                                     </div>
-                                </Link>
+                                    <ProGate
+                                        featureName="Money Flow Diagram"
+                                        featureDescription="See exactly where every dollar goes — income sources flow through spending groups, categories, and vendors in one beautiful interactive visualization."
+                                        dismissible={false}
+                                    >
+                                        <SankeyInline />
+                                    </ProGate>
+                                </div>
 
                             </div>
                         )}

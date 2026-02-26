@@ -1,99 +1,119 @@
 'use client';
 
+import Image from 'next/image';
 import { Capacitor } from '@capacitor/core';
 import { UpgradeButton } from './upgrade-button';
 
 interface ProGateOverlayProps {
     featureName: string;
     featureDescription: string;
-    preview?: React.ReactNode;
+    /** If false (inline/embedded usage), hides the X button */
+    dismissible?: boolean;
+    onClose?: () => void;
 }
 
 const PRO_FEATURES = [
-    { icon: '◈', label: 'Money Flow Diagram' },
-    { icon: '◈', label: 'Advanced spending insights' },
-    { icon: '◈', label: 'More features coming soon' },
+    { label: 'Money Flow diagram — see where every dollar goes at a glance' },
+    { label: 'Full history beyond 3 months, custom date ranges' },
+    { label: '100× higher API limits for power users' },
+    { label: 'Priority support & early access to new features' },
 ];
 
 /**
- * ProGateOverlay — client component so it can detect native vs web.
+ * ProGateOverlay — renders the upgrade card content.
+ * Positioning (fixed fullscreen vs absolute inline) is handled by the parent ProGate.
  *
  * On native Capacitor (Android/iOS): shows a polite message — NO payment links.
  * On web: shows the full upgrade UI with UpgradeButton.
  */
-export function ProGateOverlay({ featureName, featureDescription, preview }: ProGateOverlayProps) {
+export function ProGateOverlay({ featureName, featureDescription, dismissible = true, onClose }: ProGateOverlayProps) {
     const isNative = Capacitor.isNativePlatform();
 
     return (
-        <div className="relative w-full min-h-[480px] rounded-xl overflow-hidden font-[family-name:var(--font-suse)]">
-            {/* Blurred preview (optional) */}
-            {preview && (
-                <div className="absolute inset-0 blur-md opacity-20 pointer-events-none select-none scale-105">
-                    {preview}
-                </div>
+        <div className="relative w-full max-w-md mx-auto">
+
+            {/* Dismissible X button */}
+            {dismissible && (
+                <button
+                    onClick={onClose}
+                    className="absolute -top-4 -left-4 w-8 h-8 rounded-full border border-white/20 bg-black/50 text-white/40 hover:text-white/70 hover:bg-black/70 transition-colors flex items-center justify-center z-20"
+                    aria-label="Close"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
             )}
 
-            {/* Dark overlay base */}
-            <div className="absolute inset-0 bg-background/80" />
+            <div className="glass-card-blue p-6 sm:p-8 flex flex-col items-center text-center gap-5 shadow-2xl">
 
-            {/* Glass card */}
-            <div className="relative z-10 flex flex-col items-center justify-center min-h-[480px] p-8">
-                <div className="w-full max-w-sm mx-auto glass-card-blue p-7 flex flex-col items-center text-center gap-5">
+                {/* CashCat logo */}
+                <div className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-green/30 shadow-lg shadow-green/10">
+                    <Image
+                        src="/favicons/ccpwa96.png"
+                        alt="CashCat"
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                        priority
+                    />
+                </div>
 
-                    {/* Icon ring */}
-                    <div className="w-14 h-14 rounded-2xl bg-green/10 border border-green/20 flex items-center justify-center">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-green">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                            <path d="M2 17l10 5 10-5" />
-                            <path d="M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
+                {/* Heading */}
+                <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-xs font-semibold tracking-[.14em] uppercase text-green/80">
+                        CashCat Pro
+                    </span>
+                    <h2 className="text-2xl font-bold tracking-tight text-white leading-tight">
+                        Unlock {featureName}
+                    </h2>
+                    <p className="text-sm text-white/55 leading-relaxed max-w-xs">
+                        {featureDescription}
+                    </p>
+                </div>
 
-                    {/* Eyebrow */}
-                    <div className="flex flex-col items-center gap-1.5">
-                        <span className="text-xs font-semibold tracking-[.12em] uppercase text-green/80">
-                            CashCat Pro
-                        </span>
-                        <h2 className="text-xl font-bold tracking-tight text-white">
-                            {featureName}
-                        </h2>
-                        <p className="text-sm text-white/50 leading-relaxed">
-                            {featureDescription}
+                {/* Feature list */}
+                <ul className="w-full space-y-2.5 text-sm text-left">
+                    {PRO_FEATURES.map(({ label }) => (
+                        <li key={label} className="flex items-start gap-3 text-white/75">
+                            <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-green/20 border border-green/40 flex items-center justify-center">
+                                <svg width="8" height="8" viewBox="0 0 12 12" fill="none" className="text-green">
+                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </span>
+                            {label}
+                        </li>
+                    ))}
+                </ul>
+
+                {/* Pricing hook */}
+                <div className="w-full bg-green/[.08] border border-green/20 rounded-xl px-4 py-3 text-center">
+                    <p className="text-green font-semibold text-base">Less than a coffee a month</p>
+                    <p className="text-white/50 text-xs mt-0.5">Even less with yearly or lifetime plans</p>
+                </div>
+
+                {isNative ? (
+                    /* ── Native: no payment/upgrade links ── */
+                    <div className="w-full space-y-2">
+                        <p className="text-sm text-white/60 leading-relaxed">
+                            Visit{' '}
+                            <span className="text-green font-semibold">cashcat.app</span>
+                            {' '}in your browser to subscribe.
+                        </p>
+                        <p className="text-xs text-white/30">
+                            Already subscribed? Your access appears here automatically.
                         </p>
                     </div>
-
-                    {/* Feature list */}
-                    <ul className="w-full space-y-2 text-sm text-left">
-                        {PRO_FEATURES.map(({ icon, label }) => (
-                            <li key={label} className="flex items-center gap-2.5 text-white/70">
-                                <span className="text-green text-xs shrink-0">✓</span>
-                                {label}
-                            </li>
-                        ))}
-                    </ul>
-
-                    {isNative ? (
-                        /* ── Native: no payment/upgrade links ── */
-                        <div className="w-full space-y-2 pt-1">
-                            <p className="text-sm text-white/60 leading-relaxed">
-                                Visit{' '}
-                                <span className="text-green font-semibold">cashcat.app</span>
-                                {' '}in your browser to subscribe.
-                            </p>
-                            <p className="text-xs text-white/30">
-                                Already subscribed? Your access appears here automatically.
-                            </p>
-                        </div>
-                    ) : (
-                        /* ── Web: full upgrade CTA ── */
-                        <div className="w-full space-y-3 pt-1">
-                            <UpgradeButton />
-                            <p className="text-xs text-white/30 text-center">
-                                Less than a coffee a month · Cancel anytime
-                            </p>
-                        </div>
-                    )}
-                </div>
+                ) : (
+                    /* ── Web: full upgrade CTA ── */
+                    <div className="w-full space-y-2.5">
+                        <UpgradeButton label="Upgrade to Pro — Get Started" />
+                        <p className="text-xs text-white/30 text-center">
+                            Cancel anytime · No commitment
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );
