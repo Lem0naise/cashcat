@@ -124,7 +124,9 @@ const normalizeVendorKey = (value: string) =>
         .replace(/\s+/g, ' ')
         .trim();
 
-const makeTempId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+const normalizeTempKey = (value: string) => normalizeKey(value).replace(/\s+/g, '-');
+const makeTempGroupId = (normalized: string) => `temp-group:${normalizeTempKey(normalized)}`;
+const makeTempCategoryId = (groupId: string, normalized: string) => `temp-category:${groupId}:${normalizeTempKey(normalized)}`;
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -223,6 +225,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
         const supabase = createClient();
         const userId = getCachedUserId();
         if (!userId) return;
+        let isCancelled = false;
 
         const loadMappings = async () => {
             const { data, error } = await supabase
@@ -234,69 +237,16 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                 console.error('Failed to load import mappings:', error);
                 return;
             }
-            setSavedMappings(((data || []) as unknown) as ImportMappingRecord[]);
+            if (!isCancelled) {
+                setSavedMappings(((data || []) as unknown) as ImportMappingRecord[]);
+            }
         };
 
         loadMappings();
+        return () => {
+            isCancelled = true;
+        };
     }, [isOpen]);
-
-    // ── File handling ──
-    const handleFile = useCallback(async (file: File) => {
-        if (!file.name.endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')) {
-            toast.error('Please upload a CSV file');
-            return;
-        }
-
-        setFileName(file.name);
-
-        try {
-            const text = await readFileAsText(file);
-            const delimiter = detectDelimiter(text);
-            const parsed = parseCSV(text, delimiter);
-
-            if (parsed.headers.length === 0) {
-                toast.error('CSV file appears to be empty');
-                return;
-            }
-
-            setCsvHeaders(parsed.headers);
-            setCsvRows(parsed.rows);
-
-            // Try to auto-detect format
-            const preset = detectFormat(parsed.headers);
-            setDetectedPreset(preset);
-
-            if (preset) {
-                // Use preset mappings
-                setColumnMappings(preset.mappings);
-                toast.success(`Detected ${preset.name} format`);
-
-                // For recognized formats, we can skip column mapping
-                processWithMappings(parsed.headers, parsed.rows, preset.mappings, preset);
-            } else {
-                // Auto-map what we can and show column mapping step
-                const autoMapped = autoMapHeaders(parsed.headers);
-                setColumnMappings(autoMapped);
-
-                // Check if auto-mapping found required fields
-                const hasDate = autoMapped.some(m => m.cashcatField === 'date');
-                const hasAmount = autoMapped.some(m => m.cashcatField === 'amount') ||
-                    (autoMapped.some(m => m.cashcatField === 'outflow') || autoMapped.some(m => m.cashcatField === 'inflow'));
-                const hasVendor = autoMapped.some(m => m.cashcatField === 'vendor');
-
-                if (hasDate && hasAmount && hasVendor) {
-                    toast.success('Auto-mapped columns. Please verify the mappings.');
-                } else {
-                    toast('Please map the CSV columns to CashCat fields', { icon: 'i' });
-                }
-
-                setStep('column-mapping');
-            }
-        } catch (err) {
-            console.error('Error parsing CSV:', err);
-            toast.error('Failed to parse CSV file');
-        }
-    }, []);
 
     // ── Process mapped data ──
     const processWithMappings = useCallback((
@@ -393,6 +343,64 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
 
         setStep('account-select');
     }, [accounts, categories, groups, savedMappings]);
+
+    // ── File handling ──
+    const handleFile = useCallback(async (file: File) => {
+        if (!file.name.endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')) {
+            toast.error('Please upload a CSV file');
+            return;
+        }
+
+        setFileName(file.name);
+
+        try {
+            const text = await readFileAsText(file);
+            const delimiter = detectDelimiter(text);
+            const parsed = parseCSV(text, delimiter);
+
+            if (parsed.headers.length === 0) {
+                toast.error('CSV file appears to be empty');
+                return;
+            }
+
+            setCsvHeaders(parsed.headers);
+            setCsvRows(parsed.rows);
+
+            // Try to auto-detect format
+            const preset = detectFormat(parsed.headers);
+            setDetectedPreset(preset);
+
+            if (preset) {
+                // Use preset mappings
+                setColumnMappings(preset.mappings);
+                toast.success(`Detected ${preset.name} format`);
+
+                // For recognized formats, we can skip column mapping
+                processWithMappings(parsed.headers, parsed.rows, preset.mappings, preset);
+            } else {
+                // Auto-map what we can and show column mapping step
+                const autoMapped = autoMapHeaders(parsed.headers);
+                setColumnMappings(autoMapped);
+
+                // Check if auto-mapping found required fields
+                const hasDate = autoMapped.some(m => m.cashcatField === 'date');
+                const hasAmount = autoMapped.some(m => m.cashcatField === 'amount') ||
+                    (autoMapped.some(m => m.cashcatField === 'outflow') || autoMapped.some(m => m.cashcatField === 'inflow'));
+                const hasVendor = autoMapped.some(m => m.cashcatField === 'vendor');
+
+                if (hasDate && hasAmount && hasVendor) {
+                    toast.success('Auto-mapped columns. Please verify the mappings.');
+                } else {
+                    toast('Please map the CSV columns to CashCat fields', { icon: 'i' });
+                }
+
+                setStep('column-mapping');
+            }
+        } catch (err) {
+            console.error('Error parsing CSV:', err);
+            toast.error('Failed to parse CSV file');
+        }
+    }, [processWithMappings]);
 
     // ── Run duplicate detection ──
     const runDuplicateDetection = useCallback((transactions: MappedTransaction[]) => {
@@ -542,29 +550,87 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
 
     const handleNewGroupName = useCallback((groupName: string) => {
         const normalized = normalizeKey(groupName);
+        if (!normalized) return '';
         const existingGroup = groups.find(g => normalizeKey(g.name) === normalized);
         if (existingGroup) return existingGroup.id;
 
-        const existingTemp = tempGroups.find(g => g.normalized === normalized);
-        if (existingTemp) return existingTemp.id;
-
-        const id = makeTempId('group');
-        setTempGroups(prev => [...prev, { id, name: groupName, normalized }]);
+        const id = makeTempGroupId(normalized);
+        setTempGroups(prev => {
+            const existing = prev.find(g => g.id === id);
+            if (existing) {
+                if (existing.name !== groupName.trim()) {
+                    return prev.map(g => (g.id === id ? { ...g, name: groupName.trim() } : g));
+                }
+                return prev;
+            }
+            return [...prev, { id, name: groupName.trim(), normalized }];
+        });
         return id;
     }, [groups, tempGroups]);
 
     const handleNewCategoryName = useCallback((categoryName: string, groupId: string, groupName: string) => {
         const normalized = normalizeKey(categoryName);
+        if (!normalized) return '';
         const existingCategory = categories.find(c => normalizeKey(c.name) === normalized && c.group === groupId);
         if (existingCategory) return existingCategory.id;
 
-        const existingTemp = tempCategories.find(c => c.normalized === normalized && c.groupId === groupId);
-        if (existingTemp) return existingTemp.id;
-
-        const id = makeTempId('category');
-        setTempCategories(prev => [...prev, { id, name: categoryName, groupId, groupName, normalized }]);
+        const id = makeTempCategoryId(groupId, normalized);
+        setTempCategories(prev => {
+            const existing = prev.find(c => c.id === id);
+            if (existing) {
+                if (existing.name !== categoryName.trim() || existing.groupName !== groupName) {
+                    return prev.map(c => (c.id === id ? { ...c, name: categoryName.trim(), groupName } : c));
+                }
+                return prev;
+            }
+            return [...prev, { id, name: categoryName.trim(), groupId, groupName, normalized }];
+        });
         return id;
     }, [categories, tempCategories]);
+
+    useEffect(() => {
+        const usedCategoryIds = new Set<string>();
+        const usedGroupIds = new Set<string>();
+
+        categoryMappings.forEach(mapping => {
+            if (mapping.cashcatCategoryId?.startsWith('temp-category:')) {
+                usedCategoryIds.add(mapping.cashcatCategoryId);
+            }
+            if (mapping.cashcatGroupId?.startsWith('temp-group:')) {
+                usedGroupIds.add(mapping.cashcatGroupId);
+            }
+        });
+
+        vendorMappings.forEach(mapping => {
+            if (mapping.cashcatCategoryId?.startsWith('temp-category:')) {
+                usedCategoryIds.add(mapping.cashcatCategoryId);
+            }
+            if (mapping.cashcatGroupId?.startsWith('temp-group:')) {
+                usedGroupIds.add(mapping.cashcatGroupId);
+            }
+        });
+
+        tempCategories.forEach(category => {
+            if (usedCategoryIds.has(category.id) && category.groupId.startsWith('temp-group:')) {
+                usedGroupIds.add(category.groupId);
+            }
+        });
+
+        setTempCategories(prev => {
+            const next = prev.filter(category => usedCategoryIds.has(category.id));
+            if (next.length === prev.length && next.every((item, idx) => item.id === prev[idx].id)) {
+                return prev;
+            }
+            return next;
+        });
+        setTempGroups(prev => {
+            const next = prev.filter(group => usedGroupIds.has(group.id));
+            if (next.length === prev.length && next.every((item, idx) => item.id === prev[idx].id)) {
+                return prev;
+            }
+            return next;
+        });
+    }, [categoryMappings, vendorMappings, tempCategories]);
 
     const resolveCategoryIdForVendor = useCallback((vendor: string) => {
         const mapping = vendorMappings.find(m => m.vendorName === vendor);
@@ -687,6 +753,11 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                 const existingGroup = groups.find(g => g.name.toLowerCase() === name.toLowerCase());
                 if (existingGroup) return existingGroup.id;
 
+                const normalized = normalizeKey(name);
+                const tempId = makeTempGroupId(normalized);
+                const temp = tempGroups.find(g => g.id === tempId);
+                if (temp) return temp.id;
+
                 const cached = groupIdMap.get(name);
                 if (cached) return cached;
 
@@ -727,7 +798,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             for (const mapping of categoryMappings) {
                 const key = `${mapping.csvGroupName}|||${mapping.csvCategoryName}`;
                 if (mapping.mode === 'existing' && mapping.cashcatCategoryId) {
-                    const isTemp = mapping.cashcatCategoryId.startsWith('category-');
+                    const isTemp = mapping.cashcatCategoryId.startsWith('temp-category:');
                     if (!isTemp) {
                         categoryIdMap.set(key, mapping.cashcatCategoryId);
                         const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
@@ -737,7 +808,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                         continue;
                     }
 
-                    const temp = tempCategories.find(c => c.id === mapping.cashcatCategoryId);
+                const temp = tempCategories.find(c => c.id === mapping.cashcatCategoryId);
                     if (temp) {
                         const groupId = await ensureGroup('existing', temp.groupId, temp.groupName);
                         const categoryId = await ensureCategory(temp.name, groupId);
@@ -758,7 +829,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             const vendorGroupIdMap = new Map<string, string>();
             for (const mapping of vendorMappings) {
                 if (mapping.mode === 'existing' && mapping.cashcatCategoryId) {
-                    const isTemp = mapping.cashcatCategoryId.startsWith('category-');
+                    const isTemp = mapping.cashcatCategoryId.startsWith('temp-category:');
                     if (!isTemp) {
                         vendorCategoryIdMap.set(mapping.vendorName, mapping.cashcatCategoryId);
                         const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
@@ -1402,6 +1473,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                     >
                                         <option value="">Select category...</option>
+                                        {tempCategories.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name} (new • {c.groupName})</option>
+                                        ))}
                                         {categories.map(c => (
                                             <option key={c.id} value={c.id}>{c.name} ({c.groups?.name || 'No group'})</option>
                                         ))}
@@ -1418,6 +1492,18 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 next[i] = { ...mapping, newCategoryName: e.target.value };
                                                 setCategoryMappings(next);
                                             }}
+                                                onBlur={(e) => {
+                                                    const next = [...categoryMappings];
+                                                    let groupId = mapping.cashcatGroupId || '';
+                                                    let groupName = mapping.newGroupName || '';
+                                                    if (mapping.groupMode === 'new' && mapping.newGroupName.trim()) {
+                                                        groupId = handleNewGroupName(mapping.newGroupName.trim());
+                                                        groupName = mapping.newGroupName.trim();
+                                                    }
+                                                    const tempCategoryId = groupId ? handleNewCategoryName(e.target.value, groupId, groupName) : '';
+                                                    next[i] = { ...mapping, cashcatCategoryId: tempCategoryId || mapping.cashcatCategoryId };
+                                                    setCategoryMappings(next);
+                                                }}
                                             placeholder="New category name"
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                         />
@@ -1464,6 +1550,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                             >
                                                 <option value="">Select group...</option>
+                                                {tempGroups.map(g => (
+                                                    <option key={g.id} value={g.id}>{g.name} (new)</option>
+                                                ))}
                                                 {groups.map(g => (
                                                     <option key={g.id} value={g.id}>{g.name}</option>
                                                 ))}
@@ -1477,6 +1566,12 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 onChange={(e) => {
                                                     const next = [...categoryMappings];
                                                     next[i] = { ...mapping, newGroupName: e.target.value };
+                                                    setCategoryMappings(next);
+                                                }}
+                                                onBlur={(e) => {
+                                                    const next = [...categoryMappings];
+                                                    const newGroupId = handleNewGroupName(e.target.value);
+                                                    next[i] = { ...mapping, cashcatGroupId: newGroupId || mapping.cashcatGroupId };
                                                     setCategoryMappings(next);
                                                 }}
                                                 placeholder="New group name"
@@ -1591,6 +1686,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                     >
                                         <option value="">Select category...</option>
+                                        {tempCategories.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name} (new • {c.groupName})</option>
+                                        ))}
                                         {categories.map(c => (
                                             <option key={c.id} value={c.id}>{c.name} ({c.groups?.name || 'No group'})</option>
                                         ))}
@@ -1607,6 +1705,18 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 next[i] = { ...mapping, newCategoryName: e.target.value };
                                                 setVendorMappings(next);
                                             }}
+                                                onBlur={(e) => {
+                                                    const next = [...vendorMappings];
+                                                    let groupId = mapping.cashcatGroupId || '';
+                                                    let groupName = mapping.newGroupName || '';
+                                                    if (mapping.groupMode === 'new' && mapping.newGroupName.trim()) {
+                                                        groupId = handleNewGroupName(mapping.newGroupName.trim());
+                                                        groupName = mapping.newGroupName.trim();
+                                                    }
+                                                    const tempCategoryId = groupId ? handleNewCategoryName(e.target.value, groupId, groupName) : '';
+                                                    next[i] = { ...mapping, cashcatCategoryId: tempCategoryId || mapping.cashcatCategoryId };
+                                                    setVendorMappings(next);
+                                                }}
                                             placeholder="New category name"
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                         />
@@ -1653,6 +1763,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
                                             >
                                                 <option value="">Select group...</option>
+                                                {tempGroups.map(g => (
+                                                    <option key={g.id} value={g.id}>{g.name} (new)</option>
+                                                ))}
                                                 {groups.map(g => (
                                                     <option key={g.id} value={g.id}>{g.name}</option>
                                                 ))}
@@ -1666,6 +1779,12 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                                                 onChange={(e) => {
                                                     const next = [...vendorMappings];
                                                     next[i] = { ...mapping, newGroupName: e.target.value };
+                                                    setVendorMappings(next);
+                                                }}
+                                                onBlur={(e) => {
+                                                    const next = [...vendorMappings];
+                                                    const newGroupId = handleNewGroupName(e.target.value);
+                                                    next[i] = { ...mapping, cashcatGroupId: newGroupId || mapping.cashcatGroupId };
                                                     setVendorMappings(next);
                                                 }}
                                                 placeholder="New group name"
