@@ -234,8 +234,10 @@ export function parseAmount(amountStr: string): number | null {
     cleaned = cleaned.replace(/^-/, '');
 
     // Handle thousand separators
-    // If there's a comma followed by exactly 2 digits at the end, comma is decimal
-    if (/,\d{2}$/.test(cleaned)) {
+    // European format: comma is the decimal separator (e.g. 1.234,56 or 100,50).
+    // Conditions: ends with comma + exactly 2 digits AND has at most one comma total.
+    const commaCount = (cleaned.match(/,/g) || []).length;
+    if (/,\d{2}$/.test(cleaned) && commaCount === 1) {
         // European format: 1.234,56 or 100,50
         cleaned = cleaned.replace(/\./g, '').replace(',', '.');
     } else {

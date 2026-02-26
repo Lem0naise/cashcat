@@ -1,6 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import { useAuthUserId, getCachedUserId } from '@/app/hooks/useAuthUserId';
+
+export const FREE_IMPORT_LIMIT = 2;
+export const FREE_EXPORT_LIMIT = 3;
 
 type UsageCounts = {
     import_count: number;
@@ -50,8 +53,10 @@ export function useUsage() {
 }
 
 /**
- * Increment a usage counter (import_count or export_count) in the settings table.
- * Call this after a successful import or export completes.
+ * Atomically increment a usage counter (import_count or export_count).
+ * Uses a server-side RPC to avoid the read-modify-write race condition that
+ * could allow concurrent imports/exports to bypass the free-tier paywall.
+ * Requires the increment_usage_count() Postgres function (migration: 20260226_increment_usage.sql).
  */
 export async function incrementUsage(field: 'import_count' | 'export_count') {
     const userId = getCachedUserId();
@@ -59,20 +64,15 @@ export async function incrementUsage(field: 'import_count' | 'export_count') {
 
     const supabase = createClient();
 
-    // Read current value
-    const { data: current } = await supabase
-        .from('settings')
-        .select(field)
-        .eq('id', userId)
-        .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc('increment_usage_count', {
+        p_user_id: userId,
+        p_field: field,
+    });
 
-    const currentValue = (current as any)?.[field] ?? 0;
-
-    // Upsert with incremented value
-    await supabase
-        .from('settings')
-        .upsert(
-            { id: userId, [field]: currentValue + 1 },
-            { onConflict: 'id' }
-        );
+    if (error) {
+        // Non-fatal: log and continue. Offline users will miss the increment,
+        // which is acceptable — we don't want a counter failure to break import/export.
+        console.warn('[incrementUsage] RPC error (may be offline):', error);
+    }
 }

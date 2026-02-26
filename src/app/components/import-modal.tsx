@@ -12,7 +12,7 @@ import { getCachedUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { parseCSV, detectDelimiter, readFileAsText } from '@/app/utils/csv-parser';
-import { incrementUsage, useUsage } from '@/app/hooks/useUsage';
+import { incrementUsage, useUsage, FREE_IMPORT_LIMIT } from '@/app/hooks/useUsage';
 import { useSubscription } from '@/hooks/useSubscription';
 import {
     IMPORT_PRESETS,
@@ -95,8 +95,6 @@ type ImportModalProps = {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-const FREE_IMPORT_LIMIT = 2;
 
 const CASHCAT_FIELDS: { value: CashCatField; label: string }[] = [
     { value: 'date', label: 'Date' },
@@ -572,7 +570,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             return [...prev, { id, name: groupName.trim(), normalized }];
         });
         return id;
-    }, [groups, tempGroups]);
+    }, [groups]);
 
     const handleNewCategoryName = useCallback((categoryName: string, groupId: string, groupName: string) => {
         const normalized = normalizeKey(categoryName);
@@ -592,7 +590,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             return [...prev, { id, name: categoryName.trim(), groupId, groupName, normalized }];
         });
         return id;
-    }, [categories, tempCategories]);
+    }, [categories]);
 
     useEffect(() => {
         const usedCategoryIds = new Set<string>();

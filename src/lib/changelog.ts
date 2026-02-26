@@ -23,6 +23,25 @@ export const changelog: Major[] = [
         minors: [
 
             {
+                version: "13",
+                patches: [
+                    {
+                        version: "0.13.0",
+                        date: "February 26, 2026",
+                        features: [
+                            "CSV import with auto-detection for major bank formats",
+                            "Custom vendor and category mappings saved for future imports",
+                            "Duplicate detection when importing overlapping date ranges",
+                            "Money Flow (Sankey) diagram now embedded inline on the Stats page",
+                        ],
+                        bugfixes: [
+                            "Fixed a timezone bug in duplicate detection that could shift the fuzzy date window by one day for users outside UTC",
+                            "Fixed CSV amount parsing incorrectly treating values like 1,000,23 as European decimal format",
+                        ]
+                    }
+                ]
+            },
+            {
                 version: "12",
                 patches: [
                     {

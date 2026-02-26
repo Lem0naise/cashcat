@@ -19,7 +19,7 @@ import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
 import type { TransferWithAccounts } from '@/types/supabase';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useUsage } from '../../hooks/useUsage';
+import { useUsage, FREE_IMPORT_LIMIT, FREE_EXPORT_LIMIT } from '../../hooks/useUsage';
 import { ProGateOverlay } from '../../components/pro-gate-overlay';
 
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
@@ -70,9 +70,6 @@ export default function Transactions() {
     const { subscription } = useSubscription();
     const { importCount, exportCount } = useUsage();
     const [showProGate, setShowProGate] = useState<'import' | 'export' | null>(null);
-
-    const FREE_IMPORT_LIMIT = 2;
-    const FREE_EXPORT_LIMIT = 3;
 
     const handleOpenImport = () => {
         if (!subscription?.isActive && importCount >= FREE_IMPORT_LIMIT) {

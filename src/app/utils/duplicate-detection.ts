@@ -131,17 +131,17 @@ export function detectDuplicates(
         byDate.get(dateKey)!.push(tx);
     }
 
-    // Get nearby dates for fuzzy matching
+    // Get nearby dates for fuzzy matching.
+    // Uses pure date-only arithmetic to avoid UTC vs. local-time shifts that
+    // occur when mixing new Date('YYYY-MM-DD') (UTC) with getDate/setDate (local).
     const getNearbyDates = (dateStr: string): string[] => {
         const dates: string[] = [dateStr];
-        const base = new Date(dateStr);
+        const [year, month, day] = dateStr.split('-').map(Number);
         for (let d = 1; d <= dateTolerance; d++) {
-            const before = new Date(base);
-            before.setDate(before.getDate() - d);
+            const before = new Date(Date.UTC(year, month - 1, day - d));
             dates.push(before.toISOString().split('T')[0]);
 
-            const after = new Date(base);
-            after.setDate(after.getDate() + d);
+            const after = new Date(Date.UTC(year, month - 1, day + d));
             dates.push(after.toISOString().split('T')[0]);
         }
         return dates;

@@ -9,7 +9,7 @@ import type { TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
 import { incrementUsage } from '@/app/hooks/useUsage';
-import { useUsage } from '@/app/hooks/useUsage';
+import { useUsage, FREE_EXPORT_LIMIT } from '@/app/hooks/useUsage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -26,8 +26,6 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const queryClient = useQueryClient();
     const { exportCount } = useUsage();
     const { subscription } = useSubscription();
-
-    const FREE_EXPORT_LIMIT = 3;
 
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
@@ -97,7 +95,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
         });
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
         setIsExporting(true);
         try {
             // Filter transactions
@@ -226,9 +224,8 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
             }
 
             // Increment usage counter for free-tier gating
-            incrementUsage('export_count').then(() => {
-                queryClient.invalidateQueries({ queryKey: ['usage'] });
-            });
+            await incrementUsage('export_count');
+            queryClient.invalidateQueries({ queryKey: ['usage'] });
 
             onClose();
         } catch (error) {
