@@ -12,6 +12,8 @@ import { getCachedUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { parseCSV, detectDelimiter, readFileAsText } from '@/app/utils/csv-parser';
+import { incrementUsage, useUsage } from '@/app/hooks/useUsage';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
     IMPORT_PRESETS,
     detectFormat,
@@ -94,6 +96,8 @@ type ImportModalProps = {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+const FREE_IMPORT_LIMIT = 2;
+
 const CASHCAT_FIELDS: { value: CashCatField; label: string }[] = [
     { value: 'date', label: 'Date' },
     { value: 'vendor', label: 'Vendor / Payee' },
@@ -137,6 +141,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
     const { data: groups = [] } = useGroups();
     const { data: existingTransactions = [] } = useTransactions();
     const queryClient = useQueryClient();
+    const { importCount } = useUsage();
+    const { subscription } = useSubscription();
 
     // ── State ──
     const [step, setStep] = useState<ImportStep>('upload');
@@ -956,6 +962,11 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             queryClient.invalidateQueries({ queryKey: ['vendors'] });
 
             toast.success(`Successfully imported ${toImport.length} transactions`);
+
+            // Increment usage counter for free-tier gating
+            await incrementUsage('import_count');
+            queryClient.invalidateQueries({ queryKey: ['usage'] });
+
             onImportComplete();
             onClose();
         } catch (err) {
@@ -1117,6 +1128,22 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                     </span>
                 </div>
             </div>
+
+            {!subscription?.isActive && (
+                <div className={`flex items-center gap-2 text-xs ${
+                    importCount >= FREE_IMPORT_LIMIT
+                        ? 'text-orange-300'
+                        : 'text-white/40'
+                }`}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {importCount >= FREE_IMPORT_LIMIT
+                        ? `Free import limit reached (${importCount}/${FREE_IMPORT_LIMIT} used) — upgrade to Pro for unlimited imports`
+                        : `${FREE_IMPORT_LIMIT - importCount} of ${FREE_IMPORT_LIMIT} free imports remaining`
+                    }
+                </div>
+            )}
         </div>
     );
 

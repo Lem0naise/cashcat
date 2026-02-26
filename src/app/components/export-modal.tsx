@@ -8,6 +8,10 @@ import { useTransfers } from '@/app/hooks/useTransfers';
 import type { TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
+import { incrementUsage } from '@/app/hooks/useUsage';
+import { useUsage } from '@/app/hooks/useUsage';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSubscription } from '@/hooks/useSubscription';
 
 type ExportModalProps = {
     isOpen: boolean;
@@ -19,6 +23,11 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const { data: categories = [] } = useCategories();
     const { data: accounts = [] } = useAccounts();
     const { data: transfers = [] } = useTransfers();
+    const queryClient = useQueryClient();
+    const { exportCount } = useUsage();
+    const { subscription } = useSubscription();
+
+    const FREE_EXPORT_LIMIT = 3;
 
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
@@ -216,6 +225,11 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                 URL.revokeObjectURL(url);
             }
 
+            // Increment usage counter for free-tier gating
+            incrementUsage('export_count').then(() => {
+                queryClient.invalidateQueries({ queryKey: ['usage'] });
+            });
+
             onClose();
         } catch (error) {
             console.error('Export failed:', error);
@@ -404,29 +418,46 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 border-t border-white/10 bg-[#151515] flex justify-end gap-3">
-                        <button
-                            onClick={onClose}
-                            className="px-6 py-3 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleExport}
-                            disabled={isExporting}
-                            className="px-8 py-3 rounded-lg font-bold text-black bg-green hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                            {isExporting ? (
-                                <>
-                                    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-                                    Exporting...
-                                </>
-                            ) : (
-                                <>
-                                    Export
-                                </>
-                            )}
-                        </button>
+                    <div className="p-6 border-t border-white/10 bg-[#151515] flex flex-col gap-3">
+                        {/* Usage indicator for free users */}
+                        {!subscription?.isActive && (
+                            <div className={`flex items-center gap-2 text-xs ${exportCount >= FREE_EXPORT_LIMIT
+                                    ? 'text-orange-300'
+                                    : 'text-white/40'
+                                }`}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                {exportCount >= FREE_EXPORT_LIMIT
+                                    ? `Free export limit reached (${exportCount}/${FREE_EXPORT_LIMIT} used) — upgrade to Pro for unlimited exports`
+                                    : `${FREE_EXPORT_LIMIT - exportCount} of ${FREE_EXPORT_LIMIT} free exports remaining`
+                                }
+                            </div>
+                        )}
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-3 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                disabled={isExporting}
+                                className="px-8 py-3 rounded-lg font-bold text-black bg-green hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isExporting ? (
+                                    <>
+                                        <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                                        Exporting...
+                                    </>
+                                ) : (
+                                    <>
+                                        Export
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

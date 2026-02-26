@@ -18,6 +18,9 @@ import { useTransactions, TransactionWithDetails } from '../../hooks/useTransact
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
 import type { TransferWithAccounts } from '@/types/supabase';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useUsage } from '../../hooks/useUsage';
+import { ProGateOverlay } from '../../components/pro-gate-overlay';
 
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
@@ -63,6 +66,29 @@ export default function Transactions() {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
+
+    const { subscription } = useSubscription();
+    const { importCount, exportCount } = useUsage();
+    const [showProGate, setShowProGate] = useState<'import' | 'export' | null>(null);
+
+    const FREE_IMPORT_LIMIT = 2;
+    const FREE_EXPORT_LIMIT = 3;
+
+    const handleOpenImport = () => {
+        if (!subscription?.isActive && importCount >= FREE_IMPORT_LIMIT) {
+            setShowProGate('import');
+        } else {
+            setShowImportModal(true);
+        }
+    };
+
+    const handleOpenExport = () => {
+        if (!subscription?.isActive && exportCount >= FREE_EXPORT_LIMIT) {
+            setShowProGate('export');
+        } else {
+            setShowExportModal(true);
+        }
+    };
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
@@ -485,6 +511,24 @@ export default function Transactions() {
                 onClose={() => setShowImportModal(false)}
                 onImportComplete={() => { refetch(); }}
             />
+            {/* Pro Gate Overlay for import/export limits */}
+            {showProGate && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 font-[family-name:var(--font-suse)]"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowProGate(null); }}
+                >
+                    <ProGateOverlay
+                        featureName={showProGate === 'import' ? 'Unlimited Imports' : 'Unlimited Exports'}
+                        featureDescription={
+                            showProGate === 'import'
+                                ? `You've used your ${FREE_IMPORT_LIMIT} free imports. Upgrade to CashCat Pro for unlimited CSV imports.`
+                                : `You've used your ${FREE_EXPORT_LIMIT} free exports. Upgrade to CashCat Pro for unlimited data exports.`
+                        }
+                        dismissible={true}
+                        onClose={() => setShowProGate(null)}
+                    />
+                </div>
+            )}
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <Toaster
                     containerClassName='mb-[15dvh]'
@@ -559,7 +603,7 @@ export default function Transactions() {
                                 selectedAccountId={selectedAccountId}
                                 onAccountChange={setSelectedAccountId}
                                 onManageAccounts={() => setShowAccountModal(true)}
-                                onImport={() => setShowImportModal(true)}
+                                onImport={handleOpenImport}
                             />
                         )}
                     </div>
@@ -615,7 +659,7 @@ export default function Transactions() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                setShowExportModal(true);
+                                                handleOpenExport();
                                                 setShowMobileMenu(false);
                                             }}
                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
@@ -630,7 +674,7 @@ export default function Transactions() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                setShowImportModal(true);
+                                                handleOpenImport();
                                                 setShowMobileMenu(false);
                                             }}
                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
@@ -658,7 +702,7 @@ export default function Transactions() {
                                     selectedAccountId={selectedAccountId}
                                     onAccountChange={setSelectedAccountId}
                                     onManageAccounts={() => setShowAccountModal(true)}
-                                    onImport={() => setShowImportModal(true)}
+                                    onImport={handleOpenImport}
                                 />
                             </div>
 
@@ -698,7 +742,7 @@ export default function Transactions() {
                             <div className="flex gap-5">
                                 <button
                                     title="Import Transactions"
-                                    onClick={() => setShowImportModal(true)}
+                                    onClick={handleOpenImport}
                                     className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                 >
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -711,7 +755,7 @@ export default function Transactions() {
 
                                 <button
                                     title="Export Transactions"
-                                    onClick={() => setShowExportModal(true)}
+                                    onClick={handleOpenExport}
                                     className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                 >
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

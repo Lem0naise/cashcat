@@ -15,7 +15,7 @@ interface ProGateOverlayProps {
 const PRO_FEATURES = [
     { label: 'Money Flow diagram — see where every dollar goes at a glance' },
     { label: 'Full history beyond 3 months, custom date ranges' },
-    { label: '100× higher API limits for power users' },
+    { label: '100x higher API limits for power users' },
     { label: 'Priority support & early access to new features' },
 ];
 

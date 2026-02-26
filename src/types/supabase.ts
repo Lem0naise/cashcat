@@ -300,16 +300,22 @@ export type Database = {
           currency: string | null
           id: string
           landing: string | null
+          import_count: number
+          export_count: number
         }
         Insert: {
           currency?: string | null
           id?: string
           landing?: string | null
+          import_count?: number
+          export_count?: number
         }
         Update: {
           currency?: string | null
           id?: string
           landing?: string | null
+          import_count?: number
+          export_count?: number
         }
         Relationships: []
       }
