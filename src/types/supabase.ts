@@ -226,6 +226,54 @@ export type Database = {
         }
         Relationships: []
       }
+      import_mappings: {
+        Row: {
+          id: string
+          user_id: string
+          match_type: 'vendor' | 'category'
+          match_value: string
+          match_normalized: string
+          category_id: string | null
+          group_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          match_type: 'vendor' | 'category'
+          match_value: string
+          match_normalized: string
+          category_id?: string | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          match_type?: 'vendor' | 'category'
+          match_value?: string
+          match_normalized?: string
+          category_id?: string | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_mappings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_mappings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       information: {
         Row: {
           created_at: string
