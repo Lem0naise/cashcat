@@ -3,6 +3,10 @@
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ProBadge } from './pro-badge';
+import { ProGateOverlay } from './pro-gate-overlay';
 
 interface ChartControlsProps {
   timeRange: '7d' | '30d' | 'mtd' | '3m' | 'ytd' | '12m' | 'all' | 'custom';
@@ -32,6 +36,8 @@ export default function ChartControls({
   onCategoriesChange
 }: ChartControlsProps) {
   const [showCustomDates, setShowCustomDates] = useState(false);
+  const [showProGate, setShowProGate] = useState(false);
+  const { subscription } = useSubscription();
 
   const timeRangeOptions = [
     { value: '7d', label: 'Last 7 Days' },
@@ -82,6 +88,10 @@ export default function ChartControls({
             <button
               key={option.value}
               onClick={() => {
+                if (option.value === 'custom' && !subscription?.isActive) {
+                  setShowProGate(true);
+                  return;
+                }
                 onTimeRangeChange(option.value);
                 if (option.value === 'custom') {
                   setShowCustomDates(true);
@@ -93,9 +103,10 @@ export default function ChartControls({
                 timeRange === option.value
                   ? 'bg-green text-black'
                   : 'bg-white/[.05] hover:bg-white/[.1] text-white/70'
-              }`}
+              } ${option.value === 'custom' && !subscription?.isActive ? 'flex items-center gap-1.5' : ''}`}
             >
               {option.label}
+              {option.value === 'custom' && !subscription?.isActive && <ProBadge />}
             </button>
           ))}
         </div>
@@ -204,6 +215,22 @@ export default function ChartControls({
           )}
         </div>
       </div>
+
+      {/* Pro Gate Overlay for Custom Range */}
+      {showProGate && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 font-[family-name:var(--font-suse)]"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowProGate(false); }}
+        >
+          <ProGateOverlay
+            featureName="Custom Date Ranges"
+            featureDescription="Set any start and end date for your charts and stats with CashCat Pro."
+            dismissible={true}
+            onClose={() => setShowProGate(false)}
+          />
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

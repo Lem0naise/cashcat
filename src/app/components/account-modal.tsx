@@ -8,6 +8,8 @@ import Dropdown, { DropdownOption } from './dropdown';
 import { useAllAccounts } from '../hooks/useAccounts';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCreateAccount, useUpdateAccount, useDeleteAccount, useSetDefaultAccount } from '../hooks/useAccountMutations';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ProGateOverlay } from './pro-gate-overlay';
 
 type Account = {
     id: string;
@@ -25,9 +27,12 @@ interface AccountModalProps {
     onAccountsUpdated: () => void;
 }
 
+const FREE_ACCOUNT_LIMIT = 4;
+
 export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: AccountModalProps) {
     const { data: allAccountsData = [], isLoading: loading } = useAllAccounts();
     const { data: allTransactions = [] } = useTransactions();
+    const { subscription } = useSubscription();
 
     const createAccountMutation = useCreateAccount();
     const updateAccountMutation = useUpdateAccount();
@@ -55,6 +60,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
         account: null,
     });
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [showAccountProGate, setShowAccountProGate] = useState(false);
 
     useEffect(() => {
         // Check if the user has other accounts available (cannot have zero bank accounts open)
@@ -365,12 +371,49 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                         </form>
                     ) : (
                         <div className="space-y-4">
+                            {/* Usage banner for free users */}
+                            {!subscription?.isActive && (
+                                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+                                    accounts.length >= FREE_ACCOUNT_LIMIT
+                                        ? 'bg-orange-500/10 border border-orange-500/25 text-orange-300'
+                                        : 'bg-white/[.04] border border-white/10 text-white/45'
+                                }`}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    {accounts.length >= FREE_ACCOUNT_LIMIT
+                                        ? `Free plan limit reached (${FREE_ACCOUNT_LIMIT}/${FREE_ACCOUNT_LIMIT} accounts). Upgrade to Pro for unlimited.`
+                                        : `${FREE_ACCOUNT_LIMIT - accounts.length} of ${FREE_ACCOUNT_LIMIT} free accounts remaining`
+                                    }
+                                </div>
+                            )}
                             <button
-                                onClick={() => setShowForm(true)}
-                                className="w-full py-3 px-4 rounded-lg bg-green hover:bg-green/90 text-black font-medium transition-colors flex items-center justify-center gap-2"
+                                onClick={() => {
+                                    if (accounts.length >= FREE_ACCOUNT_LIMIT && !subscription?.isActive) {
+                                        setShowAccountProGate(true);
+                                    } else {
+                                        setShowForm(true);
+                                    }
+                                }}
+                                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                                    accounts.length >= FREE_ACCOUNT_LIMIT && !subscription?.isActive
+                                        ? 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+                                        : 'bg-green hover:bg-green/90 text-black'
+                                }`}
                             >
-                                <Image src="/plus.svg" alt="Add" width={16} height={16} />
-                                Add Account
+                                {accounts.length >= FREE_ACCOUNT_LIMIT && !subscription?.isActive ? (
+                                    <>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                        </svg>
+                                        Add Account — Pro Required
+                                    </>
+                                ) : (
+                                    <>
+                                        <Image src="/plus.svg" alt="Add" width={16} height={16} />
+                                        Add Account
+                                    </>
+                                )}
                             </button>
 
                             {loading ? (
@@ -424,6 +467,20 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 isLoading={confirmLoading}
                 {...getConfirmationContent()}
             />
+
+            {showAccountProGate && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 font-[family-name:var(--font-suse)]"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowAccountProGate(false); }}
+                >
+                    <ProGateOverlay
+                        featureName="Unlimited Accounts"
+                        featureDescription={`Free accounts are limited to ${FREE_ACCOUNT_LIMIT} bank accounts. Upgrade to Pro for unlimited accounts.`}
+                        dismissible
+                        onClose={() => setShowAccountProGate(false)}
+                    />
+                </div>
+            )}
         </div>
     );
 }

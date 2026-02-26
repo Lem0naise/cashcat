@@ -17,8 +17,8 @@ export default function Sidebar() {
 
                 <Link
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/budget')
-                            ? 'bg-green/10 text-green'
-                            : 'hover:bg-white/[.05]'
+                        ? 'bg-green/10 text-green'
+                        : 'hover:bg-white/[.05]'
                         }`}
                     href="/budget"
                 >
@@ -29,16 +29,16 @@ export default function Sidebar() {
                         width={16}
                         height={16}
                         className={` image-black transition-opacity ${isActive('/budget')
-                                ? 'opacity-100'
-                                : 'opacity-70 group-hover:opacity-100'
+                            ? 'opacity-100'
+                            : 'opacity-70 group-hover:opacity-100'
                             }`}
                     />
                     <span className="text-sm hidden lg:inline">Budget</span>
                 </Link>
                 <Link
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/stats')
-                            ? 'bg-green/10 text-green'
-                            : 'hover:bg-white/[.05]'
+                        ? 'bg-green/10 text-green'
+                        : 'hover:bg-white/[.05]'
                         }`}
                     href="/stats"
                 >
@@ -49,16 +49,16 @@ export default function Sidebar() {
                         width={16}
                         height={16}
                         className={`image-black transition-opacity ${isActive('/stats')
-                                ? 'opacity-100'
-                                : 'opacity-70 group-hover:opacity-100'
+                            ? 'opacity-100'
+                            : 'opacity-70 group-hover:opacity-100'
                             }`}
                     />
                     <span className="text-sm hidden lg:inline">Stats</span>
                 </Link>
                 <Link
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/budget/transactions')
-                            ? 'bg-green/10 text-green'
-                            : 'hover:bg-white/[.05]'
+                        ? 'bg-green/10 text-green'
+                        : 'hover:bg-white/[.05]'
                         }`}
                     href="/budget/transactions"
                 >
@@ -69,16 +69,16 @@ export default function Sidebar() {
                         width={16}
                         height={16}
                         className={`image-black transition-opacity ${isActive('/budget/transactions')
-                                ? 'opacity-100'
-                                : 'opacity-70 group-hover:opacity-100'
+                            ? 'opacity-100'
+                            : 'opacity-70 group-hover:opacity-100'
                             }`}
                     />
                     <span className="text-sm hidden lg:inline">Transactions</span>
                 </Link>
                 <Link
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/account')
-                            ? 'bg-green/10 text-green'
-                            : 'hover:bg-white/[.05]'
+                        ? 'bg-green/10 text-green'
+                        : 'hover:bg-white/[.05]'
                         }`}
                     href="/account"
                 >
@@ -89,8 +89,8 @@ export default function Sidebar() {
                         width={16}
                         height={16}
                         className={`image-black transition-opacity ${isActive('/account')
-                                ? 'opacity-100'
-                                : 'opacity-70 group-hover:opacity-100'
+                            ? 'opacity-100'
+                            : 'opacity-70 group-hover:opacity-100'
                             }`}
                     />
                     <span className="text-sm hidden lg:inline">Account</span>
@@ -108,7 +108,7 @@ export default function Sidebar() {
                         height={16}
                         className="image-black transition-opacity opacity-70 group-hover:opacity-100"
                     />
-                    <span className="text-sm hidden lg:inline">Documentation</span>
+                    <span className="text-sm hidden lg:inline">Docs</span>
                 </Link>
             </div>
         </aside>

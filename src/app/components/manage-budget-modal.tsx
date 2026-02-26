@@ -44,47 +44,39 @@ type WizardCategory = {
 type TemplateCategory = { name: string; goal_type: GoalType };
 type TemplateGroup = { name: string; categories: TemplateCategory[]; ratio: number };
 type Template = { label: string; groups: TemplateGroup[] };
-
 const TEMPLATES: Template[] = [
     {
         label: 'Student',
         groups: [
             {
-                name: 'Fixed Costs', ratio: 0.50, categories: [
+                name: 'Fixed Essentials', ratio: 0.45, categories: [
                     { name: 'Rent / Halls', goal_type: 'spending' },
-                    { name: 'Tuition Fees', goal_type: 'spending' },
+                    { name: 'Tuition & Fees', goal_type: 'spending' },
                     { name: 'Phone Bill', goal_type: 'spending' },
-                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Utilities & Internet', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Essentials', ratio: 0.10, categories: [
-                    { name: 'Supplies', goal_type: 'spending' },
-                    { name: 'Tech', goal_type: 'spending' },
-                    { name: 'Laundry', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Living', ratio: 0.20, categories: [
+                name: 'Daily Living', ratio: 0.15, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
-                    { name: 'Toiletries', goal_type: 'spending' },
-                    { name: 'Campus Lunch', goal_type: 'spending' },
-                    { name: 'Coffee', goal_type: 'spending' },
+                    { name: 'Supplies & Tech', goal_type: 'spending' },
+                    { name: 'Laundry & Household', goal_type: 'spending' },
+                    { name: 'Transport (Bus/Train)', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Social', ratio: 0.15, categories: [
-                    { name: 'Nights Out', goal_type: 'spending' },
+                name: 'Going Out & Social', ratio: 0.25, categories: [
+                    { name: 'Nights Out & Drinks', goal_type: 'spending' },
+                    { name: 'Dining & Campus Lunch', goal_type: 'spending' },
                     { name: 'Society Memberships', goal_type: 'spending' },
-                    { name: 'Subscriptions', goal_type: 'spending' },
-                    { name: 'Clothing', goal_type: 'spending' },
+                    { name: 'Clothing & Subscriptions', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Transport', ratio: 0.05, categories: [
-                    { name: 'Bus Pass', goal_type: 'spending' },
-                    { name: 'Uber / Taxi', goal_type: 'spending' },
-                    { name: 'Travel Home', goal_type: 'savings' },
+                name: 'Savings & Future', ratio: 0.15, categories: [
+                    { name: 'Emergency Fund', goal_type: 'emergency_fund' },
+                    { name: 'Next Year Deposit', goal_type: 'savings' },
+                    { name: 'Travel Home Fund', goal_type: 'savings' },
                 ]
             },
         ],
@@ -93,43 +85,35 @@ const TEMPLATES: Template[] = [
         label: 'Young Professional',
         groups: [
             {
-                name: 'Home', ratio: 0.45, categories: [
+                name: 'Housing & Bills', ratio: 0.45, categories: [
                     { name: 'Rent', goal_type: 'spending' },
                     { name: 'Council Tax', goal_type: 'spending' },
-                    { name: 'Electric & Gas', goal_type: 'spending' },
-                    { name: 'Water', goal_type: 'spending' },
-                    { name: 'Internet', goal_type: 'spending' },
+                    { name: 'Electric, Gas & Water', goal_type: 'spending' },
+                    { name: 'Internet & Phone', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Food & Drink', ratio: 0.15, categories: [
-                    { name: 'Groceries', goal_type: 'spending' },
-                    { name: 'Work Lunches', goal_type: 'spending' },
-                    { name: 'Dining Out', goal_type: 'spending' },
-                    { name: 'Household Supplies', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Getting Around', ratio: 0.10, categories: [
-                    { name: 'Car Payment / Lease', goal_type: 'spending' },
-                    { name: 'Fuel', goal_type: 'spending' },
-                    { name: 'Car Insurance', goal_type: 'spending' },
-                    { name: 'Public Transport', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Personal', ratio: 0.10, categories: [
-                    { name: 'Gym / Wellness', goal_type: 'spending' },
-                    { name: 'Subscriptions', goal_type: 'spending' },
-                    { name: 'Hobbies', goal_type: 'spending' },
+                name: 'Daily Essentials', ratio: 0.15, categories: [
+                    { name: 'Groceries & Household', goal_type: 'spending' },
+                    { name: 'Transport / Commute', goal_type: 'spending' },
+                    { name: 'Car Maintenance & Fuel', goal_type: 'savings' },
                     { name: 'Personal Care', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Financial Goals', ratio: 0.20, categories: [
+                name: 'Going Out & Lifestyle', ratio: 0.20, categories: [
+                    { name: 'Dining Out & Drinks', goal_type: 'spending' },
+                    { name: 'Gym & Wellness', goal_type: 'spending' },
+                    { name: 'Hobbies & Entertainment', goal_type: 'spending' },
+                    { name: 'Subscriptions', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Savings & Investments', ratio: 0.20, categories: [
                     { name: 'Emergency Fund', goal_type: 'emergency_fund' },
-                    { name: 'Lisa / ISA', goal_type: 'savings' },
-                    { name: 'Student Loan Repayment', goal_type: 'savings' },
+                    { name: 'LISA / ISA / Brokerage', goal_type: 'savings' },
+                    { name: 'Student Loan Overpayment', goal_type: 'savings' },
+                    { name: 'Vacation Fund', goal_type: 'savings' },
                 ]
             },
         ],
@@ -138,44 +122,42 @@ const TEMPLATES: Template[] = [
         label: 'Family / Homeowner',
         groups: [
             {
-                name: 'Housing', ratio: 0.40, categories: [
+                name: 'Housing & Utilities', ratio: 0.35, categories: [
                     { name: 'Mortgage', goal_type: 'spending' },
                     { name: 'Property Tax / Rates', goal_type: 'spending' },
                     { name: 'Home Insurance', goal_type: 'spending' },
-                    { name: 'Utilities', goal_type: 'spending' },
-                    { name: 'Home Maintenance', goal_type: 'savings' },
+                    { name: 'Energy & Water', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Family', ratio: 0.20, categories: [
+                name: 'Family Essentials', ratio: 0.25, categories: [
+                    { name: 'Groceries & Consumables', goal_type: 'spending' },
                     { name: 'Childcare / School Fees', goal_type: 'spending' },
+                    { name: 'Clothing & Uniforms', goal_type: 'spending' },
+                    { name: 'Transport & Fuel', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Health & Protection', ratio: 0.05, categories: [
+                    { name: 'Life / Health Insurance', goal_type: 'spending' },
+                    { name: 'Pharmacy & Medical', goal_type: 'spending' },
+                    { name: 'Pet Care', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Going Out & Fun', ratio: 0.15, categories: [
+                    { name: 'Family Outings & Dining', goal_type: 'spending' },
                     { name: 'Kids Activities / Clubs', goal_type: 'spending' },
-                    { name: 'Clothing / Uniforms', goal_type: 'spending' },
+                    { name: 'Takeaways', goal_type: 'spending' },
                     { name: 'Pocket Money', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Food & Consumables', ratio: 0.15, categories: [
-                    { name: 'Supermarket Shop', goal_type: 'spending' },
-                    { name: 'School Lunches', goal_type: 'spending' },
-                    { name: 'Pet Food / Care', goal_type: 'spending' },
-                    { name: 'Takeaways', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Health', ratio: 0.05, categories: [
-                    { name: 'Life Insurance', goal_type: 'spending' },
-                    { name: 'Health Insurance', goal_type: 'spending' },
-                    { name: 'Pharmacy / Medical', goal_type: 'spending' },
-                    { name: 'Dental', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Transport', ratio: 0.10, categories: [
-                    { name: 'Car Finance', goal_type: 'spending' },
-                    { name: 'Fuel', goal_type: 'spending' },
-                    { name: 'Service & MOT', goal_type: 'savings' },
-                    { name: 'Parking / Tolls', goal_type: 'spending' },
+                name: 'Savings & Investments', ratio: 0.20, categories: [
+                    { name: 'Home Maintenance Fund', goal_type: 'savings' },
+                    { name: 'Car Service & MOT', goal_type: 'savings' },
+                    { name: 'Kids University / ISA', goal_type: 'savings' },
+                    { name: 'Family Holiday Fund', goal_type: 'savings' },
                 ]
             },
         ],
@@ -184,11 +166,17 @@ const TEMPLATES: Template[] = [
         label: 'Debt Crusher',
         groups: [
             {
-                name: 'The Four Walls', ratio: 0.60, categories: [
+                name: 'Bare Essentials', ratio: 0.55, categories: [
                     { name: 'Rent / Mortgage', goal_type: 'spending' },
-                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Utilities & Council Tax', goal_type: 'spending' },
                     { name: 'Basic Groceries', goal_type: 'spending' },
-                    { name: 'Transport to Work', goal_type: 'spending' },
+                    { name: 'Health & Insurances', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Transport to Work', ratio: 0.05, categories: [
+                    { name: 'Fuel / Public Transit', goal_type: 'spending' },
+                    { name: 'Vehicle Maintenance', goal_type: 'savings' },
                 ]
             },
             {
@@ -196,26 +184,20 @@ const TEMPLATES: Template[] = [
                     { name: 'Credit Card 1', goal_type: 'spending' },
                     { name: 'Credit Card 2', goal_type: 'spending' },
                     { name: 'Personal Loan', goal_type: 'spending' },
-                    { name: 'Overdraft Payoff', goal_type: 'savings' },
+                    { name: 'Overdraft Payoff', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Insurance & Tax', ratio: 0.05, categories: [
-                    { name: 'Council Tax', goal_type: 'spending' },
-                    { name: 'Health / Life Insurance', goal_type: 'spending' },
-                    { name: 'Car Insurance', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Modest Lifestyle', ratio: 0.03, categories: [
+                name: 'Modest Going Out', ratio: 0.05, categories: [
+                    { name: 'Occasional Treat', goal_type: 'spending' },
                     { name: 'Internet / Phone', goal_type: 'spending' },
-                    { name: 'Fun', goal_type: 'spending' },
                     { name: 'Miscellaneous Buffer', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Emergency Fund', ratio: 0.02, categories: [
+                name: 'Savings & Safety Net', ratio: 0.05, categories: [
                     { name: 'Starter Emergency Fund', goal_type: 'emergency_fund' },
+                    { name: 'Annual Fees Buffer', goal_type: 'savings' },
                 ]
             },
         ],
@@ -224,41 +206,41 @@ const TEMPLATES: Template[] = [
         label: 'Freelancer / Gig Worker',
         groups: [
             {
-                name: 'Business Obligations', ratio: 0.30, categories: [
+                name: 'Business & Taxes', ratio: 0.30, categories: [
                     { name: 'Tax Set Aside (25-30%)', goal_type: 'savings' },
-                    { name: 'Software / Tools', goal_type: 'spending' },
+                    { name: 'Software & Tools', goal_type: 'spending' },
                     { name: 'Accountant Fees', goal_type: 'savings' },
-                    { name: 'Workspace Costs', goal_type: 'spending' },
+                    { name: 'Workspace / Equipment', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Personal Basics', ratio: 0.40, categories: [
+                name: 'Personal Essentials', ratio: 0.25, categories: [
                     { name: 'Rent / Mortgage', goal_type: 'spending' },
-                    { name: 'Utilities', goal_type: 'spending' },
+                    { name: 'Utilities & Phone', goal_type: 'spending' },
                     { name: 'Groceries', goal_type: 'spending' },
-                    { name: 'Phone & Internet', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Health & Wealth', ratio: 0.15, categories: [
-                    { name: 'Private Pension', goal_type: 'savings' },
                     { name: 'Health Insurance', goal_type: 'spending' },
-                    { name: 'Emergency Fund (3-6 Months)', goal_type: 'emergency_fund' },
                 ]
             },
             {
-                name: 'Transport', ratio: 0.05, categories: [
-                    { name: 'Business Travel', goal_type: 'spending' },
-                    { name: 'Personal Fuel', goal_type: 'spending' },
-                    { name: 'Vehicle Maintenance', goal_type: 'savings' },
+                name: 'Transport', ratio: 0.15, categories: [
+                    { name: 'Business Travel & Fuel', goal_type: 'spending' },
+                    { name: 'Personal Transport', goal_type: 'spending' },
+                    { name: 'Vehicle Maintenance Fund', goal_type: 'savings' },
                 ]
             },
             {
-                name: 'Lifestyle', ratio: 0.10, categories: [
+                name: 'Going Out & Lifestyle', ratio: 0.10, categories: [
                     { name: 'Dining Out', goal_type: 'spending' },
-                    { name: 'Entertainment', goal_type: 'spending' },
-                    { name: 'Holiday Fund', goal_type: 'savings' },
+                    { name: 'Entertainment & Hobbies', goal_type: 'spending' },
                     { name: 'Personal Shopping', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Savings & Wealth', ratio: 0.20, categories: [
+                    { name: 'Income Buffer (Next Month)', goal_type: 'savings' },
+                    { name: 'Emergency Fund (3-6 Mos)', goal_type: 'emergency_fund' },
+                    { name: 'Private Pension / SIPP', goal_type: 'savings' },
+                    { name: 'Holiday & Sick Pay Fund', goal_type: 'savings' },
                 ]
             },
         ],

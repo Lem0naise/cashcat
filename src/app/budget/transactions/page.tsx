@@ -13,15 +13,20 @@ import BankCompareModal from "../../components/bank-compare-modal";
 import AccountSelector from "../../components/account-selector";
 import AccountModal from "../../components/account-modal";
 import ExportModal from "../../components/export-modal";
+import ImportModal from "../../components/import-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
 import type { TransferWithAccounts } from '@/types/supabase';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useUsage, FREE_IMPORT_LIMIT, FREE_EXPORT_LIMIT } from '../../hooks/useUsage';
+import { ProGateOverlay } from '../../components/pro-gate-overlay';
 
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
+import QuickAddRow from '../../components/quick-add-row';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -57,11 +62,48 @@ export default function Transactions() {
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
+    const quickAddAmountRef = useRef<HTMLInputElement>(null);
+
+    const { subscription } = useSubscription();
+    const { importCount, exportCount } = useUsage();
+    const [showProGate, setShowProGate] = useState<'import' | 'export' | null>(null);
+
+    const handleOpenImport = () => {
+        if (!subscription?.isActive && importCount >= FREE_IMPORT_LIMIT) {
+            setShowProGate('import');
+        } else {
+            setShowImportModal(true);
+        }
+    };
+
+    const handleOpenExport = () => {
+        if (!subscription?.isActive && exportCount >= FREE_EXPORT_LIMIT) {
+            setShowProGate('export');
+        } else {
+            setShowExportModal(true);
+        }
+    };
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
+
+    // Global 'N' hotkey — focus the quick-add amount field on desktop
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement).tagName;
+            const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable;
+            if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !isEditable) {
+                e.preventDefault();
+                quickAddAmountRef.current?.focus();
+                quickAddAmountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, []);
 
     const refetch = () => {
         refetchTransactions();
@@ -461,6 +503,29 @@ export default function Transactions() {
                 onClose={() => setShowExportModal(false)}
                 transactions={transactions}
             />
+            <ImportModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                onImportComplete={() => { refetch(); }}
+            />
+            {/* Pro Gate Overlay for import/export limits */}
+            {showProGate && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 font-[family-name:var(--font-suse)]"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowProGate(null); }}
+                >
+                    <ProGateOverlay
+                        featureName={showProGate === 'import' ? 'Unlimited Imports' : 'Unlimited Exports'}
+                        featureDescription={
+                            showProGate === 'import'
+                                ? `You've used your ${FREE_IMPORT_LIMIT} free imports. Upgrade to CashCat Pro for unlimited CSV imports.`
+                                : `You've used your ${FREE_EXPORT_LIMIT} free exports. Upgrade to CashCat Pro for unlimited data exports.`
+                        }
+                        dismissible={true}
+                        onClose={() => setShowProGate(null)}
+                    />
+                </div>
+            )}
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <Toaster
                     containerClassName='mb-[15dvh]'
@@ -535,6 +600,7 @@ export default function Transactions() {
                                 selectedAccountId={selectedAccountId}
                                 onAccountChange={setSelectedAccountId}
                                 onManageAccounts={() => setShowAccountModal(true)}
+                                onImport={handleOpenImport}
                             />
                         )}
                     </div>
@@ -590,7 +656,7 @@ export default function Transactions() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                setShowExportModal(true);
+                                                handleOpenExport();
                                                 setShowMobileMenu(false);
                                             }}
                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
@@ -602,6 +668,20 @@ export default function Transactions() {
                                                 <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
                                             <span className="text-sm">Export</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                handleOpenImport();
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="text-sm">Import</span>
                                         </button>
                                     </div>
                                 </>
@@ -615,11 +695,11 @@ export default function Transactions() {
                     <div className="max-w-7xl mx-auto p-4 md:p-6">
                         <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
                                 <AccountSelector
                                     selectedAccountId={selectedAccountId}
                                     onAccountChange={setSelectedAccountId}
                                     onManageAccounts={() => setShowAccountModal(true)}
+                                    onImport={handleOpenImport}
                                 />
                             </div>
 
@@ -658,8 +738,21 @@ export default function Transactions() {
 
                             <div className="flex gap-5">
                                 <button
+                                    title="Import Transactions"
+                                    onClick={handleOpenImport}
+                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <p className="hidden lg:inline">Import</p>
+                                </button>
+
+                                <button
                                     title="Export Transactions"
-                                    onClick={() => setShowExportModal(true)}
+                                    onClick={handleOpenExport}
                                     className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                 >
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -716,7 +809,7 @@ export default function Transactions() {
 
 
                         {/* Balance Section */}
-                        <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-6 mb-3 mt-0">
+                        <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-4 mb-3 mt-0">
                             <div>
                                 <h2 className="text-lg font-medium text-white/90">{!selectedAccountId && ("Total ")}Balance</h2>
                                 <button
@@ -729,6 +822,17 @@ export default function Transactions() {
                             <span className={`text-2xl font-bold tabular-nums ${calculateTotalBalance(filteredTransactions, filteredTransfers, selectedAccountId) < 0 ? 'text-reddy' : 'text-green'}`}>
                                 {formatAmount(calculateTotalBalance(filteredTransactions, filteredTransfers, selectedAccountId))}
                             </span>
+                        </div>
+
+                        {/* Quick-add row — desktop only */}
+                        <div className="hidden md:block mb-4">
+                            <QuickAddRow
+                                amountInputRef={quickAddAmountRef}
+                                onSubmit={handleSubmit}
+                            />
+                            <p className="text-xs text-white/20 mt-1.5 px-1">
+                                Tab between fields · Enter to add · <kbd className="font-mono bg-white/[.06] px-1 rounded">N</kbd> to focus from anywhere
+                            </p>
                         </div>
 
                         {loading && transactions.length === 0 && transfers.length === 0 ? (

@@ -2,13 +2,11 @@
 
 
 import { useRouter } from 'next/navigation';
-import { useSupabase } from "../contexts/supabase-provider";
 import Logo from "./logo";
 
 
 export default function Navbar() {
     const router = useRouter();
-    const { user } = useSupabase();
 
     const goToAbout = async () => {
         router.push('/about');
