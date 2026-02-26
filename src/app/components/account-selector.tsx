@@ -16,9 +16,10 @@ interface AccountSelectorProps {
     selectedAccountId: string | null;
     onAccountChange: (accountId: string | null) => void;
     onManageAccounts: () => void;
+    onImport?: () => void;
 }
 
-export default function AccountSelector({ selectedAccountId, onAccountChange, onManageAccounts }: AccountSelectorProps) {
+export default function AccountSelector({ selectedAccountId, onAccountChange, onManageAccounts, onImport }: AccountSelectorProps) {
     const { data: accountsData = [], isLoading: loading } = useAccounts();
     const accounts = accountsData as Account[];
     const [isOpen, setIsOpen] = useState(false);
@@ -116,6 +117,22 @@ export default function AccountSelector({ selectedAccountId, onAccountChange, on
                                 />
                                 Manage Accounts
                             </button>
+                            {onImport && (
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        onImport();
+                                    }}
+                                    className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-sm text-white/80 flex items-center gap-2"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-60">
+                                        <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    Import Transactions
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

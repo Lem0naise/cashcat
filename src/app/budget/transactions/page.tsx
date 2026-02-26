@@ -13,6 +13,7 @@ import BankCompareModal from "../../components/bank-compare-modal";
 import AccountSelector from "../../components/account-selector";
 import AccountModal from "../../components/account-modal";
 import ExportModal from "../../components/export-modal";
+import ImportModal from "../../components/import-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
@@ -58,6 +59,7 @@ export default function Transactions() {
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
@@ -478,6 +480,11 @@ export default function Transactions() {
                 onClose={() => setShowExportModal(false)}
                 transactions={transactions}
             />
+            <ImportModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                onImportComplete={() => { refetch(); }}
+            />
             <div className="min-h-screen bg-background font-[family-name:var(--font-suse)]">
                 <Toaster
                     containerClassName='mb-[15dvh]'
@@ -552,6 +559,7 @@ export default function Transactions() {
                                 selectedAccountId={selectedAccountId}
                                 onAccountChange={setSelectedAccountId}
                                 onManageAccounts={() => setShowAccountModal(true)}
+                                onImport={() => setShowImportModal(true)}
                             />
                         )}
                     </div>
@@ -620,6 +628,20 @@ export default function Transactions() {
                                             </svg>
                                             <span className="text-sm">Export</span>
                                         </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowImportModal(true);
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="text-sm">Import</span>
+                                        </button>
                                     </div>
                                 </>
                             )}
@@ -632,11 +654,11 @@ export default function Transactions() {
                     <div className="max-w-7xl mx-auto p-4 md:p-6">
                         <div className="hidden md:flex items-center justify-between mb-0 md:mb-5 md:sticky md:top-16 bg-background md:z-30 py-4 -mt-4 -mx-4 px-4 md:-mx-6 md:px-6">
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-bold tracking-[-.01em]">Transactions</h1>
                                 <AccountSelector
                                     selectedAccountId={selectedAccountId}
                                     onAccountChange={setSelectedAccountId}
                                     onManageAccounts={() => setShowAccountModal(true)}
+                                    onImport={() => setShowImportModal(true)}
                                 />
                             </div>
 
@@ -674,6 +696,19 @@ export default function Transactions() {
                             </div>
 
                             <div className="flex gap-5">
+                                <button
+                                    title="Import Transactions"
+                                    onClick={() => setShowImportModal(true)}
+                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <p className="hidden lg:inline">Import</p>
+                                </button>
+
                                 <button
                                     title="Export Transactions"
                                     onClick={() => setShowExportModal(true)}
