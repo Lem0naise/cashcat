@@ -108,7 +108,7 @@ export function ProGateOverlay({ featureName, featureDescription, dismissible = 
                 ) : (
                     /* ── Web: full upgrade CTA ── */
                     <div className="w-full space-y-2.5">
-                        <UpgradeButton label="Upgrade to Pro — Get Started" />
+                        <UpgradeButton />
                         <p className="text-xs text-white/30 text-center">
                             Cancel anytime · No commitment
                         </p>
