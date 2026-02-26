@@ -113,6 +113,24 @@ export const IMPORT_PRESETS: ImportFormatPreset[] = [
             { csvHeader: 'Credit', cashcatField: 'inflow' },
         ],
     },
+    {
+        id: 'starling-bank',
+        name: 'Starling Bank',
+        description: 'Starling Bank export with counter party and spending category.',
+        multiAccount: false,
+        splitAmounts: false,
+        detectHeaders: ['Date', 'Counter Party', 'Reference', 'Type', 'Amount (GBP)', 'Balance (GBP)', 'Spending Category', 'Notes'],
+        mappings: [
+            { csvHeader: 'Date', cashcatField: 'date' },
+            { csvHeader: 'Counter Party', cashcatField: 'vendor' },
+            { csvHeader: 'Reference', cashcatField: 'ignore' },
+            { csvHeader: 'Type', cashcatField: 'ignore' },
+            { csvHeader: 'Amount (GBP)', cashcatField: 'amount' },
+            { csvHeader: 'Balance (GBP)', cashcatField: 'ignore' },
+            { csvHeader: 'Spending Category', cashcatField: 'category' },
+            { csvHeader: 'Notes', cashcatField: 'description' },
+        ],
+    },
 ];
 
 /**

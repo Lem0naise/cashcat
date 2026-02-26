@@ -72,6 +72,20 @@ type ImportMappingRecord = {
     group_id: string | null;
 };
 
+type TempGroup = {
+    id: string;
+    name: string;
+    normalized: string;
+};
+
+type TempCategory = {
+    id: string;
+    name: string;
+    groupId: string;
+    groupName: string;
+    normalized: string;
+};
+
 type ImportModalProps = {
     isOpen: boolean;
     onClose: () => void;
@@ -109,6 +123,8 @@ const normalizeVendorKey = (value: string) =>
         .replace(/\s+[A-Z0-9]{6,}$/i, '')
         .replace(/\s+/g, ' ')
         .trim();
+
+const makeTempId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -150,6 +166,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
     const [categoryMappings, setCategoryMappings] = useState<CategoryMapping[]>([]);
     const [vendorMappings, setVendorMappings] = useState<VendorMapping[]>([]);
     const [savedMappings, setSavedMappings] = useState<ImportMappingRecord[]>([]);
+    const [tempGroups, setTempGroups] = useState<TempGroup[]>([]);
+    const [tempCategories, setTempCategories] = useState<TempCategory[]>([]);
 
     // Parsed transactions & duplicates
     const [mappedTransactions, setMappedTransactions] = useState<MappedTransaction[]>([]);
@@ -187,6 +205,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             setCategoryMappings([]);
             setVendorMappings([]);
             setSavedMappings([]);
+            setTempGroups([]);
+            setTempCategories([]);
             setMappedTransactions([]);
             setParseErrors([]);
             setDuplicateResults([]);
@@ -340,7 +360,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                     groupMode: groupMatch ? 'existing' : 'new',
                     cashcatGroupId: match?.group || groupMatch?.id || null,
                     newGroupName: group || '',
-                    saveForFuture: !!saved,
+                    saveForFuture: true,
                 };
             });
             setCategoryMappings(newCategoryMappings);
@@ -363,7 +383,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
                     groupMode: 'existing',
                     cashcatGroupId: match?.group || null,
                     newGroupName: '',
-                    saveForFuture: !!saved,
+                    saveForFuture: true,
                 };
             });
             setVendorMappings(newVendorMappings);
@@ -519,6 +539,32 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
         runDuplicateDetection(mappedTransactions);
         setStep('review');
     }, [vendorMappings, mappedTransactions, runDuplicateDetection]);
+
+    const handleNewGroupName = useCallback((groupName: string) => {
+        const normalized = normalizeKey(groupName);
+        const existingGroup = groups.find(g => normalizeKey(g.name) === normalized);
+        if (existingGroup) return existingGroup.id;
+
+        const existingTemp = tempGroups.find(g => g.normalized === normalized);
+        if (existingTemp) return existingTemp.id;
+
+        const id = makeTempId('group');
+        setTempGroups(prev => [...prev, { id, name: groupName, normalized }]);
+        return id;
+    }, [groups, tempGroups]);
+
+    const handleNewCategoryName = useCallback((categoryName: string, groupId: string, groupName: string) => {
+        const normalized = normalizeKey(categoryName);
+        const existingCategory = categories.find(c => normalizeKey(c.name) === normalized && c.group === groupId);
+        if (existingCategory) return existingCategory.id;
+
+        const existingTemp = tempCategories.find(c => c.normalized === normalized && c.groupId === groupId);
+        if (existingTemp) return existingTemp.id;
+
+        const id = makeTempId('category');
+        setTempCategories(prev => [...prev, { id, name: categoryName, groupId, groupName, normalized }]);
+        return id;
+    }, [categories, tempCategories]);
 
     const resolveCategoryIdForVendor = useCallback((vendor: string) => {
         const mapping = vendorMappings.find(m => m.vendorName === vendor);
@@ -681,12 +727,24 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             for (const mapping of categoryMappings) {
                 const key = `${mapping.csvGroupName}|||${mapping.csvCategoryName}`;
                 if (mapping.mode === 'existing' && mapping.cashcatCategoryId) {
-                    categoryIdMap.set(key, mapping.cashcatCategoryId);
-                    const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
-                    if (existingCategory?.group) {
-                        categoryGroupIdMap.set(key, existingCategory.group);
+                    const isTemp = mapping.cashcatCategoryId.startsWith('category-');
+                    if (!isTemp) {
+                        categoryIdMap.set(key, mapping.cashcatCategoryId);
+                        const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
+                        if (existingCategory?.group) {
+                            categoryGroupIdMap.set(key, existingCategory.group);
+                        }
+                        continue;
                     }
-                    continue;
+
+                    const temp = tempCategories.find(c => c.id === mapping.cashcatCategoryId);
+                    if (temp) {
+                        const groupId = await ensureGroup('existing', temp.groupId, temp.groupName);
+                        const categoryId = await ensureCategory(temp.name, groupId);
+                        categoryIdMap.set(key, categoryId);
+                        categoryGroupIdMap.set(key, groupId);
+                        continue;
+                    }
                 }
                 if (mapping.mode === 'skip') continue;
 
@@ -700,12 +758,24 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             const vendorGroupIdMap = new Map<string, string>();
             for (const mapping of vendorMappings) {
                 if (mapping.mode === 'existing' && mapping.cashcatCategoryId) {
-                    vendorCategoryIdMap.set(mapping.vendorName, mapping.cashcatCategoryId);
-                    const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
-                    if (existingCategory?.group) {
-                        vendorGroupIdMap.set(mapping.vendorName, existingCategory.group);
+                    const isTemp = mapping.cashcatCategoryId.startsWith('category-');
+                    if (!isTemp) {
+                        vendorCategoryIdMap.set(mapping.vendorName, mapping.cashcatCategoryId);
+                        const existingCategory = categories.find(c => c.id === mapping.cashcatCategoryId);
+                        if (existingCategory?.group) {
+                            vendorGroupIdMap.set(mapping.vendorName, existingCategory.group);
+                        }
+                        continue;
                     }
-                    continue;
+
+                    const temp = tempCategories.find(c => c.id === mapping.cashcatCategoryId);
+                    if (temp) {
+                        const groupId = await ensureGroup('existing', temp.groupId, temp.groupName);
+                        const categoryId = await ensureCategory(temp.name, groupId);
+                        vendorCategoryIdMap.set(mapping.vendorName, categoryId);
+                        vendorGroupIdMap.set(mapping.vendorName, groupId);
+                        continue;
+                    }
                 }
                 if (mapping.mode === 'skip') continue;
 
