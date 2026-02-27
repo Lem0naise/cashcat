@@ -56,6 +56,7 @@ export default function Landing() {
                         <Logo />
                     </div>
                     <div className="flex items-center gap-4">
+
                         <Link
                             href="/login"
                             className="text-white/80 hover:text-white font-medium transition-colors hidden sm:block"
@@ -292,6 +293,128 @@ export default function Landing() {
                         </svg>
                         Join Our Discord
                     </Link>
+                </div>
+
+                <div className="text-center mb-16 border-t border-white/10 py-16">
+                    <h1 className="text-5xl md:text-6xl font-black mb-6">Simple, transparent <span className="text-gradient">pricing</span></h1>
+                    <p className="text-xl text-white/70 max-w-2xl mx-auto">
+                        Your money. Your rules. Get complete control over your budget for free, or upgrade to CashCat Pro for advanced power-user features.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                    {/* Free Tier */}
+                    <div className="glass-card-blue p-8 flex flex-col h-full border border-white/10 relative overflow-hidden group">
+                        <div className="mb-8">
+                            <h2 className="text-3xl font-bold text-white mb-2">Free</h2>
+                            <p className="text-white/60 mb-6">Everything you need to master your money.</p>
+                            <div className="text-5xl font-black text-white">£0<span className="text-xl text-white/50 font-normal">/forever</span></div>
+                        </div>
+
+                        <ul className="space-y-4 mb-8 flex-grow">
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80">Full zero-based budgeting engine</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80">Multi-account tracking (checking, savings, etc)</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80">Future month planning</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80">Basic income & spending reports</span>
+                            </li>
+                        </ul>
+
+                        <Link
+                            href="/signup"
+                            className="w-full py-4 rounded-xl font-bold bg-white/5 text-white hover:bg-white/10 transition-colors text-center border border-white/10"
+                        >
+                            Get Started Free
+                        </Link>
+                    </div>
+
+                    {/* Pro Tier */}
+                    <div className="glass-card-blue p-8 flex flex-col h-full border border-green/30 relative overflow-hidden group shadow-[0_0_30px_rgba(132,214,132,0.15)]">
+                        <div className="absolute top-0 right-0 bg-green text-black text-xs font-bold px-3 py-1 rounded-bl-lg">RECOMMENDED FOR POWER USERS</div>
+
+                        <div className="mb-8">
+                            <h2 className="text-3xl font-bold text-gradient mb-2">CashCat Pro</h2>
+                            <p className="text-white/60 mb-6">Advanced tools for data nerds.</p>
+                            <div className="flex items-end gap-2 text-white mb-2">
+                                <span className="text-5xl font-black">£4.99</span>
+                                <span className="text-xl text-white/50 mb-1">/mo</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="text-white/40 text-sm font-medium">
+                                    or £39.99 /year <span className="text-white/90 text-base">(just £3.33/mo)</span>
+                                </div>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-green text-black uppercase tracking-widest shadow-[0_0_10px_rgba(132,214,132,0.5)]">
+                                    4 Months Free on Annual
+                                </span>
+                            </div>
+                        </div>
+
+                        <ul className="space-y-4 mb-8 flex-grow">
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80"><strong className="text-white">Unlimited</strong> Accounts</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80"><strong className="text-white">Unlimited</strong> CSV Imports & Exports</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80"><strong className="text-white">Money Flow Diagram:</strong> Visual Sankey chart of all transactions</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80"><strong className="text-white">Custom Date Ranges:</strong> Flexible analytics windows</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className="text-white/80">Support independent development</span>
+                            </li>
+                        </ul>
+
+                        <div className="space-y-3">
+                            <Link
+                                href="https://pro.cashcat.app/checkout"
+                                className="block w-full py-4 rounded-xl font-bold bg-green text-black hover:bg-green-dark transition-colors text-center shadow-[0_0_20px_rgba(132,214,132,0.3)]"
+                            >
+                                Buy CashCat Pro
+                            </Link>
+                            <Link
+                                href="https://pro.cashcat.app"
+                                className="block w-full py-2 rounded-xl text-sm font-medium text-white/60 hover:text-white transition-colors text-center"
+                            >
+                                View Storefront
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </main>
 
