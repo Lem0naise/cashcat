@@ -6,12 +6,12 @@ import { useAuthUserId } from '@/app/hooks/useAuthUserId';
 // ─── Onboarding steps ────────────────────────────────────────────────────────
 // The onboarding flow progresses through these steps:
 //   idle        -> User is onboarded OR we're still loading.
-//   accounts    -> First step: set up bank accounts via AccountModal.
-//   budget      -> Second step: create categories via ManageBudgetModal (OnboardingWizard).
-//   tour        -> Third step: spotlight tour of the budget page.
+//   budget      -> First step: create categories via ManageBudgetModal (OnboardingWizard).
+//                  Accounts and CSV prompts are handled inline inside the wizard.
+//   tour        -> Second step: spotlight tour of the budget page.
 //   complete    -> All done; flag is persisted and flow is dismissed.
 
-export type OnboardingStep = 'idle' | 'accounts' | 'budget' | 'tour' | 'complete';
+export type OnboardingStep = 'idle' | 'budget' | 'tour' | 'complete';
 
 // ─── Fetch is_onboarded from settings ────────────────────────────────────────
 const fetchIsOnboarded = async (userId: string): Promise<boolean> => {
@@ -50,7 +50,7 @@ const markOnboarded = async (userId: string): Promise<void> => {
 };
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
-export function useOnboarding(hasCategoriesLoaded: boolean, categoriesCount: number) {
+export function useOnboarding(hasCategoriesLoaded: boolean, _categoriesCount: number) {
     const userId = useAuthUserId();
     const queryClient = useQueryClient();
 
@@ -90,17 +90,8 @@ export function useOnboarding(hasCategoriesLoaded: boolean, categoriesCount: num
 
     // ─── Step transitions ────────────────────────────────────────────────
     const startOnboarding = useCallback(() => {
-        setStep('accounts');
+        setStep('budget');
     }, []);
-    const advanceFromAccounts = useCallback(() => {
-        // User closed the accounts modal; if they have no categories, show budget wizard
-        if (categoriesCount === 0) {
-            setStep('budget');
-        } else {
-            // They already have categories (maybe imported), go straight to tour
-            setStep('tour');
-        }
-    }, [categoriesCount]);
 
     const advanceFromBudget = useCallback(() => {
         // After budget wizard closes, show the spotlight tour
@@ -118,10 +109,9 @@ export function useOnboarding(hasCategoriesLoaded: boolean, categoriesCount: num
     }, [completeMutation]);
 
     // ─── Derived booleans for the parent component ───────────────────────
-    const showAccountModal = step === 'accounts';
     const showBudgetWizard = step === 'budget';
     const showTour = step === 'tour';
-    const isOnboardingActive = step === 'accounts' || step === 'budget' || step === 'tour';
+    const isOnboardingActive = step === 'budget' || step === 'tour';
 
     return {
         /** Current onboarding step */
@@ -130,16 +120,12 @@ export function useOnboarding(hasCategoriesLoaded: boolean, categoriesCount: num
         isLoading: flagLoading,
         /** Whether onboarding flow is currently active */
         isOnboardingActive,
-        /** True when we should show the AccountModal for onboarding */
-        showAccountModal,
         /** True when we should show ManageBudgetModal in onboarding/wizard mode */
         showBudgetWizard,
         /** True when we should show the spotlight tour */
         showTour,
         /** Start the onboarding flow manually */
         startOnboarding,
-        /** Call when user closes the AccountModal during onboarding */
-        advanceFromAccounts,
         /** Call when user closes the ManageBudgetModal during onboarding */
         advanceFromBudget,
         /** Call when user finishes or skips the spotlight tour */

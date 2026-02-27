@@ -24,6 +24,7 @@ type ManageBudgetModalProps = {
     onClose: (reason?: string) => void;
     isOnboarding?: boolean;
     onImportCSV?: () => void;
+    onAddAccounts?: () => void;
 };
 
 // ─── Onboarding wizard types ────────────────────────────────────────────────
@@ -267,11 +268,11 @@ const GOAL_TYPE_DESCRIPTIONS: Record<string, string> = {
 
 // ─── Onboarding Wizard ───────────────────────────────────────────────────────
 
-function OnboardingWizard({ onClose, onImportCSV }: { onClose: (reason?: string) => void; onImportCSV?: () => void }) {
+function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (reason?: string) => void; onImportCSV?: () => void; onAddAccounts?: () => void }) {
     const supabase = createClient();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(1);
-    const TOTAL_STEPS = 3;
+    const TOTAL_STEPS = 4;
 
     // Step 1 & 2 state
     const [wizardGroups, setWizardGroups] = useState<WizardGroup[]>([]);
@@ -414,7 +415,7 @@ function OnboardingWizard({ onClose, onImportCSV }: { onClose: (reason?: string)
                 queryClient.invalidateQueries({ queryKey: ['categories'] }),
                 queryClient.invalidateQueries({ queryKey: ['groups'] }),
             ]);
-            setStep(3); // CSV import prompt
+            setStep(3); // Add bank accounts
         } catch (err) {
             console.error(err);
             toast.error('Failed to save budget. Please try again.');
@@ -439,11 +440,12 @@ function OnboardingWizard({ onClose, onImportCSV }: { onClose: (reason?: string)
                              <p className="text-sm font-medium text-white">
                                 {step === 1 && 'Choose a Template'}
                                 {step === 2 && 'Customise Your Budget'}
-                                {step === 3 && 'Import Transactions'}
+                                {step === 3 && 'Add Bank Accounts'}
+                                {step === 4 && 'Import Transactions'}
                             </p>
                         </div>
                     </div>
-                    {step < 3 && (
+                    {step < 4 && (
                         <button
                             onClick={() => onClose('skip')}
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white/50 hover:text-white text-xs"
@@ -517,6 +519,14 @@ function OnboardingWizard({ onClose, onImportCSV }: { onClose: (reason?: string)
                             <p className="text-white/60 text-sm">
                                 Groups are like envelopes. Categories are the specific jobs inside each envelope.
                                 Set optional monthly goals for each category.
+                            </p>
+                        </div>
+
+                        {/* Zero-based budgeting tip */}
+                        <div className="bg-green/[.07] border border-green/20 rounded-xl p-3 flex gap-3 items-start">
+                            
+                            <p className="text-xs text-white/70 leading-relaxed">
+                                The <span className="text-green font-medium">Savings</span> category is a catch-all for leftover money — it's not a monthly spending goal, it's where the rest of your income lives. That's zero-based budgeting.
                             </p>
                         </div>
 
@@ -709,8 +719,44 @@ function OnboardingWizard({ onClose, onImportCSV }: { onClose: (reason?: string)
                     </div>
                 )}
 
-                {/* ── Step 3: CSV import prompt ── */}
+                {/* ── Step 3: Add bank accounts ── */}
                 {step === 3 && (
+                    <div className="p-6 flex flex-col items-center text-center space-y-6">
+                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
+                                <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M16 11a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/>
+                                <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M6 4l4-1 4 1 4-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-2">Add your bank accounts</h2>
+                            <p className="text-white/60 text-sm max-w-xs mx-auto leading-relaxed">
+                                Link the accounts you spend from so every transaction knows where it came from.
+                            </p>
+                        </div>
+
+                        <div className="w-full space-y-3">
+                            <button
+                                onClick={() => { onAddAccounts?.(); }}
+                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                            >
+                                Add Accounts
+                            </button>
+                            <button
+                                onClick={() => setStep(4)}
+                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Step 4: CSV import prompt ── */}
+                {step === 4 && (
                     <div className="p-6 flex flex-col items-center text-center space-y-6">
                         <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -1347,7 +1393,7 @@ import { useSyncAll } from '@/app/hooks/useSyncAll';
 
 
 
-export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = false, onImportCSV }: ManageBudgetModalProps) {
+export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = false, onImportCSV, onAddAccounts }: ManageBudgetModalProps) {
     const [isClosing, setIsClosing] = useState(false);
     const { syncAll } = useSyncAll();
 
@@ -1384,7 +1430,7 @@ export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = fals
                 className={`relative bg-black md:bg-black/[.95] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'}`}
             >
                 {isOnboarding ? (
-                    <OnboardingWizard onClose={handleClose} onImportCSV={onImportCSV} />
+                    <OnboardingWizard onClose={handleClose} onImportCSV={onImportCSV} onAddAccounts={onAddAccounts} />
                 ) : (
                     <EditMode onClose={handleClose} />
                 )}

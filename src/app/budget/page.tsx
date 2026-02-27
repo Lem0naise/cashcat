@@ -1482,6 +1482,7 @@ export default function Budget() {
                     isOpen={showManageModal || onboarding.showBudgetWizard}
                     isOnboarding={onboarding.showBudgetWizard}
                     onImportCSV={() => setShowImportModal(true)}
+                    onAddAccounts={() => setShowAccountModal(true)}
                     onClose={(reason?: string) => {
                         if (monthString && allTransactionsData) {
                             calculateBudgetData(monthString);
@@ -1494,12 +1495,9 @@ export default function Budget() {
                 />
 
                 <AccountModal
-                    isOpen={showAccountModal || onboarding.showAccountModal}
+                    isOpen={showAccountModal}
                     onClose={() => {
                         setShowAccountModal(false);
-                        if (onboarding.showAccountModal) {
-                            onboarding.advanceFromAccounts();
-                        }
                     }}
                     onAccountsUpdated={() => {
                         refreshData();
