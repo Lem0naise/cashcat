@@ -336,6 +336,39 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
 
         if (!categoryColumn) {
             const uniqueVendors = [...new Set(result.transactions.map(t => t.vendor).filter(Boolean))];
+
+            // Accumulate temp groups/categories created during this pass so that
+            // auto-suggestions still work when the user has no existing categories yet
+            // (the "Start from Scratch → CSV" onboarding path).
+            const builtTempGroups: TempGroup[] = [];
+            const builtTempCategories: TempCategory[] = [];
+
+            const getOrCreateTempGroup = (groupName: string): string => {
+                const normalizedName = normalizeTempKey(groupName);
+                const tempId = makeTempGroupId(normalizedName);
+                // Check real groups first
+                const realGroup = groups.find(g => g.name.toLowerCase() === groupName.toLowerCase());
+                if (realGroup) return realGroup.id;
+                // Check already-built temp groups
+                const existing = builtTempGroups.find(g => g.id === tempId);
+                if (existing) return existing.id;
+                builtTempGroups.push({ id: tempId, name: groupName, normalized: normalizedName });
+                return tempId;
+            };
+
+            const getOrCreateTempCategory = (categoryName: string, groupId: string, groupName: string): string => {
+                const normalizedName = normalizeTempKey(categoryName);
+                const tempId = makeTempCategoryId(groupId, normalizedName);
+                // Check real categories first
+                const realCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+                if (realCategory) return realCategory.id;
+                // Check already-built temp categories
+                const existing = builtTempCategories.find(c => c.id === tempId);
+                if (existing) return existing.id;
+                builtTempCategories.push({ id: tempId, name: categoryName, groupId, groupName, normalized: normalizedName });
+                return tempId;
+            };
+
             const newVendorMappings: VendorMapping[] = uniqueVendors.map(vendor => {
                 const normalized = normalizeVendorKey(vendor);
                 const saved = savedMappings.find(m => m.match_type === 'vendor' && m.match_normalized === normalized);
@@ -376,6 +409,27 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     };
                 }
 
+                // Tier 2b: suggestion matched a keyword but no real category exists yet
+                // (fresh account — "Start from Scratch" path). Create a temp category so
+                // the auto-suggestion is still usable and will be created on import.
+                if (suggestion) {
+                    const tempGroupId = getOrCreateTempGroup(suggestion.groupKeyword);
+                    const tempCategoryId = getOrCreateTempCategory(suggestion.categoryKeyword, tempGroupId, suggestion.groupKeyword);
+                    return {
+                        vendorName: vendor,
+                        mode: 'existing',
+                        cashcatCategoryId: tempCategoryId,
+                        newCategoryName: suggestion.categoryKeyword,
+                        groupMode: 'existing',
+                        cashcatGroupId: tempGroupId,
+                        newGroupName: suggestion.groupKeyword,
+                        saveForFuture: true,
+                        autoConfidence: suggestion.confidence,
+                        autoSuggestionLabel: suggestion.categoryKeyword,
+                        autoConfirmed: suggestion.confidence === 'high',
+                    };
+                }
+
                 // No match — leave unmapped for manual review
                 return {
                     vendorName: vendor,
@@ -388,6 +442,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     saveForFuture: true,
                 };
             });
+
+            setTempGroups(builtTempGroups);
+            setTempCategories(builtTempCategories);
             setVendorMappings(newVendorMappings);
         } else {
             setVendorMappings([]);
