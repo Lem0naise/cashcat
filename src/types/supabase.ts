@@ -302,6 +302,7 @@ export type Database = {
           landing: string | null
           import_count: number
           export_count: number
+          is_onboarded: boolean
         }
         Insert: {
           currency?: string | null
@@ -309,6 +310,7 @@ export type Database = {
           landing?: string | null
           import_count?: number
           export_count?: number
+          is_onboarded?: boolean
         }
         Update: {
           currency?: string | null
@@ -316,6 +318,7 @@ export type Database = {
           landing?: string | null
           import_count?: number
           export_count?: number
+          is_onboarded?: boolean
         }
         Relationships: []
       }
@@ -497,6 +500,13 @@ export type Database = {
     Functions: {
       delete_user: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      increment_usage_count: {
+        Args: {
+          p_user_id: string
+          p_field: 'import_count' | 'export_count'
+        }
         Returns: undefined
       }
     }

@@ -47,6 +47,7 @@ export default function MobileNav() {
                     </Link>
 
                       <Link
+                        id="tour-mobile-nav-stats"
                         href="/stats"
                         className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/stats') 
@@ -77,6 +78,7 @@ export default function MobileNav() {
                       <div></div>
 
                     <Link
+                        id="tour-mobile-nav-transactions"
                         href="/budget/transactions"
                         className={`touch-manipulation flex flex-col items-center justify-center transition-all ${
                             isActive('/budget/transactions') 
@@ -135,7 +137,7 @@ export default function MobileNav() {
                 </div>
 
                 {/* Floating add button */}
-                <div className="absolute left-1/2 -translate-x-1/2 -top-6">
+                <div id="tour-mobile-nav-add" className="absolute left-1/2 -translate-x-1/2 -top-6">
                     <button
                         onClick={handleAddClick}
                         className="flex flex-col items-center touch-manipulation"

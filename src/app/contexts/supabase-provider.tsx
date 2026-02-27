@@ -20,6 +20,17 @@ const Context = createContext<SupabaseContext>({
 
 const USER_CACHE_KEY = 'cashcat-user';
 
+/**
+ * Ensure a settings row exists for the user.
+ * Uses INSERT ... ON CONFLICT DO NOTHING so it never overwrites existing data.
+ * Called once per session after auth is confirmed.
+ */
+async function ensureSettingsRow(userId: string, supabase: ReturnType<typeof createClient>) {
+  await supabase
+    .from('settings')
+    .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
+}
+
 export default function SupabaseProvider({
   children
 }: {
@@ -57,6 +68,8 @@ export default function SupabaseProvider({
         setUser(u);
         if (u) {
           localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
+          // Ensure the settings row exists so import/export counts always work
+          ensureSettingsRow(u.id, supabase);
         } else {
           localStorage.removeItem(USER_CACHE_KEY);
         }
@@ -74,6 +87,8 @@ export default function SupabaseProvider({
       setUser(u);
       if (u) {
         localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
+        // Ensure the settings row exists (handles new sign-ups and returning users)
+        ensureSettingsRow(u.id, supabase);
       } else {
         localStorage.removeItem(USER_CACHE_KEY);
         // Clear all cached query data so a new user starts fresh

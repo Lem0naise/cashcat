@@ -13,7 +13,7 @@ export default function SankeyPage() {
     return (
         <ProGate
             featureName="Money Flow Diagram"
-            featureDescription="See exactly where every dollar goes with an interactive Sankey flow diagram — income sources, spending groups, categories, and vendors in one beautiful visualization."
+            featureDescription="See exactly where your money goes with an interactive Sankey flow diagram — income sources, spending groups, categories, and vendors in one beautiful visualization."
         >
             <SankeyPageClient />
         </ProGate>

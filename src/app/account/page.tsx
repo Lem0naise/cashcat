@@ -8,6 +8,7 @@ import ProtectedRoute from "../components/protected-route";
 import Sidebar from "../components/sidebar";
 import FeedbackModal from "../components/feedback-modal";
 import DeleteAccountModal from "../components/delete-account-modal";
+import DeleteDataModal from "../components/delete-data-modal";
 import { useSupabase } from '../contexts/supabase-provider';
 import { createClient } from '../utils/supabase';
 import Link from 'next/link';
@@ -28,6 +29,8 @@ export default function Account() {
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmStep, setDeleteConfirmStep] = useState(0); // 0: normal, 1: are you sure
+    const [showDeleteDataModal, setShowDeleteDataModal] = useState(false);
+    const [clearDataConfirmStep, setClearDataConfirmStep] = useState(0); // 0: normal, 1: are you sure
     const [contactConfirmStep, setContactConfirmStep] = useState(0); // 0: normal, 1: click again to email
 
     // Subscription state
@@ -76,6 +79,16 @@ export default function Account() {
         } else {
             setShowDeleteModal(true);
             setDeleteConfirmStep(0);
+        }
+    };
+
+    const handleClearData = () => {
+        if (clearDataConfirmStep === 0) {
+            setClearDataConfirmStep(1);
+            setTimeout(() => setClearDataConfirmStep(0), 5000);
+        } else {
+            setShowDeleteDataModal(true);
+            setClearDataConfirmStep(0);
         }
     };
 
@@ -299,6 +312,15 @@ export default function Account() {
                                     {contactConfirmStep === 1 ? 'Click again to email lemonaise.dev@gmail.com' : 'Contact Support'}
                                 </button>
                                 <button
+                                    onClick={handleClearData}
+                                    className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${clearDataConfirmStep === 1
+                                        ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30'
+                                        : 'bg-white/[.05] hover:bg-white/[.08] text-white/70 hover:text-reddy'
+                                        }`}
+                                >
+                                    {clearDataConfirmStep === 1 ? 'Are you sure? Click again to confirm' : 'Clear Data'}
+                                </button>
+                                <button
                                     onClick={handleDeleteAccount}
                                     className={`w-full px-4 py-2 rounded-lg transition-all text-left font-medium ${deleteConfirmStep === 1
                                         ? 'bg-reddy/20 text-reddy hover:bg-reddy/30 border border-reddy/30'
@@ -360,6 +382,14 @@ export default function Account() {
                 <FeedbackModal
                     isOpen={showFeedbackModal}
                     onClose={() => setShowFeedbackModal(false)}
+                />
+
+                <DeleteDataModal
+                    isOpen={showDeleteDataModal}
+                    onClose={() => {
+                        setShowDeleteDataModal(false);
+                        setClearDataConfirmStep(0);
+                    }}
                 />
 
                 <DeleteAccountModal

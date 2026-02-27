@@ -36,6 +36,7 @@ export default function Sidebar() {
                     <span className="text-sm hidden lg:inline">Budget</span>
                 </Link>
                 <Link
+                    id="tour-sidebar-stats"
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/stats')
                         ? 'bg-green/10 text-green'
                         : 'hover:bg-white/[.05]'
@@ -56,6 +57,7 @@ export default function Sidebar() {
                     <span className="text-sm hidden lg:inline">Stats</span>
                 </Link>
                 <Link
+                    id="tour-sidebar-transactions"
                     className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 group ${isActive('/budget/transactions')
                         ? 'bg-green/10 text-green'
                         : 'hover:bg-white/[.05]'
