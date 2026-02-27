@@ -11,6 +11,7 @@ import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group, GoalType } from '@/types/supabase';
 import type { Database } from '@/types/supabase';
 import { useTransactions } from '@/app/hooks/useTransactions';
+import { useAccounts } from '@/app/hooks/useAccounts';
 
 // Category as returned by the query (includes joined groups row)
 type CategoryWithGroup = Category & {
@@ -68,7 +69,7 @@ const TEMPLATES: Template[] = [
                 ]
             },
             {
-                name: 'Going Out & Social', ratio: 0.25, categories: [
+                name: 'Going Out & Lifestyle', ratio: 0.25, categories: [
                     { name: 'Nights Out & Drinks', goal_type: 'spending' },
                     { name: 'Dining & Campus Lunch', goal_type: 'spending' },
                     { name: 'Society Memberships', goal_type: 'spending' },
@@ -273,6 +274,11 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
     const queryClient = useQueryClient();
     const [step, setStep] = useState(1);
     const TOTAL_STEPS = 4;
+    // Step labels for new order:
+    //   1 → Choose a Template
+    //   2 → Import Transactions  (early CSV, so goals can reflect real data)
+    //   3 → Review / Set Goals   (was step 2)
+    //   4 → Add Bank Accounts    (was step 3)
 
     // Step 1 & 2 state
     const [wizardGroups, setWizardGroups] = useState<WizardGroup[]>([]);
@@ -281,6 +287,8 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
 
     // Fetch transactions for historical insights
     const { data: transactions = [] } = useTransactions();
+    // Fetch accounts so step 4 CTA can adapt once the user has created one
+    const { data: existingAccounts = [] } = useAccounts();
 
     const historicalStats = useMemo(() => {
         const incomeMonths = new Set<string>();
@@ -319,7 +327,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
             ratio: g.ratio
         }));
         setWizardGroups(groups);
-        setStep(2);
+        setStep(3); // → Review Goals: user just picked a template, show their categories immediately
     };
 
     const distributeIncome = (incomeStr: string) => {
@@ -415,7 +423,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                 queryClient.invalidateQueries({ queryKey: ['categories'] }),
                 queryClient.invalidateQueries({ queryKey: ['groups'] }),
             ]);
-            setStep(3); // Add bank accounts
+            setStep(4); // Add bank accounts (new step 4)
         } catch (err) {
             console.error(err);
             toast.error('Failed to save budget. Please try again.');
@@ -439,9 +447,9 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                             <p className="text-xs text-white/50 uppercase tracking-wide">Step {step} of {TOTAL_STEPS}</p>
                              <p className="text-sm font-medium text-white">
                                 {step === 1 && 'Choose a Template'}
-                                {step === 2 && 'Customise Your Budget'}
-                                {step === 3 && 'Add Bank Accounts'}
-                                {step === 4 && 'Import Transactions'}
+                                {step === 2 && 'Import Transactions'}
+                                {step === 3 && 'Review Your Goals'}
+                                {step === 4 && 'Add Bank Accounts'}
                             </p>
                         </div>
                     </div>
@@ -506,19 +514,80 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                             onClick={() => setStep(2)}
                             className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/80 hover:text-white rounded-xl transition-all text-sm font-medium"
                         >
-                            Start from Scratch
+                            Start from Scratch or Bank Import
                         </button>
                     </div>
                 )}
 
-                {/* ── Step 2: Customise groups & categories ── */}
+                {/* ── Step 2: Import Transactions (early — so goals have real data) ── */}
                 {step === 2 && (
+                    <div className="p-6 flex flex-col items-center text-center space-y-6">
+                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
+                                <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-2">Import your bank CSV</h2>
+                            <p className="text-white/60 text-sm max-w-xs mx-auto leading-relaxed">
+                                Download a CSV from your bank and import it now — we'll use your real spending data to help you set smarter goals in the next step.
+                            </p>
+                        </div>
+
+                        <div className="w-full bg-white/[.04] border border-white/[.1] rounded-xl p-4 text-left space-y-3">
+                            <p className="text-xs text-white/50 uppercase tracking-wide font-medium">Why do this first?</p>
+                            <div className="space-y-2 text-sm text-white/70">
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>See where your money actually goes, right away</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>Your real average spend shows up when you set goals — next step</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>Takes about 2 minutes — and it's totally worth it</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-full space-y-3">
+                            <button
+                                onClick={() => { onClose('import_csv'); onImportCSV?.(); }}
+                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                            >
+                                Yes, import my bank CSV
+                            </button>
+                            <button
+                                onClick={() => setStep(3)}
+                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                            >
+                                Skip — set goals manually →
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setStep(1)}
+                            className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                        >
+                            ← Back to templates
+                        </button>
+                    </div>
+                )}
+
+                {/* ── Step 3: Review / set goals (was step 2) ── */}
+                {step === 3 && (
                     <div className="p-6 space-y-5 pb-32">
                         <div>
-                            <h2 className="text-xl font-bold text-white mb-1">Customise Your Budget</h2>
+                            <h2 className="text-xl font-bold text-white mb-1">Review Your Goals</h2>
                             <p className="text-white/60 text-sm">
                                 Groups are like envelopes. Categories are the specific jobs inside each envelope.
-                                Set optional monthly goals for each category.
+                                {historicalStats.hasData
+                                    ? ' Your real spend averages are shown below — use them to set realistic goals.'
+                                    : ' Set optional monthly goals for each category.'}
                             </p>
                         </div>
 
@@ -688,7 +757,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
 
                         <div className="flex gap-3 pt-2">
                             <button
-                                onClick={() => setStep(1)}
+                                onClick={() => setStep(wizardGroups.length > 0 ? 1 : 2)}
                                 className="px-4 py-2.5 border border-white/20 hover:bg-white/[.05] text-white/70 rounded-xl text-sm transition-colors"
                             >
                                 ← Back
@@ -704,13 +773,13 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                                         Saving…
                                     </>
                                 ) : (
-                                    'Save & Finish →'
+                                    'Save & Continue →'
                                 )}
                             </button>
                         </div>
                         {wizardGroups.length === 0 && (
                             <button
-                                onClick={() => setStep(3)}
+                                onClick={() => setStep(4)}
                                 className="w-full text-center text-xs text-white/40 hover:text-white/70 transition-colors"
                             >
                                 Skip for now (add categories later)
@@ -719,8 +788,8 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                     </div>
                 )}
 
-                {/* ── Step 3: Add bank accounts ── */}
-                {step === 3 && (
+                {/* ── Step 4: Add bank accounts (now the final step) ── */}
+                {step === 4 && (
                     <div className="p-6 flex flex-col items-center text-center space-y-6">
                         <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
@@ -738,86 +807,49 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                             </p>
                         </div>
 
-                        <div className="w-full space-y-3">
-                            <button
-                                onClick={() => { onAddAccounts?.(); }}
-                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
-                            >
-                                Add Accounts
-                            </button>
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 h-px bg-white/10" />
-                                <span className="text-xs text-white/30 font-medium">or</span>
-                                <div className="flex-1 h-px bg-white/10" />
+                        {existingAccounts.length > 0 && (
+                            <div className="w-full bg-green/[.06] border border-green/20 rounded-xl px-4 py-3 text-left">
+                                <p className="text-xs text-green font-medium mb-1">
+                                    {existingAccounts.length} account{existingAccounts.length !== 1 ? 's' : ''} connected
+                                </p>
+                                <p className="text-xs text-white/50">
+                                    {existingAccounts.map(a => a.name).join(', ')}
+                                </p>
                             </div>
-                            <button
-                                onClick={() => { onClose('import_csv'); onImportCSV?.(); }}
-                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                                    <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                                Import CSV instead
-                            </button>
-                            <button
-                                onClick={() => setStep(4)}
-                                className="w-full py-2 text-white/35 hover:text-white/60 transition-colors text-sm"
-                            >
-                                Skip for now
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* ── Step 4: CSV import prompt ── */}
-                {step === 4 && (
-                    <div className="p-6 flex flex-col items-center text-center space-y-6">
-                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
-                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
-                                <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                        </div>
-
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Import past transactions?</h2>
-                            <p className="text-white/60 text-sm max-w-xs mx-auto leading-relaxed">
-                                Most banks let you download your transaction history as a CSV file.
-                            </p>
-                        </div>
-
-                        <div className="w-full bg-white/[.04] border border-white/[.1] rounded-xl p-4 text-left space-y-3">
-                            <p className="text-xs text-white/50 uppercase tracking-wide font-medium">Why it's a great first move</p>
-                            <div className="space-y-2 text-sm text-white/70">
-                                <div className="flex items-start gap-2">
-                                    <span className="text-green mt-0.5">✓</span>
-                                    <span>See where your money actually goes, right away</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="text-green mt-0.5">✓</span>
-                                    <span>Helps you set realistic category goals based on real spending</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="text-green mt-0.5">✓</span>
-                                    <span>Takes about 2 minutes — and it's totally worth it</span>
-                                </div>
-                            </div>
-                        </div>
+                        )}
 
                         <div className="w-full space-y-3">
-                            <button
-                                onClick={() => { onClose('import_csv'); onImportCSV?.(); }}
-                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
-                            >
-                                Yes, import my bank CSV
-                            </button>
-                            <button
-                                onClick={() => onClose('skip_import')}
-                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
-                            >
-                                Skip for now
-                            </button>
+                            {existingAccounts.length > 0 ? (
+                                <>
+                                    <button
+                                        onClick={() => onClose('complete')}
+                                        className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                                    >
+                                        Done — go to my budget →
+                                    </button>
+                                    <button
+                                        onClick={() => { onAddAccounts?.(); }}
+                                        className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                                    >
+                                        Add another account
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => { onAddAccounts?.(); }}
+                                        className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                                    >
+                                        Add Accounts
+                                    </button>
+                                    <button
+                                        onClick={() => onClose('skip_accounts')}
+                                        className="w-full py-2 text-white/35 hover:text-white/60 transition-colors text-sm"
+                                    >
+                                        Skip for now
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}

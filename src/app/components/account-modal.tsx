@@ -25,13 +25,14 @@ interface AccountModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAccountsUpdated: () => void;
+    onReadyToImport?: (accountId: string) => void;
     skipBalance?: boolean;
     context?: 'onboarding' | 'normal';
 }
 
 const FREE_ACCOUNT_LIMIT = 4;
 
-export default function AccountModal({ isOpen, onClose, onAccountsUpdated, skipBalance = false, context = 'normal' }: AccountModalProps) {
+export default function AccountModal({ isOpen, onClose, onAccountsUpdated, onReadyToImport, skipBalance = false, context = 'normal' }: AccountModalProps) {
     const { data: allAccountsData = [], isLoading: loading } = useAllAccounts();
     const { data: allTransactions = [] } = useTransactions();
     const { subscription } = useSubscription();
@@ -81,13 +82,25 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated, skipB
                 toast.success('Account updated successfully');
             } else {
                 const isFirstAccount = accounts.length === 0;
-                await createAccountMutation.mutateAsync({
+                const newAccount = await createAccountMutation.mutateAsync({
                     name: formData.name,
                     type: formData.type,
                     startingBalance: parseFloat(startingBalance) || 0,
                     isFirstAccount,
                 });
                 toast.success('Account created successfully');
+
+                setFormData({ name: '', type: 'checking' });
+                setStartingBalance('0.00');
+                setEditingAccount(null);
+                setShowForm(false);
+
+                if (context === 'onboarding' && isFirstAccount && onReadyToImport) {
+                    onReadyToImport(newAccount.id);
+                } else {
+                    onAccountsUpdated();
+                }
+                return;
             }
 
             setFormData({ name: '', type: 'checking' });

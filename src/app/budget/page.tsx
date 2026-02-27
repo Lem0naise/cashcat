@@ -78,6 +78,7 @@ export default function Budget() {
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [accountModalFromOnboarding, setAccountModalFromOnboarding] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [preselectedAccountId, setPreselectedAccountId] = useState<string | null>(null);
     const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
     const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     // Combine all loading states
@@ -1512,13 +1513,24 @@ export default function Budget() {
                     onAccountsUpdated={() => {
                         refreshData();
                     }}
+                    onReadyToImport={(accountId) => {
+                        setShowAccountModal(false);
+                        setAccountModalFromOnboarding(false);
+                        setPreselectedAccountId(accountId);
+                        setShowImportModal(true);
+                    }}
                 />
 
                 <ImportModal
                     isOpen={showImportModal}
-                    onClose={() => setShowImportModal(false)}
+                    onClose={() => {
+                        setShowImportModal(false);
+                        setPreselectedAccountId(null);
+                    }}
+                    initialAccountId={preselectedAccountId ?? undefined}
                     onImportComplete={(importedAccountIds) => {
                         setShowImportModal(false);
+                        setPreselectedAccountId(null);
                         refreshData();
                         if (importedAccountIds && importedAccountIds.length > 0) {
                             setPostImportAccountId(importedAccountIds[0]);
