@@ -2,7 +2,7 @@
 
 import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Database } from '@/types/supabase';
 import TransactionModal from './transaction-modal';
@@ -32,7 +32,8 @@ type BankCompareModalProps = {
     onClose: () => void;
     transactions: Transaction[];
     onTransactionUpdated: () => void;
-    bankAccountId: string | null
+    bankAccountId: string | null;
+    postImport?: boolean;
 };
 
 export default function BankCompareModal({
@@ -41,8 +42,9 @@ export default function BankCompareModal({
     bankAccountId,
     transactions,
     onTransactionUpdated,
+    postImport = false,
 }: BankCompareModalProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [bankBalance, setBankBalance] = useState('');
     const [step, setStep] = useState<'input' | 'results' | 'correction'>('input');
     const [difference, setDifference] = useState(0);
@@ -148,6 +150,22 @@ export default function BankCompareModal({
 
         const diff = bankAmount - budgetBalance;
         setDifference(diff);
+
+        // Post-import mode: skip the diff/results screen entirely.
+        // Just apply a balance correction immediately so the starting balance
+        // is set to whatever the user says their real bank balance is.
+        if (postImport) {
+            if (Math.abs(diff) < 0.01) {
+                // Balances already match — save reconciliation and close.
+                await saveReconciliation(bankAmount);
+                handleClose();
+            } else {
+                await applyBalanceCorrection(diff);
+            }
+            return;
+        }
+
+        // Normal flow below ---------------------------------------------------
 
         // If balances match, save reconciliation
         if (Math.abs(diff) < 0.01) {
@@ -283,48 +301,41 @@ export default function BankCompareModal({
         }
     };
 
-    const handleBalanceCorrection = async () => {
+    const applyBalanceCorrection = async (correctionAmountNum: number) => {
         try {
-            const correctionAmountNum = parseFloat(correctionAmount);
-            if (isNaN(correctionAmountNum)) {
-                toast.error('Please enter a valid correction amount');
-                return;
-            }
-
             const userId = getCachedUserId();
             if (!userId) throw new Error('Not authenticated');
 
-            // Insert a Balance Correction 
-            {/*const { error } = await supabase
-                .from('transactions')
-                .insert({
-                    user_id: user.id,
-                    amount: correctionAmountNum,
-                    type: correctionAmountNum > 0 ? 'income' : 'income',
-                    date: new Date().toISOString().split('T')[0],
-                    vendor: 'Balance Correction',
-                    description: `Bank reconciliation adjustment: ${formatCurrency(correctionAmountNum)}`,
-                    created_at: new Date().toISOString(),
-                });
-            if (error) throw error;
-            */}
-
-            // Instead, adjust the starting balance
+            // Adjust the starting balance transaction for this account
             const startingTransaction = usableTransactions.find(t => t.type === 'starting' && t.account_id === bankAccountId);
 
             if (!startingTransaction) {
-                toast.error("Could not find starting transaction. Please contact support.");
-                return;
-            }
-            const newAmount = startingTransaction.amount + correctionAmountNum;
+                // No starting transaction exists yet (e.g. after a CSV import with no starting balance row).
+                // Insert one now with the correction amount as the initial balance.
+                if (!bankAccountId) throw new Error('No account selected');
+                const { error: insertError } = await supabase
+                    .from('transactions')
+                    .insert({
+                        amount: correctionAmountNum,
+                        type: 'starting',
+                        date: new Date().toISOString().split('T')[0],
+                        vendor: 'Starting Balance',
+                        account_id: bankAccountId,
+                        created_at: new Date().toISOString(),
+                        user_id: userId,
+                    });
+                if (insertError) throw insertError;
+            } else {
+                const newAmount = startingTransaction.amount + correctionAmountNum;
 
-            const { error } = await supabase
-                .from('transactions')
-                .update({
-                    amount: newAmount,
-                })
-                .eq('id', startingTransaction.id);
-            if (error) throw error;
+                const { error } = await supabase
+                    .from('transactions')
+                    .update({
+                        amount: newAmount,
+                    })
+                    .eq('id', startingTransaction.id);
+                if (error) throw error;
+            }
 
             toast.success('Balance correction added successfully');
             onTransactionUpdated();
@@ -333,6 +344,15 @@ export default function BankCompareModal({
             console.error('Error adding balance correction:', error);
             toast.error('Failed to add balance correction');
         }
+    };
+
+    const handleBalanceCorrection = async () => {
+        const correctionAmountNum = parseFloat(correctionAmount);
+        if (isNaN(correctionAmountNum)) {
+            toast.error('Please enter a valid correction amount');
+            return;
+        }
+        await applyBalanceCorrection(correctionAmountNum);
     };
 
     const handleClose = () => {
@@ -372,7 +392,7 @@ export default function BankCompareModal({
                         }`}
                 >
                     <div className="flex justify-between items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:p-0 md:mb-6 border-b border-white/[.15] md:border-0">
-                        <h2 className="text-xl font-bold">Compare with Bank</h2>
+                        <h2 className="text-xl font-bold">{postImport ? 'Reconcile Account' : 'Compare with Bank'}</h2>
                         <button
                             onClick={handleClose}
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white"
@@ -407,15 +427,26 @@ export default function BankCompareModal({
                                         />
                                     </div>
 
-                                    <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
-                                        <h4 className="font-medium text-blue mb-2">How this works:</h4>
-                                        <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
-                                            <li>Enter your current bank account balance</li>
-                                            <li>We'll compare it with your CashCat balance</li>
-                                            <li>If they don't match, we'll help you find the issue</li>
-                                            <li>You can edit transactions or add a correction</li>
-                                        </ul>
-                                    </div>
+                                    {postImport ? (
+                                        <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
+                                            <h4 className="font-medium text-blue mb-2">Why reconcile after importing?</h4>
+                                            <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
+                                                <li>Your CSV import created a starting balance of £0</li>
+                                                <li>Enter your real bank balance to fix that automatically</li>
+                                                <li>This ensures your CashCat balance matches your bank exactly</li>
+                                            </ul>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
+                                            <h4 className="font-medium text-blue mb-2">How this works:</h4>
+                                            <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
+                                                <li>Enter your current bank account balance</li>
+                                                <li>We'll compare it with your CashCat balance</li>
+                                                <li>If they don't match, we'll help you find the issue</li>
+                                                <li>You can edit transactions or add a correction</li>
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -603,7 +634,7 @@ export default function BankCompareModal({
                                     disabled={!bankBalance}
                                     className="w-full py-3 bg-green text-black font-medium rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Compare Balances
+                                    {postImport ? 'Set Balance' : 'Compare Balances'}
                                 </button>
                             )}
 

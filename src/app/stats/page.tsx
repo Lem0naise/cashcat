@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@/app/utils/supabase';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
@@ -33,7 +32,6 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 export default function Stats() {
-    const supabase = createClient();
     const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments();
     const { data: categories = [], isLoading: categoriesLoading } = useCategories();
     const { data: transactions = [], isLoading: transactionsLoading } = useTransactions();

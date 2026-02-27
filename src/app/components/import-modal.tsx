@@ -91,7 +91,7 @@ type TempCategory = {
 type ImportModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onImportComplete: () => void;
+    onImportComplete: (importedAccountIds?: string[]) => void;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -752,15 +752,10 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             const categoryIdMap = new Map<string, string>();
 
             const ensureGroup = async (groupMode: 'existing' | 'new', groupId: string | null, groupName: string) => {
-                if (groupMode === 'existing' && groupId) return groupId;
+                if (groupMode === 'existing' && groupId && !groupId.startsWith('temp-')) return groupId;
                 const name = groupName.trim();
                 const existingGroup = groups.find(g => g.name.toLowerCase() === name.toLowerCase());
                 if (existingGroup) return existingGroup.id;
-
-                const normalized = normalizeKey(name);
-                const tempId = makeTempGroupId(normalized);
-                const temp = tempGroups.find(g => g.id === tempId);
-                if (temp) return temp.id;
 
                 const cached = groupIdMap.get(name);
                 if (cached) return cached;
@@ -965,7 +960,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             await incrementUsage('import_count');
             queryClient.invalidateQueries({ queryKey: ['usage'] });
 
-            onImportComplete();
+            onImportComplete(Array.from(accountIdMap.values()));
             onClose();
         } catch (err) {
             console.error('Import error:', err);

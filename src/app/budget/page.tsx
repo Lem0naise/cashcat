@@ -17,6 +17,7 @@ import AccountModal from '../components/account-modal';
 import OnboardingOverlay from '../components/OnboardingOverlay';
 import SpotlightTour, { TourStep } from '../components/SpotlightTour';
 import ImportModal from '../components/import-modal';
+import BankCompareModal from '../components/bank-compare-modal';
 import { getCachedUserId } from '../hooks/useAuthUserId';
 import { useOnboarding } from '../hooks/useOnboarding';
 // TanStack Query hooks for offline-first data
@@ -47,7 +48,7 @@ const EMPTY_ARRAY: any[] = [];
 
 export default function Budget() {
     const router = useRouter();
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const { data: allTransactionsData = EMPTY_ARRAY, isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useTransactions();
     const { data: rawCategoriesData = EMPTY_ARRAY, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
@@ -75,7 +76,10 @@ export default function Budget() {
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
+    const [accountModalFromOnboarding, setAccountModalFromOnboarding] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
+    const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     // Combine all loading states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -1482,7 +1486,10 @@ export default function Budget() {
                     isOpen={showManageModal || onboarding.showBudgetWizard}
                     isOnboarding={onboarding.showBudgetWizard}
                     onImportCSV={() => setShowImportModal(true)}
-                    onAddAccounts={() => setShowAccountModal(true)}
+                    onAddAccounts={() => {
+                        setAccountModalFromOnboarding(true);
+                        setShowAccountModal(true);
+                    }}
                     onClose={(reason?: string) => {
                         if (monthString && allTransactionsData) {
                             calculateBudgetData(monthString);
@@ -1496,8 +1503,11 @@ export default function Budget() {
 
                 <AccountModal
                     isOpen={showAccountModal}
+                    skipBalance={accountModalFromOnboarding}
+                    context={accountModalFromOnboarding ? 'onboarding' : 'normal'}
                     onClose={() => {
                         setShowAccountModal(false);
+                        setAccountModalFromOnboarding(false);
                     }}
                     onAccountsUpdated={() => {
                         refreshData();
@@ -1507,13 +1517,29 @@ export default function Budget() {
                 <ImportModal
                     isOpen={showImportModal}
                     onClose={() => setShowImportModal(false)}
-                    onImportComplete={() => {
+                    onImportComplete={(importedAccountIds) => {
                         setShowImportModal(false);
                         refreshData();
+                        if (importedAccountIds && importedAccountIds.length > 0) {
+                            setPostImportAccountId(importedAccountIds[0]);
+                            setShowPostImportReconcile(true);
+                        }
                     }}
                 />
 
-                {onboarding.showTour && !showImportModal && (
+                <BankCompareModal
+                    isOpen={showPostImportReconcile}
+                    onClose={() => {
+                        setShowPostImportReconcile(false);
+                        setPostImportAccountId(null);
+                    }}
+                    bankAccountId={postImportAccountId}
+                    transactions={allTransactionsData as any}
+                    onTransactionUpdated={() => refreshData()}
+                    postImport={true}
+                />
+
+                {onboarding.showTour && !showImportModal && !showPostImportReconcile && (
                     <SpotlightTour
                         steps={TOUR_STEPS}
                         onFinish={() => onboarding.advanceFromTour()}

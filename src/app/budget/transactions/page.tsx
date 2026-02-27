@@ -63,6 +63,8 @@ export default function Transactions() {
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
+    const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
@@ -506,7 +508,13 @@ export default function Transactions() {
             <ImportModal
                 isOpen={showImportModal}
                 onClose={() => setShowImportModal(false)}
-                onImportComplete={() => { refetch(); }}
+                onImportComplete={(importedAccountIds) => {
+                    refetch();
+                    if (importedAccountIds && importedAccountIds.length > 0) {
+                        setPostImportAccountId(importedAccountIds[0]);
+                        setShowPostImportReconcile(true);
+                    }
+                }}
             />
             {/* Pro Gate Overlay for import/export limits */}
             {showProGate && (
@@ -1019,6 +1027,18 @@ export default function Transactions() {
                     onClose={() => setShowBankCompareModal(false)}
                     transactions={transactions}
                     onTransactionUpdated={() => refetch()}
+                />
+
+                <BankCompareModal
+                    bankAccountId={postImportAccountId}
+                    isOpen={showPostImportReconcile}
+                    onClose={() => {
+                        setShowPostImportReconcile(false);
+                        setPostImportAccountId(null);
+                    }}
+                    transactions={transactions}
+                    onTransactionUpdated={() => refetch()}
+                    postImport={true}
                 />
 
                 <AccountModal

@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
@@ -22,7 +22,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 
 export default function Account() {
     const router = useRouter();
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const { user } = useSupabase();
     const { promptToInstall, isInstallable } = usePwaPrompt();
     const [isInstallDismissed, setIsInstallDismissed] = useState(false);

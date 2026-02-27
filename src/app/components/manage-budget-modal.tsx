@@ -745,11 +745,26 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                             >
                                 Add Accounts
                             </button>
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px bg-white/10" />
+                                <span className="text-xs text-white/30 font-medium">or</span>
+                                <div className="flex-1 h-px bg-white/10" />
+                            </div>
+                            <button
+                                onClick={() => { onClose('import_csv'); onImportCSV?.(); }}
+                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium flex items-center justify-center gap-2"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                                    <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                                Import CSV instead
+                            </button>
                             <button
                                 onClick={() => setStep(4)}
-                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                                className="w-full py-2 text-white/35 hover:text-white/60 transition-colors text-sm"
                             >
-                                Done
+                                Skip for now
                             </button>
                         </div>
                     </div>
