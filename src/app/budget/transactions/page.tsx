@@ -15,6 +15,7 @@ import AccountModal from "../../components/account-modal";
 import ExportModal from "../../components/export-modal";
 import ImportModal from "../../components/import-modal";
 import VendorManagerModal from "../../components/vendor-manager-modal";
+import BulkEditModal from "../../components/bulk-edit-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
@@ -70,6 +71,7 @@ export default function Transactions() {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showDesktopMenu, setShowDesktopMenu] = useState(false);
     const [showVendorManager, setShowVendorManager] = useState(false);
+    const [showBulkEdit, setShowBulkEdit] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
     const desktopMenuRef = useRef<HTMLDivElement>(null);
@@ -703,21 +705,38 @@ export default function Transactions() {
                                              <span className="text-sm">Import</span>
                                          </button>
                                          <button
-                                             onClick={() => {
-                                                 setShowVendorManager(true);
-                                                 setShowMobileMenu(false);
-                                             }}
-                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
-                                         >
-                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                                 <circle cx="9" cy="7" r="4" />
-                                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                             </svg>
-                                             <span className="text-sm">Manage Vendors</span>
-                                         </button>
-                                    </div>
+                                              onClick={() => {
+                                                  setShowVendorManager(true);
+                                                  setShowMobileMenu(false);
+                                              }}
+                                              className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
+                                          >
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                  <circle cx="9" cy="7" r="4" />
+                                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                              </svg>
+                                              <span className="text-sm">Manage Vendors</span>
+                                          </button>
+                                          <button
+                                              onClick={() => {
+                                                  setShowBulkEdit(true);
+                                                  setShowMobileMenu(false);
+                                              }}
+                                              className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                          >
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <rect x="3" y="5" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 7h11" />
+                                                  <rect x="3" y="12" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 14h11" />
+                                                  <rect x="3" y="19" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 21h11" />
+                                              </svg>
+                                              <span className="text-sm">Bulk Edit</span>
+                                          </button>
+                                     </div>
                                 </>
                             )}
                         </div>
@@ -850,6 +869,20 @@ export default function Transactions() {
                                                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                                 </svg>
                                                 <span className="text-sm">Manage Vendors</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowBulkEdit(true); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <rect x="3" y="5" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 7h11" />
+                                                    <rect x="3" y="12" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 14h11" />
+                                                    <rect x="3" y="19" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 21h11" />
+                                                </svg>
+                                                <span className="text-sm">Bulk Edit</span>
                                             </button>
                                         </div>
                                     )}
@@ -1094,6 +1127,11 @@ export default function Transactions() {
                 <VendorManagerModal
                     isOpen={showVendorManager}
                     onClose={() => setShowVendorManager(false)}
+                />
+
+                <BulkEditModal
+                    isOpen={showBulkEdit}
+                    onClose={() => setShowBulkEdit(false)}
                 />
             </div >
         </ProtectedRoute >
