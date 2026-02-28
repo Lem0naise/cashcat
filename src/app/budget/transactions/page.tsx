@@ -72,6 +72,7 @@ export default function Transactions() {
     const [showDesktopMenu, setShowDesktopMenu] = useState(false);
     const [showVendorManager, setShowVendorManager] = useState(false);
     const [showBulkEdit, setShowBulkEdit] = useState(false);
+    const [bulkEditUncategorised, setBulkEditUncategorised] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
     const desktopMenuRef = useRef<HTMLDivElement>(null);
@@ -907,6 +908,7 @@ export default function Transactions() {
                             </span>
                         </div>
 
+
                         {/* Quick-add row — desktop only */}
                         <div className="hidden md:block mb-4">
                             <QuickAddRow
@@ -917,6 +919,32 @@ export default function Transactions() {
                                 Tab between fields · Enter to add · <kbd className="font-mono bg-white/[.06] px-1 rounded">N</kbd> to focus from anywhere
                             </p>
                         </div>
+
+
+                        {/* Uncategorised Transactions Banner */}
+                        {(() => {
+                            const uncatCount = transactions.filter(t => t.type === 'payment' && !t.category_id).length;
+                            if (uncatCount === 0) return null;
+                            return (
+                                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 border-b-4 border-b-amber-500/50 flex justify-between items-center p-3 md:p-4 mb-3 md:mb-4">
+                                    <div>
+                                        <p className="font-medium text-amber-400 text-sm md:text-base">
+                                            {uncatCount} uncategorised transaction{uncatCount !== 1 ? 's' : ''}
+                                        </p>
+                                        <p className="text-xs text-amber-400/60 mt-0.5">
+                                            Categorise these to keep your budget accurate
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => { setBulkEditUncategorised(true); setShowBulkEdit(true); }}
+                                        className="px-3 md:px-4 py-1.5 rounded-full bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 transition-colors flex-shrink-0 ml-3"
+                                    >
+                                        Fix Now
+                                    </button>
+                                </div>
+                            );
+                        })()}
+
 
                         {loading && transactions.length === 0 && transfers.length === 0 ? (
                             <div className="flex justify-center items-center min-h-[200px]">
@@ -1021,6 +1049,7 @@ export default function Transactions() {
                                                                 );
                                                             } else {
                                                                 const transaction = item.data;
+                                                                const typeName = transaction.type === 'income' ? 'Income' : 'Uncategorised'
                                                                 return (
                                                                     <div key={transaction.id}
                                                                         onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setModalTransfer(null), setShowModal(true)) : null}
@@ -1041,8 +1070,8 @@ export default function Transactions() {
                                                                                 )}
                                                                             </div>
                                                                             {transaction.type !== 'starting' && (
-                                                                                <div className="text-sm text-white/40 truncate mt-0.5">
-                                                                                    {transaction.categories ? transaction.categories.name : "Income"}
+                                                                                <div className={`text-sm truncate mt-0.5 ${transaction.categories ? 'text-white/40 ' : (typeName==='Income' ? 'text-green' : 'text-reddy')}`}>
+                                                                                    {transaction.categories ? transaction.categories.name : typeName}
                                                                                     {transaction.description && (
                                                                                         <span className="inline truncate text-white/30 text-sm">
                                                                                             &nbsp; - {transaction.description}
@@ -1131,7 +1160,8 @@ export default function Transactions() {
 
                 <BulkEditModal
                     isOpen={showBulkEdit}
-                    onClose={() => setShowBulkEdit(false)}
+                    onClose={() => { setShowBulkEdit(false); setBulkEditUncategorised(false); }}
+                    filterUncategorised={bulkEditUncategorised}
                 />
             </div >
         </ProtectedRoute >
