@@ -87,7 +87,7 @@ export default function Landing() {
                     </h1>
 
                     <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed">
-                        The zero-based budgeting app that gives you total control. Available on <span className="text-green font-bold">Web, Android, and iOS</span>.
+                        The zero-based budgeting app that gives you total control. Available on the <span className="text-green font-bold">Web</span>. Native mobile apps coming soon.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -99,9 +99,9 @@ export default function Landing() {
                         </Link>
                         <Link
                             href="#waitlist"
-                            className="px-8 py-4 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all text-lg border border-white/10 backdrop-blur-sm"
+                            className="px-8 py-4 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all text-lg border border-white/10 backdrop-blur-sm whitespace-nowrap"
                         >
-                            Join the Waitlist
+                            Join Mobile Waitlist
                         </Link>
                     </div>
 
@@ -146,7 +146,7 @@ export default function Landing() {
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-3">Multi-Account</h3>
                                 <p className="text-white/70">
-                                    Track checking, savings, credit cards, and cash in one view. Handle transfers between accounts with ease.
+                                    Track current accounts, savings, credit cards, and cash in one view. Handle transfers between accounts with ease.
                                 </p>
                             </div>
                         </div>
@@ -241,7 +241,7 @@ export default function Landing() {
                             <span className="inline-block px-3 py-1 bg-white/10 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-4">Coming Soon</span>
                             <h2 className="text-4xl font-bold mb-6 text-white">Budget on Any Device.</h2>
                             <p className="text-lg text-white/70 mb-8 leading-relaxed">
-                                CashCat is built for every device and platform. Use our fully-featured web app on any computer, or budget on the go with Android and iOS.
+                                CashCat is built for every device and platform. Use our fully-featured web app on any device today. Native Android and iOS apps are currently in development.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-12">
@@ -322,7 +322,7 @@ export default function Landing() {
                                 <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span className="text-white/80">Multi-account tracking (checking, savings, etc)</span>
+                                <span className="text-white/80">Multi-account tracking (current accounts, savings, etc)</span>
                             </li>
                             <li className="flex items-start gap-3">
                                 <svg className="w-6 h-6 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
