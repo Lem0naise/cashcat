@@ -53,8 +53,10 @@ function findSimilarPairs(names: string[], threshold = 0.65) {
     const pairs: Array<{ a: string; b: string; score: number }> = [];
     for (let i = 0; i < names.length; i++) {
         for (let j = i + 1; j < names.length; j++) {
+            // Skip only if the names are byte-for-byte identical (already the same vendor)
+            if (names[i] === names[j]) continue;
             const score = stringSimilarity(names[i], names[j]);
-            if (score >= threshold && score < 1) {
+            if (score >= threshold) {
                 pairs.push({ a: names[i], b: names[j], score });
             }
         }
@@ -484,43 +486,94 @@ export default function VendorManagerModal({ isOpen, onClose }: VendorManagerMod
                 {view === 'merge' && mergeSource && (
                     <div className="flex flex-col h-[calc(100dvh-5rem)] md:h-auto">
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                            <div className="p-3 bg-white/[.04] rounded-lg border border-white/[.10]">
-                                <p className="text-xs text-white/40 mb-0.5">Merging from</p>
-                                <p className="font-semibold text-white/90">{mergeSource.name}</p>
-                                <p className="text-xs text-white/40 mt-0.5">{txCountByName[mergeSource.name] ?? 0} transactions</p>
-                            </div>
+                            {/* Direction picker — only shown when both sides are pre-populated (from similar tab) */}
+                            {mergeTarget ? (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-white/40 px-0.5">Choose which vendor to keep</p>
+                                    {/* Option A: source → target (current direction) */}
+                                    <button
+                                        onClick={() => {/* already this direction */}}
+                                        className="w-full p-3 rounded-lg border transition-colors text-left bg-green/10 border-green/40"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-xs text-white/40 line-through truncate max-w-[120px]">{mergeSource.name}</span>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                                    <span className="text-sm font-semibold text-white truncate max-w-[120px]">{mergeTarget.name}</span>
+                                                </div>
+                                                <p className="text-xs text-white/40 mt-0.5">
+                                                    Keep <strong className="text-white/60">{mergeTarget.name}</strong> · remove {mergeSource.name}
+                                                </p>
+                                            </div>
+                                            <div className="w-4 h-4 rounded-full border-2 border-green bg-green flex-shrink-0 flex items-center justify-center">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                                            </div>
+                                        </div>
+                                    </button>
+                                    {/* Option B: swap — target becomes source */}
+                                    <button
+                                        onClick={() => {
+                                            const tmp = mergeSource;
+                                            setMergeSource(mergeTarget);
+                                            setMergeTarget(tmp);
+                                        }}
+                                        className="w-full p-3 rounded-lg border transition-colors text-left bg-white/[.03] border-white/[.10] hover:bg-white/[.06]"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-xs text-white/40 line-through truncate max-w-[120px]">{mergeTarget.name}</span>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                                    <span className="text-sm font-semibold text-white truncate max-w-[120px]">{mergeSource.name}</span>
+                                                </div>
+                                                <p className="text-xs text-white/40 mt-0.5">
+                                                    Keep <strong className="text-white/60">{mergeSource.name}</strong> · remove {mergeTarget.name}
+                                                </p>
+                                            </div>
+                                            <div className="w-4 h-4 rounded-full border-2 border-white/30 flex-shrink-0" />
+                                        </div>
+                                    </button>
+                                </div>
+                            ) : (
+                                /* No target yet — show the "merging from" header and vendor picker */
+                                <>
+                                    <div className="p-3 bg-white/[.04] rounded-lg border border-white/[.10]">
+                                        <p className="text-xs text-white/40 mb-0.5">Merging from</p>
+                                        <p className="font-semibold text-white/90">{mergeSource.name}</p>
+                                        <p className="text-xs text-white/40 mt-0.5">{txCountByName[mergeSource.name] ?? 0} transactions</p>
+                                    </div>
 
-                            <div>
-                                <label className="block text-sm text-white/50 mb-1">Merge into…</label>
-                                <div className="relative mb-2">
-                                    <input
-                                        type="text"
-                                        value={mergeSearchQuery}
-                                        onChange={e => setMergeSearchQuery(e.target.value)}
-                                        placeholder="Search vendors…"
-                                        className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.12] focus:border-green focus:outline-none text-sm transition-colors"
-                                    />
-                                    <Image src="/magnify.svg" alt="" width={14} height={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 invert" />
-                                </div>
-                                <div className="space-y-1 max-h-60 overflow-y-auto">
-                                    {userVendors
-                                        .filter(v => v.id !== mergeSource.id)
-                                        .filter(v => !mergeSearchQuery || v.name.toLowerCase().includes(mergeSearchQuery.toLowerCase()))
-                                        .map(vendor => (
-                                            <button
-                                                key={vendor.id}
-                                                onClick={() => setMergeTarget({ id: vendor.id, name: vendor.name })}
-                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${mergeTarget?.id === vendor.id
-                                                    ? 'bg-green/20 border border-green/40 text-white'
-                                                    : 'bg-white/[.04] border border-white/[.08] text-white/70 hover:bg-white/[.07]'
-                                                    }`}
-                                            >
-                                                <span className="font-medium">{vendor.name}</span>
-                                                <span className="text-xs text-white/40">{txCountByName[vendor.name] ?? 0} tx</span>
-                                            </button>
-                                        ))}
-                                </div>
-                            </div>
+                                    <div>
+                                        <label className="block text-sm text-white/50 mb-1">Merge into…</label>
+                                        <div className="relative mb-2">
+                                            <input
+                                                type="text"
+                                                value={mergeSearchQuery}
+                                                onChange={e => setMergeSearchQuery(e.target.value)}
+                                                placeholder="Search vendors…"
+                                                className="w-full p-2 pl-8 rounded-lg bg-white/[.05] border border-white/[.12] focus:border-green focus:outline-none text-sm transition-colors"
+                                            />
+                                            <Image src="/magnify.svg" alt="" width={14} height={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40 invert" />
+                                        </div>
+                                        <div className="space-y-1 max-h-60 overflow-y-auto">
+                                            {userVendors
+                                                .filter(v => v.id !== mergeSource.id)
+                                                .filter(v => !mergeSearchQuery || v.name.toLowerCase().includes(mergeSearchQuery.toLowerCase()))
+                                                .map(vendor => (
+                                                    <button
+                                                        key={vendor.id}
+                                                        onClick={() => setMergeTarget({ id: vendor.id, name: vendor.name })}
+                                                        className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between bg-white/[.04] border border-white/[.08] text-white/70 hover:bg-white/[.07]"
+                                                    >
+                                                        <span className="font-medium">{vendor.name}</span>
+                                                        <span className="text-xs text-white/40">{txCountByName[vendor.name] ?? 0} tx</span>
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             {mergeTarget && (
                                 <div className="p-3 bg-green/5 border border-green/20 rounded-lg text-sm">

@@ -2294,7 +2294,10 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
 
     // ─── Main render ──────────────────────────────────────────────────────────
     return (
-        <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-0 md:p-4">
+        <div
+            className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-0 md:p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
             <div className="bg-[#111] border border-white/10 md:rounded-xl w-full h-full md:h-auto md:max-h-[90vh] md:max-w-3xl overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
                 {/* Header */}
                 <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-[#151515] flex-shrink-0">
