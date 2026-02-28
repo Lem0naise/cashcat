@@ -1,14 +1,15 @@
 [
-    {
-        "relation": [
-            "delegate_permission/common.handle_all_urls"
-        ],
-        "target": {
-            "namespace": "android_app",
-            "package_name": "com.lemonaise.cashcat",
-            "sha256_cert_fingerprints": [
-                "DA:FC:4A:E4:47:76:E8:6E:EA:D4:97:1F:5E:A5:6A:08:69:74:34:69:4A:4C:06:D8:01:DD:D5:49:9A:BC:BE:9A"
-            ]
-        }
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.lemonaise.cashcat",
+      "sha256_cert_fingerprints": [
+        "DA:FC:4A:E4:47:76:E8:6E:EA:D4:97:1F:5E:A5:6A:08:69:74:34:69:4A:4C:06:D8:01:DD:D5:49:9A:BC:BE:9A"
+      ]
     }
+  }
 ]
