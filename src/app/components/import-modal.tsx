@@ -138,6 +138,33 @@ const normalizeTempKey = (value: string) => normalizeKey(value).replace(/\s+/g, 
 const makeTempGroupId = (normalized: string) => `temp-group:${normalizeTempKey(normalized)}`;
 const makeTempCategoryId = (groupId: string, normalized: string) => `temp-category:${groupId}:${normalizeTempKey(normalized)}`;
 
+function findBestMatch<T extends { id: string; name: string }>(query: string, items: T[]): T | undefined {
+    if (!query) return undefined;
+    
+    const normQuery = query.toLowerCase().trim();
+    const veryNormQuery = normalizeKey(query);
+    
+    // 1. Exact match
+    let match = items.find(item => item.name.toLowerCase().trim() === normQuery);
+    if (match) return match;
+    
+    // 2. Exact match ignoring punctuation/spaces
+    match = items.find(item => normalizeKey(item.name) === veryNormQuery);
+    if (match) return match;
+    
+    // 3. Substring match
+    if (normQuery.length >= 3) {
+        match = items.find(item => {
+            const normItem = item.name.toLowerCase().trim();
+            // avoid matching super short names inside long words
+            if (normItem.length < 3 && normQuery.length >= 3) return false;
+            return normItem.includes(normQuery) || normQuery.includes(normItem);
+        });
+    }
+    
+    return match;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ImportModal({ isOpen, onClose, onImportComplete, initialAccountId }: ImportModalProps) {
@@ -327,8 +354,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                 const normalized = normalizeKey(name);
                 const saved = savedMappings.find(m => m.match_type === 'category' && m.match_normalized === normalized);
                 const savedCategory = saved?.category_id ? categories.find(c => c.id === saved.category_id) : undefined;
-                const match = savedCategory || categories.find(c => c.name.toLowerCase() === name.toLowerCase());
-                const groupMatch = group ? groups.find(g => g.name.toLowerCase() === group.toLowerCase()) : undefined;
+                const match = savedCategory || findBestMatch(name, categories);
+                const groupMatch = group ? findBestMatch(group, groups) : undefined;
                 return {
                     csvCategoryName: name,
                     csvGroupName: group,
