@@ -29,6 +29,7 @@ const docsSections = [
 			{ name: 'Budget Management', href: '/docs/budget-management' },
 			{ name: 'Statistics & Reports', href: '/docs/statistics' },
 			{ name: 'Account Settings', href: '/docs/account-settings' },
+			{ name: 'CashCat Pro', href: '/docs/pro-subscription' },
 		],
 	},
 	{

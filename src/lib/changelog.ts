@@ -26,6 +26,20 @@ export const changelog: Major[] = [
                 version: "13",
                 patches: [
                     {
+                        version: "0.13.1",
+                        date: "February 26, 2026",
+                        features: [
+                            "CSV import with auto-detection for major bank formats",
+                            "Custom vendor and category mappings saved for future imports",
+                            "Duplicate detection when importing overlapping date ranges",
+                            "Money Flow (Sankey) diagram now embedded inline on the Stats page",
+                        ],
+                        bugfixes: [
+                            "Fixed vendor mapping bugs",
+                            "Fix CSV import bug"
+                        ]
+                    },
+                    {
                         version: "0.13.0",
                         date: "February 26, 2026",
                         features: [

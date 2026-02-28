@@ -14,14 +14,19 @@ import ProtectedRoute from '../components/protected-route';
 import Sidebar from "../components/sidebar";
 import CategoryCard from '../features/Category';
 import AccountModal from '../components/account-modal';
+import OnboardingOverlay from '../components/OnboardingOverlay';
+import SpotlightTour, { TourStep } from '../components/SpotlightTour';
+import ImportModal from '../components/import-modal';
+import BankCompareModal from '../components/bank-compare-modal';
 import { getCachedUserId } from '../hooks/useAuthUserId';
-import Link from 'next/link';
+import { useOnboarding } from '../hooks/useOnboarding';
 // TanStack Query hooks for offline-first data
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAssignments } from '../hooks/useAssignments';
 import { useUpdateAssignment } from '../hooks/useUpdateAssignment';
 import { useSyncAll } from '../hooks/useSyncAll';
+import { getCurrencySymbol } from '../components/charts/utils';
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -44,7 +49,7 @@ const EMPTY_ARRAY: any[] = [];
 
 export default function Budget() {
     const router = useRouter();
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const { data: allTransactionsData = EMPTY_ARRAY, isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useTransactions();
     const { data: rawCategoriesData = EMPTY_ARRAY, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
@@ -72,8 +77,11 @@ export default function Budget() {
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
-    const [isOnboarding, setIsOnboarding] = useState(false);
-    const [hasAutoOpenedOnboarding, setHasAutoOpenedOnboarding] = useState(false);
+    const [accountModalFromOnboarding, setAccountModalFromOnboarding] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [preselectedAccountId, setPreselectedAccountId] = useState<string | null>(null);
+    const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
+    const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     // Combine all loading states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -82,6 +90,8 @@ export default function Budget() {
     const [isMassAssigning, setIsMassAssigning] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [currencySymbol, setCurrencySymbol] = useState('£');
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [showOverspentAlert, setShowOverspentAlert] = useState(false);
     const [reminderText, setReminderText] = useState<string>('');
@@ -90,6 +100,52 @@ export default function Budget() {
 
     // Draft assignments for mass assign mode (categoryId -> drafted amount)
     const [draftAssignments, setDraftAssignments] = useState<Map<string, number>>(new Map());
+
+    // ─── Onboarding (centralised) ────────────────────────────────────────
+    const hasCategoriesLoaded = !categoriesLoading && !assignmentsLoading && !transactionsLoading && !loading;
+    const onboarding = useOnboarding(hasCategoriesLoaded, rawCategoriesData.length);
+
+    // ─── Spotlight tour steps ─────────────────────────────────────────────
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const update = () => setIsMobile(window.innerWidth < 768);
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
+
+    const TOUR_STEPS = useMemo<TourStep[]>(() => [
+        {
+            targetId: 'tour-left-to-assign',
+            title: 'Your money pool',
+            body: 'This shows how much money you have left to assign. Click it to open the assign panel.',
+            position: 'bottom',
+        },
+        {
+            targetId: isMobile ? 'tour-manage-budget-mobile' : 'tour-manage-budget',
+            title: 'Manage your budget',
+            body: 'Add, edit, or remove categories and groups at any time.',
+            position: 'bottom',
+        },
+        {
+            targetId: 'tour-categories',
+            title: 'Your categories',
+            body: 'Each category has a goal. Expand a group to assign money and see how much you\'ve spent.',
+            position: 'bottom',
+        },
+        {
+            targetId: isMobile ? 'tour-mobile-nav-transactions' : 'tour-sidebar-transactions',
+            title: 'Log transactions',
+            body: 'Head to Transactions to record your income and spending. Every transaction is tied to a category.',
+            position: isMobile ? 'top' : 'right',
+        },
+        {
+            targetId: isMobile ? 'tour-mobile-nav-stats' : 'tour-sidebar-stats',
+            title: 'Track your progress',
+            body: 'Stats gives you a visual breakdown of your spending over time. Check back at the end of the month!',
+            position: isMobile ? 'top' : 'right',
+        },
+    ], [isMobile]);
 
     // Compute the total draft difference from current assignments
     const draftDifference = useMemo(() => {
@@ -381,30 +437,33 @@ export default function Budget() {
         }
     }, [currentMonth, allTransactionsData, rawCategoriesData, allAssignmentsData, transactionsLoading, categoriesLoading, assignmentsLoading, calculateBudgetData]);
 
-    // Auto-open onboarding for new users (no categories, data loaded)
-    useEffect(() => {
-        if (hasAutoOpenedOnboarding) return;
-        if (transactionsLoading || categoriesLoading || assignmentsLoading) return;
-        if (rawCategoriesData.length === 0 && !loading) {
-            setHasAutoOpenedOnboarding(true);
-            setShowAccountModal(true);
-        }
-    }, [rawCategoriesData, loading, transactionsLoading, categoriesLoading, assignmentsLoading, hasAutoOpenedOnboarding]);
-
-
     // Listen for hide budget values changes
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const savedHideBudgetValues = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('hideBudgetValues') === 'true' : false;
             setHideBudgetValues(savedHideBudgetValues);
+            setThousandsSeparator(window.localStorage?.getItem('thousandsSeparator') === 'true');
+            setCurrencySymbol(getCurrencySymbol());
 
             const handleHideBudgetValuesChange = (event: CustomEvent) => {
                 setHideBudgetValues(event.detail.hideBudgetValues);
             };
 
+            const handleThousandsSeparatorChange = (event: CustomEvent) => {
+                setThousandsSeparator(event.detail.thousandsSeparator);
+            };
+
+            const handleCurrencyChange = () => {
+                setCurrencySymbol(getCurrencySymbol());
+            };
+
             window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            window.addEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+            window.addEventListener('currencyChanged', handleCurrencyChange);
             return () => {
                 window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+                window.removeEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+                window.removeEventListener('currencyChanged', handleCurrencyChange);
             };
         }
     }, []);
@@ -755,7 +814,11 @@ export default function Budget() {
     // Helper function to format currency or return asterisks
     const formatCurrency = (amount: number) => {
         if (hideBudgetValues) return '****';
-        return `£${Math.abs(amount).toFixed(2)}`;
+        const abs = Math.abs(amount);
+        const formatted = thousandsSeparator
+            ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : abs.toFixed(2);
+        return `${currencySymbol}${formatted}`;
     };
 
     // Helper function to get group totals
@@ -958,6 +1021,7 @@ export default function Budget() {
                     </div>
                     <div className="w-12 flex justify-end">
                         <button
+                            id="tour-manage-budget-mobile"
                             onClick={() => setShowManageModal(true)}
                             className="flex gap-2 p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
                         >
@@ -1062,6 +1126,7 @@ export default function Budget() {
                                 </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
+                                    id="tour-manage-budget"
                                     className="bg-primary hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
                                 >
                                     <Image
@@ -1130,6 +1195,7 @@ export default function Budget() {
                         {/* Balance Assignment Info & Mass Assign Panel */}
                         {balanceInfo && !isMassAssigning && (
                             <div
+                                id="tour-left-to-assign"
                                 className={`rounded-lg overflow-hidden transition-all duration-200 ${Math.round(balanceInfo.budgetPool * 100) / 100 == Math.round(balanceInfo.assigned * 100) / 100 ? ('h-[0px] pb-0') : (balanceInfo.budgetPool > balanceInfo.assigned
                                     ? 'bg-green/10 text-green border-b-4 border-b-green h-[56px] md:h-[64px] md:pb-4 mb-4'
                                     : 'bg-reddy/10 text-reddy border-b-4 border-b-reddy h-[56px] md:h-[64px] md:pb-4 mb-4')
@@ -1173,17 +1239,17 @@ export default function Budget() {
                                         <div>
                                             <div className="text-xs text-white/50 uppercase tracking-wide mb-0.5">Draft Balance</div>
                                             <div className="flex items-baseline gap-2">
-                                                <span className={`text-xl md:text-2xl font-bold ${draftLeftToAssign >= 0 ? 'text-green' : 'text-reddy'}`}>
-                                                    {hideBudgetValues ? '****' : `£${Math.abs(draftLeftToAssign).toFixed(2)}`}
-                                                </span>
+                                                  <span className={`text-xl md:text-2xl font-bold ${draftLeftToAssign >= 0 ? 'text-green' : 'text-reddy'}`}>
+                                                     {hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? Math.abs(draftLeftToAssign).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : Math.abs(draftLeftToAssign).toFixed(2)}`}
+                                                 </span>
                                                 <span className={`text-sm ${draftLeftToAssign >= 0 ? 'text-green/70' : 'text-reddy/70'}`}>
                                                     {draftLeftToAssign >= 0 ? 'left to assign' : 'over-assigned'}
                                                 </span>
                                             </div>
                                             {draftDifference !== 0 && (
-                                                <div className="text-xs text-white/50 mt-0.5">
-                                                    {draftDifference > 0 ? '+' : ''}{hideBudgetValues ? '****' : `£${draftDifference.toFixed(2)}`} from current
-                                                </div>
+                                                 <div className="text-xs text-white/50 mt-0.5">
+                                                     {draftDifference > 0 ? '+' : ''}{hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? draftDifference.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : draftDifference.toFixed(2)}`} from current
+                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex gap-2">
@@ -1217,9 +1283,9 @@ export default function Budget() {
                                             </svg>
                                             Fund All Underfunded
                                             {totalUnderfundedAmount > 0 && (
-                                                <span className="text-xs opacity-70">
-                                                    ({hideBudgetValues ? '****' : `£${totalUnderfundedAmount.toFixed(2)}`})
-                                                </span>
+                                                 <span className="text-xs opacity-70">
+                                                     ({hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? totalUnderfundedAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalUnderfundedAmount.toFixed(2)}`})
+                                                 </span>
                                             )}
                                         </button>
                                         <button
@@ -1250,56 +1316,13 @@ export default function Budget() {
                                 {error}
                             </div>
                         ) : categories.length === 0 ? (
-                            <div className="text-center text-white/60 mt-5 max-w-md mx-auto">
-                                <Image
-                                    src="/transactions.svg"
-                                    alt="No budget categories"
-                                    width={48}
-                                    height={48}
-                                    className="image-black opacity-40 mx-auto mb-4"
-                                />
-                                <h2 className="text-2xl font-semibold mb-2">Welcome to CashCat!</h2>
-                                <div className="bg-white/[.03] rounded-lg p-6 mb-2 md:mb-8 md:mt-4 backdrop-blur-sm">
-                                    <h3 className="text-lg font-medium text-green mb-4">Get Started in 3 Steps:</h3>
-                                    <ul className="inline-block text-left list-disc list-inside space-y-3 text-base">
-                                        <li className="opacity-90">Enter your bank account balances</li>
-                                        <li className="opacity-90">Create your budget</li>
-                                        <li className="opacity-90">Log your first transaction</li>
-                                    </ul>
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <button
-                                        onClick={() => setShowAccountModal(true)}
-                                        className="
-                                        bg-green text-black px-6 py-3 rounded-lg hover:bg-green-dark transition-colors text-sm font-medium sm:order-none"
-                                    >
-                                        Create Your Budget!
-                                    </button>
-                                    <Link
-                                        href="/docs/getting-started"
-                                        className="cursor-pointer px-6 py-3 rounded-lg border border-white/20 hover:bg-white/[.05] transition-colors text-sm font-medium text-white/90"
-                                    >
-                                        Learn the Basics First
-                                    </Link>
-
-
-                                </div>
-                                <div className="sm:mt-4 mt-8">
-                                    <Link
-                                        href="https://discord.gg/C9mYnEdAQA"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white font-medium rounded-lg hover:bg-[#4752C4] transition-all text-sm"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
-                                        </svg>
-                                        Join our Discord Community
-                                    </Link>
-                                </div>
-                            </div>
+                            <OnboardingOverlay onStartOnboarding={() => {
+                                if (!onboarding.isOnboardingActive) {
+                                    onboarding.startOnboarding();
+                                }
+                            }} />
                         ) : (
-                            <div className="space-y-1 md:space-y-2">
+                            <div id="tour-categories" className="space-y-1 md:space-y-2">
                                 {/* Monthly Summary */}
                                 <div className="bg-white/[.03] rounded-lg py-1 md:py-3 md:p-4 mb-2">
                                     {(() => {
@@ -1482,32 +1505,79 @@ export default function Budget() {
                 </main>
 
                 <ManageBudgetModal
-                    isOpen={showManageModal}
-                    isOnboarding={isOnboarding}
-                    onClose={() => {
+                    isOpen={showManageModal || onboarding.showBudgetWizard}
+                    isOnboarding={onboarding.showBudgetWizard}
+                    onImportCSV={() => setShowImportModal(true)}
+                    onAddAccounts={() => {
+                        setAccountModalFromOnboarding(true);
+                        setShowAccountModal(true);
+                    }}
+                    onClose={(reason?: string) => {
                         if (monthString && allTransactionsData) {
                             calculateBudgetData(monthString);
                         }
-                        setIsOnboarding(false);
+                        if (onboarding.showBudgetWizard) {
+                            onboarding.advanceFromBudget();
+                        }
                         setShowManageModal(false);
                     }}
                 />
 
                 <AccountModal
                     isOpen={showAccountModal}
+                    skipBalance={accountModalFromOnboarding}
+                    context={accountModalFromOnboarding ? 'onboarding' : 'normal'}
                     onClose={() => {
                         setShowAccountModal(false);
-                        // Open budget wizard on close if user has no categories yet
-                        if (rawCategoriesData.length === 0) {
-                            setIsOnboarding(true);
-                            setShowManageModal(true);
-                        }
+                        setAccountModalFromOnboarding(false);
                     }}
                     onAccountsUpdated={() => {
-                        // Just refresh data — do NOT close modal or open budget wizard
                         refreshData();
                     }}
+                    onReadyToImport={(accountId) => {
+                        setShowAccountModal(false);
+                        setAccountModalFromOnboarding(false);
+                        setPreselectedAccountId(accountId);
+                        setShowImportModal(true);
+                    }}
                 />
+
+                <ImportModal
+                    isOpen={showImportModal}
+                    onClose={() => {
+                        setShowImportModal(false);
+                        setPreselectedAccountId(null);
+                    }}
+                    initialAccountId={preselectedAccountId ?? undefined}
+                    onImportComplete={(importedAccountIds) => {
+                        setShowImportModal(false);
+                        setPreselectedAccountId(null);
+                        refreshData();
+                        if (importedAccountIds && importedAccountIds.length > 0) {
+                            setPostImportAccountId(importedAccountIds[0]);
+                            setShowPostImportReconcile(true);
+                        }
+                    }}
+                />
+
+                <BankCompareModal
+                    isOpen={showPostImportReconcile}
+                    onClose={() => {
+                        setShowPostImportReconcile(false);
+                        setPostImportAccountId(null);
+                    }}
+                    bankAccountId={postImportAccountId}
+                    transactions={allTransactionsData as any}
+                    onTransactionUpdated={() => refreshData()}
+                    postImport={true}
+                />
+
+                {onboarding.showTour && !showImportModal && !showPostImportReconcile && (
+                    <SpotlightTour
+                        steps={TOUR_STEPS}
+                        onFinish={() => onboarding.advanceFromTour()}
+                    />
+                )}
             </div>
         </ProtectedRoute>
     );

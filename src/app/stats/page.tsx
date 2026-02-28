@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@/app/utils/supabase';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Database } from '../../types/supabase';
@@ -33,7 +32,6 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 export default function Stats() {
-    const supabase = createClient();
     const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments();
     const { data: categories = [], isLoading: categoriesLoading } = useCategories();
     const { data: transactions = [], isLoading: transactionsLoading } = useTransactions();
@@ -226,7 +224,7 @@ export default function Stats() {
                 <main className={`pt-[env(safe-area-inset-top)] mt-4 md:pt-16 pb-32 md:pb-6 sm:ml-20 lg:ml-[max(16.66%,100px)] p-4 sm:p-6 fade-in`}>
                     <div className="max-w-12xl mx-auto">
 
-                        {assignments.length === 0 ? (
+                        {(assignments.length === 0 && transactions.length === 0) ? (
                             <div className="text-center text-white/60 mt-20">
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/[.05] flex items-center justify-center">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white/40">
@@ -603,7 +601,7 @@ export default function Stats() {
                                     </div>
                                     <ProGate
                                         featureName="Money Flow Diagram"
-                                        featureDescription="See exactly where every dollar goes — income sources flow through spending groups, categories, and vendors in one beautiful interactive visualization."
+                                        featureDescription="See exactly where your money goes — income sources flow through spending groups, categories, and vendors in one beautiful interactive visualization."
                                         dismissible={false}
                                     >
                                         <SankeyInline />

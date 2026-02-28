@@ -9,6 +9,7 @@ import { useAllAccounts } from '../hooks/useAccounts';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCreateAccount, useUpdateAccount, useDeleteAccount, useSetDefaultAccount } from '../hooks/useAccountMutations';
 import { useSubscription } from '@/hooks/useSubscription';
+import { getCurrencySymbol } from './charts/utils';
 import { ProGateOverlay } from './pro-gate-overlay';
 
 type Account = {
@@ -25,11 +26,14 @@ interface AccountModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAccountsUpdated: () => void;
+    onReadyToImport?: (accountId: string) => void;
+    skipBalance?: boolean;
+    context?: 'onboarding' | 'normal';
 }
 
 const FREE_ACCOUNT_LIMIT = 4;
 
-export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: AccountModalProps) {
+export default function AccountModal({ isOpen, onClose, onAccountsUpdated, onReadyToImport, skipBalance = false, context = 'normal' }: AccountModalProps) {
     const { data: allAccountsData = [], isLoading: loading } = useAllAccounts();
     const { data: allTransactions = [] } = useTransactions();
     const { subscription } = useSubscription();
@@ -79,17 +83,29 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 toast.success('Account updated successfully');
             } else {
                 const isFirstAccount = accounts.length === 0;
-                await createAccountMutation.mutateAsync({
+                const newAccount = await createAccountMutation.mutateAsync({
                     name: formData.name,
                     type: formData.type,
-                    startingBalance: parseFloat(startingBalance),
+                    startingBalance: parseFloat(startingBalance) || 0,
                     isFirstAccount,
                 });
                 toast.success('Account created successfully');
+
+                setFormData({ name: '', type: 'checking' });
+                setStartingBalance('0.00');
+                setEditingAccount(null);
+                setShowForm(false);
+
+                if (context === 'onboarding' && isFirstAccount && onReadyToImport) {
+                    onReadyToImport(newAccount.id);
+                } else {
+                    onAccountsUpdated();
+                }
+                return;
             }
 
             setFormData({ name: '', type: 'checking' });
-            setStartingBalance('');
+            setStartingBalance('0.00');
             setEditingAccount(null);
             setShowForm(false);
             onAccountsUpdated();
@@ -206,7 +222,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
 
             if (hasBalance) {
-                message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
+                message += `\n\nWarning: This account has a balance of ${getCurrencySymbol()}${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
 
             message += '\n\nYou can reopen the account later if needed.';
@@ -229,7 +245,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
 
     return (
         <div
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4"
             onClick={onClose}
         >
             <div
@@ -237,9 +253,16 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-xl font-semibold">Manage Bank Accounts</h2>
+                    <div>
+                        <h2 className="text-xl font-semibold">
+                            {showForm && !editingAccount ? 'Add Account' : showForm ? 'Edit Account' : 'Bank Accounts'}
+                        </h2>
+                        {context === 'onboarding' && !showForm && (
+                            <p className="text-xs text-white/45 mt-0.5">Add the accounts you want to track</p>
+                        )}
+                    </div>
                     <button
-                        onClick={onClose}
+                        onClick={showForm ? handleCancel : onClose}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     >
                         <Image src="/plus.svg" alt="Close" width={16} height={16} className="invert rotate-45" />
@@ -297,7 +320,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     </button>
                                 </div>)}
 
-                            {!editingAccount && (<div>
+                            {!editingAccount && !skipBalance && (<div>
                                 <label className="block text-sm font-medium text-white/80 mb-2">
                                     Balance Right Now
                                 </label>
@@ -308,46 +331,58 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     autoFocus={false}
                                     currencySymbol={true}
                                 />
+                                <p className="text-xs text-white/45 mt-2">
+                                    Planning to import a CSV? You can skip this — your balance will be calculated from your transactions.
+                                </p>
                             </div>)}
 
-                            {editingAccount && (
-                                <div className="flex gap-3 pt-2">
-
-                                    {(editingAccount.is_active && otherAccountsAvailable) && !editingAccount.is_default && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleBankAccountClose(editingAccount)}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                        >
-                                            Close Account
-                                        </button>)}
-                                    {!editingAccount.is_active && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleBankAccountReopen(editingAccount)}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                        >
-                                            Re-open Account
-                                        </button>
-                                    )}
-
-                                    {(!editingAccount.is_active || otherAccountsAvailable) && !editingAccount.is_default && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDelete(editingAccount)}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-reddy hover:bg-old-reddy text-white font-medium transition-colors"
-                                        >
-                                            Delete Account
-                                        </button>)}
-
+                            {!editingAccount && skipBalance && (
+                                <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-white/[.04] border border-white/10 text-xs text-white/55">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5">
+                                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    Balance will be calculated automatically from your imported transactions.
                                 </div>
                             )}
 
-                            {editingAccount?.is_active && !otherAccountsAvailable && !editingAccount.is_default && (
-                                <p className="text-xs text-white/60 mt-2">You cannot close or delete the only account you have left open.</p>
-                            )}
-                            {editingAccount?.is_default && (
-                                <p className="text-xs text-white/60 mt-2">You cannot close or delete your default account.</p>
+                            {editingAccount && (
+                                <div className="pt-2 space-y-2">
+                                    <p className="text-xs text-white/40 font-medium uppercase tracking-wide">Danger zone</p>
+                                    <div className="flex gap-2">
+                                        {(editingAccount.is_active && otherAccountsAvailable) && !editingAccount.is_default && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleBankAccountClose(editingAccount)}
+                                                className="flex-1 py-2 px-3 rounded-lg bg-white/[.04] hover:bg-reddy/20 border border-white/10 hover:border-reddy/40 text-white/70 hover:text-reddy text-sm font-medium transition-colors"
+                                            >
+                                                Close Account
+                                            </button>)}
+                                        {!editingAccount.is_active && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleBankAccountReopen(editingAccount)}
+                                                className="flex-1 py-2 px-3 rounded-lg bg-white/[.04] hover:bg-green/10 border border-white/10 hover:border-green/30 text-white/70 hover:text-green text-sm font-medium transition-colors"
+                                            >
+                                                Re-open Account
+                                            </button>
+                                        )}
+
+                                        {(!editingAccount.is_active || otherAccountsAvailable) && !editingAccount.is_default && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(editingAccount)}
+                                                className="flex-1 py-2 px-3 rounded-lg bg-white/[.04] hover:bg-reddy/20 border border-white/10 hover:border-reddy/40 text-white/70 hover:text-reddy text-sm font-medium transition-colors"
+                                            >
+                                                Delete Account
+                                            </button>)}
+                                    </div>
+                                    {editingAccount?.is_active && !otherAccountsAvailable && !editingAccount.is_default && (
+                                        <p className="text-xs text-white/40 mt-1">You cannot close or delete the only account you have left open.</p>
+                                    )}
+                                    {editingAccount?.is_default && (
+                                        <p className="text-xs text-white/40 mt-1">You cannot close or delete your default account.</p>
+                                    )}
+                                </div>
                             )}
 
 
@@ -421,36 +456,47 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated }: Acc
                                     <div className="w-6 h-6 border-2 border-green border-t-transparent rounded-full animate-spin" />
                                 </div>
                             ) : accounts.length === 0 ? (
-                                <div className="text-center py-8 text-white/60">
-                                    <p>No accounts found</p>
-                                    <p className="text-sm mt-1">Create your first account to get started</p>
+                                <div className="text-center py-8 text-white/50">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40">
+                                        <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                                    </svg>
+                                    <p className="font-medium">No accounts yet</p>
+                                    <p className="text-xs mt-1 text-white/35">Add your first account above to get started</p>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     {accounts.map((account) => (
-                                        <div key={account.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors
-                                            ${account.is_active} 
-                                                ? 'bg-white/5 hover:bg-white/10'
-                                                : 'bg-white/2 hover:bg-white/5 opacity-60'`}>
-                                            <div>
-                                                <h3 className={`font-medium ${account.is_active ? '' : 'text-white/50'}`}>{account.name} {!account.is_active && (<span className="ml-2 text-xs px-2 py-1 rounded bg-red-500/20 text-red-300">
-                                                    CLOSED
-                                                </span>)}
-                                                    {account.is_default && (<span className="ml-2 text-xs px-2 py-1 rounded text-green">
-                                                        DEFAULT
-                                                    </span>)}</h3>
-
-                                                <p className="text-sm text-white/60 capitalize">{account.type}</p>
+                                        <div key={account.id} className={`flex items-center justify-between p-3 rounded-lg border transition-colors
+                                            ${account.is_active
+                                                ? 'bg-white/[.04] hover:bg-white/[.07] border-white/10'
+                                                : 'bg-white/[.02] hover:bg-white/[.04] border-white/[.06] opacity-60'}`}>
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <h3 className={`font-medium truncate ${account.is_active ? '' : 'text-white/50'}`}>
+                                                            {account.name}
+                                                        </h3>
+                                                        {account.is_default && (
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green/15 text-green border border-green/20 font-medium shrink-0">
+                                                                DEFAULT
+                                                            </span>
+                                                        )}
+                                                        {!account.is_active && (
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/20 font-medium shrink-0">
+                                                                CLOSED
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-white/50 capitalize mt-0.5">{account.type === 'checking' ? 'Current' : account.type}</p>
+                                                </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(account)}
-                                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                                    title="Edit account"
-                                                >
-                                                    <Image src="/pencil.svg" alt="Edit" width={16} height={16} className="invert" />
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => handleEdit(account)}
+                                                className="p-2 hover:bg-white/10 rounded-lg transition-colors shrink-0"
+                                                title="Edit account"
+                                            >
+                                                <Image src="/pencil.svg" alt="Edit" width={14} height={14} className="invert opacity-60" />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

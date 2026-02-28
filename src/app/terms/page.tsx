@@ -124,7 +124,7 @@ export default function Terms() {
 
                     <section>
                         <h2 className="text-xl font-semibold mb-3 text-green">2. How We Use Your Information</h2>
-                        <p>Your email address is used solely for account authentication and essential service communications. Your budget data is used exclusively to provide the app's budgeting functionality, generate your personal reports and insights, and save your preferences. We never analyze your data for advertising purposes or external use. Under GDPR, our legal basis for processing your personal data is: (1) Legitimate interest for providing the budgeting service you requested, (2) Contract performance for account management and service delivery, and (3) Your explicit consent where required. You have the right to withdraw consent at any time without affecting the lawfulness of processing based on consent before its withdrawal.</p>
+                        <p>Your email address is used solely for account authentication and essential service communications. Your budget data is used exclusively to provide the app's budgeting functionality, generate your personal reports and insights, and save your preferences. We never analyse your data for advertising purposes or external use. Under GDPR, our legal basis for processing your personal data is: (1) Legitimate interest for providing the budgeting service you requested, (2) Contract performance for account management and service delivery, and (3) Your explicit consent where required. You have the right to withdraw consent at any time without affecting the lawfulness of processing based on consent before its withdrawal.</p>
                     </section>
 
                     <section>

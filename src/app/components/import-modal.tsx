@@ -30,6 +30,7 @@ import {
     type DuplicateResult,
     type ExistingTransaction,
 } from '@/app/utils/duplicate-detection';
+import { suggestCategory, resolveCategory, type AutoCatConfidence } from '@/app/utils/vendor-categories';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,12 @@ type VendorMapping = {
     cashcatGroupId: string | null;
     newGroupName: string;
     saveForFuture: boolean;
+    /** Set when auto-categorization has a suggestion */
+    autoConfidence?: AutoCatConfidence;
+    /** Human-readable label of the auto-suggested category */
+    autoSuggestionLabel?: string;
+    /** Whether the user has manually overridden the auto-suggestion */
+    autoConfirmed?: boolean;
 };
 
 type ImportMappingRecord = {
@@ -91,7 +98,8 @@ type TempCategory = {
 type ImportModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onImportComplete: () => void;
+    onImportComplete: (importedAccountIds?: string[]) => void;
+    initialAccountId?: string;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -132,7 +140,7 @@ const makeTempCategoryId = (groupId: string, normalized: string) => `temp-catego
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ImportModal({ isOpen, onClose, onImportComplete }: ImportModalProps) {
+export default function ImportModal({ isOpen, onClose, onImportComplete, initialAccountId }: ImportModalProps) {
     // ── Data hooks ──
     const { data: accounts = [] } = useAccounts();
     const { data: categories = [] } = useCategories();
@@ -172,6 +180,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
     const [categoryMappings, setCategoryMappings] = useState<CategoryMapping[]>([]);
     const [vendorMappings, setVendorMappings] = useState<VendorMapping[]>([]);
     const [savedMappings, setSavedMappings] = useState<ImportMappingRecord[]>([]);
+    const [saveAllForFuture, setSaveAllForFuture] = useState(true);
+    const [autoCatSectionCollapsed, setAutoCatSectionCollapsed] = useState(true);
     const [tempGroups, setTempGroups] = useState<TempGroup[]>([]);
     const [tempCategories, setTempCategories] = useState<TempCategory[]>([]);
 
@@ -204,13 +214,15 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             setIsMultiAccount(false);
             setAccountImportMode('single');
             setSingleAccountMode('existing');
-            setSingleAccountId('');
+            setSingleAccountId(initialAccountId ?? '');
             setSingleAccountName('');
             setSingleAccountType('checking');
             setAccountMappings([]);
             setCategoryMappings([]);
             setVendorMappings([]);
             setSavedMappings([]);
+            setSaveAllForFuture(true);
+            setAutoCatSectionCollapsed(true);
             setTempGroups([]);
             setTempCategories([]);
             setMappedTransactions([]);
@@ -221,7 +233,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             setIsImporting(false);
             setImportProgress({ done: 0, total: 0 });
         }
-    }, [isOpen]);
+    }, [isOpen, initialAccountId]);
 
     // ── Load saved mappings ──
     useEffect(() => {
@@ -324,22 +336,115 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
 
         if (!categoryColumn) {
             const uniqueVendors = [...new Set(result.transactions.map(t => t.vendor).filter(Boolean))];
+
+            // Accumulate temp groups/categories created during this pass so that
+            // auto-suggestions still work when the user has no existing categories yet
+            // (the "Start from Scratch → CSV" onboarding path).
+            const builtTempGroups: TempGroup[] = [];
+            const builtTempCategories: TempCategory[] = [];
+
+            const getOrCreateTempGroup = (groupName: string): string => {
+                const normalizedName = normalizeTempKey(groupName);
+                const tempId = makeTempGroupId(normalizedName);
+                // Check real groups first
+                const realGroup = groups.find(g => g.name.toLowerCase() === groupName.toLowerCase());
+                if (realGroup) return realGroup.id;
+                // Check already-built temp groups
+                const existing = builtTempGroups.find(g => g.id === tempId);
+                if (existing) return existing.id;
+                builtTempGroups.push({ id: tempId, name: groupName, normalized: normalizedName });
+                return tempId;
+            };
+
+            const getOrCreateTempCategory = (categoryName: string, groupId: string, groupName: string): string => {
+                const normalizedName = normalizeTempKey(categoryName);
+                const tempId = makeTempCategoryId(groupId, normalizedName);
+                // Check real categories first
+                const realCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+                if (realCategory) return realCategory.id;
+                // Check already-built temp categories
+                const existing = builtTempCategories.find(c => c.id === tempId);
+                if (existing) return existing.id;
+                builtTempCategories.push({ id: tempId, name: categoryName, groupId, groupName, normalized: normalizedName });
+                return tempId;
+            };
+
             const newVendorMappings: VendorMapping[] = uniqueVendors.map(vendor => {
                 const normalized = normalizeVendorKey(vendor);
                 const saved = savedMappings.find(m => m.match_type === 'vendor' && m.match_normalized === normalized);
                 const savedCategory = saved?.category_id ? categories.find(c => c.id === saved.category_id) : undefined;
-                const match = savedCategory || categories.find(c => c.name.toLowerCase() === vendor.toLowerCase());
+                const exactMatch = savedCategory || categories.find(c => c.name.toLowerCase() === vendor.toLowerCase());
+
+                if (exactMatch) {
+                    return {
+                        vendorName: vendor,
+                        mode: 'existing',
+                        cashcatCategoryId: exactMatch.id,
+                        newCategoryName: '',
+                        groupMode: 'existing',
+                        cashcatGroupId: exactMatch.group || null,
+                        newGroupName: '',
+                        saveForFuture: true,
+                        autoConfirmed: true,
+                    };
+                }
+
+                // Tier 2: keyword-based auto-categorization
+                const suggestion = suggestCategory(vendor);
+                const resolvedCategory = suggestion ? resolveCategory(suggestion, categories) : null;
+
+                if (suggestion && resolvedCategory) {
+                    return {
+                        vendorName: vendor,
+                        mode: 'existing',
+                        cashcatCategoryId: resolvedCategory.id,
+                        newCategoryName: '',
+                        groupMode: 'existing',
+                        cashcatGroupId: (resolvedCategory as any).group || null,
+                        newGroupName: '',
+                        saveForFuture: true,
+                        autoConfidence: suggestion.confidence,
+                        autoSuggestionLabel: resolvedCategory.name,
+                        autoConfirmed: suggestion.confidence === 'high',
+                    };
+                }
+
+                // Tier 2b: suggestion matched a keyword but no real category exists yet
+                // (fresh account — "Start from Scratch" path). Create a temp category so
+                // the auto-suggestion is still usable and will be created on import.
+                if (suggestion) {
+                    const tempGroupId = getOrCreateTempGroup(suggestion.groupKeyword);
+                    const tempCategoryId = getOrCreateTempCategory(suggestion.categoryKeyword, tempGroupId, suggestion.groupKeyword);
+                    return {
+                        vendorName: vendor,
+                        mode: 'existing',
+                        cashcatCategoryId: tempCategoryId,
+                        newCategoryName: suggestion.categoryKeyword,
+                        groupMode: 'existing',
+                        cashcatGroupId: tempGroupId,
+                        newGroupName: suggestion.groupKeyword,
+                        saveForFuture: true,
+                        autoConfidence: suggestion.confidence,
+                        autoSuggestionLabel: suggestion.categoryKeyword,
+                        autoConfirmed: suggestion.confidence === 'high',
+                    };
+                }
+
+                // No match — leave unmapped for manual review
                 return {
                     vendorName: vendor,
-                    mode: match ? 'existing' : 'new',
-                    cashcatCategoryId: match?.id || null,
+                    mode: 'existing',
+                    cashcatCategoryId: null,
                     newCategoryName: '',
                     groupMode: 'existing',
-                    cashcatGroupId: match?.group || null,
+                    cashcatGroupId: null,
                     newGroupName: '',
                     saveForFuture: true,
                 };
             });
+
+            setTempGroups(builtTempGroups);
+            setTempCategories(builtTempCategories);
             setVendorMappings(newVendorMappings);
         } else {
             setVendorMappings([]);
@@ -533,24 +638,19 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
 
     // ── Vendor mapping confirmation ──
     const confirmVendorMappings = useCallback(() => {
-        const invalid = vendorMappings.find(m => {
-            if (m.mode === 'existing') return !m.cashcatCategoryId;
-            if (m.mode === 'new') {
-                if (!m.newCategoryName.trim()) return true;
-                if (m.groupMode === 'existing') return !m.cashcatGroupId;
-                return !m.newGroupName.trim();
-            }
-            return false;
-        });
-
-        if (invalid) {
-            toast.error('Please complete all vendor mappings');
-            return;
-        }
+        // Treat any vendor with mode 'existing' but no category selected as 'skip'
+        // (don't block the user — unmapped = uncategorized transaction, which is fine).
+        setVendorMappings(prev =>
+            prev.map(m =>
+                m.mode === 'existing' && !m.cashcatCategoryId
+                    ? { ...m, mode: 'skip' }
+                    : m,
+            ),
+        );
 
         runDuplicateDetection(mappedTransactions);
         setStep('review');
-    }, [vendorMappings, mappedTransactions, runDuplicateDetection]);
+    }, [mappedTransactions, runDuplicateDetection]);
 
     const handleNewGroupName = useCallback((groupName: string) => {
         const normalized = normalizeKey(groupName);
@@ -752,15 +852,10 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             const categoryIdMap = new Map<string, string>();
 
             const ensureGroup = async (groupMode: 'existing' | 'new', groupId: string | null, groupName: string) => {
-                if (groupMode === 'existing' && groupId) return groupId;
+                if (groupMode === 'existing' && groupId && !groupId.startsWith('temp-')) return groupId;
                 const name = groupName.trim();
                 const existingGroup = groups.find(g => g.name.toLowerCase() === name.toLowerCase());
                 if (existingGroup) return existingGroup.id;
-
-                const normalized = normalizeKey(name);
-                const tempId = makeTempGroupId(normalized);
-                const temp = tempGroups.find(g => g.id === tempId);
-                if (temp) return temp.id;
 
                 const cached = groupIdMap.get(name);
                 if (cached) return cached;
@@ -965,7 +1060,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
             await incrementUsage('import_count');
             queryClient.invalidateQueries({ queryKey: ['usage'] });
 
-            onImportComplete();
+            onImportComplete(Array.from(accountIdMap.values()));
             onClose();
         } catch (err) {
             console.error('Import error:', err);
@@ -1628,217 +1723,307 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }: Impor
     );
 
     // ─── Step: Vendor Mapping ─────────────────────────────────────────────────
-    const renderVendorMapping = () => (
-        <div className="p-6 flex-1 overflow-y-auto space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold mb-1">Map Vendors</h3>
-                <p className="text-white/50 text-sm">
-                    Assign a category to each vendor. These can be saved for future imports.
-                </p>
-            </div>
+    const renderVendorMapping = () => {
+        // Partition into needs-review vs auto-confirmed
+        const needsReview = vendorMappings
+            .map((m, i) => ({ m, i }))
+            .filter(({ m }) => !m.autoConfirmed || !m.cashcatCategoryId);
+        const autoCat = vendorMappings
+            .map((m, i) => ({ m, i }))
+            .filter(({ m }) => m.autoConfirmed && !!m.cashcatCategoryId);
+        const skippedCount = vendorMappings.filter(m => m.mode === 'skip').length;
 
-            <div className="text-xs text-white/40 bg-white/[.03] border border-white/10 rounded-lg p-3">
-                If your CSV does not include categories, this is where you can map vendors like JMGALBRAITH to Therapy once and re-use it next time.
-            </div>
+        // Build a flat category option list (temp first, then real)
+        const allCategoryOptions = [
+            ...tempCategories.map(c => ({ id: c.id, label: `${c.name} (new · ${c.groupName})` })),
+            ...categories.map(c => ({ id: c.id, label: `${c.name} (${(c as any).groups?.name || 'No group'})` })),
+        ];
 
-            {vendorMappings.length > 0 && (
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-white/60">Vendors</h4>
-                        <span className="text-xs text-white/30">{vendorMappings.length} vendors</span>
-                    </div>
+        const updateMapping = (i: number, patch: Partial<VendorMapping>) => {
+            setVendorMappings(prev => {
+                const next = [...prev];
+                next[i] = { ...next[i], ...patch };
+                return next;
+            });
+        };
 
-                    <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
-                        {vendorMappings.map((mapping, i) => (
-                            <div key={i} className="bg-white/[.02] rounded-lg p-3 border border-white/5 space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm text-white/80 truncate block">{mapping.vendorName}</span>
-                                </div>
+        // Bulk: apply a category to every currently-unassigned vendor
+        const applyToAllUnassigned = (categoryId: string) => {
+            if (!categoryId) return;
+            setVendorMappings(prev =>
+                prev.map(m =>
+                    !m.cashcatCategoryId
+                        ? { ...m, cashcatCategoryId: categoryId, mode: 'existing', autoConfirmed: true, saveForFuture: saveAllForFuture }
+                        : m,
+                ),
+            );
+        };
 
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name={`vendor-mode-${i}`}
-                                            checked={mapping.mode === 'existing'}
-                                            onChange={() => {
-                                                const next = [...vendorMappings];
-                                                next[i] = { ...mapping, mode: 'existing' };
-                                                setVendorMappings(next);
-                                            }}
-                                            className="accent-green"
-                                        />
-                                        <span className="text-xs text-white/70">Use existing category</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name={`vendor-mode-${i}`}
-                                            checked={mapping.mode === 'new'}
-                                            onChange={() => {
-                                                const next = [...vendorMappings];
-                                                next[i] = { ...mapping, mode: 'new' };
-                                                setVendorMappings(next);
-                                            }}
-                                            className="accent-green"
-                                        />
-                                        <span className="text-xs text-white/70">Create new category</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name={`vendor-mode-${i}`}
-                                            checked={mapping.mode === 'skip'}
-                                            onChange={() => {
-                                                const next = [...vendorMappings];
-                                                next[i] = { ...mapping, mode: 'skip' };
-                                                setVendorMappings(next);
-                                            }}
-                                            className="accent-green"
-                                        />
-                                        <span className="text-xs text-white/70">Skip</span>
-                                    </label>
-                                </div>
+        // Bulk: confirm all medium-confidence auto suggestions
+        const confirmAllAuto = () => {
+            setVendorMappings(prev =>
+                prev.map(m =>
+                    m.autoConfidence === 'medium' && m.cashcatCategoryId
+                        ? { ...m, autoConfirmed: true }
+                        : m,
+                ),
+            );
+        };
 
-                                {mapping.mode === 'existing' && (
-                                    <select
-                                        value={mapping.cashcatCategoryId || ''}
-                                        onChange={(e) => {
-                                            const next = [...vendorMappings];
-                                            next[i] = { ...mapping, cashcatCategoryId: e.target.value || null };
-                                            setVendorMappings(next);
-                                        }}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
-                                    >
-                                        <option value="">Select category...</option>
-                                        {tempCategories.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name} (new • {c.groupName})</option>
-                                        ))}
-                                        {categories.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name} ({c.groups?.name || 'No group'})</option>
-                                        ))}
-                                    </select>
-                                )}
+        const unassignedCount = vendorMappings.filter(m => !m.cashcatCategoryId && m.mode !== 'skip').length;
+        const mediumPendingCount = vendorMappings.filter(m => m.autoConfidence === 'medium' && !m.autoConfirmed).length;
 
-                                {mapping.mode === 'new' && (
-                                    <div className="space-y-2">
-                                        <input
-                                            type="text"
-                                            value={mapping.newCategoryName}
-                                            onChange={(e) => {
-                                                const next = [...vendorMappings];
-                                                next[i] = { ...mapping, newCategoryName: e.target.value };
-                                                setVendorMappings(next);
-                                            }}
-                                                onBlur={(e) => {
-                                                    const next = [...vendorMappings];
-                                                    let groupId = mapping.cashcatGroupId || '';
-                                                    let groupName = mapping.newGroupName || '';
-                                                    if (mapping.groupMode === 'new' && mapping.newGroupName.trim()) {
-                                                        groupId = handleNewGroupName(mapping.newGroupName.trim());
-                                                        groupName = mapping.newGroupName.trim();
-                                                    }
-                                                    const tempCategoryId = groupId ? handleNewCategoryName(e.target.value, groupId, groupName) : '';
-                                                    next[i] = { ...mapping, cashcatCategoryId: tempCategoryId || mapping.cashcatCategoryId };
-                                                    setVendorMappings(next);
-                                                }}
-                                            placeholder="New category name"
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
-                                        />
-
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name={`vendor-group-mode-${i}`}
-                                                    checked={mapping.groupMode === 'existing'}
-                                                    onChange={() => {
-                                                        const next = [...vendorMappings];
-                                                        next[i] = { ...mapping, groupMode: 'existing' };
-                                                        setVendorMappings(next);
-                                                    }}
-                                                    className="accent-green"
-                                                />
-                                                <span className="text-xs text-white/70">Add to existing group</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name={`vendor-group-mode-${i}`}
-                                                    checked={mapping.groupMode === 'new'}
-                                                    onChange={() => {
-                                                        const next = [...vendorMappings];
-                                                        next[i] = { ...mapping, groupMode: 'new' };
-                                                        setVendorMappings(next);
-                                                    }}
-                                                    className="accent-green"
-                                                />
-                                                <span className="text-xs text-white/70">Create new group</span>
-                                            </label>
-                                        </div>
-
-                                        {mapping.groupMode === 'existing' && (
-                                            <select
-                                                value={mapping.cashcatGroupId || ''}
-                                                onChange={(e) => {
-                                                    const next = [...vendorMappings];
-                                                    next[i] = { ...mapping, cashcatGroupId: e.target.value || null };
-                                                    setVendorMappings(next);
-                                                }}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
-                                            >
-                                                <option value="">Select group...</option>
-                                                {tempGroups.map(g => (
-                                                    <option key={g.id} value={g.id}>{g.name} (new)</option>
-                                                ))}
-                                                {groups.map(g => (
-                                                    <option key={g.id} value={g.id}>{g.name}</option>
-                                                ))}
-                                            </select>
-                                        )}
-
-                                        {mapping.groupMode === 'new' && (
-                                            <input
-                                                type="text"
-                                                value={mapping.newGroupName}
-                                                onChange={(e) => {
-                                                    const next = [...vendorMappings];
-                                                    next[i] = { ...mapping, newGroupName: e.target.value };
-                                                    setVendorMappings(next);
-                                                }}
-                                                onBlur={(e) => {
-                                                    const next = [...vendorMappings];
-                                                    const newGroupId = handleNewGroupName(e.target.value);
-                                                    next[i] = { ...mapping, cashcatGroupId: newGroupId || mapping.cashcatGroupId };
-                                                    setVendorMappings(next);
-                                                }}
-                                                placeholder="New group name"
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-green focus:outline-none transition-colors"
-                                            />
-                                        )}
-                                    </div>
-                                )}
-
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={mapping.saveForFuture}
-                                        onChange={(e) => {
-                                            const next = [...vendorMappings];
-                                            next[i] = { ...mapping, saveForFuture: e.target.checked };
-                                            setVendorMappings(next);
-                                        }}
-                                        className="accent-green"
-                                    />
-                                    <span className="text-xs text-white/50">Save this mapping for future imports</span>
-                                </label>
-                            </div>
-                        ))}
-                    </div>
+        return (
+            <div className="p-6 flex-1 overflow-y-auto space-y-5">
+                {/* Header */}
+                <div>
+                    <h3 className="text-lg font-semibold mb-1">Categorize Vendors</h3>
+                    <p className="text-white/50 text-sm">
+                        We've auto-matched what we can. Review the rest below.
+                    </p>
                 </div>
-            )}
-        </div>
-    );
+
+                {/* Stats bar */}
+                <div className="flex items-center gap-3 flex-wrap text-xs">
+                    {autoCat.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green/10 text-green font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green" />
+                            {autoCat.length} auto-categorized
+                        </span>
+                    )}
+                    {needsReview.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                            {needsReview.length} need review
+                        </span>
+                    )}
+                    {skippedCount > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-white/40 font-medium">
+                            {skippedCount} skipped
+                        </span>
+                    )}
+                </div>
+
+                {/* Bulk-action bar */}
+                {(unassignedCount > 0 || mediumPendingCount > 0) && (
+                    <div className="flex items-center gap-2 flex-wrap p-3 bg-white/[.03] border border-white/10 rounded-lg">
+                        {unassignedCount > 0 && (
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <select
+                                    defaultValue=""
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            applyToAllUnassigned(e.target.value);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-green focus:outline-none transition-colors"
+                                >
+                                    <option value="">Apply category to {unassignedCount} unassigned…</option>
+                                    {allCategoryOptions.map(o => (
+                                        <option key={o.id} value={o.id}>{o.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        {mediumPendingCount > 0 && (
+                            <button
+                                onClick={confirmAllAuto}
+                                className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors whitespace-nowrap"
+                            >
+                                Confirm {mediumPendingCount} auto-matched
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Global "save for future" toggle */}
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        checked={saveAllForFuture}
+                        onChange={(e) => {
+                            setSaveAllForFuture(e.target.checked);
+                            setVendorMappings(prev => prev.map(m => ({ ...m, saveForFuture: e.target.checked })));
+                        }}
+                        className="accent-green"
+                    />
+                    <span className="text-xs text-white/50">Save all mappings for future imports</span>
+                </label>
+
+                {/* ── Section: Needs Review ── */}
+                {needsReview.length > 0 && (
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+                            <h4 className="text-sm font-semibold text-yellow-400">Needs Your Review</h4>
+                            <span className="text-xs text-white/30 ml-auto">{needsReview.length} vendor{needsReview.length !== 1 ? 's' : ''}</span>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            {needsReview.map(({ m: mapping, i }) => (
+                                <div
+                                    key={i}
+                                    className="flex items-center gap-2 bg-white/[.02] border border-white/5 rounded-lg px-3 py-2"
+                                >
+                                    {/* Vendor name */}
+                                    <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={mapping.vendorName}>
+                                        {mapping.vendorName}
+                                    </span>
+
+                                    {/* Confidence badge (medium only — high would already be confirmed) */}
+                                    {mapping.autoConfidence === 'medium' && !mapping.autoConfirmed && (
+                                        <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/10 text-yellow-400 uppercase tracking-wide">
+                                            <span className="w-1 h-1 rounded-full bg-yellow-400" />
+                                            MED
+                                        </span>
+                                    )}
+
+                                    {/* Category dropdown */}
+                                    {mapping.mode !== 'skip' ? (
+                                        <select
+                                            value={mapping.cashcatCategoryId || ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                updateMapping(i, {
+                                                    cashcatCategoryId: val || null,
+                                                    mode: 'existing',
+                                                    autoConfirmed: !!val,
+                                                    saveForFuture: saveAllForFuture,
+                                                });
+                                            }}
+                                            className="shrink-0 w-44 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:border-green focus:outline-none transition-colors"
+                                        >
+                                            <option value="">Pick category…</option>
+                                            {allCategoryOptions.map(o => (
+                                                <option key={o.id} value={o.id}>{o.label}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <span className="shrink-0 text-xs text-white/30 italic">skipped</span>
+                                    )}
+
+                                    {/* Skip / undo-skip */}
+                                    {mapping.mode !== 'skip' ? (
+                                        <button
+                                            onClick={() => updateMapping(i, { mode: 'skip', cashcatCategoryId: null, autoConfirmed: false })}
+                                            className="shrink-0 text-xs text-white/30 hover:text-white/60 transition-colors px-1"
+                                            title="Skip this vendor"
+                                        >
+                                            Skip
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => updateMapping(i, { mode: 'existing' })}
+                                            className="shrink-0 text-xs text-green hover:text-green/80 transition-colors px-1"
+                                            title="Assign a category"
+                                        >
+                                            Assign
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Section: Auto-Categorized ── */}
+                {autoCat.length > 0 && (
+                    <div className="space-y-2">
+                        <button
+                            onClick={() => setAutoCatSectionCollapsed(p => !p)}
+                            className="w-full flex items-center gap-2 group"
+                        >
+                            <span className="w-2 h-2 rounded-full bg-green shrink-0" />
+                            <h4 className="text-sm font-semibold text-green">Auto-Categorized</h4>
+                            <span className="text-xs text-white/30 ml-1">{autoCat.length} vendor{autoCat.length !== 1 ? 's' : ''}</span>
+                            <svg
+                                className={`ml-auto w-3.5 h-3.5 text-white/30 group-hover:text-white/60 transition-transform ${autoCatSectionCollapsed ? '' : 'rotate-180'}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        {!autoCatSectionCollapsed && (
+                            <div className="space-y-1">
+                                {autoCat.map(({ m: mapping, i }) => {
+                                    const catLabel = allCategoryOptions.find(o => o.id === mapping.cashcatCategoryId)?.label
+                                        ?? mapping.autoSuggestionLabel
+                                        ?? '—';
+                                    const isExpanded = (mapping as any).__expanded;
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-2 bg-white/[.015] border border-white/[.04] rounded-lg px-3 py-2"
+                                        >
+                                            {/* Vendor name */}
+                                            <span className="text-sm text-white/60 truncate min-w-0 flex-1" title={mapping.vendorName}>
+                                                {mapping.vendorName}
+                                            </span>
+
+                                            {/* High/medium confidence badge */}
+                                            {mapping.autoConfidence === 'high' && (
+                                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green/10 text-green uppercase tracking-wide">
+                                                    <span className="w-1 h-1 rounded-full bg-green" />
+                                                    HIGH
+                                                </span>
+                                            )}
+                                            {mapping.autoConfidence === 'medium' && (
+                                                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/10 text-yellow-400 uppercase tracking-wide">
+                                                    <span className="w-1 h-1 rounded-full bg-yellow-400" />
+                                                    MED
+                                                </span>
+                                            )}
+
+                                            {/* Assigned category — read-only or editable */}
+                                            {!isExpanded ? (
+                                                <span className="shrink-0 text-xs text-white/50 max-w-[10rem] truncate" title={catLabel}>
+                                                    {catLabel}
+                                                </span>
+                                            ) : (
+                                                <select
+                                                    value={mapping.cashcatCategoryId || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        updateMapping(i, {
+                                                            cashcatCategoryId: val || null,
+                                                            mode: 'existing',
+                                                            autoConfirmed: !!val,
+                                                            saveForFuture: saveAllForFuture,
+                                                            __expanded: false,
+                                                        } as Partial<VendorMapping> & { __expanded?: boolean });
+                                                    }}
+                                                    className="shrink-0 w-44 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:border-green focus:outline-none transition-colors"
+                                                >
+                                                    <option value="">Pick category…</option>
+                                                    {allCategoryOptions.map(o => (
+                                                        <option key={o.id} value={o.id}>{o.label}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+
+                                            {/* Change toggle */}
+                                            <button
+                                                onClick={() => updateMapping(i, { __expanded: !isExpanded } as Partial<VendorMapping> & { __expanded?: boolean })}
+                                                className="shrink-0 text-xs text-white/30 hover:text-white/60 transition-colors px-1"
+                                            >
+                                                {isExpanded ? 'Done' : 'Change'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {vendorMappings.length === 0 && (
+                    <p className="text-sm text-white/30 text-center py-8">No vendors found in this CSV.</p>
+                )}
+            </div>
+        );
+    };
 
     // ─── Step: Review & Import ────────────────────────────────────────────────
     const renderReview = () => (

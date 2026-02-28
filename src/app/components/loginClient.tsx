@@ -4,7 +4,7 @@ import { createClient } from '@/app/utils/supabase';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Capacitor } from '@capacitor/core';
 
@@ -102,7 +102,7 @@ export default function LoginClient() {
   };
 
   const redirectTo = validateRedirectTo(searchParams.get('redirectTo'));
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [redirectUrl, setRedirectUrl] = useState<string>('');
 
   useEffect(() => {

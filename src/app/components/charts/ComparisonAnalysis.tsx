@@ -2,7 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ComparisonData } from './types';
-import { formatCurrency } from './utils';
+import { formatCurrency, getCurrencySymbol } from './utils';
 
 interface ComparisonAnalysisProps {
   comparisonData: ComparisonData | null;
@@ -129,7 +129,7 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                             :
                             // For range, show the change
                             (!categoryData.absoluteChange || isNaN(categoryData.absoluteChange) || !isFinite(categoryData.absoluteChange)
-                              ? '£0.00'
+                              ? `${getCurrencySymbol()}0.00`
                               : `${categoryData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(categoryData.absoluteChange)}`
                             )
                           }
@@ -181,7 +181,7 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                     :
                     // For range, show the change
                     (!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
-                      ? '£0.00'
+                      ? `${getCurrencySymbol()}0.00`
                       : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
                     )
                   }
@@ -241,7 +241,7 @@ export const ComparisonAnalysis: React.FC<ComparisonAnalysisProps> = React.memo(
                 :
                 // For range, show change
                 (!currentData.absoluteChange || isNaN(currentData.absoluteChange) || !isFinite(currentData.absoluteChange)
-                  ? '£0.00'
+                  ? `${getCurrencySymbol()}0.00`
                   : `${currentData.absoluteChange >= 0 ? '+' : ''}${formatCurrency(currentData.absoluteChange)}`
                 )
               }

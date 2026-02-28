@@ -4,12 +4,16 @@ import { createClient } from '@/app/utils/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group, GoalType } from '@/types/supabase';
 import type { Database } from '@/types/supabase';
+import { CURRENCIES, getCurrencySymbol } from '@/app/components/charts/utils';
 import { useTransactions } from '@/app/hooks/useTransactions';
+import { useAccounts } from '@/app/hooks/useAccounts';
+import { useAuthUserId } from '@/app/hooks/useAuthUserId';
 
 // Category as returned by the query (includes joined groups row)
 type CategoryWithGroup = Category & {
@@ -20,8 +24,10 @@ type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 
 type ManageBudgetModalProps = {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: (reason?: string) => void;
     isOnboarding?: boolean;
+    onImportCSV?: () => void;
+    onAddAccounts?: () => void;
 };
 
 // ─── Onboarding wizard types ────────────────────────────────────────────────
@@ -65,7 +71,7 @@ const TEMPLATES: Template[] = [
                 ]
             },
             {
-                name: 'Going Out & Social', ratio: 0.25, categories: [
+                name: 'Going Out & Lifestyle', ratio: 0.25, categories: [
                     { name: 'Nights Out & Drinks', goal_type: 'spending' },
                     { name: 'Dining & Campus Lunch', goal_type: 'spending' },
                     { name: 'Society Memberships', goal_type: 'spending' },
@@ -265,18 +271,26 @@ const GOAL_TYPE_DESCRIPTIONS: Record<string, string> = {
 
 // ─── Onboarding Wizard ───────────────────────────────────────────────────────
 
-function OnboardingWizard({ onClose }: { onClose: () => void }) {
+function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (reason?: string) => void; onImportCSV?: () => void; onAddAccounts?: () => void }) {
     const supabase = createClient();
+    const queryClient = useQueryClient();
     const [step, setStep] = useState(1);
     const TOTAL_STEPS = 4;
+    // Step labels for new order:
+    //   1 → Choose a Template
+    //   2 → Import Transactions  (early CSV, so goals can reflect real data)
+    //   3 → Review / Set Goals   (was step 2)
+    //   4 → Add Bank Accounts    (was step 3)
 
-    // Step 2 & 3 state
+    // Step 1 & 2 state
     const [wizardGroups, setWizardGroups] = useState<WizardGroup[]>([]);
     const [newGroupName, setNewGroupName] = useState('');
     const [saving, setSaving] = useState(false);
 
     // Fetch transactions for historical insights
     const { data: transactions = [] } = useTransactions();
+    // Fetch accounts so step 4 CTA can adapt once the user has created one
+    const { data: existingAccounts = [] } = useAccounts();
 
     const historicalStats = useMemo(() => {
         const incomeMonths = new Set<string>();
@@ -315,7 +329,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
             ratio: g.ratio
         }));
         setWizardGroups(groups);
-        setStep(3);
+        setStep(3); // → Review Goals: user just picked a template, show their categories immediately
     };
 
     const distributeIncome = (incomeStr: string) => {
@@ -406,7 +420,12 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                     if (catErr) throw catErr;
                 }
             }
-            setStep(4);
+            // Invalidate so budget page sees new categories immediately
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['categories'] }),
+                queryClient.invalidateQueries({ queryKey: ['groups'] }),
+            ]);
+            setStep(4); // Add bank accounts (new step 4)
         } catch (err) {
             console.error(err);
             toast.error('Failed to save budget. Please try again.');
@@ -429,16 +448,16 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                         <div>
                             <p className="text-xs text-white/50 uppercase tracking-wide">Step {step} of {TOTAL_STEPS}</p>
                             <p className="text-sm font-medium text-white">
-                                {step === 1 && 'How CashCat Works'}
-                                {step === 2 && 'Choose a Template'}
-                                {step === 3 && 'Customise Your Budget'}
-                                {step === 4 && "You're All Set!"}
+                                {step === 1 && 'Choose a Template'}
+                                {step === 2 && 'Import Transactions'}
+                                {step === 3 && 'Review Your Goals'}
+                                {step === 4 && 'Add Bank Accounts'}
                             </p>
                         </div>
                     </div>
                     {step < 4 && (
                         <button
-                            onClick={onClose}
+                            onClick={() => onClose('skip')}
                             className="p-2 hover:bg-white/[.05] rounded-full transition-colors text-white/50 hover:text-white text-xs"
                         >
                             Skip for now
@@ -456,97 +475,8 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
             {/* Step content */}
             <div className="flex-1 overflow-y-scroll">
 
-                {/* ── Step 1: Zero-based budgeting explainer ── */}
+                {/* ── Step 1: Template picker ── */}
                 {step === 1 && (
-                    <div className="p-6 space-y-6">
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-green/10 border border-green/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-green">
-                                    <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                                    <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Zero-Based Budgeting</h2>
-                            <p className="text-white/60 text-sm max-w-sm mx-auto">
-                                The method that puts <span className="text-green font-semibold">you</span> in control of every penny.
-                            </p>
-                        </div>
-
-                        {/* Core concept */}
-                        <div className="bg-green/[.06] border border-green/20 rounded-xl p-5">
-                            <h3 className="font-semibold text-green mb-2">The Core Idea</h3>
-                            <p className="text-white/80 text-sm leading-relaxed">
-                                Give <strong className="text-white">every pound you earn a specific job</strong> before you spend it.
-                                Your income minus your assigned spending should equal <strong className="text-green">zero</strong>. Not because you spend everything,
-                                but because every pound is <em>intentionally allocated</em> somewhere.
-                            </p>
-                        </div>
-
-                        {/* Visual analogy */}
-                        <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wide">How it works</h3>
-                            <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                                <div className="bg-white/[.04] rounded-xl p-4 border border-white/[.08]">
-
-
-                                    <div className=''> <svg className="block mx-auto mb-2" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><title>cash-multiple</title><path d="M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9M1,10H3V20H19V22H1V10Z" /></svg>
-                                    </div>
-                                    <div className="font-semibold text-white mb-1">Income arrives</div>
-                                    <div className="text-white/50">Your salary, freelance, etc.</div>
-                                </div>
-                                <div className="flex items-center justify-center text-white/30">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                                </div>
-                                <div className="bg-white/[.04] rounded-xl p-4 border border-white/[.08]">
-                                    <div className=''> <svg className="block mx-auto mb-2" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><title>cash-multiple</title><path d="M19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21M15.8 16V8.9L13.7 11L9.8 7.2L7 10L10.8 13.9L8.7 16H15.8Z" /></svg>
-
-
-                                    </div>
-                                    <div className="font-semibold text-white mb-1">Assign it all</div>
-                                    <div className="text-white/50">Rent, food, savings…</div>
-                                </div>
-                            </div>
-                            <div className="bg-white/[.04] rounded-xl p-4 border border-white/[.08] text-center text-xs">
-                                <div className=''> <svg className="block mx-auto mb-2" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><title>cash-multiple</title><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>check-decagram</title><path d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" /></svg></svg>
-                                </div>
-                                <div className="font-semibold text-white mb-1">Zero left to assign</div>
-                                <div className="text-white/50">Every pound has a purpose — no surprises at month end</div>
-                            </div>
-                        </div>
-
-                        {/* Key benefits */}
-                        <div className="space-y-2">
-                            {[
-                                { text: 'Spend intentionally — no more mystery spending' },
-                                { text: 'Build savings faster by planning ahead' },
-                                { text: 'Reduce financial stress with full visibility' },
-                            ].map(({ text }) => (
-                                <div key={text} className="flex items-center gap-3 text-sm text-white/80">
-
-                                    <span>{text}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="pt-2 flex gap-3">
-                            <button
-                                onClick={() => setStep(2)}
-                                className="flex-1 py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
-                            >
-                                Let's Build My Budget →
-                            </button>
-                        </div>
-                        <p className="text-center text-xs text-white/40">
-                            Want to learn more first?{' '}
-                            <Link href="/docs/zero-based-budgeting" target="_blank" className="text-green hover:underline">
-                                Read the full guide
-                            </Link>
-                        </p>
-                    </div>
-                )}
-
-                {/* ── Step 2: Template picker ── */}
-                {step === 2 && (
                     <div className="p-6 space-y-5">
                         <div>
                             <h2 className="text-xl font-bold text-white mb-1">Pick a Starting Point</h2>
@@ -583,29 +513,91 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                         </div>
 
                         <button
-                            onClick={() => setStep(3)}
+                            onClick={() => setStep(2)}
                             className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/80 hover:text-white rounded-xl transition-all text-sm font-medium"
                         >
-                            Start from Scratch
-                        </button>
-
-                        <button
-                            onClick={() => setStep(1)}
-                            className="w-full text-center text-xs text-white/40 hover:text-white/70 transition-colors"
-                        >
-                            ← Back
+                            Start from Scratch or Bank Import
                         </button>
                     </div>
                 )}
 
-                {/* ── Step 3: Customise groups & categories ── */}
+                {/* ── Step 2: Import Transactions (early — so goals have real data) ── */}
+                {step === 2 && (
+                    <div className="p-6 flex flex-col items-center text-center space-y-6">
+                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
+                                <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-2">Import your bank CSV</h2>
+                            <p className="text-white/60 text-sm max-w-xs mx-auto leading-relaxed">
+                                Download a CSV from your bank and import it now — we'll use your real spending data to help you set smarter goals in the next step.
+                            </p>
+                        </div>
+
+                        <div className="w-full bg-white/[.04] border border-white/[.1] rounded-xl p-4 text-left space-y-3">
+                            <p className="text-xs text-white/50 uppercase tracking-wide font-medium">Why do this first?</p>
+                            <div className="space-y-2 text-sm text-white/70">
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>See where your money actually goes, right away</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>Your real average spend shows up when you set goals — next step</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-green mt-0.5">✓</span>
+                                    <span>Takes about 2 minutes — and it's totally worth it</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-full space-y-3">
+                            <button
+                                onClick={() => { onClose('import_csv'); onImportCSV?.(); }}
+                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                            >
+                                Yes, import my bank CSV
+                            </button>
+                            <button
+                                onClick={() => setStep(3)}
+                                className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                            >
+                                Skip — set goals manually →
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setStep(1)}
+                            className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                        >
+                            ← Back to templates
+                        </button>
+                    </div>
+                )}
+
+                {/* ── Step 3: Review / set goals (was step 2) ── */}
                 {step === 3 && (
                     <div className="p-6 space-y-5 pb-32">
                         <div>
-                            <h2 className="text-xl font-bold text-white mb-1">Customise Your Budget</h2>
+                            <h2 className="text-xl font-bold text-white mb-1">Review Your Goals</h2>
                             <p className="text-white/60 text-sm">
                                 Groups are like envelopes. Categories are the specific jobs inside each envelope.
-                                Set optional monthly goals for each category.
+                                {historicalStats.hasData
+                                    ? ' Your real spend averages are shown below — use them to set realistic goals.'
+                                    : ' Set optional monthly goals for each category.'}
+                            </p>
+                        </div>
+
+                        {/* Zero-based budgeting tip */}
+                        <div className="bg-green/[.07] border border-green/20 rounded-xl p-3 flex gap-3 items-start">
+
+                            <p className="text-xs text-white/70 leading-relaxed">
+                                The <span className="text-green font-medium">Savings</span> category is a catch-all for leftover money — it's not a monthly spending goal, it's where the rest of your income lives. That's zero-based budgeting.
                             </p>
                         </div>
 
@@ -648,14 +640,14 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                         {/* Historical Insights */}
                         {historicalStats.hasData && (
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
-                                    <p className="text-sm font-bold text-green">£{historicalStats.avgIncome.toFixed(2)}</p>
-                                </div>
-                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
-                                    <p className="text-sm font-bold text-white">£{historicalStats.avgSpend.toFixed(2)}</p>
-                                </div>
+                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
+                                     <p className="text-sm font-bold text-green">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
+                                 </div>
+                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
+                                     <p className="text-sm font-bold text-white">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
+                                 </div>
                             </div>
                         )}
 
@@ -767,7 +759,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
 
                         <div className="flex gap-3 pt-2">
                             <button
-                                onClick={() => setStep(2)}
+                                onClick={() => setStep(wizardGroups.length > 0 ? 1 : 2)}
                                 className="px-4 py-2.5 border border-white/20 hover:bg-white/[.05] text-white/70 rounded-xl text-sm transition-colors"
                             >
                                 ← Back
@@ -783,7 +775,7 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                                         Saving…
                                     </>
                                 ) : (
-                                    'Save & Finish →'
+                                    'Save & Continue →'
                                 )}
                             </button>
                         </div>
@@ -798,55 +790,68 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
                     </div>
                 )}
 
-                {/* ── Step 4: Done ── */}
+                {/* ── Step 4: Add bank accounts (now the final step) ── */}
                 {step === 4 && (
                     <div className="p-6 flex flex-col items-center text-center space-y-6">
-                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-full flex items-center justify-center mt-4">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-green">
-                                <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
+                                <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                                <path d="M16 11a1 1 0 100 2 1 1 0 000-2z" fill="currentColor" />
+                                <path d="M2 10h20" stroke="currentColor" strokeWidth="2" />
+                                <path d="M6 4l4-1 4 1 4-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                         </div>
 
                         <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">You're all set!</h2>
-                            <p className="text-white/60 text-sm max-w-xs mx-auto">
-                                Your budget is ready. Start by assigning money to your categories, then log transactions as you spend.
+                            <h2 className="text-2xl font-bold text-white mb-2">Add your bank accounts</h2>
+                            <p className="text-white/60 text-sm max-w-xs mx-auto leading-relaxed">
+                                Link the accounts you spend from so every transaction knows where it came from.
                             </p>
                         </div>
 
-                        {wizardGroups.length > 0 && (
-                            <div className="w-full bg-white/[.03] rounded-xl p-4 text-left space-y-2">
-                                <p className="text-xs text-white/50 uppercase tracking-wide mb-3">Created</p>
-                                {wizardGroups.filter(g => g.name.trim()).map(g => (
-                                    <div key={g.id} className="flex items-center justify-between text-sm">
-                                        <span className="text-green font-medium">{g.name}</span>
-                                        <span className="text-white/50">{g.categories.filter(c => c.name.trim()).length} categories</span>
-                                    </div>
-                                ))}
+                        {existingAccounts.length > 0 && (
+                            <div className="w-full bg-green/[.06] border border-green/20 rounded-xl px-4 py-3 text-left">
+                                <p className="text-xs text-green font-medium mb-1">
+                                    {existingAccounts.length} account{existingAccounts.length !== 1 ? 's' : ''} connected
+                                </p>
+                                <p className="text-xs text-white/50">
+                                    {existingAccounts.map(a => a.name).join(', ')}
+                                </p>
                             </div>
                         )}
 
                         <div className="w-full space-y-3">
-                            <button
-                                onClick={onClose}
-                                className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
-                            >
-                                Go to My Budget →
-                            </button>
-                            <Link
-                                href="/docs/getting-started"
-                                onClick={onClose}
-                                className="block w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/80 hover:text-white rounded-xl transition-all text-sm font-medium"
-                            >
-                                Read the Getting Started Guide
-                            </Link>
-                            <Link
-                                href="/docs"
-                                onClick={onClose}
-                                className="block text-xs text-white/40 hover:text-white/70 transition-colors"
-                            >
-                                Browse all documentation →
-                            </Link>
+                            {existingAccounts.length > 0 ? (
+                                <>
+                                    <button
+                                        onClick={() => onClose('complete')}
+                                        className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                                    >
+                                        Done — go to my budget →
+                                    </button>
+                                    <button
+                                        onClick={() => { onAddAccounts?.(); }}
+                                        className="w-full py-3 border border-white/20 hover:bg-white/[.05] text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium"
+                                    >
+                                        Add another account
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => { onAddAccounts?.(); }}
+                                        className="w-full py-3 bg-green hover:bg-green-dark text-black font-bold rounded-xl transition-colors"
+                                    >
+                                        Add Accounts
+                                    </button>
+                                    <button
+                                        onClick={() => onClose('skip_accounts')}
+                                        className="w-full py-2 text-white/35 hover:text-white/60 transition-colors text-sm"
+                                    >
+                                        Skip for now
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}
@@ -859,12 +864,16 @@ function OnboardingWizard({ onClose }: { onClose: () => void }) {
 
 function EditMode({ onClose }: { onClose: () => void }) {
     const supabase = createClient();
+    const userId = useAuthUserId();
     const [activeTab, setActiveTab] = useState<'categories' | 'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
     const [categories, setCategories] = useState<CategoryWithGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [currency, setCurrency] = useState('GBP');
+    const currencySymbol = CURRENCIES.find(c => c.value === currency)?.symbol ?? '£';
 
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [editingCategory, setEditingCategory] = useState<CategoryWithGroup | null>(null);
@@ -885,8 +894,20 @@ function EditMode({ onClose }: { onClose: () => void }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setHideBudgetValues(localStorage.getItem('hideBudgetValues') === 'true');
+            setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
+            // Load currency: prefer localStorage (instant), then sync from Supabase
+            setCurrency(localStorage.getItem('currency') || 'GBP');
+            if (userId) {
+                supabase.from('settings').select('currency').eq('id', userId).maybeSingle().then(({ data }) => {
+                    if (data?.currency) {
+                        setCurrency(data.currency);
+                        localStorage.setItem('currency', data.currency);
+                        window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: data.currency } }));
+                    }
+                });
+            }
         }
-    }, []);
+    }, [userId]);
 
     const handleEditCategory = (category: CategoryWithGroup) => {
         setEditingCategory(category);
@@ -899,6 +920,26 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('hideBudgetValues', newValue.toString());
             window.dispatchEvent(new CustomEvent('hideBudgetValuesChanged', { detail: { hideBudgetValues: newValue } }));
+        }
+    };
+
+    const toggleThousandsSeparator = () => {
+        const newValue = !thousandsSeparator;
+        setThousandsSeparator(newValue);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('thousandsSeparator', newValue.toString());
+            window.dispatchEvent(new CustomEvent('thousandsSeparatorChanged', { detail: { thousandsSeparator: newValue } }));
+        }
+    };
+
+    const handleCurrencyChange = (newCurrency: string) => {
+        setCurrency(newCurrency);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('currency', newCurrency);
+            window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: newCurrency } }));
+        }
+        if (userId) {
+            supabase.from('settings').upsert({ id: userId, currency: newCurrency }, { onConflict: 'id' });
         }
     };
 
@@ -1070,6 +1111,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
         await fetchCategories();
     };
 
+    const formatAmount = (amount: number) => {
+        const abs = Math.abs(amount);
+        return thousandsSeparator
+            ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : abs.toFixed(2);
+    };
+
     return (
         <div className="flex flex-col h-full overflow-y-scroll">
             {/* Header */}
@@ -1087,7 +1135,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                             onClick={() => setActiveTab(tab)}
                             className={`px-4 py-2 transition-all duration-200 capitalize ${activeTab === tab ? 'text-green border-b-2 border-green' : 'text-white/60 hover:text-white'}`}
                         >
-                            {tab === 'categories' ? 'Categories & Groups' : 'Other Settings'}
+                            {tab === 'categories' ? 'Categories & Groups' : 'Budget Settings'}
                         </button>
                     ))}
                 </div>
@@ -1108,26 +1156,26 @@ function EditMode({ onClose }: { onClose: () => void }) {
                         {activeTab === 'categories' && !loadingTransactions && (
                             <div className="flex sm:flex-row flex-col gap-2 mb-6">
 
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
-                                    <p className="text-xl font-bold text-white">£{stats.avgMonthlyIncome.toFixed(2)}</p>
-                                </div>
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
-                                    <p className="text-xl font-bold text-green">£{stats.totalGoals.toFixed(2)}</p>
-                                </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
+                                     <p className="text-xl font-bold text-white">{currencySymbol}{formatAmount(stats.avgMonthlyIncome)}</p>
+                                 </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
+                                     <p className="text-xl font-bold text-green">{currencySymbol}{formatAmount(stats.totalGoals)}</p>
+                                 </div>
 
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
-                                    <p className="text-xl font-bold text-reddy">£{stats.avgMonthlySpend.toFixed(2)}</p>
-                                    {/* Over/Under spending indicator */}
-                                    <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
-                                        {stats.avgMonthlySpend > stats.totalGoals
-                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
-                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
-                                        }
-                                    </p>
-                                </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
+                                     <p className="text-xl font-bold text-reddy">{currencySymbol}{formatAmount(stats.avgMonthlySpend)}</p>
+                                     {/* Over/Under spending indicator */}
+                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
+                                         {stats.avgMonthlySpend > stats.totalGoals
+                                             ? `${currencySymbol}${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
+                                             : `${currencySymbol}${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
+                                         }
+                                     </p>
+                                 </div>
                             </div>
                         )}
 
@@ -1148,19 +1196,26 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                 <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${hideBudgetValues ? 'translate-x-5' : 'translate-x-0.5'}`} />
                                             </button>
                                         </div>
-                                        <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
-                                            <p className="block font-medium text-white mb-2">Currency</p>
-                                            <Dropdown
-                                                value="GBP"
-                                                onChange={() => { }}
-                                                options={[
-                                                    { value: 'GBP', label: '£ GBP (Coming Soon)', disabled: true },
-                                                    { value: 'USD', label: '$ USD (Coming Soon)', disabled: true },
-                                                    { value: 'EUR', label: '€ EUR (Coming Soon)', disabled: true },
-                                                ]}
-                                                disabled
-                                            />
+                                        <div className="flex items-center justify-between p-4 bg-white/[.03] rounded-lg">
+                                            <div>
+                                                <h4 className="font-medium text-white">Thousands Separator</h4>
+                                                <p className="text-sm text-white/60 mt-1">Show a comma for thousands (e.g. £1,234.56 instead of £1234.56)</p>
+                                            </div>
+                                            <button
+                                                onClick={toggleThousandsSeparator}
+                                                className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${thousandsSeparator ? 'bg-green' : 'bg-white/20'}`}
+                                            >
+                                                <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${thousandsSeparator ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                            </button>
                                         </div>
+                                        <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
+                                             <p className="block font-medium text-white mb-2">Currency</p>
+                                             <Dropdown
+                                                 value={currency}
+                                                 onChange={handleCurrencyChange}
+                                                 options={CURRENCIES.map(c => ({ value: c.value, label: c.label }))}
+                                             />
+                                         </div>
                                     </div>
                                 </div>
                                 <div className="bg-white/[.03] rounded-lg p-6">
@@ -1249,9 +1304,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                             // Tolerance of 1 to avoid rounding noise
                                                                             if (Math.abs(diff) > 1) {
                                                                                 const isOver = diff > 0;
-                                                                                return (
-                                                                                    <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
-                                                                                        £{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
+                                                                                             return (
+                                                                                                 <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
+                                                                                                     {currencySymbol}{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
                                                                                     </span>
                                                                                 );
                                                                             }
@@ -1400,9 +1455,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                                     return null;
                                                                                 })()}
                                                                             </div>
-                                                                            <div className="flex gap-3 text-sm text-white/50">
-                                                                                <span>Goal: £{category.goal || 0}</span>
-                                                                                <span>Avg: £{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
+                                                                             <div className="flex gap-3 text-sm text-white/50">
+                                                                                 <span>Goal: {currencySymbol}{category.goal || 0}</span>
+                                                                                 <span>Avg: {currencySymbol}{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
@@ -1437,7 +1492,7 @@ import { useSyncAll } from '@/app/hooks/useSyncAll';
 
 
 
-export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = false }: ManageBudgetModalProps) {
+export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = false, onImportCSV, onAddAccounts }: ManageBudgetModalProps) {
     const [isClosing, setIsClosing] = useState(false);
     const { syncAll } = useSyncAll();
 
@@ -1474,7 +1529,7 @@ export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = fals
                 className={`relative bg-black md:bg-black/[.95] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'}`}
             >
                 {isOnboarding ? (
-                    <OnboardingWizard onClose={handleClose} />
+                    <OnboardingWizard onClose={handleClose} onImportCSV={onImportCSV} onAddAccounts={onAddAccounts} />
                 ) : (
                     <EditMode onClose={handleClose} />
                 )}
