@@ -3,6 +3,7 @@
 import { useEffect, useState, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Parser } from 'expr-eval';
+import { getCurrencySymbol } from '@/app/components/charts/utils';
 
 interface MoneyInputProps {
     value: string;
@@ -36,6 +37,14 @@ export default function MoneyInput({
     const [showKeypad, setShowKeypad] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [shouldReplaceValue, setShouldReplaceValue] = useState(true);
+    const [symbol, setSymbol] = useState('£');
+
+    useEffect(() => {
+        setSymbol(getCurrencySymbol());
+        const handler = () => setSymbol(getCurrencySymbol());
+        window.addEventListener('currencyChanged', handler);
+        return () => window.removeEventListener('currencyChanged', handler);
+    }, []);
 
     useEffect(() => {
         // Detect mobile device
@@ -193,7 +202,7 @@ export default function MoneyInput({
     return (
         <>
             <div className="relative">
-                {currencySymbol && (<span className={`absolute left-3 top-1/2 -translate-y-1/2 ${inline ? "text-lg" : "text-3xl"} text-white/50`}>£</span>)}
+                {currencySymbol && (<span className={`absolute left-3 top-1/2 -translate-y-1/2 ${inline ? "text-lg" : "text-3xl"} text-white/50`}>{symbol}</span>)}
                 <input
                     ref={inputRef}
                     onFocus={handleInputClick}
@@ -225,7 +234,7 @@ export default function MoneyInput({
                         {/* Display */}
                         <div className="bg-white/[.05] rounded-lg p-3 mb-3">
                             <div className="text-left font-medium">
-                                {currencySymbol && (<span className="text-white/50">£</span>)}
+                                {currencySymbol && (<span className="text-white/50">{symbol}</span>)}
                                 <span className="text-white text-xl ml-1 font-medium">
                                     {value || placeholder}
                                 </span>

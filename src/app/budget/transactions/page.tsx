@@ -24,6 +24,7 @@ import { ProGateOverlay } from '../../components/pro-gate-overlay';
 
 import { useCreateTransaction } from '../../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../../hooks/useUpdateTransaction';
+import { formatCurrency } from '../../components/charts/utils';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
 import QuickAddRow from '../../components/quick-add-row';
@@ -400,13 +401,7 @@ export default function Transactions() {
         }
     };
 
-    const formatAmount = (amount: number) => {
-        return new Intl.NumberFormat('en-GB', {
-            style: 'currency',
-            currency: 'GBP',
-            minimumFractionDigits: 2
-        }).format(amount);
-    };
+    const formatAmount = (amount: number) => formatCurrency(amount);
 
     const groupTransactionsByMonth = (txs: TransactionWithDetails[], tfrs: TransferWithAccounts[], accountId: string | null) => {
         // Filter out starting balance transactions

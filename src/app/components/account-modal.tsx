@@ -9,6 +9,7 @@ import { useAllAccounts } from '../hooks/useAccounts';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCreateAccount, useUpdateAccount, useDeleteAccount, useSetDefaultAccount } from '../hooks/useAccountMutations';
 import { useSubscription } from '@/hooks/useSubscription';
+import { getCurrencySymbol } from './charts/utils';
 import { ProGateOverlay } from './pro-gate-overlay';
 
 type Account = {
@@ -221,7 +222,7 @@ export default function AccountModal({ isOpen, onClose, onAccountsUpdated, onRea
             let message = `Are you sure you want to close ${confirmModal.account.name}?`;
 
             if (hasBalance) {
-                message += `\n\nWarning: This account has a balance of £${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
+                message += `\n\nWarning: This account has a balance of ${getCurrencySymbol()}${confirmModal.balance?.toFixed(2)}. Closing the account will not hide this balance from your total, and the transaction history will be preserved.`;
             }
 
             message += '\n\nYou can reopen the account later if needed.';

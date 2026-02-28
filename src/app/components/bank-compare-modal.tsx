@@ -9,6 +9,7 @@ import TransactionModal from './transaction-modal';
 import MoneyInput from './money-input';
 import { getCachedUserId } from '../hooks/useAuthUserId';
 import { useTransfers } from '../hooks/useTransfers';
+import { formatCurrency, getCurrencySymbol } from './charts/utils';
 import { TransferWithAccounts } from '@/types/supabase';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
@@ -133,18 +134,6 @@ export default function BankCompareModal({
         };
     }, [isOpen]);
 
-    const formatCurrency = (amount: number) => {
-        const useThousandsSeparator = typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true';
-        if (useThousandsSeparator) {
-            return new Intl.NumberFormat('en-GB', {
-                style: 'currency',
-                currency: 'GBP',
-                minimumFractionDigits: 2
-            }).format(amount);
-        }
-        const abs = Math.abs(amount);
-        return `${amount < 0 ? '-' : ''}£${abs.toFixed(2)}`;
-    };
 
     const handleCompare = async () => {
         const bankAmount = parseFloat(bankBalance);
@@ -436,7 +425,7 @@ export default function BankCompareModal({
                                         <div className="bg-blue/10 border border-blue/20 rounded-lg p-4">
                                             <h4 className="font-medium text-blue mb-2">Why reconcile after importing?</h4>
                                             <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
-                                                <li>Your CSV import created a starting balance of £0</li>
+                                                <li>Your CSV import created a starting balance of {getCurrencySymbol()}0</li>
                                                 <li>Enter your real bank balance to fix that automatically</li>
                                                 <li>This ensures your CashCat balance matches your bank exactly</li>
                                             </ul>

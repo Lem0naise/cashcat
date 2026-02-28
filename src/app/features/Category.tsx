@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MoneyInput from '../components/money-input';
 import type { GoalType } from '@/types/supabase';
+import { getCurrencySymbol } from '../components/charts/utils';
 
 interface CategoryProps {
     name: string;
@@ -31,6 +32,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
     const [isUpdating, setIsUpdating] = useState(false);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [currencySymbol, setCurrencySymbol] = useState('£');
     // Always round to 2 decimals for display
     const displayAvailable = available !== undefined ? Math.round(available * 100) / 100 : Math.round((assigned + rollover - spent) * 100) / 100;
     const goal = goalAmount || 0;
@@ -93,6 +95,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
             const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
             setHideBudgetValues(savedHideBudgetValues);
             setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
+            setCurrencySymbol(getCurrencySymbol());
 
             const handleHideBudgetValuesChange = (event: CustomEvent) => {
                 setHideBudgetValues(event.detail.hideBudgetValues);
@@ -102,11 +105,17 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
                 setThousandsSeparator(event.detail.thousandsSeparator);
             };
 
+            const handleCurrencyChange = () => {
+                setCurrencySymbol(getCurrencySymbol());
+            };
+
             window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
             window.addEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+            window.addEventListener('currencyChanged', handleCurrencyChange);
             return () => {
                 window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
                 window.removeEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+                window.removeEventListener('currencyChanged', handleCurrencyChange);
             };
         }
     }, []);
@@ -162,7 +171,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
         const formatted = thousandsSeparator
             ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : abs.toFixed(2);
-        return `${rounded < 0 ? '-' : ''}£${formatted}`;
+        return `${rounded < 0 ? '-' : ''}${currencySymbol}${formatted}`;
     };
 
     return (
@@ -249,7 +258,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
 
 
                             <div className="w-14 lg:w-16 flex items-center gap-1">
-                                <span className="text-white/70 text-sm xl:text-md font-medium inline">£</span>
+                                <span className="text-white/70 text-sm xl:text-md font-medium inline">{currencySymbol}</span>
                                 <MoneyInput
                                     inputRef={inputRef}
                                     value={hideBudgetValues ? '****' : editedAmount}

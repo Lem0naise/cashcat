@@ -26,6 +26,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAssignments } from '../hooks/useAssignments';
 import { useUpdateAssignment } from '../hooks/useUpdateAssignment';
 import { useSyncAll } from '../hooks/useSyncAll';
+import { getCurrencySymbol } from '../components/charts/utils';
 
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -90,6 +91,7 @@ export default function Budget() {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [currencySymbol, setCurrencySymbol] = useState('£');
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [showOverspentAlert, setShowOverspentAlert] = useState(false);
     const [reminderText, setReminderText] = useState<string>('');
@@ -441,6 +443,7 @@ export default function Budget() {
             const savedHideBudgetValues = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('hideBudgetValues') === 'true' : false;
             setHideBudgetValues(savedHideBudgetValues);
             setThousandsSeparator(window.localStorage?.getItem('thousandsSeparator') === 'true');
+            setCurrencySymbol(getCurrencySymbol());
 
             const handleHideBudgetValuesChange = (event: CustomEvent) => {
                 setHideBudgetValues(event.detail.hideBudgetValues);
@@ -450,11 +453,17 @@ export default function Budget() {
                 setThousandsSeparator(event.detail.thousandsSeparator);
             };
 
+            const handleCurrencyChange = () => {
+                setCurrencySymbol(getCurrencySymbol());
+            };
+
             window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
             window.addEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+            window.addEventListener('currencyChanged', handleCurrencyChange);
             return () => {
                 window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
                 window.removeEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
+                window.removeEventListener('currencyChanged', handleCurrencyChange);
             };
         }
     }, []);
@@ -809,7 +818,7 @@ export default function Budget() {
         const formatted = thousandsSeparator
             ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : abs.toFixed(2);
-        return `£${formatted}`;
+        return `${currencySymbol}${formatted}`;
     };
 
     // Helper function to get group totals
@@ -1230,17 +1239,17 @@ export default function Budget() {
                                         <div>
                                             <div className="text-xs text-white/50 uppercase tracking-wide mb-0.5">Draft Balance</div>
                                             <div className="flex items-baseline gap-2">
-                                                 <span className={`text-xl md:text-2xl font-bold ${draftLeftToAssign >= 0 ? 'text-green' : 'text-reddy'}`}>
-                                                     {hideBudgetValues ? '****' : `£${thousandsSeparator ? Math.abs(draftLeftToAssign).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : Math.abs(draftLeftToAssign).toFixed(2)}`}
-                                                </span>
+                                                  <span className={`text-xl md:text-2xl font-bold ${draftLeftToAssign >= 0 ? 'text-green' : 'text-reddy'}`}>
+                                                     {hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? Math.abs(draftLeftToAssign).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : Math.abs(draftLeftToAssign).toFixed(2)}`}
+                                                 </span>
                                                 <span className={`text-sm ${draftLeftToAssign >= 0 ? 'text-green/70' : 'text-reddy/70'}`}>
                                                     {draftLeftToAssign >= 0 ? 'left to assign' : 'over-assigned'}
                                                 </span>
                                             </div>
                                             {draftDifference !== 0 && (
-                                                <div className="text-xs text-white/50 mt-0.5">
-                                                     {draftDifference > 0 ? '+' : ''}{hideBudgetValues ? '****' : `£${thousandsSeparator ? draftDifference.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : draftDifference.toFixed(2)}`} from current
-                                                </div>
+                                                 <div className="text-xs text-white/50 mt-0.5">
+                                                     {draftDifference > 0 ? '+' : ''}{hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? draftDifference.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : draftDifference.toFixed(2)}`} from current
+                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex gap-2">
@@ -1274,9 +1283,9 @@ export default function Budget() {
                                             </svg>
                                             Fund All Underfunded
                                             {totalUnderfundedAmount > 0 && (
-                                                <span className="text-xs opacity-70">
-                                                    ({hideBudgetValues ? '****' : `£${thousandsSeparator ? totalUnderfundedAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalUnderfundedAmount.toFixed(2)}`})
-                                                </span>
+                                                 <span className="text-xs opacity-70">
+                                                     ({hideBudgetValues ? '****' : `${currencySymbol}${thousandsSeparator ? totalUnderfundedAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalUnderfundedAmount.toFixed(2)}`})
+                                                 </span>
                                             )}
                                         </button>
                                         <button

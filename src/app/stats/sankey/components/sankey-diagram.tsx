@@ -5,6 +5,7 @@ import * as d3 from 'd3-sankey';
 import { select } from 'd3-selection';
 import { interpolateNumber } from 'd3-interpolate';
 import { Transaction, Category } from '../../../components/charts/types';
+import { getCurrencySymbol } from '../../../components/charts/utils';
 
 interface SankeyNode {
   id: string;
@@ -489,15 +490,16 @@ export default function SankeyDiagram({
 
   const formatCurrency = (amount: number) => {
     const useThousandsSeparator = typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true';
+    const sym = getCurrencySymbol();
     if (useThousandsSeparator) {
       return amount.toLocaleString('en-GB', {
         style: 'currency',
-        currency: 'GBP',
+        currency: localStorage.getItem('currency') || 'GBP',
         minimumFractionDigits: 0,
       });
     }
     const abs = Math.abs(amount);
-    return `${amount < 0 ? '-' : ''}£${abs.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: false })}`;
+    return `${amount < 0 ? '-' : ''}${sym}${abs.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: false })}`;
   };
 
   return (

@@ -13,6 +13,7 @@ import type { Database } from '@/types/supabase';
 import { CURRENCIES, getCurrencySymbol } from '@/app/components/charts/utils';
 import { useTransactions } from '@/app/hooks/useTransactions';
 import { useAccounts } from '@/app/hooks/useAccounts';
+import { useAuthUserId } from '@/app/hooks/useAuthUserId';
 
 // Category as returned by the query (includes joined groups row)
 type CategoryWithGroup = Category & {
@@ -639,14 +640,14 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                         {/* Historical Insights */}
                         {historicalStats.hasData && (
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
-                                    <p className="text-sm font-bold text-green">£{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
-                                </div>
-                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
-                                    <p className="text-sm font-bold text-white">£{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
-                                </div>
+                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
+                                     <p className="text-sm font-bold text-green">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
+                                 </div>
+                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
+                                     <p className="text-sm font-bold text-white">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
+                                 </div>
                             </div>
                         )}
 
@@ -863,6 +864,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
 
 function EditMode({ onClose }: { onClose: () => void }) {
     const supabase = createClient();
+    const userId = useAuthUserId();
     const [activeTab, setActiveTab] = useState<'categories' | 'settings'>('categories');
     const [groups, setGroups] = useState<Group[]>([]);
     const [categories, setCategories] = useState<CategoryWithGroup[]>([]);
@@ -893,8 +895,19 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             setHideBudgetValues(localStorage.getItem('hideBudgetValues') === 'true');
             setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
+            // Load currency: prefer localStorage (instant), then sync from Supabase
+            setCurrency(localStorage.getItem('currency') || 'GBP');
+            if (userId) {
+                supabase.from('settings').select('currency').eq('id', userId).maybeSingle().then(({ data }) => {
+                    if (data?.currency) {
+                        setCurrency(data.currency);
+                        localStorage.setItem('currency', data.currency);
+                        window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: data.currency } }));
+                    }
+                });
+            }
         }
-    }, []);
+    }, [userId]);
 
     const handleEditCategory = (category: CategoryWithGroup) => {
         setEditingCategory(category);
@@ -916,6 +929,17 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('thousandsSeparator', newValue.toString());
             window.dispatchEvent(new CustomEvent('thousandsSeparatorChanged', { detail: { thousandsSeparator: newValue } }));
+        }
+    };
+
+    const handleCurrencyChange = (newCurrency: string) => {
+        setCurrency(newCurrency);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('currency', newCurrency);
+            window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: newCurrency } }));
+        }
+        if (userId) {
+            supabase.from('settings').update({ currency: newCurrency }).eq('id', userId);
         }
     };
 
@@ -1132,26 +1156,26 @@ function EditMode({ onClose }: { onClose: () => void }) {
                         {activeTab === 'categories' && !loadingTransactions && (
                             <div className="flex sm:flex-row flex-col gap-2 mb-6">
 
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
-                                    <p className="text-xl font-bold text-white">£{formatAmount(stats.avgMonthlyIncome)}</p>
-                                </div>
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
-                                    <p className="text-xl font-bold text-green">£{formatAmount(stats.totalGoals)}</p>
-                                </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
+                                     <p className="text-xl font-bold text-white">{currencySymbol}{formatAmount(stats.avgMonthlyIncome)}</p>
+                                 </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
+                                     <p className="text-xl font-bold text-green">{currencySymbol}{formatAmount(stats.totalGoals)}</p>
+                                 </div>
 
-                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
-                                    <p className="text-xl font-bold text-reddy">£{formatAmount(stats.avgMonthlySpend)}</p>
-                                    {/* Over/Under spending indicator */}
-                                    <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
-                                        {stats.avgMonthlySpend > stats.totalGoals
-                                            ? `£${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
-                                            : `£${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
-                                        }
-                                    </p>
-                                </div>
+                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
+                                     <p className="text-xl font-bold text-reddy">{currencySymbol}{formatAmount(stats.avgMonthlySpend)}</p>
+                                     {/* Over/Under spending indicator */}
+                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
+                                         {stats.avgMonthlySpend > stats.totalGoals
+                                             ? `${currencySymbol}${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
+                                             : `${currencySymbol}${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
+                                         }
+                                     </p>
+                                 </div>
                             </div>
                         )}
 
@@ -1185,18 +1209,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                             </button>
                                         </div>
                                         <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
-                                            <p className="block font-medium text-white mb-2">Currency</p>
-                                            <Dropdown
-                                                value="GBP"
-                                                onChange={() => { }}
-                                                options={[
-                                                    { value: 'GBP', label: '£ GBP (Coming Soon)', disabled: true },
-                                                    { value: 'USD', label: '$ USD (Coming Soon)', disabled: true },
-                                                    { value: 'EUR', label: '€ EUR (Coming Soon)', disabled: true },
-                                                ]}
-                                                disabled
-                                            />
-                                        </div>
+                                             <p className="block font-medium text-white mb-2">Currency</p>
+                                             <Dropdown
+                                                 value={currency}
+                                                 onChange={handleCurrencyChange}
+                                                 options={CURRENCIES.map(c => ({ value: c.value, label: c.label }))}
+                                             />
+                                         </div>
                                     </div>
                                 </div>
                                 <div className="bg-white/[.03] rounded-lg p-6">
@@ -1285,9 +1304,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                             // Tolerance of 1 to avoid rounding noise
                                                                             if (Math.abs(diff) > 1) {
                                                                                 const isOver = diff > 0;
-                                                                                return (
-                                                                                    <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
-                                                                                        £{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
+                                                                                             return (
+                                                                                                 <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
+                                                                                                     {currencySymbol}{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
                                                                                     </span>
                                                                                 );
                                                                             }
@@ -1436,9 +1455,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                                     return null;
                                                                                 })()}
                                                                             </div>
-                                                                            <div className="flex gap-3 text-sm text-white/50">
-                                                                                <span>Goal: £{category.goal || 0}</span>
-                                                                                <span>Avg: £{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
+                                                                             <div className="flex gap-3 text-sm text-white/50">
+                                                                                 <span>Goal: {currencySymbol}{category.goal || 0}</span>
+                                                                                 <span>Avg: {currencySymbol}{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

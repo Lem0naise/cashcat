@@ -15,7 +15,7 @@ import { Bar } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 import { format, startOfWeek, startOfMonth, startOfDay, differenceInDays } from 'date-fns';
 import { Transaction, Category } from './types';
-import { formatCurrency } from './utils';
+import { formatCurrency, getCurrencySymbol } from './utils';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, TimeScale);
 
@@ -241,10 +241,11 @@ export default function SpendingOverTime({
                 ticks: {
                     color: 'rgba(255, 255, 255, 0.4)',
                     font: { size: 10 },
-                    callback: (value: number) => {
-                        if (value >= 1000) return `£${(value / 1000).toFixed(0)}k`;
-                        return `£${value}`;
-                    },
+                        callback: (value: number) => {
+                                const sym = getCurrencySymbol();
+                                if (value >= 1000) return `${sym}${(value / 1000).toFixed(0)}k`;
+                                return `${sym}${value}`;
+                            },
                 },
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                 border: { display: false },

@@ -8,6 +8,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useGroups } from '../hooks/useGroups';
 import { useVendors } from '../hooks/useVendors';
 import { useTransactions } from '../hooks/useTransactions';
+import { getCurrencySymbol } from './charts/utils';
 
 type Vendor = { id: string; name: string };
 
@@ -63,6 +64,14 @@ export default function QuickAddRow({ onSubmit, onCancel, autoFocus = false, amo
         const def = accounts.find(a => a.is_default);
         return def?.id || accounts[0]?.id || '';
     }, [accounts]);
+
+    const [currencySymbol, setCurrencySymbol] = useState(() => getCurrencySymbol());
+
+    useEffect(() => {
+        const handler = () => setCurrencySymbol(getCurrencySymbol());
+        window.addEventListener('currencyChanged', handler);
+        return () => window.removeEventListener('currencyChanged', handler);
+    }, []);
 
     const [type, setType] = useState<'payment' | 'income'>('payment');
     const [amount, setAmount] = useState('');
@@ -480,7 +489,7 @@ export default function QuickAddRow({ onSubmit, onCancel, autoFocus = false, amo
 
             {/* Amount */}
             <div className="w-28 flex-shrink-0 relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30 text-sm pointer-events-none">£</span>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30 text-sm pointer-events-none">{currencySymbol}</span>
                 <input
                     ref={setAmountRef}
                     type="tel"
