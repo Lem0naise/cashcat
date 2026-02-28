@@ -136,7 +136,7 @@ export default function VendorManagerModal({ isOpen, onClose }: VendorManagerMod
 
     /** Pairs of vendors with similar names */
     const similarPairs = useMemo(
-        () => findSimilarPairs(userVendors.map(v => v.name)),
+        () => findSimilarPairs([...new Set(userVendors.map(v => v.name))]),
         [userVendors]
     );
 
