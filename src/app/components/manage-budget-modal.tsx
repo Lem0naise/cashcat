@@ -55,115 +55,106 @@ const TEMPLATES: Template[] = [
         label: 'Student',
         groups: [
             {
-                name: 'Fixed Essentials', ratio: 0.45, categories: [
-                    { name: 'Rent / Halls', goal_type: 'spending' },
-                    { name: 'Tuition & Fees', goal_type: 'spending' },
-                    { name: 'Phone Bill', goal_type: 'spending' },
-                    { name: 'Utilities & Internet', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Daily Living', ratio: 0.15, categories: [
+                name: 'Food', ratio: 0.25, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
-                    { name: 'Supplies & Tech', goal_type: 'spending' },
-                    { name: 'Laundry & Household', goal_type: 'spending' },
-                    { name: 'Transport (Bus/Train)', goal_type: 'spending' },
+                    { name: 'Dining', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Going Out & Lifestyle', ratio: 0.25, categories: [
-                    { name: 'Nights Out & Drinks', goal_type: 'spending' },
-                    { name: 'Dining & Campus Lunch', goal_type: 'spending' },
-                    { name: 'Society Memberships', goal_type: 'spending' },
-                    { name: 'Clothing & Subscriptions', goal_type: 'spending' },
+                name: 'Needs', ratio: 0.40, categories: [
+                    { name: 'Housing', goal_type: 'spending' },
+                    { name: 'Bills', goal_type: 'spending' },
+                    { name: 'Transport', goal_type: 'spending' },
+                    { name: 'Health & Care', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Savings & Future', ratio: 0.15, categories: [
-                    { name: 'Emergency Fund', goal_type: 'emergency_fund' },
-                    { name: 'Next Year Deposit', goal_type: 'savings' },
-                    { name: 'Travel Home Fund', goal_type: 'savings' },
-                ]
-            },
-        ],
-    },
-    {
-        label: 'Young Professional',
-        groups: [
-            {
-                name: 'Housing & Bills', ratio: 0.45, categories: [
-                    { name: 'Rent', goal_type: 'spending' },
-                    { name: 'Council Tax', goal_type: 'spending' },
-                    { name: 'Electric, Gas & Water', goal_type: 'spending' },
-                    { name: 'Internet & Phone', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Daily Essentials', ratio: 0.15, categories: [
-                    { name: 'Groceries & Household', goal_type: 'spending' },
-                    { name: 'Transport / Commute', goal_type: 'spending' },
-                    { name: 'Car Maintenance & Fuel', goal_type: 'savings' },
-                    { name: 'Personal Care', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Going Out & Lifestyle', ratio: 0.20, categories: [
-                    { name: 'Dining Out & Drinks', goal_type: 'spending' },
-                    { name: 'Gym & Wellness', goal_type: 'spending' },
-                    { name: 'Hobbies & Entertainment', goal_type: 'spending' },
+                name: 'Wants', ratio: 0.20, categories: [
+                    { name: 'Shopping', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
                     { name: 'Subscriptions', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Savings & Investments', ratio: 0.20, categories: [
-                    { name: 'Emergency Fund', goal_type: 'emergency_fund' },
-                    { name: 'LISA / ISA / Brokerage', goal_type: 'savings' },
-                    { name: 'Student Loan Overpayment', goal_type: 'savings' },
-                    { name: 'Vacation Fund', goal_type: 'savings' },
+                name: 'Savings', ratio: 0.15, categories: [
+                    { name: 'Emergency', goal_type: 'emergency_fund' },
+                    { name: 'Travel', goal_type: 'savings' },
+                    { name: 'Savings', goal_type: 'savings' }
                 ]
             },
         ],
     },
     {
-        label: 'Family / Homeowner',
+        label: 'Professional',
         groups: [
             {
-                name: 'Housing & Utilities', ratio: 0.35, categories: [
-                    { name: 'Mortgage', goal_type: 'spending' },
-                    { name: 'Property Tax / Rates', goal_type: 'spending' },
-                    { name: 'Home Insurance', goal_type: 'spending' },
-                    { name: 'Energy & Water', goal_type: 'spending' },
+                name: 'Food', ratio: 0.15, categories: [
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Dining', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Family Essentials', ratio: 0.25, categories: [
-                    { name: 'Groceries & Consumables', goal_type: 'spending' },
-                    { name: 'Childcare / School Fees', goal_type: 'spending' },
-                    { name: 'Clothing & Uniforms', goal_type: 'spending' },
-                    { name: 'Transport & Fuel', goal_type: 'spending' },
+                name: 'Needs', ratio: 0.40, categories: [
+                    { name: 'Housing', goal_type: 'spending' },
+                    { name: 'Bills', goal_type: 'spending' },
+                    { name: 'Transport', goal_type: 'spending' },
+                    { name: 'Health & Care', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Health & Protection', ratio: 0.05, categories: [
-                    { name: 'Life / Health Insurance', goal_type: 'spending' },
-                    { name: 'Pharmacy & Medical', goal_type: 'spending' },
-                    { name: 'Pet Care', goal_type: 'spending' },
+                name: 'Business', ratio: 0.10, categories: [
+                    { name: 'Software', goal_type: 'spending' },
+                    { name: 'Services', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Going Out & Fun', ratio: 0.15, categories: [
-                    { name: 'Family Outings & Dining', goal_type: 'spending' },
-                    { name: 'Kids Activities / Clubs', goal_type: 'spending' },
-                    { name: 'Takeaways', goal_type: 'spending' },
-                    { name: 'Pocket Money', goal_type: 'spending' },
+                name: 'Wants', ratio: 0.15, categories: [
+                    { name: 'Shopping', goal_type: 'spending' },
+                    { name: 'Gym', goal_type: 'spending' },
+                    { name: 'Subscriptions', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Savings & Investments', ratio: 0.20, categories: [
-                    { name: 'Home Maintenance Fund', goal_type: 'savings' },
-                    { name: 'Car Service & MOT', goal_type: 'savings' },
-                    { name: 'Kids University / ISA', goal_type: 'savings' },
-                    { name: 'Family Holiday Fund', goal_type: 'savings' },
+                name: 'Savings', ratio: 0.20, categories: [
+                    { name: 'Emergency', goal_type: 'emergency_fund' },
+                    { name: 'Investments', goal_type: 'savings' },
+                    { name: 'Savings', goal_type: 'savings' },
+                ]
+            },
+        ],
+    },
+    {
+        label: 'Family',
+        groups: [
+            {
+                name: 'Food', ratio: 0.20, categories: [
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Dining', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Needs', ratio: 0.45, categories: [
+                    { name: 'Housing', goal_type: 'spending' },
+                    { name: 'Bills', goal_type: 'spending' },
+                    { name: 'Transport', goal_type: 'spending' },
+                    { name: 'Family', goal_type: 'spending' },
+                    { name: 'Health & Care', goal_type: 'spending' },
+                    { name: 'Home', goal_type: 'spending' },
+                    { name: 'Insurance', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Wants', ratio: 0.15, categories: [
+                    { name: 'Shopping', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
+                    { name: 'Subscriptions', goal_type: 'spending' },
+                ]
+            },
+            {
+                name: 'Savings', ratio: 0.20, categories: [
+                    { name: 'Emergency', goal_type: 'emergency_fund' },
+                    { name: 'Savings', goal_type: 'savings' },
                 ]
             },
         ],
@@ -172,81 +163,70 @@ const TEMPLATES: Template[] = [
         label: 'Debt Crusher',
         groups: [
             {
-                name: 'Bare Essentials', ratio: 0.55, categories: [
-                    { name: 'Rent / Mortgage', goal_type: 'spending' },
-                    { name: 'Utilities & Council Tax', goal_type: 'spending' },
-                    { name: 'Basic Groceries', goal_type: 'spending' },
-                    { name: 'Health & Insurances', goal_type: 'spending' },
+                name: 'Food', ratio: 0.20, categories: [
+                    { name: 'Groceries', goal_type: 'spending' },
+                    { name: 'Dining', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Transport to Work', ratio: 0.05, categories: [
-                    { name: 'Fuel / Public Transit', goal_type: 'spending' },
-                    { name: 'Vehicle Maintenance', goal_type: 'savings' },
+                name: 'Needs', ratio: 0.45, categories: [
+                    { name: 'Housing', goal_type: 'spending' },
+                    { name: 'Bills', goal_type: 'spending' },
+                    { name: 'Transport', goal_type: 'spending' },
+                    { name: 'Health & Care', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Debt Payments', ratio: 0.30, categories: [
-                    { name: 'Credit Card 1', goal_type: 'spending' },
-                    { name: 'Credit Card 2', goal_type: 'spending' },
-                    { name: 'Personal Loan', goal_type: 'spending' },
-                    { name: 'Overdraft Payoff', goal_type: 'spending' },
+                name: 'Wants', ratio: 0.05, categories: [
+                    { name: 'Shopping', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Modest Going Out', ratio: 0.05, categories: [
-                    { name: 'Occasional Treat', goal_type: 'spending' },
-                    { name: 'Internet / Phone', goal_type: 'spending' },
-                    { name: 'Miscellaneous Buffer', goal_type: 'spending' },
-                ]
-            },
-            {
-                name: 'Savings & Safety Net', ratio: 0.05, categories: [
-                    { name: 'Starter Emergency Fund', goal_type: 'emergency_fund' },
-                    { name: 'Annual Fees Buffer', goal_type: 'savings' },
+                name: 'Savings', ratio: 0.30, categories: [
+                    { name: 'Debt Payments', goal_type: 'spending' },
+                    { name: 'Emergency', goal_type: 'emergency_fund' },
+                    { name: 'Savings', goal_type: 'savings' },
                 ]
             },
         ],
     },
     {
-        label: 'Freelancer / Gig Worker',
+        label: 'Freelancer',
         groups: [
             {
-                name: 'Business & Taxes', ratio: 0.30, categories: [
-                    { name: 'Tax Set Aside (25-30%)', goal_type: 'savings' },
-                    { name: 'Software & Tools', goal_type: 'spending' },
-                    { name: 'Accountant Fees', goal_type: 'savings' },
-                    { name: 'Workspace / Equipment', goal_type: 'spending' },
+                name: 'Business', ratio: 0.25, categories: [
+                    { name: 'Taxes', goal_type: 'savings' },
+                    { name: 'Software', goal_type: 'spending' },
+                    { name: 'Services', goal_type: 'spending' },
+                    { name: 'Equipment', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Personal Essentials', ratio: 0.25, categories: [
-                    { name: 'Rent / Mortgage', goal_type: 'spending' },
-                    { name: 'Utilities & Phone', goal_type: 'spending' },
+                name: 'Food', ratio: 0.15, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
-                    { name: 'Health Insurance', goal_type: 'spending' },
+                    { name: 'Dining', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Transport', ratio: 0.15, categories: [
-                    { name: 'Business Travel & Fuel', goal_type: 'spending' },
-                    { name: 'Personal Transport', goal_type: 'spending' },
-                    { name: 'Vehicle Maintenance Fund', goal_type: 'savings' },
+                name: 'Needs', ratio: 0.35, categories: [
+                    { name: 'Housing', goal_type: 'spending' },
+                    { name: 'Bills', goal_type: 'spending' },
+                    { name: 'Transport', goal_type: 'spending' },
+                    { name: 'Health & Care', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Going Out & Lifestyle', ratio: 0.10, categories: [
-                    { name: 'Dining Out', goal_type: 'spending' },
-                    { name: 'Entertainment & Hobbies', goal_type: 'spending' },
-                    { name: 'Personal Shopping', goal_type: 'spending' },
+                name: 'Wants', ratio: 0.10, categories: [
+                    { name: 'Shopping', goal_type: 'spending' },
+                    { name: 'Entertainment', goal_type: 'spending' },
+                    { name: 'Gym', goal_type: 'spending' },
                 ]
             },
             {
-                name: 'Savings & Wealth', ratio: 0.20, categories: [
-                    { name: 'Income Buffer (Next Month)', goal_type: 'savings' },
-                    { name: 'Emergency Fund (3-6 Mos)', goal_type: 'emergency_fund' },
-                    { name: 'Private Pension / SIPP', goal_type: 'savings' },
-                    { name: 'Holiday & Sick Pay Fund', goal_type: 'savings' },
+                name: 'Savings', ratio: 0.15, categories: [
+                    { name: 'Emergency', goal_type: 'emergency_fund' },
+                    { name: 'Savings', goal_type: 'savings' },
                 ]
             },
         ],
@@ -640,14 +620,14 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                         {/* Historical Insights */}
                         {historicalStats.hasData && (
                             <div className="grid grid-cols-2 gap-3">
-                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
-                                     <p className="text-sm font-bold text-green">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
-                                 </div>
-                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
-                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
-                                     <p className="text-sm font-bold text-white">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
-                                 </div>
+                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
+                                    <p className="text-sm font-bold text-green">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
+                                    <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
+                                    <p className="text-sm font-bold text-white">{typeof window !== 'undefined' ? getCurrencySymbol() : '£'}{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
+                                </div>
                             </div>
                         )}
 
@@ -1156,26 +1136,26 @@ function EditMode({ onClose }: { onClose: () => void }) {
                         {activeTab === 'categories' && !loadingTransactions && (
                             <div className="flex sm:flex-row flex-col gap-2 mb-6">
 
-                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
-                                     <p className="text-xl font-bold text-white">{currencySymbol}{formatAmount(stats.avgMonthlyIncome)}</p>
-                                 </div>
-                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
-                                     <p className="text-xl font-bold text-green">{currencySymbol}{formatAmount(stats.totalGoals)}</p>
-                                 </div>
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
+                                    <p className="text-xl font-bold text-white">{currencySymbol}{formatAmount(stats.avgMonthlyIncome)}</p>
+                                </div>
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
+                                    <p className="text-xl font-bold text-green">{currencySymbol}{formatAmount(stats.totalGoals)}</p>
+                                </div>
 
-                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
-                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
-                                     <p className="text-xl font-bold text-reddy">{currencySymbol}{formatAmount(stats.avgMonthlySpend)}</p>
-                                     {/* Over/Under spending indicator */}
-                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
-                                         {stats.avgMonthlySpend > stats.totalGoals
-                                             ? `${currencySymbol}${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
-                                             : `${currencySymbol}${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
-                                         }
-                                     </p>
-                                 </div>
+                                <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
+                                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
+                                    <p className="text-xl font-bold text-reddy">{currencySymbol}{formatAmount(stats.avgMonthlySpend)}</p>
+                                    {/* Over/Under spending indicator */}
+                                    <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
+                                        {stats.avgMonthlySpend > stats.totalGoals
+                                            ? `${currencySymbol}${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
+                                            : `${currencySymbol}${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
+                                        }
+                                    </p>
+                                </div>
                             </div>
                         )}
 
@@ -1209,13 +1189,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                             </button>
                                         </div>
                                         <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
-                                             <p className="block font-medium text-white mb-2">Currency</p>
-                                             <Dropdown
-                                                 value={currency}
-                                                 onChange={handleCurrencyChange}
-                                                 options={CURRENCIES.map(c => ({ value: c.value, label: c.label }))}
-                                             />
-                                         </div>
+                                            <p className="block font-medium text-white mb-2">Currency</p>
+                                            <Dropdown
+                                                value={currency}
+                                                onChange={handleCurrencyChange}
+                                                options={CURRENCIES.map(c => ({ value: c.value, label: c.label }))}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="bg-white/[.03] rounded-lg p-6">
@@ -1304,9 +1284,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                             // Tolerance of 1 to avoid rounding noise
                                                                             if (Math.abs(diff) > 1) {
                                                                                 const isOver = diff > 0;
-                                                                                             return (
-                                                                                                 <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
-                                                                                                     {currencySymbol}{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
+                                                                                return (
+                                                                                    <span className={`text-xs font-medium ${isOver ? 'text-reddy' : 'text-green'}`}>
+                                                                                        {currencySymbol}{Math.abs(diff).toFixed(0)} {isOver ? 'over/mo' : 'under/mo'}
                                                                                     </span>
                                                                                 );
                                                                             }
@@ -1455,9 +1435,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                                                     return null;
                                                                                 })()}
                                                                             </div>
-                                                                             <div className="flex gap-3 text-sm text-white/50">
-                                                                                 <span>Goal: {currencySymbol}{category.goal || 0}</span>
-                                                                                 <span>Avg: {currencySymbol}{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
+                                                                            <div className="flex gap-3 text-sm text-white/50">
+                                                                                <span>Goal: {currencySymbol}{category.goal || 0}</span>
+                                                                                <span>Avg: {currencySymbol}{(stats.categoryAverages.get(category.id) || 0).toFixed(0)}</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
