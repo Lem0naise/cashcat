@@ -74,6 +74,9 @@ android/.gradle/
 android/.idea/
 *.iml
 
+
+*AGENT.md
+
 # -----------------------------------
 # iOS (If you ever add it)
 # -----------------------------------

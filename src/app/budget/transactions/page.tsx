@@ -14,6 +14,7 @@ import AccountSelector from "../../components/account-selector";
 import AccountModal from "../../components/account-modal";
 import ExportModal from "../../components/export-modal";
 import ImportModal from "../../components/import-modal";
+import VendorManagerModal from "../../components/vendor-manager-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
@@ -67,8 +68,11 @@ export default function Transactions() {
     const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
     const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showDesktopMenu, setShowDesktopMenu] = useState(false);
+    const [showVendorManager, setShowVendorManager] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
+    const desktopMenuRef = useRef<HTMLDivElement>(null);
 
     const { subscription } = useSubscription();
     const { importCount, exportCount } = useUsage();
@@ -107,6 +111,18 @@ export default function Transactions() {
         document.addEventListener('keydown', handler);
         return () => document.removeEventListener('keydown', handler);
     }, []);
+
+    // Close desktop menu when clicking outside
+    useEffect(() => {
+        if (!showDesktopMenu) return;
+        const handler = (e: MouseEvent) => {
+            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node)) {
+                setShowDesktopMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showDesktopMenu]);
 
     const refetch = () => {
         refetchTransactions();
@@ -672,20 +688,35 @@ export default function Transactions() {
                                             </svg>
                                             <span className="text-sm">Export</span>
                                         </button>
-                                        <button
-                                            onClick={() => {
-                                                handleOpenImport();
-                                                setShowMobileMenu(false);
-                                            }}
-                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            <span className="text-sm">Import</span>
-                                        </button>
+                                         <button
+                                             onClick={() => {
+                                                 handleOpenImport();
+                                                 setShowMobileMenu(false);
+                                             }}
+                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                         >
+                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                 <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                 <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                 <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                             </svg>
+                                             <span className="text-sm">Import</span>
+                                         </button>
+                                         <button
+                                             onClick={() => {
+                                                 setShowVendorManager(true);
+                                                 setShowMobileMenu(false);
+                                             }}
+                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
+                                         >
+                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                 <circle cx="9" cy="7" r="4" />
+                                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                             </svg>
+                                             <span className="text-sm">Manage Vendors</span>
+                                         </button>
                                     </div>
                                 </>
                             )}
@@ -739,65 +770,28 @@ export default function Transactions() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-5">
-                                <button
-                                    title="Import Transactions"
-                                    onClick={handleOpenImport}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                                >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <p className="hidden lg:inline">Import</p>
-                                </button>
-
-                                <button
-                                    title="Export Transactions"
-                                    onClick={handleOpenExport}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                                >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <p className="hidden lg:inline">Export</p>
-                                </button>
-
+                            <div className="flex gap-2 items-center">
                                 <button
                                     onClick={() => { syncAll() }}
-                                    className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${isSyncing ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                    className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${isSyncing ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                     disabled={isSyncing}
                                     title="Refresh transactions"
                                 >
                                     <svg className={`${isSyncing ? 'animate-spin' : ''}`} width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <g transform="scale(-1, 1) translate(-48, 0)">
-                                            <path
-                                                d="M24 6a18 18 0 1 1-12.73 5.27"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-
-                                            />
-                                            <path
-                                                d="M12 4v8h8"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-
-                                            />
+                                            <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                            <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
                                         </g>
                                     </svg>
                                     <p className="hidden lg:inline">{isSyncing ? 'Syncing...' : 'Sync'}</p>
-
                                 </button>
 
                                 <button
-                                    title="Add Transaction" onClick={() => { setModalTransaction(null); setModalTransfer(null); setShowModal(true) }}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                    title="Add Transaction"
+                                    onClick={() => { setModalTransaction(null); setModalTransfer(null); setShowModal(true) }}
+                                    className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                 >
-                                    <svg width="24" height="24" viewBox="-2 -2 50 50 " fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <svg width="24" height="24" viewBox="-2 -2 50 50" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                         <g>
                                             <path d="M41.267,18.557H26.832V4.134C26.832,1.851,24.99,0,22.707,0c-2.283,0-4.124,1.851-4.124,4.135v14.432H4.141
                                 c-2.283,0-4.139,1.851-4.138,4.135c-0.001,1.141,0.46,2.187,1.207,2.934c0.748,0.749,1.78,1.222,2.92,1.222h14.453V41.27
@@ -807,6 +801,59 @@ export default function Transactions() {
                                     </svg>
                                     <p className="hidden lg:inline">Add</p>
                                 </button>
+
+                                {/* Desktop overflow menu */}
+                                <div ref={desktopMenuRef} className="relative">
+                                    <button
+                                        onClick={() => setShowDesktopMenu(o => !o)}
+                                        className={`p-2 rounded-lg transition-all hover:bg-white/[.05] ${showDesktopMenu ? 'bg-white/[.1] opacity-100' : 'opacity-70 hover:opacity-100'}`}
+                                        title="More options"
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+
+                                    {showDesktopMenu && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                                            <button
+                                                onClick={() => { handleOpenImport(); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                <span className="text-sm">Import</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleOpenExport(); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                <span className="text-sm">Export</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowVendorManager(true); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="9" cy="7" r="4" />
+                                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                </svg>
+                                                <span className="text-sm">Manage Vendors</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -1042,6 +1089,11 @@ export default function Transactions() {
                     onAccountsUpdated={() => {
                         refetch()
                     }}
+                />
+
+                <VendorManagerModal
+                    isOpen={showVendorManager}
+                    onClose={() => setShowVendorManager(false)}
                 />
             </div >
         </ProtectedRoute >
