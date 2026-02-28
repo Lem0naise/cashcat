@@ -25,7 +25,7 @@ export const changelog: Major[] = [
             {
                 version: "13",
                 patches: [
-                     {
+                    {
                         version: "0.13.1",
                         date: "February 26, 2026",
                         features: [
@@ -35,7 +35,8 @@ export const changelog: Major[] = [
                             "Money Flow (Sankey) diagram now embedded inline on the Stats page",
                         ],
                         bugfixes: [
-                            "Fixed vendor mapping bugs"
+                            "Fixed vendor mapping bugs",
+                            "Fix CSV import bug"
                         ]
                     },
                     {
