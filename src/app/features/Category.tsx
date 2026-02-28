@@ -30,6 +30,7 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
     const [editedAmount, setEditedAmount] = useState(assigned.toFixed(2));
     const [isUpdating, setIsUpdating] = useState(false);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [thousandsSeparator, setThousandsSeparator] = useState(false);
     // Always round to 2 decimals for display
     const displayAvailable = available !== undefined ? Math.round(available * 100) / 100 : Math.round((assigned + rollover - spent) * 100) / 100;
     const goal = goalAmount || 0;
@@ -91,14 +92,21 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
         if (typeof window !== 'undefined') {
             const savedHideBudgetValues = localStorage.getItem('hideBudgetValues') === 'true';
             setHideBudgetValues(savedHideBudgetValues);
+            setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
 
             const handleHideBudgetValuesChange = (event: CustomEvent) => {
                 setHideBudgetValues(event.detail.hideBudgetValues);
             };
 
+            const handleThousandsSeparatorChange = (event: CustomEvent) => {
+                setThousandsSeparator(event.detail.thousandsSeparator);
+            };
+
             window.addEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+            window.addEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
             return () => {
                 window.removeEventListener('hideBudgetValuesChanged', handleHideBudgetValuesChange as EventListener);
+                window.removeEventListener('thousandsSeparatorChanged', handleThousandsSeparatorChange as EventListener);
             };
         }
     }, []);
@@ -150,7 +158,11 @@ export default function Category({ name, assigned, rollover, spent, goalAmount, 
         if (hideBudgetValues) return '****';
         // Always round to 2 decimals before formatting
         const rounded = Math.round(amount * 100) / 100;
-        return `${rounded < 0 ? '-' : ''}£${Math.abs(rounded).toFixed(2)}`;
+        const abs = Math.abs(rounded);
+        const formatted = thousandsSeparator
+            ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : abs.toFixed(2);
+        return `${rounded < 0 ? '-' : ''}£${formatted}`;
     };
 
     return (

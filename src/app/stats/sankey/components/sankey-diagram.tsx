@@ -488,11 +488,16 @@ export default function SankeyDiagram({
   }, [sankeyData, dimensions, onNodeClick]);
 
   const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 0,
-    });
+    const useThousandsSeparator = typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true';
+    if (useThousandsSeparator) {
+      return amount.toLocaleString('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        minimumFractionDigits: 0,
+      });
+    }
+    const abs = Math.abs(amount);
+    return `${amount < 0 ? '-' : ''}£${abs.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: false })}`;
   };
 
   return (

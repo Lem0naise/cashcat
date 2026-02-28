@@ -10,6 +10,7 @@ import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group, GoalType } from '@/types/supabase';
 import type { Database } from '@/types/supabase';
+import { CURRENCIES, getCurrencySymbol } from '@/app/components/charts/utils';
 import { useTransactions } from '@/app/hooks/useTransactions';
 import { useAccounts } from '@/app/hooks/useAccounts';
 
@@ -445,7 +446,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                         </div>
                         <div>
                             <p className="text-xs text-white/50 uppercase tracking-wide">Step {step} of {TOTAL_STEPS}</p>
-                             <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-white">
                                 {step === 1 && 'Choose a Template'}
                                 {step === 2 && 'Import Transactions'}
                                 {step === 3 && 'Review Your Goals'}
@@ -524,8 +525,8 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                     <div className="p-6 flex flex-col items-center text-center space-y-6">
                         <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
-                                <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                <path d="M12 15V3M12 15L8 11M12 15L16 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                         </div>
 
@@ -593,7 +594,7 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
 
                         {/* Zero-based budgeting tip */}
                         <div className="bg-green/[.07] border border-green/20 rounded-xl p-3 flex gap-3 items-start">
-                            
+
                             <p className="text-xs text-white/70 leading-relaxed">
                                 The <span className="text-green font-medium">Savings</span> category is a catch-all for leftover money — it's not a monthly spending goal, it's where the rest of your income lives. That's zero-based budgeting.
                             </p>
@@ -640,11 +641,11 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Income</p>
-                                    <p className="text-sm font-bold text-green">£{historicalStats.avgIncome.toFixed(2)}</p>
+                                    <p className="text-sm font-bold text-green">£{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgIncome.toFixed(2)}</p>
                                 </div>
                                 <div className="bg-white/[.03] border border-white/[.08] rounded-xl p-3">
                                     <p className="text-[10px] uppercase tracking-wide text-white/50 mb-1">Avg. Monthly Spend</p>
-                                    <p className="text-sm font-bold text-white">£{historicalStats.avgSpend.toFixed(2)}</p>
+                                    <p className="text-sm font-bold text-white">£{typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true' ? historicalStats.avgSpend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : historicalStats.avgSpend.toFixed(2)}</p>
                                 </div>
                             </div>
                         )}
@@ -793,10 +794,10 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                     <div className="p-6 flex flex-col items-center text-center space-y-6">
                         <div className="w-20 h-20 bg-green/10 border border-green/30 rounded-2xl flex items-center justify-center mt-4">
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-green">
-                                <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
-                                <path d="M16 11a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/>
-                                <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
-                                <path d="M6 4l4-1 4 1 4-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                                <path d="M16 11a1 1 0 100 2 1 1 0 000-2z" fill="currentColor" />
+                                <path d="M2 10h20" stroke="currentColor" strokeWidth="2" />
+                                <path d="M6 4l4-1 4 1 4-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                         </div>
 
@@ -868,6 +869,9 @@ function EditMode({ onClose }: { onClose: () => void }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
+    const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [currency, setCurrency] = useState('GBP');
+    const currencySymbol = CURRENCIES.find(c => c.value === currency)?.symbol ?? '£';
 
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [editingCategory, setEditingCategory] = useState<CategoryWithGroup | null>(null);
@@ -888,6 +892,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setHideBudgetValues(localStorage.getItem('hideBudgetValues') === 'true');
+            setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
         }
     }, []);
 
@@ -902,6 +907,15 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('hideBudgetValues', newValue.toString());
             window.dispatchEvent(new CustomEvent('hideBudgetValuesChanged', { detail: { hideBudgetValues: newValue } }));
+        }
+    };
+
+    const toggleThousandsSeparator = () => {
+        const newValue = !thousandsSeparator;
+        setThousandsSeparator(newValue);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('thousandsSeparator', newValue.toString());
+            window.dispatchEvent(new CustomEvent('thousandsSeparatorChanged', { detail: { thousandsSeparator: newValue } }));
         }
     };
 
@@ -1073,6 +1087,13 @@ function EditMode({ onClose }: { onClose: () => void }) {
         await fetchCategories();
     };
 
+    const formatAmount = (amount: number) => {
+        const abs = Math.abs(amount);
+        return thousandsSeparator
+            ? abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : abs.toFixed(2);
+    };
+
     return (
         <div className="flex flex-col h-full overflow-y-scroll">
             {/* Header */}
@@ -1090,7 +1111,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                             onClick={() => setActiveTab(tab)}
                             className={`px-4 py-2 transition-all duration-200 capitalize ${activeTab === tab ? 'text-green border-b-2 border-green' : 'text-white/60 hover:text-white'}`}
                         >
-                            {tab === 'categories' ? 'Categories & Groups' : 'Other Settings'}
+                            {tab === 'categories' ? 'Categories & Groups' : 'Budget Settings'}
                         </button>
                     ))}
                 </div>
@@ -1113,21 +1134,21 @@ function EditMode({ onClose }: { onClose: () => void }) {
 
                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Avg. Monthly Income</p>
-                                    <p className="text-xl font-bold text-white">£{stats.avgMonthlyIncome.toFixed(2)}</p>
+                                    <p className="text-xl font-bold text-white">£{formatAmount(stats.avgMonthlyIncome)}</p>
                                 </div>
                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Current Monthly Goals</p>
-                                    <p className="text-xl font-bold text-green">£{stats.totalGoals.toFixed(2)}</p>
+                                    <p className="text-xl font-bold text-green">£{formatAmount(stats.totalGoals)}</p>
                                 </div>
 
                                 <div className="bg-white/[.04] p-2 rounded-xl border border-white/[.08]">
                                     <p className="text-white/50 text-xs uppercase tracking-wide mb-1">3-Month Avg. Spend</p>
-                                    <p className="text-xl font-bold text-reddy">£{stats.avgMonthlySpend.toFixed(2)}</p>
+                                    <p className="text-xl font-bold text-reddy">£{formatAmount(stats.avgMonthlySpend)}</p>
                                     {/* Over/Under spending indicator */}
                                     <p className={`text-xs mt-1 font-medium ${stats.avgMonthlySpend > stats.totalGoals ? 'text-reddy' : 'text-green'}`}>
                                         {stats.avgMonthlySpend > stats.totalGoals
-                                            ? `£${(stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
-                                            : `£${(stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
+                                            ? `£${thousandsSeparator ? (stats.avgMonthlySpend - stats.totalGoals).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.avgMonthlySpend - stats.totalGoals).toFixed(0)} over goals`
+                                            : `£${thousandsSeparator ? (stats.totalGoals - stats.avgMonthlySpend).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : (stats.totalGoals - stats.avgMonthlySpend).toFixed(0)} under goals`
                                         }
                                     </p>
                                 </div>
@@ -1149,6 +1170,18 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                 className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${hideBudgetValues ? 'bg-green' : 'bg-white/20'}`}
                                             >
                                                 <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${hideBudgetValues ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-white/[.03] rounded-lg">
+                                            <div>
+                                                <h4 className="font-medium text-white">Thousands Separator</h4>
+                                                <p className="text-sm text-white/60 mt-1">Show a comma for thousands (e.g. £1,234.56 instead of £1234.56)</p>
+                                            </div>
+                                            <button
+                                                onClick={toggleThousandsSeparator}
+                                                className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${thousandsSeparator ? 'bg-green' : 'bg-white/20'}`}
+                                            >
+                                                <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${thousandsSeparator ? 'translate-x-5' : 'translate-x-0.5'}`} />
                                             </button>
                                         </div>
                                         <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">

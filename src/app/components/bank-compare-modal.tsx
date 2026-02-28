@@ -134,11 +134,16 @@ export default function BankCompareModal({
     }, [isOpen]);
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-GB', {
-            style: 'currency',
-            currency: 'GBP',
-            minimumFractionDigits: 2
-        }).format(amount);
+        const useThousandsSeparator = typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true';
+        if (useThousandsSeparator) {
+            return new Intl.NumberFormat('en-GB', {
+                style: 'currency',
+                currency: 'GBP',
+                minimumFractionDigits: 2
+            }).format(amount);
+        }
+        const abs = Math.abs(amount);
+        return `${amount < 0 ? '-' : ''}£${abs.toFixed(2)}`;
     };
 
     const handleCompare = async () => {

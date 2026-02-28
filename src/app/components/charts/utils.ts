@@ -2,13 +2,49 @@
 import { addDays, format, startOfDay, endOfDay, startOfMonth, startOfYear } from 'date-fns';
 import { Assignment, Transaction } from './types';
 
+export const CURRENCIES: { value: string; symbol: string; label: string }[] = [
+  { value: 'GBP', symbol: '£', label: '£ GBP' },
+  { value: 'USD', symbol: '$', label: '$ USD' },
+  { value: 'EUR', symbol: '€', label: '€ EUR' },
+  { value: 'JPY', symbol: '¥', label: '¥ JPY' },
+  { value: 'CAD', symbol: 'CA$', label: 'CA$ CAD' },
+  { value: 'AUD', symbol: 'A$', label: 'A$ AUD' },
+  { value: 'CHF', symbol: 'Fr', label: 'Fr CHF' },
+  { value: 'SEK', symbol: 'kr', label: 'kr SEK' },
+  { value: 'NOK', symbol: 'kr', label: 'kr NOK' },
+  { value: 'DKK', symbol: 'kr', label: 'kr DKK' },
+  { value: 'PLN', symbol: 'zł', label: 'zł PLN' },
+  { value: 'INR', symbol: '₹', label: '₹ INR' },
+  { value: 'BRL', symbol: 'R$', label: 'R$ BRL' },
+  { value: 'MXN', symbol: 'MX$', label: 'MX$ MXN' },
+  { value: 'SGD', symbol: 'S$', label: 'S$ SGD' },
+  { value: 'HKD', symbol: 'HK$', label: 'HK$ HKD' },
+  { value: 'NZD', symbol: 'NZ$', label: 'NZ$ NZD' },
+  { value: 'ZAR', symbol: 'R', label: 'R ZAR' },
+];
+
+export const getCurrencySymbol = (): string => {
+  if (typeof window === 'undefined') return '£';
+  const code = localStorage.getItem('currency') || 'GBP';
+  return CURRENCIES.find(c => c.value === code)?.symbol ?? '£';
+};
+
 export const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
+  const useThousandsSeparator = typeof window !== 'undefined' && localStorage.getItem('thousandsSeparator') === 'true';
+  const currencyCode = typeof window !== 'undefined' ? (localStorage.getItem('currency') || 'GBP') : 'GBP';
+  const symbol = CURRENCIES.find(c => c.value === currencyCode)?.symbol ?? '£';
+  if (useThousandsSeparator) {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+  // No thousands separator — use symbol but suppress grouping
+  const abs = Math.abs(amount);
+  const formatted = abs.toFixed(2);
+  return `${amount < 0 ? '-' : ''}${symbol}${formatted}`;
 };
 
 export const calculateDateRange = (
