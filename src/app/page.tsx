@@ -402,17 +402,14 @@ export default function Landing() {
 
                         <div className="space-y-3">
                             <Link
-                                href="https://pro.cashcat.app/checkout"
+                                href="/signup"
                                 className="block w-full py-4 rounded-xl font-bold bg-green text-black hover:bg-green-dark transition-colors text-center shadow-[0_0_20px_rgba(132,214,132,0.3)]"
                             >
-                                Buy CashCat Pro
+                                Get Started
                             </Link>
-                            <Link
-                                href="https://pro.cashcat.app"
-                                className="block w-full py-2 rounded-xl text-sm font-medium text-white/60 hover:text-white transition-colors text-center"
-                            >
-                                View Storefront
-                            </Link>
+                            <p className="text-white/40 text-sm text-center">
+                                Upgrade to Pro anytime from within the app
+                            </p>
                         </div>
                     </div>
                 </div>

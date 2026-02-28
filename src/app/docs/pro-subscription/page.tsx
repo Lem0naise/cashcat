@@ -66,13 +66,45 @@ export default function ProSubscriptionDocs() {
 
             <h2 className="text-2xl font-bold mb-4 mt-8">How to Upgrade</h2>
             <p className="mb-4 text-white/80">
-                You can easily subscribe to CashCat Pro via Lemon Squeezy, our merchant of record. We offer secure processing and instant access upon purchase.
+                To upgrade to CashCat Pro, make sure you are signed into your CashCat account first, then upgrade from within the app. This ensures your purchase is securely linked to your account.
             </p>
-            <ul className="mb-8 text-white/80">
-                <li>Navigate to <Link href="/pricing" className="text-green hover:underline">the Pricing Page</Link> for an overview.</li>
-                <li>Check out securely at <Link href="https://pro.cashcat.app/checkout" className="text-green hover:underline">CashCat Checkout</Link>.</li>
-                <li>Access your customer portal to manage details via <Link href="https://pro.cashcat.app" className="text-green hover:underline">pro.cashcat.app</Link>.</li>
+            <ul className="mb-12 text-white/80">
+                <li>Sign in (or create a free account) at <Link href="/login" className="text-green hover:underline">cashcat.app/login</Link>.</li>
+                <li>Upgrade from within the app — look for the Pro upgrade prompts or visit your account settings.</li>
+                <li>Manage your subscription or billing via <Link href="https://pro.cashcat.app" className="text-green hover:underline">pro.cashcat.app</Link>.</li>
             </ul>
+
+            <h2 className="text-2xl font-bold mb-4 mt-8">Troubleshooting Your Purchase</h2>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-bold text-yellow-400 mb-2 mt-0">Purchased Pro before creating an account?</h3>
+                <p className="text-white/80 text-sm mb-3">
+                    CashCat Pro must be purchased while signed in so that your subscription can be linked to your account. If you completed a Lemon Squeezy checkout without being logged in first, don't worry — your purchase is not lost.
+                </p>
+                <p className="text-white/80 text-sm mb-4">
+                    Simply get in touch and we'll manually attach your purchase to your account straight away. Please include the email address you used during checkout.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <a
+                        href="mailto:cashcat@indigonolan.com"
+                        className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-lg font-bold text-sm hover:bg-yellow-500/30 transition-colors no-underline"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        cashcat@indigonolan.com
+                    </a>
+                    <a
+                        href="mailto:support@lemonaise.dev"
+                        className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-lg font-bold text-sm hover:bg-yellow-500/30 transition-colors no-underline"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        support@lemonaise.dev
+                    </a>
+                </div>
+            </div>
         </article>
     );
 }

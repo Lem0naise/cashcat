@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Common Questions - CashCat Docs',
-  description: 'Frequently asked questions about using CashCat for budgeting and financial management.',
+    title: 'Common Questions - CashCat Docs',
+    description: 'Frequently asked questions about using CashCat for budgeting and financial management.',
 };
 
 export default function CommonQuestions() {
@@ -18,11 +18,11 @@ export default function CommonQuestions() {
             {/* Getting started questions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Getting Started</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">How much money should I budget for each category?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Start by looking at your last 2-3 months of spending to see where your money actually goes. 
+                        Start by looking at your last 2-3 months of spending to see where your money actually goes.
                         Use these amounts as your initial budget, then adjust based on your goals and priorities.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -33,7 +33,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What if I don't have much money to budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Budgeting is even more important when money is tight! Start by tracking where every penny goes, 
+                        Budgeting is even more important when money is tight! Start by tracking where every penny goes,
                         then look for small areas to cut back. Even budgeting £50 is better than not budgeting at all.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -44,7 +44,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Do I need to track every single purchase?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Yes, for the best results. Small purchases add up quickly and can derail your budget. 
+                        Yes, for the best results. Small purchases add up quickly and can derail your budget.
                         However, if tracking every expense feels overwhelming, start with purchases over £5 or £10.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -56,11 +56,11 @@ export default function CommonQuestions() {
             {/* Budgeting questions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Budgeting Process</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What happens if I overspend in a category?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Don't panic! Move money from another category to cover the overspending. The key is keeping 
+                        Don't panic! Move money from another category to cover the overspending. The key is keeping
                         your total budget balanced. This flexibility is what makes budgeting sustainable.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -71,7 +71,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">How often should I update my budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Review your budget monthly and make adjustments based on what you learned. 
+                        Review your budget monthly and make adjustments based on what you learned.
                         For daily management, check your category balances weekly to stay on track.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -82,7 +82,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Should I budget money that I'm saving?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Absolutely! Savings goals should be treated as expenses in your budget. This includes 
+                        Absolutely! Savings goals should be treated as expenses in your budget. This includes
                         emergency funds, retirement contributions, and saving for specific goals like vacations.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -94,11 +94,11 @@ export default function CommonQuestions() {
             {/* Technical questions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Using CashCat</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Can I connect my bank accounts automatically?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Currently, CashCat requires manual transaction entry. 
+                        Currently, CashCat requires manual transaction entry.
                         This also helps you stay more aware of your spending by actively recording each transaction. We are considering adding bank account integration in the future.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -109,7 +109,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">How do I handle shared expenses with roommates or partners?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        For shared expenses, record your portion in the appropriate category. For example, if you split 
+                        For shared expenses, record your portion in the appropriate category. For example, if you split
                         a £50 dinner bill, record £25 in your "Dining Out" category.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -120,17 +120,32 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">What about cash transactions?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        It depends. If you withdraw it after you started CashCat, you can either record it as a transaction whenever you withdraw cash from an ATM. 
+                        It depends. If you withdraw it after you started CashCat, you can either record it as a transaction whenever you withdraw cash from an ATM.
                         Alternatively, when you spend the cash, you can record those purchases in their appropriate categories. It depends how commited you are to budgeting!
                     </p>
-                    
+
+                </div>
+
+                <div className="p-4 md:p-6 left-envelope-card rounded-lg border border-yellow-500/20">
+                    <h3 className="text-lg md:text-xl font-semibold text-yellow-400 mb-2 md:mb-3">I bought CashCat Pro but it's not showing up in my account.</h3>
+                    <p className="text-white/70 text-sm md:text-base mb-3">
+                        This usually happens if the purchase was completed before signing into CashCat, so we couldn't link it to your account automatically. Your purchase is not lost!
+                    </p>
+                    <p className="text-white/70 text-sm md:text-base mb-4">
+                        Email us with the address you used during checkout and we'll attach it to your account straight away:
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <a href="mailto:cashcat@indigonolan.com" className="text-yellow-400 hover:text-yellow-300 underline text-sm font-medium">cashcat@indigonolan.com</a>
+                        <span className="text-white/30 hidden sm:inline">or</span>
+                        <a href="mailto:support@lemonaise.dev" className="text-yellow-400 hover:text-yellow-300 underline text-sm font-medium">support@lemonaise.dev</a>
+                    </div>
                 </div>
             </div>
 
             {/* Troubleshooting questions */}
             <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                 <h2 className="text-xl md:text-2xl font-bold mb-4">Common Challenges</h2>
-                
+
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">I keep forgetting to track my purchases. What can I do?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
@@ -145,7 +160,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">My income varies each month. How do I budget?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Budget based on your lowest expected monthly income. Use higher-income months to build up 
+                        Budget based on your lowest expected monthly income. Use higher-income months to build up
                         buffers and save for leaner periods. Consider this an "income smoothing" strategy.
                     </p>
                     <p className="text-white/60 text-sm">
@@ -156,7 +171,7 @@ export default function CommonQuestions() {
                 <div className="p-4 md:p-6 left-envelope-card rounded-lg">
                     <h3 className="text-lg md:text-xl font-semibold text-green mb-2 md:mb-3">Budgeting feels restrictive. How can I make it more enjoyable?</h3>
                     <p className="text-white/70 text-sm md:text-base mb-3">
-                        Remember that budgeting gives you permission to spend, not restrictions. Include "fun money" 
+                        Remember that budgeting gives you permission to spend, not restrictions. Include "fun money"
                         in your budget so you can spend guilt-free. Focus on funding your values and priorities.
                     </p>
                     <p className="text-white/60 text-sm">

@@ -184,7 +184,33 @@ export default function Troubleshooting() {
                 </div>
             </div>
 
+            {/* Subscription & billing issues */}
+            <div className="space-y-4 md:space-y-6 mb-8 md:mb-12">
+                <h2 className="text-xl md:text-2xl font-bold mb-4">Subscription &amp; Billing Issues</h2>
+
+                <div className="p-4 md:p-6 glass-card rounded-lg border border-yellow-500/20">
+                    <h3 className="text-lg md:text-xl font-semibold text-yellow-400 mb-2 md:mb-3">I bought CashCat Pro but it's not showing up in my account</h3>
+                    <p className="text-white/70 text-sm md:text-base mb-3">
+                        This usually happens if the Lemon Squeezy checkout was completed before signing into CashCat, so we couldn't automatically link the purchase to your account. Your purchase is <strong className="text-white">not lost</strong>.
+                    </p>
+                    <div className="bg-yellow-500/10 p-3 rounded-lg mt-3 mb-4">
+                        <p className="text-yellow-300 text-sm font-medium mb-1">To fix this:</p>
+                        <ol className="text-yellow-200/80 text-sm space-y-1 list-decimal list-inside">
+                            <li>Create or sign into your CashCat account at <Link href="/login" className="underline hover:text-yellow-300">/login</Link>.</li>
+                            <li>Email us with the email address you used during checkout.</li>
+                            <li>We'll manually attach the purchase to your account straight away.</li>
+                        </ol>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <a href="mailto:cashcat@indigonolan.com" className="text-yellow-400 hover:text-yellow-300 underline text-sm font-medium">cashcat@indigonolan.com</a>
+                        <span className="text-white/30 hidden sm:inline">or</span>
+                        <a href="mailto:support@lemonaise.dev" className="text-yellow-400 hover:text-yellow-300 underline text-sm font-medium">support@lemonaise.dev</a>
+                    </div>
+                </div>
+            </div>
+
             {/* Getting help */}
+
             <div className="p-4 md:p-6 glass-card-blue rounded-lg mb-8 md:mb-12">
                 <h3 className="text-lg md:text-xl font-semibold text-green mb-3 md:mb-4">Still Need Help?</h3>
                 <p className="text-white/70 text-sm md:text-base mb-4">
