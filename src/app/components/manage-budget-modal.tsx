@@ -939,7 +939,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: newCurrency } }));
         }
         if (userId) {
-            supabase.from('settings').update({ currency: newCurrency }).eq('id', userId);
+            supabase.from('settings').upsert({ id: userId, currency: newCurrency }, { onConflict: 'id' });
         }
     };
 
