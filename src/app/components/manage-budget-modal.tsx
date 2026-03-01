@@ -58,6 +58,7 @@ const TEMPLATES: Template[] = [
                 name: 'Food', ratio: 0.25, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
                     { name: 'Dining', goal_type: 'spending' },
+                    { name: 'Lunch & Drinks', goal_type: 'spending' },
                 ]
             },
             {
@@ -91,6 +92,7 @@ const TEMPLATES: Template[] = [
                 name: 'Food', ratio: 0.15, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
                     { name: 'Dining', goal_type: 'spending' },
+                    { name: 'Lunch & Drinks', goal_type: 'spending' },
                 ]
             },
             {
@@ -131,6 +133,7 @@ const TEMPLATES: Template[] = [
                 name: 'Food', ratio: 0.20, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
                     { name: 'Dining', goal_type: 'spending' },
+                    { name: 'Lunch & Drinks', goal_type: 'spending' },
                 ]
             },
             {
@@ -166,6 +169,7 @@ const TEMPLATES: Template[] = [
                 name: 'Food', ratio: 0.20, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
                     { name: 'Dining', goal_type: 'spending' },
+                    { name: 'Lunch & Drinks', goal_type: 'spending' },
                 ]
             },
             {
@@ -206,6 +210,7 @@ const TEMPLATES: Template[] = [
                 name: 'Food', ratio: 0.15, categories: [
                     { name: 'Groceries', goal_type: 'spending' },
                     { name: 'Dining', goal_type: 'spending' },
+                    { name: 'Lunch & Drinks', goal_type: 'spending' },
                 ]
             },
             {
