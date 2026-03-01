@@ -31,7 +31,7 @@ const fetchCategories = async (userId: string): Promise<CategoryWithGroup[]> => 
 export const useCategories = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['categories'],
+        queryKey: ['categories', userId],
         queryFn: () => fetchCategories(userId!),
         enabled: !!userId,
     });

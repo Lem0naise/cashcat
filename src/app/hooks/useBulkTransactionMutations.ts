@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
-import { getCachedUserId } from './useAuthUserId';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 import type { Database } from '@/types/supabase';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
@@ -113,16 +113,17 @@ const bulkReassignVendor = async ({
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-const invalidate = (queryClient: ReturnType<typeof useQueryClient>) => {
-    queryClient.invalidateQueries({ queryKey: ['transactions'] });
+const invalidate = (queryClient: ReturnType<typeof useQueryClient>, userId: string | null) => {
+    queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
 };
 
 export const useBulkUpdateTransactions = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: bulkUpdateTransactions,
         onMutate: async ({ ids, updates }) => {
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
             const prev = queryClient.getQueryData<Transaction[]>(['transactions']);
             queryClient.setQueryData<Transaction[]>(['transactions'], (old) =>
                 old?.map((tx) => (ids.includes(tx.id) ? { ...tx, ...updates } : tx)) ?? []
@@ -132,16 +133,17 @@ export const useBulkUpdateTransactions = () => {
         onError: (_err, _vars, ctx) => {
             if (ctx?.prev) queryClient.setQueryData(['transactions'], ctx.prev);
         },
-        onSettled: () => invalidate(queryClient),
+        onSettled: () => invalidate(queryClient, userId),
     });
 };
 
 export const useBulkDeleteTransactions = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: bulkDeleteTransactions,
         onMutate: async (ids) => {
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
             const prev = queryClient.getQueryData<Transaction[]>(['transactions']);
             queryClient.setQueryData<Transaction[]>(['transactions'], (old) =>
                 old?.filter((tx) => !ids.includes(tx.id)) ?? []
@@ -151,24 +153,26 @@ export const useBulkDeleteTransactions = () => {
         onError: (_err, _vars, ctx) => {
             if (ctx?.prev) queryClient.setQueryData(['transactions'], ctx.prev);
         },
-        onSettled: () => invalidate(queryClient),
+        onSettled: () => invalidate(queryClient, userId),
     });
 };
 
 export const useSetVendorCategory = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: setVendorCategory,
-        onSettled: () => invalidate(queryClient),
+        onSettled: () => invalidate(queryClient, userId),
     });
 };
 
 export const useBulkReassignVendor = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: bulkReassignVendor,
         onMutate: async ({ ids, vendorId, vendorName }) => {
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
             const prev = queryClient.getQueryData<Transaction[]>(['transactions']);
             queryClient.setQueryData<Transaction[]>(['transactions'], (old) =>
                 old?.map((tx) =>
@@ -180,6 +184,6 @@ export const useBulkReassignVendor = () => {
         onError: (_err, _vars, ctx) => {
             if (ctx?.prev) queryClient.setQueryData(['transactions'], ctx.prev);
         },
-        onSettled: () => invalidate(queryClient),
+        onSettled: () => invalidate(queryClient, userId),
     });
 };

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
-import { getCachedUserId } from './useAuthUserId';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 
 type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 type Transaction = Database['public']['Tables']['transactions']['Row'];
@@ -24,6 +24,7 @@ const createTransaction = async (newTransaction: TransactionInsert): Promise<Tra
 
 // Custom hook for creating transactions with optimistic updates
 export const useCreateTransaction = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -34,7 +35,7 @@ export const useCreateTransaction = () => {
         // Optimistic update - immediately add to cache
         onMutate: async (newTransaction) => {
             // Cancel any outgoing refetches
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
 
             // Snapshot the previous value
             const previousTransactions = queryClient.getQueryData<Transaction[]>(['transactions']);
@@ -62,7 +63,7 @@ export const useCreateTransaction = () => {
 
         // Always refetch after mutation settles
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
         },
     });
 };

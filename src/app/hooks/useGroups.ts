@@ -23,7 +23,7 @@ const fetchGroups = async (userId: string): Promise<Group[]> => {
 export const useGroups = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['groups'],
+        queryKey: ['groups', userId],
         queryFn: () => fetchGroups(userId!),
         enabled: !!userId,
     });

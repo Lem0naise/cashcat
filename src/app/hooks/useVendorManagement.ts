@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
-import { getCachedUserId } from './useAuthUserId';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 import type { Database } from '@/types/supabase';
 
 type Vendor = Database['public']['Tables']['vendors']['Row'];
@@ -124,41 +124,45 @@ const pruneOrphanVendors = async ({ vendorIds }: { vendorIds: string[] }) => {
 const invalidationKeys = ['vendors', 'transactions'] as const;
 
 export const useRenameVendor = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: renameVendor,
         onSettled: () => {
-            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key, userId] }));
         },
     });
 };
 
 export const useMergeVendors = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: mergeVendors,
         onSettled: () => {
-            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key, userId] }));
         },
     });
 };
 
 export const useDeleteVendor = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: deleteVendor,
         onSettled: () => {
-            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key, userId] }));
         },
     });
 };
 
 export const usePruneOrphanVendors = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: pruneOrphanVendors,
         onSettled: () => {
-            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+            invalidationKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key, userId] }));
         },
     });
 };

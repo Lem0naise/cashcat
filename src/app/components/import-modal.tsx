@@ -174,6 +174,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
     const { data: groups = [] } = useGroups();
     const { data: existingTransactions = [] } = useTransactions();
     const queryClient = useQueryClient();
+    const _currentUserId = getCachedUserId();
     const { importCount } = useUsage();
     const { subscription } = useSubscription();
 
@@ -278,15 +279,15 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
     useEffect(() => {
         if (!isOpen) return;
         const supabase = createClient();
-        const userId = getCachedUserId();
-        if (!userId) return;
+        
+        if (!_currentUserId) return;
         let isCancelled = false;
 
         const loadMappings = async () => {
             const { data, error } = await supabase
                 .from('import_mappings')
                 .select('id, match_type, match_value, match_normalized, category_id, group_id, user_id')
-                .eq('user_id', userId);
+                .eq('user_id', _currentUserId);
 
             if (error) {
                 console.error('Failed to load import mappings:', error);
@@ -828,8 +829,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
     // ── Import execution ──
     const executeImport = useCallback(async () => {
         const supabase = createClient();
-        const userId = getCachedUserId();
-        if (!userId) {
+        
+        if (!_currentUserId) {
             toast.error('Not authenticated');
             return;
         }
@@ -863,7 +864,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                         .insert({
                             name: singleAccountName.trim(),
                             type: singleAccountType,
-                            user_id: userId,
+                            user_id: _currentUserId!,
                             is_active: true,
                             is_default: false,
                         })
@@ -881,7 +882,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                             .insert({
                                 name: mapping.csvAccountName,
                             type: mapping.accountType,
-                                user_id: userId,
+                                user_id: _currentUserId!,
                                 is_active: true,
                                 is_default: false,
                             })
@@ -913,7 +914,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     .from('groups')
                     .insert({
                         name,
-                        user_id: userId,
+                        user_id: _currentUserId!,
                     })
                     .select()
                     .single();
@@ -932,7 +933,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     .insert({
                         name,
                         group: groupId,
-                        user_id: userId,
+                        user_id: _currentUserId!,
                         timeframe: { type: 'monthly' },
                     })
                     .select()
@@ -1016,7 +1017,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     match_normalized: normalizeKey(mapping.csvCategoryName),
                     category_id: categoryId,
                     group_id: categoryGroupIdMap.get(key) || mapping.cashcatGroupId || null,
-                    user_id: userId,
+                    user_id: _currentUserId!,
                 });
             });
             vendorMappings.forEach(mapping => {
@@ -1029,7 +1030,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                     match_normalized: normalizeVendorKey(mapping.vendorName),
                     category_id: categoryId,
                     group_id: vendorGroupIdMap.get(mapping.vendorName) || mapping.cashcatGroupId || null,
-                    user_id: userId,
+                    user_id: _currentUserId!,
                 });
             });
 
@@ -1082,7 +1083,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                         description: tx.description || undefined,
                         account_id: accountId,
                         category_id: categoryId || undefined,
-                        user_id: userId,
+                        user_id: _currentUserId!,
                     };
                 });
 
@@ -1097,17 +1098,18 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
             }
 
             // Invalidate queries to refresh data
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
-            queryClient.invalidateQueries({ queryKey: ['groups'] });
-            queryClient.invalidateQueries({ queryKey: ['vendors'] });
+            
+            queryClient.invalidateQueries({ queryKey: ['transactions', _currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['accounts', _currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['categories', _currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['groups', _currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['vendors', _currentUserId] });
 
             toast.success(`Successfully imported ${toImport.length} transactions`);
 
             // Increment usage counter for free-tier gating
             await incrementUsage('import_count');
-            queryClient.invalidateQueries({ queryKey: ['usage'] });
+            queryClient.invalidateQueries({ queryKey: ['usage', _currentUserId] });
 
             onImportComplete(Array.from(accountIdMap.values()));
             onClose();

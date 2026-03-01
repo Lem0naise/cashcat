@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
-import { getCachedUserId } from './useAuthUserId';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 
 type Account = Database['public']['Tables']['accounts']['Row'];
 
 // Create account mutation
 export const useCreateAccount = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -53,14 +54,15 @@ export const useCreateAccount = () => {
             return newAccount;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
         },
     });
 };
 
 // Update account mutation
 export const useUpdateAccount = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -82,7 +84,7 @@ export const useUpdateAccount = () => {
             return data;
         },
         onMutate: async ({ id, updates }) => {
-            await queryClient.cancelQueries({ queryKey: ['accounts'] });
+            await queryClient.cancelQueries({ queryKey: ['accounts', userId] });
             const previous = queryClient.getQueryData<Account[]>(['accounts']);
             queryClient.setQueryData<Account[]>(['accounts'], (old) =>
                 old?.map((a) => (a.id === id ? { ...a, ...updates } : a)) || []
@@ -95,13 +97,14 @@ export const useUpdateAccount = () => {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
         },
     });
 };
 
 // Delete account mutation
 export const useDeleteAccount = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -117,7 +120,7 @@ export const useDeleteAccount = () => {
             if (error) throw error;
         },
         onMutate: async (id) => {
-            await queryClient.cancelQueries({ queryKey: ['accounts'] });
+            await queryClient.cancelQueries({ queryKey: ['accounts', userId] });
             const previous = queryClient.getQueryData<Account[]>(['accounts']);
             queryClient.setQueryData<Account[]>(['accounts'], (old) =>
                 old?.filter((a) => a.id !== id) || []
@@ -131,14 +134,15 @@ export const useDeleteAccount = () => {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
         },
     });
 };
 
 // Set default account mutation
 export const useSetDefaultAccount = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -166,7 +170,7 @@ export const useSetDefaultAccount = () => {
             if (setDefaultError) throw setDefaultError;
         },
         onMutate: async (accountId) => {
-            await queryClient.cancelQueries({ queryKey: ['accounts'] });
+            await queryClient.cancelQueries({ queryKey: ['accounts', userId] });
             const previous = queryClient.getQueryData<Account[]>(['accounts']);
             queryClient.setQueryData<Account[]>(['accounts'], (old) =>
                 old?.map((a) => ({ ...a, is_default: a.id === accountId })) || []
@@ -180,7 +184,7 @@ export const useSetDefaultAccount = () => {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
         },
     });
 };

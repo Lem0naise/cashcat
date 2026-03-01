@@ -22,7 +22,7 @@ const fetchAssignments = async (userId: string): Promise<Assignment[]> => {
 export const useAssignments = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['assignments'],
+        queryKey: ['assignments', userId],
         queryFn: () => fetchAssignments(userId!),
         enabled: !!userId,
     });

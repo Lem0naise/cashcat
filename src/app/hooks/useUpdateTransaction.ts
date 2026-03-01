@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
+import { useAuthUserId } from './useAuthUserId';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type TransactionUpdate = Partial<Database['public']['Tables']['transactions']['Update']>;
@@ -27,6 +28,7 @@ const updateTransaction = async ({ id, updates }: UpdateTransactionParams): Prom
 
 // Custom hook for updating transactions with optimistic updates
 export const useUpdateTransaction = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -35,7 +37,7 @@ export const useUpdateTransaction = () => {
         networkMode: 'offlineFirst',
 
         onMutate: async ({ id, updates }) => {
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
 
             const previousTransactions = queryClient.getQueryData<Transaction[]>(['transactions']);
 
@@ -55,7 +57,7 @@ export const useUpdateTransaction = () => {
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
         },
     });
 };

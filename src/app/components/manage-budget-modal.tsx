@@ -259,6 +259,7 @@ const GOAL_TYPE_DESCRIPTIONS: Record<string, string> = {
 function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (reason?: string) => void; onImportCSV?: () => void; onAddAccounts?: () => void }) {
     const supabase = createClient();
     const queryClient = useQueryClient();
+    const userId = useAuthUserId();
     const [step, setStep] = useState(1);
     const TOTAL_STEPS = 4;
     // Step labels for new order:
@@ -407,8 +408,8 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
             }
             // Invalidate so budget page sees new categories immediately
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['categories'] }),
-                queryClient.invalidateQueries({ queryKey: ['groups'] }),
+                queryClient.invalidateQueries({ queryKey: ['categories', userId] }),
+                queryClient.invalidateQueries({ queryKey: ['groups', userId] }),
             ]);
             setStep(4); // Add bank accounts (new step 4)
         } catch (err) {

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
-import { getCachedUserId } from './useAuthUserId';
+import { useAuthUserId, getCachedUserId } from './useAuthUserId';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 
@@ -34,6 +34,7 @@ const updateAssignment = async ({ categoryId, month, assigned }: UpdateAssignmen
 
 // Custom hook for updating assignments with optimistic updates
 export const useUpdateAssignment = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -42,7 +43,7 @@ export const useUpdateAssignment = () => {
         networkMode: 'offlineFirst',
 
         onMutate: async ({ categoryId, month, assigned }) => {
-            await queryClient.cancelQueries({ queryKey: ['assignments'] });
+            await queryClient.cancelQueries({ queryKey: ['assignments', userId] });
 
             const previousAssignments = queryClient.getQueryData<Assignment[]>(['assignments']);
 
@@ -84,7 +85,7 @@ export const useUpdateAssignment = () => {
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['assignments'] });
+            queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
         },
     });
 };

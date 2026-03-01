@@ -72,7 +72,7 @@ const fetchTransactions = async (userId: string): Promise<TransactionWithDetails
 export const useTransactions = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['transactions'],
+        queryKey: ['transactions', userId],
         queryFn: () => fetchTransactions(userId!),
         enabled: !!userId,
     });

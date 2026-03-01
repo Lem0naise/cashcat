@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
 import { incrementUsage } from '@/app/hooks/useUsage';
 import { useUsage, FREE_EXPORT_LIMIT } from '@/app/hooks/useUsage';
+import { useAuthUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -24,6 +25,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const { data: accounts = [] } = useAccounts();
     const { data: transfers = [] } = useTransfers();
     const queryClient = useQueryClient();
+    const userId = useAuthUserId();
     const { exportCount } = useUsage();
     const { subscription } = useSubscription();
 
@@ -225,7 +227,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
 
             // Increment usage counter for free-tier gating
             await incrementUsage('export_count');
-            queryClient.invalidateQueries({ queryKey: ['usage'] });
+            queryClient.invalidateQueries({ queryKey: ['usage', userId] });
 
             onClose();
         } catch (error) {
