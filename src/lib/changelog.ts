@@ -21,7 +21,24 @@ export const changelog: Major[] = [
     {
         version: "0",
         minors: [
+            {
+                version: "14",
+                patches: [
+                    {
+                        version: "0.14.0",
+                        date: "March 1, 2026",
+                        features: [
+                            "Vendor name management",
+                            "Bulk editing of transactions",
+                            "Add vendor name normalisation"
+                        ],
+                        bugfixes: [
+                            "Fixed vendor mapping bugs"
+                        ]
+                    },
 
+                ]
+            },
             {
                 version: "13",
                 patches: [

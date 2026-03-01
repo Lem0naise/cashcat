@@ -34,7 +34,7 @@ const fetchTransfers = async (userId: string): Promise<TransferWithAccounts[]> =
 export const useTransfers = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['transfers'],
+        queryKey: ['transfers', userId],
         queryFn: () => fetchTransfers(userId!),
         enabled: !!userId,
     });
@@ -42,6 +42,7 @@ export const useTransfers = () => {
 
 // Create transfer mutation
 export const useCreateTransfer = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -71,13 +72,14 @@ export const useCreateTransfer = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transfers'] });
+            queryClient.invalidateQueries({ queryKey: ['transfers', userId] });
         },
     });
 };
 
 // Update transfer mutation
 export const useUpdateTransfer = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -105,13 +107,14 @@ export const useUpdateTransfer = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transfers'] });
+            queryClient.invalidateQueries({ queryKey: ['transfers', userId] });
         },
     });
 };
 
 // Delete transfer mutation
 export const useDeleteTransfer = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
     const supabase = createClient();
 
@@ -127,7 +130,7 @@ export const useDeleteTransfer = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transfers'] });
+            queryClient.invalidateQueries({ queryKey: ['transfers', userId] });
         },
     });
 };

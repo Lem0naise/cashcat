@@ -46,15 +46,9 @@ export default function SupabaseProvider({
       return null;
     }
   });
-  // If we have a cached user, start with loading=false so app renders immediately
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    try {
-      return !localStorage.getItem(USER_CACHE_KEY);
-    } catch {
-      return true;
-    }
-  });
+  // Instead of syncing with localStorage to render instantly, we start with loading=true
+  // so that the app waits for getSession to complete and avoids unauthenticated requests
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const queryClient = useQueryClient();
   const router = useRouter();

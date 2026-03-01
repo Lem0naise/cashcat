@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
 import { incrementUsage } from '@/app/hooks/useUsage';
 import { useUsage, FREE_EXPORT_LIMIT } from '@/app/hooks/useUsage';
+import { useAuthUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -24,6 +25,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const { data: accounts = [] } = useAccounts();
     const { data: transfers = [] } = useTransfers();
     const queryClient = useQueryClient();
+    const userId = useAuthUserId();
     const { exportCount } = useUsage();
     const { subscription } = useSubscription();
 
@@ -225,7 +227,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
 
             // Increment usage counter for free-tier gating
             await incrementUsage('export_count');
-            queryClient.invalidateQueries({ queryKey: ['usage'] });
+            queryClient.invalidateQueries({ queryKey: ['usage', userId] });
 
             onClose();
         } catch (error) {
@@ -254,7 +256,10 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
         };
 
         return (
-            <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div
+                className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+                onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+            >
                 <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.15s_ease-out]">
                     <div className="p-8 flex flex-col items-center text-center space-y-6">
 
@@ -291,7 +296,10 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     }
     else {
         return (
-            <div className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div
+                className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+                onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+            >
                 <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
                     {/* Header */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#151515]">

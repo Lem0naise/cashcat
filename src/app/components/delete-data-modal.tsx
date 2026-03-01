@@ -174,7 +174,7 @@ export default function DeleteDataModal({ isOpen, onClose }: DeleteDataModalProp
             } else {
                 await deleteAllData(userId);
                 // Bust TanStack Query cache after full reset
-                queryClient.invalidateQueries({ queryKey: ['onboarding'] });
+                queryClient.invalidateQueries({ queryKey: ['onboarding', userId] });
                 queryClient.clear();
             }
         };

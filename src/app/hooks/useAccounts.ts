@@ -24,7 +24,7 @@ const fetchAccounts = async (userId: string): Promise<Account[]> => {
 export const useAccounts = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['accounts'],
+        queryKey: ['accounts', userId],
         queryFn: () => fetchAccounts(userId!),
         enabled: !!userId,
     });
@@ -48,7 +48,7 @@ const fetchAllAccounts = async (userId: string): Promise<Account[]> => {
 export const useAllAccounts = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['accounts', 'all'],
+        queryKey: ['accounts', 'all', userId],
         queryFn: () => fetchAllAccounts(userId!),
         enabled: !!userId,
     });

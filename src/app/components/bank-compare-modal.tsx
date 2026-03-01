@@ -55,33 +55,31 @@ export default function BankCompareModal({
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [correctionAmount, setCorrectionAmount] = useState('');
-    const [usableTransactions, setUsableTransactions] = useState(transactions);
     const { data: transfers = [] } = useTransfers();
-    const [usableTransfers, setUsableTransfers] = useState<TransferWithAccounts[]>([]);
     const [lastReconciliation, setLastReconciliation] = useState<{
         reconciled_at: string;
         bank_balance: number;
     } | null>(null);
 
+    // Derive filtered transactions/transfers from props — no state needed, avoids infinite loop
+    const usableTransactions = useMemo(() =>
+        transactions.filter(t => t.account_id === bankAccountId),
+        [transactions, bankAccountId]
+    );
+
+    const usableTransfers = useMemo(() =>
+        transfers.filter(t =>
+            t.from_account_id === bankAccountId || t.to_account_id === bankAccountId
+        ),
+        [transfers, bankAccountId]
+    );
+
     // Calculate budget balance from transactions and transfers
     useEffect(() => {
-        // filter transactions by the current bank account
-        const filteredTransactions = (transactions.filter(transaction =>
-            transaction.account_id === bankAccountId
-        ));
-
-        // filter transfers by the current bank account
-        const filteredTransfers = transfers.filter(transfer =>
-            transfer.from_account_id === bankAccountId || transfer.to_account_id === bankAccountId
-        );
-
-        setUsableTransactions(filteredTransactions);
-        setUsableTransfers(filteredTransfers);
-
-        const transactionBalance = filteredTransactions
+        const transactionBalance = usableTransactions
             .reduce((total, transaction) => total + transaction.amount, 0);
 
-        const transferBalance = filteredTransfers.reduce((total, transfer) => {
+        const transferBalance = usableTransfers.reduce((total, transfer) => {
             if (transfer.to_account_id === bankAccountId) {
                 return total + transfer.amount;
             } else if (transfer.from_account_id === bankAccountId) {
@@ -91,7 +89,7 @@ export default function BankCompareModal({
         }, 0);
 
         setBudgetBalance(transactionBalance + transferBalance);
-    }, [transactions, transfers, bankAccountId]);
+    }, [usableTransactions, usableTransfers, bankAccountId]);
 
     // Fetch last reconciliation data
     useEffect(() => {

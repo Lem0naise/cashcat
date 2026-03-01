@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
+import { useAuthUserId } from './useAuthUserId';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -18,6 +19,7 @@ const deleteTransaction = async (id: string): Promise<void> => {
 
 // Custom hook for deleting transactions with optimistic updates
 export const useDeleteTransaction = () => {
+    const userId = useAuthUserId();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -26,7 +28,7 @@ export const useDeleteTransaction = () => {
         networkMode: 'offlineFirst',
 
         onMutate: async (id) => {
-            await queryClient.cancelQueries({ queryKey: ['transactions'] });
+            await queryClient.cancelQueries({ queryKey: ['transactions', userId] });
 
             const previousTransactions = queryClient.getQueryData<Transaction[]>(['transactions']);
 
@@ -46,7 +48,7 @@ export const useDeleteTransaction = () => {
         },
 
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
         },
     });
 };

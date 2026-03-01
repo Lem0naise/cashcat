@@ -23,7 +23,7 @@ const fetchVendors = async (userId: string): Promise<Vendor[]> => {
 export const useVendors = () => {
     const userId = useAuthUserId();
     return useQuery({
-        queryKey: ['vendors'],
+        queryKey: ['vendors', userId],
         queryFn: () => fetchVendors(userId!),
         enabled: !!userId,
     });

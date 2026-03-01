@@ -14,6 +14,8 @@ import AccountSelector from "../../components/account-selector";
 import AccountModal from "../../components/account-modal";
 import ExportModal from "../../components/export-modal";
 import ImportModal from "../../components/import-modal";
+import VendorManagerModal from "../../components/vendor-manager-modal";
+import BulkEditModal from "../../components/bulk-edit-modal";
 import { useTransactions, TransactionWithDetails } from '../../hooks/useTransactions';
 import { useTransfers } from '../../hooks/useTransfers';
 import { useCreateTransfer, useUpdateTransfer, useDeleteTransfer } from '../../hooks/useTransfers';
@@ -28,6 +30,8 @@ import { formatCurrency } from '../../components/charts/utils';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
 import QuickAddRow from '../../components/quick-add-row';
+import { useContextMenu } from '../../components/transaction-context-menu';
+import SwipeableRow from '../../components/swipeable-row';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -67,8 +71,13 @@ export default function Transactions() {
     const [postImportAccountId, setPostImportAccountId] = useState<string | null>(null);
     const [showPostImportReconcile, setShowPostImportReconcile] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showDesktopMenu, setShowDesktopMenu] = useState(false);
+    const [showVendorManager, setShowVendorManager] = useState(false);
+    const [showBulkEdit, setShowBulkEdit] = useState(false);
+    const [bulkEditUncategorised, setBulkEditUncategorised] = useState(false);
     const mobileSearchRef = useRef<HTMLInputElement>(null);
     const quickAddAmountRef = useRef<HTMLInputElement>(null);
+    const desktopMenuRef = useRef<HTMLDivElement>(null);
 
     const { subscription } = useSubscription();
     const { importCount, exportCount } = useUsage();
@@ -92,6 +101,47 @@ export default function Transactions() {
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
+    const { openMenu, Portal: contextMenuPortal } = useContextMenu();
+
+    // Delete confirmation state
+    const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+    const pendingDeleteCallback = useRef<(() => void) | null>(null);
+
+    // Stage a delete — shows confirmation UI instead of deleting immediately
+    const requestDelete = (id: string, fn: () => void) => {
+        pendingDeleteCallback.current = fn;
+        setConfirmingDeleteId(id);
+    };
+
+    const cancelDelete = () => {
+        setConfirmingDeleteId(null);
+        pendingDeleteCallback.current = null;
+    };
+
+    const confirmDelete = () => {
+        pendingDeleteCallback.current?.();
+        setConfirmingDeleteId(null);
+        pendingDeleteCallback.current = null;
+    };
+
+    // Quick-delete helpers — execute the actual mutation
+    const quickDeleteTransaction = async (id: string) => {
+        const promise = deleteMutation.mutateAsync(id);
+        await toast.promise(promise, {
+            loading: 'Deleting transaction...',
+            success: 'Transaction deleted',
+            error: 'Failed to delete transaction'
+        });
+    };
+
+    const quickDeleteTransfer = async (id: string) => {
+        const promise = deleteTransferMutation.mutateAsync(id);
+        await toast.promise(promise, {
+            loading: 'Deleting transfer...',
+            success: 'Transfer deleted',
+            error: 'Failed to delete transfer'
+        });
+    };
 
     // Global 'N' hotkey — focus the quick-add amount field on desktop
     useEffect(() => {
@@ -107,6 +157,18 @@ export default function Transactions() {
         document.addEventListener('keydown', handler);
         return () => document.removeEventListener('keydown', handler);
     }, []);
+
+    // Close desktop menu when clicking outside
+    useEffect(() => {
+        if (!showDesktopMenu) return;
+        const handler = (e: MouseEvent) => {
+            if (desktopMenuRef.current && !desktopMenuRef.current.contains(e.target as Node)) {
+                setShowDesktopMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showDesktopMenu]);
 
     const refetch = () => {
         refetchTransactions();
@@ -494,6 +556,39 @@ export default function Transactions() {
 
     return (
         <ProtectedRoute>
+            {contextMenuPortal}
+
+            {/* Mobile delete confirmation popup */}
+            {confirmingDeleteId && (
+                <>
+                    {/* backdrop — tap to cancel */}
+                    <div
+                        className="md:hidden fixed inset-0 z-[180] bg-transparent"
+                        onTouchStart={cancelDelete}
+                        onClick={cancelDelete}
+                    />
+                    <div className="md:hidden fixed bottom-0 inset-x-0 z-[190] pb-[env(safe-area-inset-bottom)] animate-[slideIn_0.18s_ease-out]">
+                        <div className="mx-4 mb-4 bg-[#1c1c1c] border border-white/10 rounded-2xl overflow-hidden shadow-2xl font-[family-name:var(--font-suse)]">
+                            <p className="text-sm text-white/50 text-center pt-4 pb-2 px-4">Delete this item? This cannot be undone.</p>
+                            <div className="flex border-t border-white/[.08]">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="flex-1 py-3.5 text-sm text-white/60 hover:bg-white/[.05] transition-colors border-r border-white/[.08]"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 py-3.5 text-sm font-semibold text-reddy hover:bg-reddy/10 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             <TransactionModalWrapper setShowModal={setShowModal} />
             <ExportModal
                 isOpen={showExportModal}
@@ -672,21 +767,53 @@ export default function Transactions() {
                                             </svg>
                                             <span className="text-sm">Export</span>
                                         </button>
-                                        <button
-                                            onClick={() => {
-                                                handleOpenImport();
-                                                setShowMobileMenu(false);
-                                            }}
-                                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            <span className="text-sm">Import</span>
-                                        </button>
-                                    </div>
+                                         <button
+                                             onClick={() => {
+                                                 handleOpenImport();
+                                                 setShowMobileMenu(false);
+                                             }}
+                                             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                         >
+                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                 <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                 <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                 <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                             </svg>
+                                             <span className="text-sm">Import</span>
+                                         </button>
+                                         <button
+                                              onClick={() => {
+                                                  setShowVendorManager(true);
+                                                  setShowMobileMenu(false);
+                                              }}
+                                              className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
+                                          >
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                  <circle cx="9" cy="7" r="4" />
+                                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                              </svg>
+                                              <span className="text-sm">Manage Vendors</span>
+                                          </button>
+                                          <button
+                                              onClick={() => {
+                                                  setShowBulkEdit(true);
+                                                  setShowMobileMenu(false);
+                                              }}
+                                              className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                          >
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <rect x="3" y="5" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 7h11" />
+                                                  <rect x="3" y="12" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 14h11" />
+                                                  <rect x="3" y="19" width="4" height="4" rx="0.5" />
+                                                  <path d="M10 21h11" />
+                                              </svg>
+                                              <span className="text-sm">Bulk Edit</span>
+                                          </button>
+                                     </div>
                                 </>
                             )}
                         </div>
@@ -739,65 +866,28 @@ export default function Transactions() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-5">
-                                <button
-                                    title="Import Transactions"
-                                    onClick={handleOpenImport}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                                >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <p className="hidden lg:inline">Import</p>
-                                </button>
-
-                                <button
-                                    title="Export Transactions"
-                                    onClick={handleOpenExport}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                                >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <p className="hidden lg:inline">Export</p>
-                                </button>
-
+                            <div className="flex gap-2 items-center">
                                 <button
                                     onClick={() => { syncAll() }}
-                                    className={` flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${isSyncing ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                    className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${isSyncing ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                     disabled={isSyncing}
                                     title="Refresh transactions"
                                 >
                                     <svg className={`${isSyncing ? 'animate-spin' : ''}`} width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <g transform="scale(-1, 1) translate(-48, 0)">
-                                            <path
-                                                d="M24 6a18 18 0 1 1-12.73 5.27"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-
-                                            />
-                                            <path
-                                                d="M12 4v8h8"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-
-                                            />
+                                            <path d="M24 6a18 18 0 1 1-12.73 5.27" stroke="currentColor" strokeWidth="4" />
+                                            <path d="M12 4v8h8" stroke="currentColor" strokeWidth="4" />
                                         </g>
                                     </svg>
                                     <p className="hidden lg:inline">{isSyncing ? 'Syncing...' : 'Sync'}</p>
-
                                 </button>
 
                                 <button
-                                    title="Add Transaction" onClick={() => { setModalTransaction(null); setModalTransfer(null); setShowModal(true) }}
-                                    className={` gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] md:flex hidden ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
+                                    title="Add Transaction"
+                                    onClick={() => { setModalTransaction(null); setModalTransfer(null); setShowModal(true) }}
+                                    className={`flex gap-2 p-2 rounded-lg transition-all hover:bg-white/[.05] ${loading ? 'opacity-50 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
                                 >
-                                    <svg width="24" height="24" viewBox="-2 -2 50 50 " fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <svg width="24" height="24" viewBox="-2 -2 50 50" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                         <g>
                                             <path d="M41.267,18.557H26.832V4.134C26.832,1.851,24.99,0,22.707,0c-2.283,0-4.124,1.851-4.124,4.135v14.432H4.141
                                 c-2.283,0-4.139,1.851-4.138,4.135c-0.001,1.141,0.46,2.187,1.207,2.934c0.748,0.749,1.78,1.222,2.92,1.222h14.453V41.27
@@ -807,6 +897,73 @@ export default function Transactions() {
                                     </svg>
                                     <p className="hidden lg:inline">Add</p>
                                 </button>
+
+                                {/* Desktop overflow menu */}
+                                <div ref={desktopMenuRef} className="relative">
+                                    <button
+                                        onClick={() => setShowDesktopMenu(o => !o)}
+                                        className={`p-2 rounded-lg transition-all hover:bg-white/[.05] ${showDesktopMenu ? 'bg-white/[.1] opacity-100' : 'opacity-70 hover:opacity-100'}`}
+                                        title="More options"
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+
+                                    {showDesktopMenu && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                                            <button
+                                                onClick={() => { handleOpenImport(); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M12 8L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M20 16.7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V16.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                <span className="text-sm">Import</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleOpenExport(); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9 11L12 8L15 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                <span className="text-sm">Export</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowVendorManager(true); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors border-t border-white/[.08]"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="9" cy="7" r="4" />
+                                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                </svg>
+                                                <span className="text-sm">Manage Vendors</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowBulkEdit(true); setShowDesktopMenu(false); }}
+                                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <rect x="3" y="5" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 7h11" />
+                                                    <rect x="3" y="12" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 14h11" />
+                                                    <rect x="3" y="19" width="4" height="4" rx="0.5" />
+                                                    <path d="M10 21h11" />
+                                                </svg>
+                                                <span className="text-sm">Bulk Edit</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -827,6 +984,7 @@ export default function Transactions() {
                             </span>
                         </div>
 
+
                         {/* Quick-add row — desktop only */}
                         <div className="hidden md:block mb-4">
                             <QuickAddRow
@@ -837,6 +995,32 @@ export default function Transactions() {
                                 Tab between fields · Enter to add · <kbd className="font-mono bg-white/[.06] px-1 rounded">N</kbd> to focus from anywhere
                             </p>
                         </div>
+
+
+                        {/* Uncategorised Transactions Banner */}
+                        {(() => {
+                            const uncatCount = transactions.filter(t => t.type === 'payment' && !t.category_id).length;
+                            if (uncatCount === 0) return null;
+                            return (
+                                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 border-b-4 border-b-amber-500/50 flex justify-between items-center p-3 md:p-4 mb-3 md:mb-4">
+                                    <div>
+                                        <p className="font-medium text-amber-400 text-sm md:text-base">
+                                            {uncatCount} uncategorised transaction{uncatCount !== 1 ? 's' : ''}
+                                        </p>
+                                        <p className="text-xs text-amber-400/60 mt-0.5">
+                                            Categorise these to keep your budget accurate
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => { setBulkEditUncategorised(true); setShowBulkEdit(true); }}
+                                        className="px-3 md:px-4 py-1.5 rounded-full bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 transition-colors flex-shrink-0 ml-3"
+                                    >
+                                        Fix Now
+                                    </button>
+                                </div>
+                            );
+                        })()}
+
 
                         {loading && transactions.length === 0 && transfers.length === 0 ? (
                             <div className="flex justify-center items-center min-h-[200px]">
@@ -903,82 +1087,150 @@ export default function Transactions() {
                                                         )}
                                                     </div>
                                                     <div className="space-y-1">
-                                                        {group.items.map((item) => {
-                                                            if (item.type === 'transfer') {
-                                                                const transfer = item.data;
-                                                                const transferAmount = getTransferAmountForAccount(transfer, selectedAccountId);
-                                                                const isOutgoing = selectedAccountId ? transfer.from_account_id === selectedAccountId : false;
-                                                                const isIncoming = selectedAccountId ? transfer.to_account_id === selectedAccountId : false;
+                                                         {group.items.map((item) => {
+                                                             if (item.type === 'transfer') {
+                                                                 const transfer = item.data;
+                                                                 const transferAmount = getTransferAmountForAccount(transfer, selectedAccountId);
+                                                                 const isOutgoing = selectedAccountId ? transfer.from_account_id === selectedAccountId : false;
+                                                                 const isIncoming = selectedAccountId ? transfer.to_account_id === selectedAccountId : false;
 
-                                                                return (
-                                                                    <div key={transfer.id}
-                                                                        onClick={() => { setModalTransfer(transfer); setModalTransaction(null); setShowModal(true); }}
-                                                                        className="flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer border border-blue-500/30 transition-colors"
-                                                                    >
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/30 text-blue-300 font-medium">
-                                                                                    TRANSFER
-                                                                                </span>
-                                                                                <h4 className="font-medium truncate text-white/90">
-                                                                                    {transfer.from_account?.name} → {transfer.to_account?.name}
-                                                                                </h4>
-                                                                            </div>
-                                                                            {transfer.description && (
-                                                                                <div className="text-sm text-white/40 truncate mt-0.5">
-                                                                                    {transfer.description}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${!selectedAccountId ? 'text-blue-300' :
-                                                                            isOutgoing ? 'text-reddy' :
-                                                                                isIncoming ? 'text-green' :
-                                                                                    'text-blue-300'
-                                                                            }`}>
-                                                                            {formatAmount(transferAmount || transfer.amount)}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            } else {
-                                                                const transaction = item.data;
-                                                                return (
-                                                                    <div key={transaction.id}
-                                                                        onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setModalTransfer(null), setShowModal(true)) : null}
-                                                                        className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group ${transaction.type === 'starting'
-                                                                            ? 'bg-white/[.02] cursor-default'
-                                                                            : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
-                                                                            } transition-colors`}
-                                                                    >
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <h4 className="font-medium truncate text-white/90">
-                                                                                    {transaction.type === 'starting' ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
-                                                                                </h4>
-                                                                                {transaction.accounts && (selectedAccountId === null) && (
-                                                                                    <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">
-                                                                                        {transaction.accounts.name}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            {transaction.type !== 'starting' && (
-                                                                                <div className="text-sm text-white/40 truncate mt-0.5">
-                                                                                    {transaction.categories ? transaction.categories.name : "Income"}
-                                                                                    {transaction.description && (
-                                                                                        <span className="inline truncate text-white/30 text-sm">
-                                                                                            &nbsp; - {transaction.description}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${transaction.type === 'starting' ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
-                                                                            }`}>
-                                                                            {formatAmount(transaction.amount)}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        })}
+                                                                  const openTransferEdit = () => { setModalTransfer(transfer); setModalTransaction(null); setShowModal(true); };
+                                                                 const deleteTransfer = () => quickDeleteTransfer(transfer.id);
+                                                                 const isConfirmingThis = confirmingDeleteId === transfer.id;
+
+                                                                 return (
+                                                                     <SwipeableRow key={transfer.id} onDelete={() => requestDelete(transfer.id, deleteTransfer)}>
+                                                                         <div
+                                                                             onClick={() => { if (isConfirmingThis) { cancelDelete(); return; } openTransferEdit(); }}
+                                                                             onContextMenu={(e) => openMenu(e, { isTransfer: true, onEdit: openTransferEdit, onDelete: () => requestDelete(transfer.id, deleteTransfer) })}
+                                                                             className="flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer border border-blue-500/30 transition-colors"
+                                                                         >
+                                                                             <div className="flex-1 min-w-0">
+                                                                                 <div className="flex items-center gap-2">
+                                                                                     <span className="text-xs px-2 py-0.5 rounded bg-blue-500/30 text-blue-300 font-medium">
+                                                                                         TRANSFER
+                                                                                     </span>
+                                                                                     <h4 className="font-medium truncate text-white/90">
+                                                                                         {transfer.from_account?.name} → {transfer.to_account?.name}
+                                                                                     </h4>
+                                                                                 </div>
+                                                                                 {transfer.description && (
+                                                                                     <div className="text-sm text-white/40 truncate mt-0.5">
+                                                                                         {transfer.description}
+                                                                                     </div>
+                                                                                 )}
+                                                                             </div>
+                                                                             {/* Hover action buttons — desktop only */}
+                                                                             <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                                                                 <button
+                                                                                     onClick={(e) => {
+                                                                                         e.stopPropagation();
+                                                                                         if (isConfirmingThis) { confirmDelete(); } else { requestDelete(transfer.id, deleteTransfer); }
+                                                                                     }}
+                                                                                     onBlur={() => { if (isConfirmingThis) cancelDelete(); }}
+                                                                                     className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${isConfirmingThis
+                                                                                         ? 'bg-reddy/20 text-reddy border border-reddy/40 min-w-[4rem]'
+                                                                                         : 'p-1.5 hover:bg-reddy/10 text-white/40 hover:text-reddy'}`}
+                                                                                     title="Delete transfer"
+                                                                                 >
+                                                                                     {isConfirmingThis ? 'Delete?' : (
+                                                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                             <polyline points="3 6 5 6 21 6" />
+                                                                                             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                                                             <path d="M10 11v6M14 11v6" />
+                                                                                             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                                                                         </svg>
+                                                                                     )}
+                                                                                 </button>
+                                                                             </div>
+                                                                             <span className={`font-medium whitespace-nowrap tabular-nums ${!selectedAccountId ? 'text-blue-300' :
+                                                                                 isOutgoing ? 'text-reddy' :
+                                                                                     isIncoming ? 'text-green' :
+                                                                                         'text-blue-300'
+                                                                                 }`}>
+                                                                                 {formatAmount(transferAmount || transfer.amount)}
+                                                                             </span>
+                                                                         </div>
+                                                                     </SwipeableRow>
+                                                                 );
+                                                             } else {
+                                                                 const transaction = item.data;
+                                                                 const typeName = transaction.type === 'income' ? 'Income' : 'Uncategorised';
+                                                                 const isStarting = transaction.type === 'starting';
+
+                                                                 const openTransactionEdit = () => { setModalTransaction(transaction); setModalTransfer(null); setShowModal(true); };
+                                                                 const deleteTransaction = () => quickDeleteTransaction(transaction.id);
+                                                                 const isConfirmingThis = confirmingDeleteId === transaction.id;
+
+                                                                 return (
+                                                                     <SwipeableRow key={transaction.id} onDelete={() => requestDelete(transaction.id, deleteTransaction)} disabled={isStarting}>
+                                                                         <div
+                                                                             onClick={() => {
+                                                                                 if (isConfirmingThis) { cancelDelete(); return; }
+                                                                                 if (!isStarting) openTransactionEdit();
+                                                                             }}
+                                                                             onContextMenu={(e) => !isStarting ? openMenu(e, { isTransfer: false, onEdit: openTransactionEdit, onDelete: () => requestDelete(transaction.id, deleteTransaction) }) : e.preventDefault()}
+                                                                             className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group ${isStarting
+                                                                                 ? 'bg-white/[.02] cursor-default'
+                                                                                 : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
+                                                                                 } transition-colors`}
+                                                                         >
+                                                                             <div className="flex-1 min-w-0">
+                                                                                 <div className="flex items-center gap-3">
+                                                                                     <h4 className="font-medium truncate text-white/90">
+                                                                                         {isStarting ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
+                                                                                     </h4>
+                                                                                     {transaction.accounts && (selectedAccountId === null) && (
+                                                                                         <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">
+                                                                                             {transaction.accounts.name}
+                                                                                         </span>
+                                                                                     )}
+                                                                                 </div>
+                                                                                 {!isStarting && (
+                                                                                     <div className={`text-sm truncate mt-0.5 ${transaction.categories ? 'text-white/40 ' : (typeName === 'Income' ? 'text-green' : 'text-reddy')}`}>
+                                                                                         {transaction.categories ? transaction.categories.name : typeName}
+                                                                                         {transaction.description && (
+                                                                                             <span className="inline truncate text-white/30 text-sm">
+                                                                                                 &nbsp; - {transaction.description}
+                                                                                             </span>
+                                                                                         )}
+                                                                                     </div>
+                                                                                 )}
+                                                                             </div>
+                                                                             {/* Hover action buttons — desktop only */}
+                                                                             {!isStarting && (
+                                                                                 <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                                                                     <button
+                                                                                         onClick={(e) => {
+                                                                                             e.stopPropagation();
+                                                                                             if (isConfirmingThis) { confirmDelete(); } else { requestDelete(transaction.id, deleteTransaction); }
+                                                                                         }}
+                                                                                         onBlur={() => { if (isConfirmingThis) cancelDelete(); }}
+                                                                                         className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${isConfirmingThis
+                                                                                             ? 'bg-reddy/20 text-reddy border border-reddy/40 min-w-[4rem]'
+                                                                                             : 'p-1.5 hover:bg-reddy/10 text-white/40 hover:text-reddy'}`}
+                                                                                         title="Delete transaction"
+                                                                                     >
+                                                                                         {isConfirmingThis ? 'Delete?' : (
+                                                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                                 <polyline points="3 6 5 6 21 6" />
+                                                                                                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                                                                 <path d="M10 11v6M14 11v6" />
+                                                                                                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                                                                             </svg>
+                                                                                         )}
+                                                                                     </button>
+                                                                                 </div>
+                                                                             )}
+                                                                             <span className={`font-medium whitespace-nowrap tabular-nums ${isStarting ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
+                                                                                 }`}>
+                                                                                 {formatAmount(transaction.amount)}
+                                                                             </span>
+                                                                         </div>
+                                                                     </SwipeableRow>
+                                                                 );
+                                                             }
+                                                         })}
                                                     </div>
                                                 </div>
                                             ))}
@@ -1042,6 +1294,17 @@ export default function Transactions() {
                     onAccountsUpdated={() => {
                         refetch()
                     }}
+                />
+
+                <VendorManagerModal
+                    isOpen={showVendorManager}
+                    onClose={() => setShowVendorManager(false)}
+                />
+
+                <BulkEditModal
+                    isOpen={showBulkEdit}
+                    onClose={() => { setShowBulkEdit(false); setBulkEditUncategorised(false); }}
+                    filterUncategorised={bulkEditUncategorised}
                 />
             </div >
         </ProtectedRoute >
