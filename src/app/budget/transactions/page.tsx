@@ -30,6 +30,8 @@ import { formatCurrency } from '../../components/charts/utils';
 import { useDeleteTransaction } from '../../hooks/useDeleteTransaction';
 import { useSyncAll } from '../../hooks/useSyncAll';
 import QuickAddRow from '../../components/quick-add-row';
+import { useContextMenu } from '../../components/transaction-context-menu';
+import SwipeableRow from '../../components/swipeable-row';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -99,6 +101,47 @@ export default function Transactions() {
 
     const loading = loadingTransactions || loadingTransfers;
     const { syncAll, isSyncing } = useSyncAll();
+    const { openMenu, Portal: contextMenuPortal } = useContextMenu();
+
+    // Delete confirmation state
+    const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+    const pendingDeleteCallback = useRef<(() => void) | null>(null);
+
+    // Stage a delete — shows confirmation UI instead of deleting immediately
+    const requestDelete = (id: string, fn: () => void) => {
+        pendingDeleteCallback.current = fn;
+        setConfirmingDeleteId(id);
+    };
+
+    const cancelDelete = () => {
+        setConfirmingDeleteId(null);
+        pendingDeleteCallback.current = null;
+    };
+
+    const confirmDelete = () => {
+        pendingDeleteCallback.current?.();
+        setConfirmingDeleteId(null);
+        pendingDeleteCallback.current = null;
+    };
+
+    // Quick-delete helpers — execute the actual mutation
+    const quickDeleteTransaction = async (id: string) => {
+        const promise = deleteMutation.mutateAsync(id);
+        await toast.promise(promise, {
+            loading: 'Deleting transaction...',
+            success: 'Transaction deleted',
+            error: 'Failed to delete transaction'
+        });
+    };
+
+    const quickDeleteTransfer = async (id: string) => {
+        const promise = deleteTransferMutation.mutateAsync(id);
+        await toast.promise(promise, {
+            loading: 'Deleting transfer...',
+            success: 'Transfer deleted',
+            error: 'Failed to delete transfer'
+        });
+    };
 
     // Global 'N' hotkey — focus the quick-add amount field on desktop
     useEffect(() => {
@@ -513,6 +556,39 @@ export default function Transactions() {
 
     return (
         <ProtectedRoute>
+            {contextMenuPortal}
+
+            {/* Mobile delete confirmation popup */}
+            {confirmingDeleteId && (
+                <>
+                    {/* backdrop — tap to cancel */}
+                    <div
+                        className="md:hidden fixed inset-0 z-[180] bg-transparent"
+                        onTouchStart={cancelDelete}
+                        onClick={cancelDelete}
+                    />
+                    <div className="md:hidden fixed bottom-0 inset-x-0 z-[190] pb-[env(safe-area-inset-bottom)] animate-[slideIn_0.18s_ease-out]">
+                        <div className="mx-4 mb-4 bg-[#1c1c1c] border border-white/10 rounded-2xl overflow-hidden shadow-2xl font-[family-name:var(--font-suse)]">
+                            <p className="text-sm text-white/50 text-center pt-4 pb-2 px-4">Delete this item? This cannot be undone.</p>
+                            <div className="flex border-t border-white/[.08]">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="flex-1 py-3.5 text-sm text-white/60 hover:bg-white/[.05] transition-colors border-r border-white/[.08]"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 py-3.5 text-sm font-semibold text-reddy hover:bg-reddy/10 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             <TransactionModalWrapper setShowModal={setShowModal} />
             <ExportModal
                 isOpen={showExportModal}
@@ -1011,83 +1087,150 @@ export default function Transactions() {
                                                         )}
                                                     </div>
                                                     <div className="space-y-1">
-                                                        {group.items.map((item) => {
-                                                            if (item.type === 'transfer') {
-                                                                const transfer = item.data;
-                                                                const transferAmount = getTransferAmountForAccount(transfer, selectedAccountId);
-                                                                const isOutgoing = selectedAccountId ? transfer.from_account_id === selectedAccountId : false;
-                                                                const isIncoming = selectedAccountId ? transfer.to_account_id === selectedAccountId : false;
+                                                         {group.items.map((item) => {
+                                                             if (item.type === 'transfer') {
+                                                                 const transfer = item.data;
+                                                                 const transferAmount = getTransferAmountForAccount(transfer, selectedAccountId);
+                                                                 const isOutgoing = selectedAccountId ? transfer.from_account_id === selectedAccountId : false;
+                                                                 const isIncoming = selectedAccountId ? transfer.to_account_id === selectedAccountId : false;
 
-                                                                return (
-                                                                    <div key={transfer.id}
-                                                                        onClick={() => { setModalTransfer(transfer); setModalTransaction(null); setShowModal(true); }}
-                                                                        className="flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer border border-blue-500/30 transition-colors"
-                                                                    >
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/30 text-blue-300 font-medium">
-                                                                                    TRANSFER
-                                                                                </span>
-                                                                                <h4 className="font-medium truncate text-white/90">
-                                                                                    {transfer.from_account?.name} → {transfer.to_account?.name}
-                                                                                </h4>
-                                                                            </div>
-                                                                            {transfer.description && (
-                                                                                <div className="text-sm text-white/40 truncate mt-0.5">
-                                                                                    {transfer.description}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${!selectedAccountId ? 'text-blue-300' :
-                                                                            isOutgoing ? 'text-reddy' :
-                                                                                isIncoming ? 'text-green' :
-                                                                                    'text-blue-300'
-                                                                            }`}>
-                                                                            {formatAmount(transferAmount || transfer.amount)}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            } else {
-                                                                const transaction = item.data;
-                                                                const typeName = transaction.type === 'income' ? 'Income' : 'Uncategorised'
-                                                                return (
-                                                                    <div key={transaction.id}
-                                                                        onClick={() => transaction.type !== 'starting' ? (setModalTransaction(transaction), setModalTransfer(null), setShowModal(true)) : null}
-                                                                        className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group ${transaction.type === 'starting'
-                                                                            ? 'bg-white/[.02] cursor-default'
-                                                                            : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
-                                                                            } transition-colors`}
-                                                                    >
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <h4 className="font-medium truncate text-white/90">
-                                                                                    {transaction.type === 'starting' ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
-                                                                                </h4>
-                                                                                {transaction.accounts && (selectedAccountId === null) && (
-                                                                                    <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">
-                                                                                        {transaction.accounts.name}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            {transaction.type !== 'starting' && (
-                                                                                <div className={`text-sm truncate mt-0.5 ${transaction.categories ? 'text-white/40 ' : (typeName==='Income' ? 'text-green' : 'text-reddy')}`}>
-                                                                                    {transaction.categories ? transaction.categories.name : typeName}
-                                                                                    {transaction.description && (
-                                                                                        <span className="inline truncate text-white/30 text-sm">
-                                                                                            &nbsp; - {transaction.description}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className={`font-medium whitespace-nowrap tabular-nums ${transaction.type === 'starting' ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
-                                                                            }`}>
-                                                                            {formatAmount(transaction.amount)}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        })}
+                                                                  const openTransferEdit = () => { setModalTransfer(transfer); setModalTransaction(null); setShowModal(true); };
+                                                                 const deleteTransfer = () => quickDeleteTransfer(transfer.id);
+                                                                 const isConfirmingThis = confirmingDeleteId === transfer.id;
+
+                                                                 return (
+                                                                     <SwipeableRow key={transfer.id} onDelete={() => requestDelete(transfer.id, deleteTransfer)}>
+                                                                         <div
+                                                                             onClick={() => { if (isConfirmingThis) { cancelDelete(); return; } openTransferEdit(); }}
+                                                                             onContextMenu={(e) => openMenu(e, { isTransfer: true, onEdit: openTransferEdit, onDelete: () => requestDelete(transfer.id, deleteTransfer) })}
+                                                                             className="flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer border border-blue-500/30 transition-colors"
+                                                                         >
+                                                                             <div className="flex-1 min-w-0">
+                                                                                 <div className="flex items-center gap-2">
+                                                                                     <span className="text-xs px-2 py-0.5 rounded bg-blue-500/30 text-blue-300 font-medium">
+                                                                                         TRANSFER
+                                                                                     </span>
+                                                                                     <h4 className="font-medium truncate text-white/90">
+                                                                                         {transfer.from_account?.name} → {transfer.to_account?.name}
+                                                                                     </h4>
+                                                                                 </div>
+                                                                                 {transfer.description && (
+                                                                                     <div className="text-sm text-white/40 truncate mt-0.5">
+                                                                                         {transfer.description}
+                                                                                     </div>
+                                                                                 )}
+                                                                             </div>
+                                                                             {/* Hover action buttons — desktop only */}
+                                                                             <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                                                                 <button
+                                                                                     onClick={(e) => {
+                                                                                         e.stopPropagation();
+                                                                                         if (isConfirmingThis) { confirmDelete(); } else { requestDelete(transfer.id, deleteTransfer); }
+                                                                                     }}
+                                                                                     onBlur={() => { if (isConfirmingThis) cancelDelete(); }}
+                                                                                     className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${isConfirmingThis
+                                                                                         ? 'bg-reddy/20 text-reddy border border-reddy/40 min-w-[4rem]'
+                                                                                         : 'p-1.5 hover:bg-reddy/10 text-white/40 hover:text-reddy'}`}
+                                                                                     title="Delete transfer"
+                                                                                 >
+                                                                                     {isConfirmingThis ? 'Delete?' : (
+                                                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                             <polyline points="3 6 5 6 21 6" />
+                                                                                             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                                                             <path d="M10 11v6M14 11v6" />
+                                                                                             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                                                                         </svg>
+                                                                                     )}
+                                                                                 </button>
+                                                                             </div>
+                                                                             <span className={`font-medium whitespace-nowrap tabular-nums ${!selectedAccountId ? 'text-blue-300' :
+                                                                                 isOutgoing ? 'text-reddy' :
+                                                                                     isIncoming ? 'text-green' :
+                                                                                         'text-blue-300'
+                                                                                 }`}>
+                                                                                 {formatAmount(transferAmount || transfer.amount)}
+                                                                             </span>
+                                                                         </div>
+                                                                     </SwipeableRow>
+                                                                 );
+                                                             } else {
+                                                                 const transaction = item.data;
+                                                                 const typeName = transaction.type === 'income' ? 'Income' : 'Uncategorised';
+                                                                 const isStarting = transaction.type === 'starting';
+
+                                                                 const openTransactionEdit = () => { setModalTransaction(transaction); setModalTransfer(null); setShowModal(true); };
+                                                                 const deleteTransaction = () => quickDeleteTransaction(transaction.id);
+                                                                 const isConfirmingThis = confirmingDeleteId === transaction.id;
+
+                                                                 return (
+                                                                     <SwipeableRow key={transaction.id} onDelete={() => requestDelete(transaction.id, deleteTransaction)} disabled={isStarting}>
+                                                                         <div
+                                                                             onClick={() => {
+                                                                                 if (isConfirmingThis) { cancelDelete(); return; }
+                                                                                 if (!isStarting) openTransactionEdit();
+                                                                             }}
+                                                                             onContextMenu={(e) => !isStarting ? openMenu(e, { isTransfer: false, onEdit: openTransactionEdit, onDelete: () => requestDelete(transaction.id, deleteTransaction) }) : e.preventDefault()}
+                                                                             className={`flex items-center gap-3 py-2 px-3 rounded-lg touch-manipulation relative group ${isStarting
+                                                                                 ? 'bg-white/[.02] cursor-default'
+                                                                                 : 'bg-white/[.05] hover:bg-white/[.1] cursor-pointer'
+                                                                                 } transition-colors`}
+                                                                         >
+                                                                             <div className="flex-1 min-w-0">
+                                                                                 <div className="flex items-center gap-3">
+                                                                                     <h4 className="font-medium truncate text-white/90">
+                                                                                         {isStarting ? `Initial Balance${selectedAccountId === null ? ` (${transaction.accounts?.name})` : ''}` : transaction.vendors?.name || transaction.vendor}
+                                                                                     </h4>
+                                                                                     {transaction.accounts && (selectedAccountId === null) && (
+                                                                                         <span className="hidden group-hover:inline text-xs px-2 py-1 rounded bg-white/10 text-white/60">
+                                                                                             {transaction.accounts.name}
+                                                                                         </span>
+                                                                                     )}
+                                                                                 </div>
+                                                                                 {!isStarting && (
+                                                                                     <div className={`text-sm truncate mt-0.5 ${transaction.categories ? 'text-white/40 ' : (typeName === 'Income' ? 'text-green' : 'text-reddy')}`}>
+                                                                                         {transaction.categories ? transaction.categories.name : typeName}
+                                                                                         {transaction.description && (
+                                                                                             <span className="inline truncate text-white/30 text-sm">
+                                                                                                 &nbsp; - {transaction.description}
+                                                                                             </span>
+                                                                                         )}
+                                                                                     </div>
+                                                                                 )}
+                                                                             </div>
+                                                                             {/* Hover action buttons — desktop only */}
+                                                                             {!isStarting && (
+                                                                                 <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                                                                     <button
+                                                                                         onClick={(e) => {
+                                                                                             e.stopPropagation();
+                                                                                             if (isConfirmingThis) { confirmDelete(); } else { requestDelete(transaction.id, deleteTransaction); }
+                                                                                         }}
+                                                                                         onBlur={() => { if (isConfirmingThis) cancelDelete(); }}
+                                                                                         className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${isConfirmingThis
+                                                                                             ? 'bg-reddy/20 text-reddy border border-reddy/40 min-w-[4rem]'
+                                                                                             : 'p-1.5 hover:bg-reddy/10 text-white/40 hover:text-reddy'}`}
+                                                                                         title="Delete transaction"
+                                                                                     >
+                                                                                         {isConfirmingThis ? 'Delete?' : (
+                                                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                                 <polyline points="3 6 5 6 21 6" />
+                                                                                                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                                                                 <path d="M10 11v6M14 11v6" />
+                                                                                                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                                                                             </svg>
+                                                                                         )}
+                                                                                     </button>
+                                                                                 </div>
+                                                                             )}
+                                                                             <span className={`font-medium whitespace-nowrap tabular-nums ${isStarting ? 'text-white' : transaction.amount < 0 ? 'text-reddy' : 'text-green'
+                                                                                 }`}>
+                                                                                 {formatAmount(transaction.amount)}
+                                                                             </span>
+                                                                         </div>
+                                                                     </SwipeableRow>
+                                                                 );
+                                                             }
+                                                         })}
                                                     </div>
                                                 </div>
                                             ))}
