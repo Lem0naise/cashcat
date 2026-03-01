@@ -29,7 +29,8 @@ export const changelog: Major[] = [
                         date: "March 1, 2026",
                         features: [
                             "Vendor name management",
-                            "Bulk editing of transactions"
+                            "Bulk editing of transactions",
+                            "Add vendor name normalisation"
                         ],
                         bugfixes: [
                             "Fixed vendor mapping bugs"
