@@ -1,5 +1,7 @@
 'use client';
 
+import posthog from 'posthog-js';
+
 interface OnboardingOverlayProps {
     onStartOnboarding: () => void;
 }
@@ -24,7 +26,10 @@ export default function OnboardingOverlay({ onStartOnboarding }: OnboardingOverl
             </p>
 
             <button
-                onClick={onStartOnboarding}
+                onClick={() => {
+                    posthog.capture('onboarding_started');
+                    onStartOnboarding();
+                }}
                 className="w-full bg-green hover:bg-green-dark text-black font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
             >
                 Get Started

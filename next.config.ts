@@ -23,6 +23,23 @@ const nextConfig = {
     ],
   },
 
+  // Required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
+
+  // PostHog reverse proxy — routes ingestion through the app to avoid ad-blockers
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://eu-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://eu.i.posthog.com/:path*',
+      },
+    ];
+  },
+
   // Asynchronous function to define redirects
   async redirects() {
     return [

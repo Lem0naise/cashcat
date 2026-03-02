@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { createCheckoutAction } from '@/app/actions/subscription';
 import toast from 'react-hot-toast';
+import posthog from 'posthog-js';
 
 interface UpgradeButtonProps {
     className?: string;
@@ -20,11 +21,13 @@ export function UpgradeButton({
     const [isPending, startTransition] = useTransition();
 
     const handleUpgrade = () => {
+        posthog.capture('upgrade_clicked', { label });
         startTransition(async () => {
             const result = await createCheckoutAction();
             if (result.success) {
                 window.location.href = result.checkoutUrl;
             } else {
+                posthog.captureException(new Error(result.error ?? 'Checkout creation failed'));
                 toast.error(result.error ?? 'Something went wrong. Please try again.');
             }
         });

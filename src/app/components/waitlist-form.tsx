@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { joinWaitlist } from '../actions/waitlist';
+import posthog from 'posthog-js';
 
 export default function WaitlistForm() {
     const [email, setEmail] = useState('');
@@ -22,6 +23,7 @@ export default function WaitlistForm() {
             setStatus('error');
             setMessage(result.error);
         } else {
+            posthog.capture('waitlist_joined');
             setStatus('success');
             setMessage('You have been added to the waitlist!');
             setEmail('');

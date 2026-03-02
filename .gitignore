@@ -83,3 +83,10 @@ android/.idea/
 ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 ios/App/Pods/
 ios/.DS_Store
+.env.local
+
+
+posthog-setup-report.md
+*SKILL.md
+.claude/**/*.md
+

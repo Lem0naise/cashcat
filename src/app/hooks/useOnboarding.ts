@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import { useAuthUserId } from '@/app/hooks/useAuthUserId';
+import posthog from 'posthog-js';
 
 // ─── Onboarding steps ────────────────────────────────────────────────────────
 // The onboarding flow progresses through these steps:
@@ -99,11 +100,13 @@ export function useOnboarding(hasCategoriesLoaded: boolean, _categoriesCount: nu
     }, []);
 
     const advanceFromTour = useCallback(() => {
+        posthog.capture('onboarding_completed');
         setStep('complete');
         completeMutation.mutate();
     }, [completeMutation]);
 
     const skipOnboarding = useCallback(() => {
+        posthog.capture('onboarding_skipped');
         setStep('idle');
         completeMutation.mutate();
     }, [completeMutation]);

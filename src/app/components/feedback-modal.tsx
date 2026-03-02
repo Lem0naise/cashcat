@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Database } from '@/types/supabase';
+import posthog from 'posthog-js';
 
 type FeedbackModalProps = {
     isOpen: boolean;
@@ -92,8 +93,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 error: 'Failed to submit feedback'
             });
 
+            posthog.capture('feedback_submitted', { feedback_type: type });
             handleClose();
         } catch (error) {
+            posthog.captureException(error);
             console.error('Error submitting feedback:', error);
         } finally {
             setIsSubmitting(false);
