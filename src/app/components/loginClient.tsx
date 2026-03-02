@@ -130,6 +130,8 @@ export default function LoginClient() {
           // Identify the user and capture login event
           posthog.identify(session.user.id, {
             email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
+            avatar: session.user.user_metadata?.avatar_url,
             provider: session.user.app_metadata.provider,
           });
           posthog.capture('user_logged_in', {

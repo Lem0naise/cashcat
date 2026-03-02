@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import posthog from 'posthog-js';
 import { User } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '../utils/supabase';
@@ -88,6 +89,7 @@ export default function SupabaseProvider({
         // Clear all cached query data so a new user starts fresh
         if (event === 'SIGNED_OUT') {
           queryClient.clear();
+          posthog.reset();
         }
       }
       setLoading(false);

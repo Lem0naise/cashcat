@@ -126,6 +126,8 @@ export default function SignUpClient() {
           // Identify the user and capture sign-up event
           posthog.identify(session.user.id, {
             email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
+            avatar: session.user.user_metadata?.avatar_url,
             provider: session.user.app_metadata.provider,
           });
           posthog.capture('user_signed_up', {
