@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Transaction, Category } from './types';
-import { formatCurrency } from './utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +17,10 @@ interface BentoBreakdownProps {
     selectedGroups?: string[];
     selectedCategories?: string[];
     onTileClick?: (tile: BentoTileClick) => void;
+    /** Called when navigating all the way back to the groups view (clears group + category filter) */
+    onBack?: () => void;
+    /** Called when navigating from vendors back to categories (clears category filter only) */
+    onBackToCategory?: () => void;
 }
 
 type ViewMode = 'groups' | 'categories' | 'vendors';
@@ -30,6 +33,7 @@ interface BentoItem {
     count: number;
     share: number;         // 0–1 fraction of total visible spend (may be boosted for layout)
     displayShare?: number; // original share before any min-size boost, for display only
+    isOthers?: boolean;    // true for the "Others" catch-all bucket
 }
 
 interface TileRect {
@@ -53,16 +57,15 @@ const PALETTE = [
     'rgba(255,234,134,0.75)',
     'rgba(255,134,190,0.75)',
     'rgba(134,255,200,0.75)',
-    'rgba(200,200,200,0.60)',
-    'rgba(255,180,100,0.70)',
+    'rgba(180,180,180,0.55)', // "Others" gets this muted colour
 ];
 
-function getColor(index: number): string {
-    return PALETTE[index % PALETTE.length];
+function getColor(index: number, isOthers?: boolean): string {
+    if (isOthers) return 'rgba(180,180,180,0.55)';
+    return PALETTE[index % (PALETTE.length - 1)];
 }
 
 // ─── Squarified treemap ───────────────────────────────────────────────────────
-// All coordinates are in [0,1] normalised space; the caller scales to px.
 
 interface Rect { x: number; y: number; w: number; h: number; }
 
@@ -74,37 +77,10 @@ function worst(row: number[], w: number, total: number): number {
     return Math.max((w * w * max) / (s * s), (s * s) / (w * w * min)) * total * total;
 }
 
-function layoutRow(row: number[], rect: Rect, isHorizontal: boolean): TileRect[] {
-    const tiles: TileRect[] = [];
-    const sum = row.reduce((a, b) => a + b, 0);
-    let offset = isHorizontal ? rect.y : rect.x;
-    const stripSize = isHorizontal
-        ? (sum / rect.w) * rect.h      // height of strip
-        : (sum / rect.h) * rect.w;     // width of strip
-
-    for (const val of row) {
-        const dim = isHorizontal
-            ? (val / sum) * rect.w
-            : (val / sum) * rect.h;
-
-        tiles.push({
-            x: isHorizontal ? rect.x + (isHorizontal ? 0 : offset - rect.x) : rect.x + offset - rect.x,
-            y: isHorizontal ? offset : rect.y + (isHorizontal ? offset - rect.y : 0),
-            w: isHorizontal ? dim : stripSize,
-            h: isHorizontal ? stripSize : dim,
-            item: null as any,
-            index: -1,
-        });
-        offset += dim;
-    }
-    return tiles;
-}
-
 function squarify(items: BentoItem[], rect: Rect): TileRect[] {
     if (items.length === 0) return [];
 
     const totalArea = rect.w * rect.h;
-    // Normalise values to sum to totalArea
     const totalShare = items.reduce((s, x) => s + x.share, 0);
     const values = items.map(x => (x.share / totalShare) * totalArea);
 
@@ -126,7 +102,7 @@ function squarifyInto(
     }
 
     const isHorizontal = rect.w >= rect.h;
-    const w = isHorizontal ? rect.w : rect.h; // length of the shorter side
+    const w = isHorizontal ? rect.w : rect.h;
 
     let row: number[] = [];
     let i = 0;
@@ -141,12 +117,10 @@ function squarifyInto(
         }
     }
 
-    // Layout the committed row
     const rowTiles = layoutRowNorm(row, items.slice(0, row.length), rect, isHorizontal);
     rowTiles.forEach((t, j) => { t.index = out.length + j; });
     out.push(...rowTiles);
 
-    // Remaining rectangle
     const sum = row.reduce((a, b) => a + b, 0);
     const stripSize = isHorizontal
         ? (sum / rect.w) * rect.h
@@ -211,33 +185,25 @@ function BentoCard({
     onDrillDown?: (item: BentoItem) => void;
 }) {
     const { item } = tile;
-    const color = getColor(colorIndex);
-    const sharePct = Math.round((item.displayShare ?? item.share) * 100);
+    const color = getColor(colorIndex, item.isOthers);
 
     const pxX = tile.x * containerW + GAP / 2;
     const pxY = tile.y * containerH + GAP / 2;
     const pxW = tile.w * containerW - GAP;
     const pxH = tile.h * containerH - GAP;
 
-    const isWide = pxW > 120;
-    const isTall = pxH > 80;
-    const isTiny = pxW < 80 || pxH < 72;
+    const isWide = pxW > 100;
+    const isNarrow = pxW < 70;
 
-    const pad = isTiny ? 6 : isWide ? 14 : 10;
-
-    // Name font size: scale with the smaller tile dimension, then shrink for long names.
-    const shortSide = Math.min(pxW, pxH);
-    const baseNameSize = Math.round(Math.min(22, Math.max(10, shortSide * 0.13)));
-    const nameLen = item.name.length;
-    const lengthDiscount = nameLen <= 6 ? 0 : nameLen <= 12 ? 1 : nameLen <= 18 ? 2 : 3;
-    const nameFontSize = Math.max(10, baseNameSize - lengthDiscount);
+    const pad = isNarrow ? 6 : isWide ? 12 : 8;
 
     // Drill advances mode: groups → categories → vendors
-    const canDrill = !!onDrillDown && mode !== 'vendors';
-    const clickable = canDrill || (!!onTileClick && mode !== 'vendors');
+    // "Others" tiles are not drillable
+    const canDrill = !!onDrillDown && mode !== 'vendors' && !item.isOthers;
+    const clickable = canDrill || (!!onTileClick && mode !== 'vendors' && !item.isOthers);
 
     const handleClick = () => {
-        // Fire external filter callback first
+        if (item.isOthers) return;
         if (onTileClick) {
             if (mode === 'groups') {
                 onTileClick({ id: item.id, type: 'group' });
@@ -245,19 +211,27 @@ function BentoCard({
                 onTileClick({ id: item.id, type: 'category' });
             }
         }
-        // Advance internal drill-down
         if (onDrillDown && mode !== 'vendors') {
             onDrillDown(item);
         }
     };
 
+    // Scale font by the smaller dimension, then reduce for long names
+    const shortSide = Math.min(pxW, pxH);
+    const baseSize = Math.round(Math.min(18, Math.max(9, shortSide * 0.14)));
+    const nameLen = item.name.length;
+    const lengthDiscount = nameLen <= 8 ? 0 : nameLen <= 14 ? 1 : nameLen <= 20 ? 2 : 3;
+    const nameFontSize = Math.max(9, baseSize - lengthDiscount);
+
+    // Sub-label (group/category of the tile)
+    const showLabel = item.label && isWide && pxH > 80;
+
     return (
         <div
-            className={`absolute overflow-hidden rounded-xl border transition-all duration-200 ease-out ${
-                clickable
+            className={`absolute overflow-hidden rounded-xl border transition-all duration-200 ease-out ${clickable
                     ? 'border-white/[.07] hover:border-white/[.35] hover:brightness-110 cursor-pointer active:scale-[0.98]'
-                    : 'border-white/[.07] hover:border-white/[.20] cursor-default'
-            }`}
+                    : 'border-white/[.07] hover:border-white/[.15] cursor-default'
+                }`}
             style={{
                 left: pxX,
                 top: pxY,
@@ -267,65 +241,56 @@ function BentoCard({
                 padding: pad,
             }}
             onClick={clickable ? handleClick : undefined}
-            title={canDrill ? `Drill into ${item.name}` : clickable ? `Filter by ${item.name}` : undefined}
+            title={
+                item.isOthers
+                    ? `Others (${item.count} items)`
+                    : canDrill
+                        ? `Drill into ${item.name}`
+                        : clickable
+                            ? `Filter by ${item.name}`
+                            : item.name
+            }
         >
             {/* Full-card colour wash */}
             <div
                 className="absolute inset-0 pointer-events-none"
-                style={{ background: color, opacity: 0.13 }}
+                style={{ background: color, opacity: item.isOthers ? 0.08 : 0.13 }}
             />
 
-            {/* Content — hide progressively as card shrinks */}
-            <div className="relative w-full h-full flex flex-col justify-between">
-                {/* Top row: rank + share */}
-                <div className="flex items-start justify-between">
-                    <span
-                        className="text-[9px] font-bold rounded-full flex items-center justify-center shrink-0"
-                        style={{
-                            background: color,
-                            color: 'rgba(10,10,10,0.85)',
-                            width: isTiny ? 14 : 18,
-                            height: isTiny ? 14 : 18,
-                            fontSize: isTiny ? 8 : 10,
-                        }}
-                    >
-                        {colorIndex + 1}
-                    </span>
-                    {!isTiny && (
-                        <span className="text-[10px] text-white/40 tabular-nums">{sharePct}%</span>
-                    )}
-                </div>
+            {/* Content */}
+            <div className="relative w-full h-full flex flex-col justify-center">
+                {/* Name — always shown, truncated if needed */}
+                <p
+                    className="font-semibold text-white leading-tight w-full"
+                    style={{
+                        fontSize: nameFontSize,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: pxH > 60 ? 2 : 1,
+                        WebkitBoxOrient: 'vertical' as any,
+                        wordBreak: 'break-word',
+                        opacity: item.isOthers ? 0.6 : 1,
+                    }}
+                >
+                    {item.name}
+                </p>
 
-                {/* Name block — only when tall enough */}
-                {isTall && (
-                    <div className="mt-1">
-                        <p
-                            className="font-semibold text-white leading-tight"
-                            style={{ fontSize: isWide ? 12 : 10 }}
-                            title={item.name}
-                        >
-                            {item.name}
-                        </p>
-                        {item.label && isWide && (
-                            <p className="text-[9px] text-white/40 truncate mt-0.5">{item.label}</p>
-                        )}
-                    </div>
+                {/* Sub-label: context (category or group name) */}
+                {showLabel && (
+                    <p
+                        className="text-white/40 truncate mt-0.5"
+                        style={{ fontSize: Math.max(8, nameFontSize - 2) }}
+                    >
+                        {item.label}
+                    </p>
                 )}
 
-                {/* Amount */}
-                <div className="flex items-end justify-between gap-1 mt-auto">
-                    <span
-                        className="font-bold tabular-nums text-white truncate"
-                        style={{ fontSize: isWide ? 13 : 11 }}
-                    >
-                        {formatCurrency(item.amount)}
-                    </span>
-                    {isWide && !isTiny && (
-                        <span className="text-[9px] text-white/35 tabular-nums shrink-0">
-                            {item.count} txn{item.count !== 1 ? 's' : ''}
-                        </span>
-                    )}
-                </div>
+                {/* Drill hint for wide tiles */}
+                {canDrill && isWide && pxH > 70 && (
+                    <p className="text-white/25 mt-1" style={{ fontSize: 8 }}>
+                        tap to drill
+                    </p>
+                )}
             </div>
         </div>
     );
@@ -333,7 +298,7 @@ function BentoCard({
 
 // ─── Treemap container ────────────────────────────────────────────────────────
 const ASPECT = 2.2;         // width / height ratio for the treemap box
-const MIN_TILE_PX = 56;     // minimum tile dimension in px (both width and height)
+const MIN_TILE_PX = 80;     // minimum tile dimension in px — ensures label is always visible
 
 /**
  * Boost items whose natural share would produce a tile smaller than MIN_TILE_PX
@@ -387,10 +352,11 @@ function BentoGrid({
         );
     }
 
-    // Minimum container height: enough rows of MIN_TILE_PX to fit all items
-    const minContainerH = Math.ceil(items.length / Math.floor(Math.max(containerW, 1) / MIN_TILE_PX)) * MIN_TILE_PX;
+    // ── Height calculation: avoid division-by-zero when containerW is 0
+    const tilesPerRow = containerW > 0 ? Math.max(1, Math.floor(containerW / MIN_TILE_PX)) : 1;
+    const minContainerH = Math.ceil(items.length / tilesPerRow) * MIN_TILE_PX;
     const naturalH = containerW > 0 ? Math.round(containerW / ASPECT) : 0;
-    const containerH = Math.max(naturalH, minContainerH);
+    const containerH = containerW > 0 ? Math.max(naturalH, minContainerH) : minContainerH;
 
     const adjustedItems = containerW > 0 ? enforceMinTileSize(items, containerW, containerH) : items;
     const tiles = containerW > 0
@@ -401,7 +367,7 @@ function BentoGrid({
         <div
             ref={containerRef}
             className="relative w-full"
-            style={{ height: containerH || undefined }}
+            style={{ height: containerH }}
         >
             {containerW > 0 && tiles.map((tile, i) => (
                 <BentoCard
@@ -421,6 +387,8 @@ function BentoGrid({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+const TOP_N = 10; // show top N items, rest go into "Others"
+
 export default function BentoBreakdown({
     transactions,
     categories,
@@ -428,13 +396,12 @@ export default function BentoBreakdown({
     selectedGroups = [],
     selectedCategories = [],
     onTileClick,
+    onBack,
+    onBackToCategory,
 }: BentoBreakdownProps) {
     const [mode, setMode] = useState<ViewMode>('groups');
-    const [limit] = useState(12);
 
     // ── Internal drill-down state ─────────────────────────────────────────────
-    // drillGroup: group name the user drilled into (set when clicking a group tile)
-    // drillCategory: category id the user drilled into (set when clicking a category tile)
     const [drillGroup, setDrillGroup] = useState<string | null>(null);
     const [drillCategory, setDrillCategory] = useState<string | null>(null);
 
@@ -445,12 +412,13 @@ export default function BentoBreakdown({
 
     // ── Drill handler ─────────────────────────────────────────────────────────
     const handleDrillDown = (item: BentoItem) => {
+        if (item.isOthers) return;
         if (mode === 'groups') {
-            setDrillGroup(item.id);   // item.id === group name for groups mode
+            setDrillGroup(item.id);
             setDrillCategory(null);
             setMode('categories');
         } else if (mode === 'categories') {
-            setDrillCategory(item.id); // item.id === category id
+            setDrillCategory(item.id);
             setMode('vendors');
         }
     };
@@ -492,7 +460,7 @@ export default function BentoBreakdown({
         });
     }, [transactions, dateRange, selectedGroups, selectedCategories, categoryMap, drillGroup, drillCategory]);
 
-    // ── Aggregate by selected mode ────────────────────────────────────────────
+    // ── Aggregate by selected mode — top 10 + "Others" ───────────────────────
     const items: BentoItem[] = useMemo(() => {
         const map = new Map<string, { name: string; label?: string; amount: number; count: number }>();
 
@@ -537,16 +505,35 @@ export default function BentoBreakdown({
 
         const sorted = Array.from(map.entries())
             .map(([id, v]) => ({ id, ...v }))
-            .sort((a, b) => b.amount - a.amount)
-            .slice(0, limit);
+            .sort((a, b) => b.amount - a.amount);
 
-        const total = sorted.reduce((s, x) => s + x.amount, 0);
+        const top = sorted.slice(0, TOP_N);
+        const rest = sorted.slice(TOP_N);
 
-        return sorted.map(x => ({
+        // Grand total for share calculation (top + others)
+        const grandTotal = sorted.reduce((s, x) => s + x.amount, 0);
+
+        const result: BentoItem[] = top.map(x => ({
             ...x,
-            share: total > 0 ? x.amount / total : 0,
+            share: grandTotal > 0 ? x.amount / grandTotal : 0,
         }));
-    }, [baseTxns, mode, categoryMap, limit]);
+
+        // Append "Others" bucket if there are items beyond the top-10
+        if (rest.length > 0) {
+            const othersAmount = rest.reduce((s, x) => s + x.amount, 0);
+            const othersCount = rest.reduce((s, x) => s + x.count, 0);
+            result.push({
+                id: '__others__',
+                name: `Others (${rest.length})`,
+                amount: othersAmount,
+                count: othersCount,
+                share: grandTotal > 0 ? othersAmount / grandTotal : 0,
+                isOthers: true,
+            });
+        }
+
+        return result;
+    }, [baseTxns, mode, categoryMap]);
 
     // ── Total summary ─────────────────────────────────────────────────────────
     const totalSpend = useMemo(
@@ -562,7 +549,6 @@ export default function BentoBreakdown({
     ];
 
     // ── Breadcrumb trail ──────────────────────────────────────────────────────
-    // Shows the drill path and lets the user click to navigate back up
     const breadcrumbs: { label: string; onClick: () => void }[] = [];
     if (drillGroup !== null) {
         breadcrumbs.push({
@@ -571,6 +557,8 @@ export default function BentoBreakdown({
                 setDrillGroup(null);
                 setDrillCategory(null);
                 setMode('groups');
+                // Also clear parent filters so other charts reset
+                onBack?.();
             },
         });
     }
@@ -581,9 +569,15 @@ export default function BentoBreakdown({
             onClick: () => {
                 setDrillCategory(null);
                 setMode('categories');
+                // Clear the category filter in the parent
+                onBackToCategory?.();
             },
         });
     }
+
+    // Format currency for the summary line
+    const fmt = (v: number) =>
+        new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
 
     return (
         <div>
@@ -591,7 +585,7 @@ export default function BentoBreakdown({
             <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-white tabular-nums">
-                        {formatCurrency(totalSpend)}
+                        {fmt(totalSpend)}
                     </span>
                     <span className="text-xs text-white/40 tabular-nums">{totalTxns} transactions</span>
                 </div>
@@ -601,11 +595,10 @@ export default function BentoBreakdown({
                         <button
                             key={tab.id}
                             onClick={() => handleTabChange(tab.id)}
-                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-                                mode === tab.id
+                            className={`px-3 py-1.5 text-xs rounded-md transition-all ${mode === tab.id
                                     ? 'bg-green text-black font-medium'
                                     : 'text-white/60 hover:text-white/80'
-                            }`}
+                                }`}
                         >
                             {tab.label}
                         </button>
@@ -622,6 +615,7 @@ export default function BentoBreakdown({
                             setDrillGroup(null);
                             setDrillCategory(null);
                             setMode('groups');
+                            onBack?.();
                         }}
                     >
                         All

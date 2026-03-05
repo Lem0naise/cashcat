@@ -449,9 +449,14 @@ export default function Stats() {
                                                 setSelectedCategories([tile.id]);
                                             }
                                         }}
+                                        onBack={() => {
+                                            if (selectedCategories.length > 0) setSelectedCategories([]);
+                                            else if (selectedGroups.length > 0) setSelectedGroups([]);
+                                        }}
+                                        onBackToCategory={() => setSelectedCategories([])}
                                     />
                                 </div>
-                                
+
 
                                 {/* ── 4. Top Categories + Top Vendors ────────────────────────────── */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
