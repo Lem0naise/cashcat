@@ -14,6 +14,7 @@ import SpendingHabitsWidget from '../components/charts/SpendingHabitsWidget';
 import TopCategoriesChart from '../components/charts/TopCategoriesChart';
 import TopVendorsChart from '../components/charts/TopVendorsChart';
 import SpendingOverTime from '../components/charts/SpendingOverTime';
+import BentoBreakdown from '../components/charts/BentoBreakdown';
 import { PieSegment } from '../components/charts/types';
 import { calculateDateRange, calculateAllTimeRange, formatCurrency } from '../components/charts/utils';
 import MobileNav from "../components/mobileNav";
@@ -24,6 +25,7 @@ import { useMobileViewportStability } from '../hooks/useMobileViewportStability'
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { ProGate } from '../components/pro-gate';
 import SankeyInline from './sankey/sankey-inline';
+import ShareModal from '../components/share-modal';
 import { Capacitor } from '@capacitor/core';
 import { subDays, startOfMonth, subMonths, endOfMonth, startOfYear, subYears, endOfYear } from 'date-fns';
 
@@ -50,6 +52,7 @@ export default function Stats() {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [showGoals, setShowGoals] = useState(false);
     const [showRollover, setShowRollover] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     // Mobile only – toggle between Spending and Balance charts
     const [activityChartMode, setActivityChartMode] = useState<'spending' | 'income'>('spending');
@@ -241,19 +244,22 @@ export default function Stats() {
                             <div className={`space-y-3 sm:space-y-4 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}>
 
                                 {/* ── 1. Chart Controls ───────────────────────────────────────────── */}
-                                <ChartControls
-                                    timeRange={timeRange}
-                                    onTimeRangeChange={handleTimeRangeChange}
-                                    customStartDate={customStartDate}
-                                    customEndDate={customEndDate}
-                                    onCustomDateChange={handleCustomDateChange}
-                                    availableGroups={availableGroups}
-                                    selectedGroups={selectedGroups}
-                                    onGroupsChange={handleGroupsChange}
-                                    availableCategories={availableCategories}
-                                    selectedCategories={selectedCategories}
-                                    onCategoriesChange={handleCategoriesChange}
-                                />
+                                <div>
+                                    <ChartControls
+                                        timeRange={timeRange}
+                                        onTimeRangeChange={handleTimeRangeChange}
+                                        customStartDate={customStartDate}
+                                        customEndDate={customEndDate}
+                                        onCustomDateChange={handleCustomDateChange}
+                                        availableGroups={availableGroups}
+                                        selectedGroups={selectedGroups}
+                                        onGroupsChange={handleGroupsChange}
+                                        availableCategories={availableCategories}
+                                        selectedCategories={selectedCategories}
+                                        onCategoriesChange={handleCategoriesChange}
+                                        onShare={() => setShowShareModal(true)}
+                                    />
+                                </div>
 
 
 
@@ -426,6 +432,37 @@ export default function Stats() {
                                 </div>
 
 
+                                {/* ── 5. Bento Breakdown ──────────────────────────────────────────── */}
+                                <div className="stats-card">
+                                    <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                                        </svg>
+                                        Visualise Spending
+                                    </h2>
+                                    <BentoBreakdown
+                                        transactions={transactions}
+                                        categories={categories}
+                                        dateRange={dateRange}
+                                        selectedGroups={selectedGroups}
+                                        selectedCategories={selectedCategories}
+                                        onTileClick={(tile) => {
+                                            if (tile.type === 'group') {
+                                                setSelectedGroups([tile.id]);
+                                                setSelectedCategories([]);
+                                            } else if (tile.type === 'category') {
+                                                setSelectedCategories([tile.id]);
+                                            }
+                                        }}
+                                        onBack={() => {
+                                            if (selectedCategories.length > 0) setSelectedCategories([]);
+                                            else if (selectedGroups.length > 0) setSelectedGroups([]);
+                                        }}
+                                        onBackToCategory={() => setSelectedCategories([])}
+                                    />
+                                </div>
+
+
                                 {/* ── 4. Top Categories + Top Vendors ────────────────────────────── */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                                     {showTopCategories && (
@@ -471,7 +508,8 @@ export default function Stats() {
                                     </div>
                                 </div>
 
-                                {/* ── 5. Activity charts ──────────────────────────────────────────── */}
+
+                                {/* ── 6. Activity charts ──────────────────────────────────────────── */}
                                 {/* Desktop: both side-by-side. Mobile: toggle */}
                                 {isDesktop ? (
                                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -613,6 +651,17 @@ export default function Stats() {
                     </div>
                 </main>
             </div>
+
+            {/* Share modal — mounted outside the main scroll container */}
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                transactions={transactions}
+                categories={categories}
+                dateRange={dateRange}
+                timeRange={timeRange}
+                quickStats={quickStats}
+            />
         </ProtectedRoute>
     );
 }

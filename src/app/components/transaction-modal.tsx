@@ -14,6 +14,7 @@ import { useGroups } from '../hooks/useGroups';
 import { useVendors } from '../hooks/useVendors';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAssignments } from '../hooks/useAssignments';
+import { suggestCategory, resolveCategory } from '../utils/vendor-categories';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -87,6 +88,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [vendorInputFocused, setVendorInputFocused] = useState(false);
     const [similarVendorWarning, setSimilarVendorWarning] = useState<Vendor | null>(null);
+    const [isCategoryAutoSuggested, setIsCategoryAutoSuggested] = useState(false);
     const vendorRef = useRef<HTMLDivElement>(null);
     const vendorInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,6 +120,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
         setFromAccountId('');
         setToAccountId('');
         setType('payment');
+        setIsCategoryAutoSuggested(false);
     };
 
     // Handle mode toggle
@@ -166,6 +169,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
             setAccountId('');
             setFromAccountId('');
             setToAccountId('');
+            setIsCategoryAutoSuggested(false);
         }
     }, [isOpen, transaction, transfer]);
 
@@ -223,8 +227,44 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                 return score >= 0.75;
             });
             setSimilarVendorWarning(similar ?? null);
+
+            // Auto-categorize via keyword engine only when this is a brand-new vendor
+            // (no prior transactions for this name) and no category is set yet
+            const hasHistory = cachedTransactions.some(
+                t => t.vendor.toLowerCase() === trimmed
+            );
+            if (!hasHistory && !categoryId) {
+                const suggestion = suggestCategory(value);
+                if (suggestion) {
+                    const match = resolveCategory(suggestion, categories);
+                    if (match) {
+                        setCategoryId(match.id);
+                        setIsCategoryAutoSuggested(true);
+                    }
+                }
+            } else if (!hasHistory && isCategoryAutoSuggested) {
+                // Vendor text changed — refresh the suggestion
+                const suggestion = suggestCategory(value);
+                if (suggestion) {
+                    const match = resolveCategory(suggestion, categories);
+                    if (match) {
+                        setCategoryId(match.id);
+                    } else {
+                        setCategoryId('');
+                        setIsCategoryAutoSuggested(false);
+                    }
+                } else {
+                    setCategoryId('');
+                    setIsCategoryAutoSuggested(false);
+                }
+            }
         } else {
             setSimilarVendorWarning(null);
+            // Clear auto-suggestion if input is too short
+            if (isCategoryAutoSuggested) {
+                setCategoryId('');
+                setIsCategoryAutoSuggested(false);
+            }
         }
     };
 
@@ -306,12 +346,14 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
         setVendor(vendorName);
         setShowSuggestions(false);
         setSimilarVendorWarning(null);
+        setIsCategoryAutoSuggested(false);
     };
 
     const selectVendor = (vendorName: string) => {
         setVendor(vendorName);
         setShowSuggestions(false);
         setSimilarVendorWarning(null);
+        setIsCategoryAutoSuggested(false);
 
         // Find the most recent transaction for this vendor from cached data
         const vendorTransactions = cachedTransactions
@@ -612,12 +654,22 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                                     <div>
                                         <div className="flex justify-between items-center mb-0.5">
                                             <label className={`block text-sm ${categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : 'text-white/50'}`}>Category</label>
-
+                                            {isCategoryAutoSuggested && (
+                                                <span className="flex items-center gap-1 text-xs text-white/30 select-none">
+                                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                                                        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                                    </svg>
+                                                    Auto-suggested
+                                                </span>
+                                            )}
                                         </div>
                                         <GroupedDropdown
                                             required={type === 'payment'}
                                             value={categoryId}
-                                            onChange={setCategoryId}
+                                            onChange={(val) => {
+                                                setCategoryId(val);
+                                                setIsCategoryAutoSuggested(false);
+                                            }}
                                             options={categories.map((category) => {
                                                 const group = groups.find(g => g.id === category.group);
                                                 return {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { adminClient } from '@/app/utils/supabase/admin';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 /**
  * POST /api/webhooks/lemonsqueezy
@@ -101,6 +102,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (upsertError) {
         console.error('[LS Webhook] Upsert error:', upsertError.message);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    // 8. Capture PostHog analytics for key subscription lifecycle events
+    if (eventName === 'subscription_created' || eventName === 'subscription_cancelled') {
+        const posthog = getPostHogClient();
+        posthog.capture({
+            distinctId: userId,
+            event: eventName,
+            properties: {
+                product_id: subscriptionRow.product_id,
+                variant_id: subscriptionRow.variant_id,
+                status: subscriptionRow.status,
+                renews_at: subscriptionRow.renews_at,
+            },
+        });
+        await posthog.shutdown();
     }
 
     console.log(`[LS Webhook] Processed ${eventName} for user ${userId} — status: ${subscriptionRow.status}`);

@@ -6,6 +6,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import posthog from 'posthog-js';
 
 export default function SignUpClient() {
   const router = useRouter();
@@ -122,6 +123,16 @@ export default function SignUpClient() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         if (session.user?.app_metadata.provider === 'email' || session.user?.app_metadata.provider === 'google') {
+          // Identify the user and capture sign-up event
+          posthog.identify(session.user.id, {
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
+            avatar: session.user.user_metadata?.avatar_url,
+            provider: session.user.app_metadata.provider,
+          });
+          posthog.capture('user_signed_up', {
+            provider: session.user.app_metadata.provider,
+          });
           router.push(redirectTo);
         }
       }

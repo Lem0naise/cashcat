@@ -25,6 +25,17 @@ export const changelog: Major[] = [
                 version: "14",
                 patches: [
                     {
+                        version: "0.14.1",
+                        date: "March 4, 2026",
+                        features: [
+                            "Vendor auto-categorisation",
+                            "Share modal for social media"
+                        ],
+                        bugfixes: [
+                            "Fixed bugs"
+                        ]
+                    },
+                    {
                         version: "0.14.0",
                         date: "March 1, 2026",
                         features: [

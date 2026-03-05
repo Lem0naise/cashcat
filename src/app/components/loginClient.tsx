@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Capacitor } from '@capacitor/core';
+import posthog from 'posthog-js';
 
 export default function LoginClient() {
   const router = useRouter();
@@ -126,6 +127,16 @@ export default function LoginClient() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         if (session.user?.app_metadata.provider === 'email' || session.user?.app_metadata.provider === 'google') {
+          // Identify the user and capture login event
+          posthog.identify(session.user.id, {
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
+            avatar: session.user.user_metadata?.avatar_url,
+            provider: session.user.app_metadata.provider,
+          });
+          posthog.capture('user_logged_in', {
+            provider: session.user.app_metadata.provider,
+          });
           router.push(redirectTo);
         }
       }

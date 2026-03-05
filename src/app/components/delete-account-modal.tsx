@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Database } from '@/types/supabase';
+import posthog from 'posthog-js';
 
 type DeleteAccountModalProps = {
     isOpen: boolean;
@@ -108,10 +109,14 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
                 error: 'Failed to delete account - please contact support.'
             });
 
+            posthog.capture('account_deleted');
+            posthog.reset();
+
             // Account deletion successful
             setTimeout(onAccountDeleted, 500);
 
         } catch (error) {
+            posthog.captureException(error);
             console.error('Error deleting account:', error);
             setConfirmDelete(false); // Reset confirmation on error
         } finally {

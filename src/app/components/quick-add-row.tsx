@@ -9,6 +9,7 @@ import { useGroups } from '../hooks/useGroups';
 import { useVendors } from '../hooks/useVendors';
 import { useTransactions } from '../hooks/useTransactions';
 import { getCurrencySymbol } from './charts/utils';
+import posthog from 'posthog-js';
 
 type Vendor = { id: string; name: string };
 
@@ -281,6 +282,11 @@ export default function QuickAddRow({ onSubmit, onCancel, autoFocus = false, amo
             vendor: vendor.trim(),
             account_id: accountId,
             category_id: type === 'payment' ? categoryId : null,
+        });
+
+        posthog.capture('transaction_added', {
+            transaction_type: type,
+            has_category: type === 'payment' ? !!categoryId : false,
         });
 
         resetForm();
