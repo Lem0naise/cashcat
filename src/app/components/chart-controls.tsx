@@ -20,6 +20,7 @@ interface ChartControlsProps {
   availableCategories: { id: string; name: string; group: string }[];
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
+  onShare?: () => void;
 }
 
 export default function ChartControls({
@@ -33,7 +34,8 @@ export default function ChartControls({
   onGroupsChange,
   availableCategories,
   selectedCategories,
-  onCategoriesChange
+  onCategoriesChange,
+  onShare,
 }: ChartControlsProps) {
   const [showCustomDates, setShowCustomDates] = useState(false);
   const [showProGate, setShowProGate] = useState(false);
@@ -83,7 +85,7 @@ export default function ChartControls({
       {/* Time Range Controls */}
       <div className="bg-white/[.03] rounded-lg p-4">
         <h3 className="font-medium mb-3">Time Range</h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {timeRangeOptions.map(option => (
             <button
               key={option.value}
@@ -109,6 +111,18 @@ export default function ChartControls({
               {option.value === 'custom' && !subscription?.isActive && <ProBadge />}
             </button>
           ))}
+          {onShare && (
+            <button
+              onClick={onShare}
+              title="Share"
+              className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[.04] border border-white/[.08] text-white/60 hover:bg-white/[.08] hover:text-white/90 transition-colors text-sm font-medium"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              <span className="hidden sm:inline">Share</span>
+            </button>
+          )}
         </div>
 
         {/* Custom Date Picker */}

@@ -41,6 +41,7 @@
     "d3-shape": "^3.2.0",
     "date-fns": "^3.6.0",
     "expr-eval": "^2.0.2",
+    "html-to-image": "^1.11.13",
     "idb-keyval": "^6.2.2",
     "lodash": "^4.17.21",
     "next": "15.3.8",

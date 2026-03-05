@@ -25,6 +25,7 @@ import { useMobileViewportStability } from '../hooks/useMobileViewportStability'
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { ProGate } from '../components/pro-gate';
 import SankeyInline from './sankey/sankey-inline';
+import ShareModal from '../components/share-modal';
 import { Capacitor } from '@capacitor/core';
 import { subDays, startOfMonth, subMonths, endOfMonth, startOfYear, subYears, endOfYear } from 'date-fns';
 
@@ -51,6 +52,7 @@ export default function Stats() {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [showGoals, setShowGoals] = useState(false);
     const [showRollover, setShowRollover] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     // Mobile only – toggle between Spending and Balance charts
     const [activityChartMode, setActivityChartMode] = useState<'spending' | 'income'>('spending');
@@ -242,19 +244,22 @@ export default function Stats() {
                             <div className={`space-y-3 sm:space-y-4 transition-all duration-300 ease-out ${zoomAnimating ? 'opacity-90 scale-[0.995]' : 'opacity-100 scale-100'}`}>
 
                                 {/* ── 1. Chart Controls ───────────────────────────────────────────── */}
-                                <ChartControls
-                                    timeRange={timeRange}
-                                    onTimeRangeChange={handleTimeRangeChange}
-                                    customStartDate={customStartDate}
-                                    customEndDate={customEndDate}
-                                    onCustomDateChange={handleCustomDateChange}
-                                    availableGroups={availableGroups}
-                                    selectedGroups={selectedGroups}
-                                    onGroupsChange={handleGroupsChange}
-                                    availableCategories={availableCategories}
-                                    selectedCategories={selectedCategories}
-                                    onCategoriesChange={handleCategoriesChange}
-                                />
+                                <div>
+                                    <ChartControls
+                                        timeRange={timeRange}
+                                        onTimeRangeChange={handleTimeRangeChange}
+                                        customStartDate={customStartDate}
+                                        customEndDate={customEndDate}
+                                        onCustomDateChange={handleCustomDateChange}
+                                        availableGroups={availableGroups}
+                                        selectedGroups={selectedGroups}
+                                        onGroupsChange={handleGroupsChange}
+                                        availableCategories={availableCategories}
+                                        selectedCategories={selectedCategories}
+                                        onCategoriesChange={handleCategoriesChange}
+                                        onShare={() => setShowShareModal(true)}
+                                    />
+                                </div>
 
 
 
@@ -646,6 +651,17 @@ export default function Stats() {
                     </div>
                 </main>
             </div>
+
+            {/* Share modal — mounted outside the main scroll container */}
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                transactions={transactions}
+                categories={categories}
+                dateRange={dateRange}
+                timeRange={timeRange}
+                quickStats={quickStats}
+            />
         </ProtectedRoute>
     );
 }
