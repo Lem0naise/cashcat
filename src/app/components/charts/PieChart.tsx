@@ -769,7 +769,7 @@ export default function PieChart({
           style={{ overflow: 'visible' }}
         >
           <div className={`relative w-full ${shouldShowLabels ? (matchHeight ? 'max-w-[500px]' : 'max-w-[600px]') : 'max-w-full'}`}>
-            <div className="w-full h-full overflow-visible relative transition-all duration-300 ease-out">
+            <div className="w-full h-full flex items-center justify-center overflow-visible relative transition-all duration-300 ease-out">
               <Doughnut
                 ref={chartRef}
                 data={chartData}
