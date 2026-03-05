@@ -14,6 +14,7 @@ import SpendingHabitsWidget from '../components/charts/SpendingHabitsWidget';
 import TopCategoriesChart from '../components/charts/TopCategoriesChart';
 import TopVendorsChart from '../components/charts/TopVendorsChart';
 import SpendingOverTime from '../components/charts/SpendingOverTime';
+import BentoBreakdown from '../components/charts/BentoBreakdown';
 import { PieSegment } from '../components/charts/types';
 import { calculateDateRange, calculateAllTimeRange, formatCurrency } from '../components/charts/utils';
 import MobileNav from "../components/mobileNav";
@@ -426,6 +427,32 @@ export default function Stats() {
                                 </div>
 
 
+                                {/* ── 5. Bento Breakdown ──────────────────────────────────────────── */}
+                                <div className="stats-card">
+                                    <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
+                                            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                                        </svg>
+                                        Visualise Spending
+                                    </h2>
+                                    <BentoBreakdown
+                                        transactions={transactions}
+                                        categories={categories}
+                                        dateRange={dateRange}
+                                        selectedGroups={selectedGroups}
+                                        selectedCategories={selectedCategories}
+                                        onTileClick={(tile) => {
+                                            if (tile.type === 'group') {
+                                                setSelectedGroups([tile.id]);
+                                                setSelectedCategories([]);
+                                            } else if (tile.type === 'category') {
+                                                setSelectedCategories([tile.id]);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                
+
                                 {/* ── 4. Top Categories + Top Vendors ────────────────────────────── */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                                     {showTopCategories && (
@@ -471,7 +498,8 @@ export default function Stats() {
                                     </div>
                                 </div>
 
-                                {/* ── 5. Activity charts ──────────────────────────────────────────── */}
+
+                                {/* ── 6. Activity charts ──────────────────────────────────────────── */}
                                 {/* Desktop: both side-by-side. Mobile: toggle */}
                                 {isDesktop ? (
                                     <div className="grid grid-cols-2 gap-3 sm:gap-4">

@@ -1,5 +1,6 @@
 // Chart components index - easy imports
 export { default as BudgetAssignmentChart } from '../BudgetAssignmentChartRefactored';
+export { default as BentoBreakdown } from './BentoBreakdown';
 export { ComparisonAnalysis } from './ComparisonAnalysis';
 export { default as PieChart } from './PieChart';
 export { default as PieSegmentInsights } from './PieSegmentInsights';
