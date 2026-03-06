@@ -273,6 +273,26 @@ export default function Account() {
                         </div>
 
 
+                        {/* Google Play Link */}
+                        {isNative && ( <div className="mt-4 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-semibold mb-1">View on Google Play</h2>
+                                    <p className="text-sm text-white/70">
+                                        View CashCat on the Google Play Store.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="https://play.google.com/store/apps/details?id=com.lemonaise.cashcat"
+                                    target="_blank"
+                                    className="w-full md:w-auto text-center px-3 py-1.5 text-sm bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50 md:shrink-0"
+                                >
+                                    Google Play
+                                </Link>
+                            </div>
+                        </div>
+)}
+                       
 
                         {/* API Keys */}
                         {!isNative && ApiKeyManager && <ApiKeyManager />}
