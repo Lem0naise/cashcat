@@ -1508,11 +1508,11 @@ export default function ManageBudgetModal({ isOpen, onClose, isOnboarding = fals
 
     return (
         <div
-            className={`fixed inset-0 bg-black md:bg-black/60 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out_forwards]' : 'animate-[fadeIn_0.2s_ease-out]'}`}
+            className={`fixed inset-0 bg-black md:bg-black/60 backdrop-blur-sm z-[100] flex items-start md:items-center justify-center font-[family-name:var(--font-suse)] overflow-hidden ${isClosing ? 'animate-[fadeOut_0.2s_ease-out_forwards]' : ''}`}
             onClick={handleBackdropClick}
         >
             <div
-                className={`relative bg-black md:bg-black/[.95] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : 'animate-[slideIn_0.2s_ease-out]'}`}
+                className={`relative bg-black md:bg-black/[.95] md:rounded-lg md:border-b-4 w-full md:max-w-xl h-screen md:h-auto md:max-h-[90vh] flex flex-col ${isClosing ? 'animate-[slideOut_0.2s_ease-out_forwards]' : ''}`}
             >
                 {isOnboarding ? (
                     <OnboardingWizard onClose={handleClose} onImportCSV={onImportCSV} onAddAccounts={onAddAccounts} />
