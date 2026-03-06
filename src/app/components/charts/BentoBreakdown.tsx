@@ -66,16 +66,7 @@ function getColor(index: number, isOthers?: boolean): string {
 }
 
 // ─── Squarified treemap ───────────────────────────────────────────────────────
-
 interface Rect { x: number; y: number; w: number; h: number; }
-
-function worst(row: number[], w: number, total: number): number {
-    if (row.length === 0) return 99;
-    const s = row.reduce((a, b) => a + b, 0);
-    const max = Math.max(...row);
-    const min = Math.min(...row);
-    return Math.max((w * w * max) / (s * s), (s * s) / (w * w * min)) * total * total;
-}
 
 function squarify(items: BentoItem[], rect: Rect): TileRect[] {
     if (items.length === 0) return [];
@@ -85,83 +76,61 @@ function squarify(items: BentoItem[], rect: Rect): TileRect[] {
     const values = items.map(x => (x.share / totalShare) * totalArea);
 
     const result: TileRect[] = [];
-    squarifyInto(values, items, rect, result);
+    balancedPartition(values, items, rect, result);
+    
+    // Re-assign indexes based on final layout
+    result.forEach((t, i) => { t.index = i; });
     return result;
 }
 
-function squarifyInto(
+function balancedPartition(
     values: number[],
     items: BentoItem[],
     rect: Rect,
-    out: TileRect[],
+    out: TileRect[]
 ): void {
-    if (values.length === 0) return;
-    if (values.length === 1) {
+    if (items.length === 0) return;
+    if (items.length === 1) {
         out.push({ ...rect, item: items[0], index: 0 });
         return;
     }
 
-    const isHorizontal = rect.w >= rect.h;
-    const w = isHorizontal ? rect.w : rect.h;
+    // Find the split point that most evenly divides the financial weight
+    const total = values.reduce((a, b) => a + b, 0);
+    const half = total / 2;
+    let sum = 0;
+    let splitIdx = 0;
+    let bestDiff = total;
 
-    let row: number[] = [];
-    let i = 0;
-
-    while (i < values.length) {
-        const next = values[i];
-        if (worst([...row, next], w, 1) <= worst(row, w, 1) || row.length === 0) {
-            row.push(next);
-            i++;
-        } else {
-            break;
+    for (let i = 0; i < values.length - 1; i++) {
+        sum += values[i];
+        const diff = Math.abs(half - sum);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            splitIdx = i;
         }
     }
 
-    const rowTiles = layoutRowNorm(row, items.slice(0, row.length), rect, isHorizontal);
-    rowTiles.forEach((t, j) => { t.index = out.length + j; });
-    out.push(...rowTiles);
+    const group1Items = items.slice(0, splitIdx + 1);
+    const group1Values = values.slice(0, splitIdx + 1);
+    const group2Items = items.slice(splitIdx + 1);
+    const group2Values = values.slice(splitIdx + 1);
 
-    const sum = row.reduce((a, b) => a + b, 0);
-    const stripSize = isHorizontal
-        ? (sum / rect.w) // FIX: removed erroneous * rect.h
-        : (sum / rect.h); // FIX: removed erroneous * rect.w
+    const g1Sum = group1Values.reduce((a, b) => a + b, 0);
+    const ratio = total > 0 ? g1Sum / total : 0.5;
 
-    const remaining: Rect = isHorizontal
-        ? { x: rect.x, y: rect.y + stripSize, w: rect.w, h: rect.h - stripSize }
-        : { x: rect.x + stripSize, y: rect.y, w: rect.w - stripSize, h: rect.h };
+    // Split along the longest side to keep tiles as square as possible
+    const isHorizontal = rect.w >= rect.h;
 
-    squarifyInto(values.slice(row.length), items.slice(row.length), remaining, out);
-}
-
-function layoutRowNorm(
-    row: number[],
-    rowItems: BentoItem[],
-    rect: Rect,
-    isHorizontal: boolean,
-): TileRect[] {
-    const tiles: TileRect[] = [];
-    const sum = row.reduce((a, b) => a + b, 0);
-    const stripSize = isHorizontal
-        ? (sum / rect.w) // FIX: removed erroneous * rect.h
-        : (sum / rect.h); // FIX: removed erroneous * rect.w
-
-    let offset = isHorizontal ? rect.x : rect.y;
-
-    for (let k = 0; k < row.length; k++) {
-        const val = row[k];
-        const dim = isHorizontal ? (val / sum) * rect.w : (val / sum) * rect.h;
-
-        tiles.push({
-            x: isHorizontal ? offset : rect.x,
-            y: isHorizontal ? rect.y : offset,
-            w: isHorizontal ? dim : stripSize,
-            h: isHorizontal ? stripSize : dim,
-            item: rowItems[k],
-            index: k,
-        });
-        offset += dim;
+    if (isHorizontal) {
+        const w1 = rect.w * ratio;
+        balancedPartition(group1Values, group1Items, { x: rect.x, y: rect.y, w: w1, h: rect.h }, out);
+        balancedPartition(group2Values, group2Items, { x: rect.x + w1, y: rect.y, w: rect.w - w1, h: rect.h }, out);
+    } else {
+        const h1 = rect.h * ratio;
+        balancedPartition(group1Values, group1Items, { x: rect.x, y: rect.y, w: rect.w, h: h1 }, out);
+        balancedPartition(group2Values, group2Items, { x: rect.x, y: rect.y + h1, w: rect.w, h: rect.h - h1 }, out);
     }
-    return tiles;
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
@@ -386,7 +355,14 @@ function BentoGrid({
     const tilesPerRow = containerW > 0 ? Math.max(1, Math.floor(containerW / MIN_TILE_PX)) : 1;
     const minContainerH = Math.ceil(items.length / (containerW > 400 ? 2 : 1)) * MIN_TILE_PX;
     const naturalH = containerW > 0 ? Math.round(containerW / dynamicAspect) : 0;
-    const containerH = containerW > 0 ? Math.max(naturalH, minContainerH) : minContainerH;
+
+    // Cap treemap height to ~2/3 viewport height
+    const viewportCap = typeof window !== 'undefined'
+        ? Math.floor(window.innerHeight * 0.5)
+        : Number.POSITIVE_INFINITY;
+
+    const uncappedH = containerW > 0 ? Math.max(naturalH, minContainerH) : minContainerH;
+    const containerH = Math.min(uncappedH, viewportCap);
 
     const adjustedItems = containerW > 0 ? enforceMinTileSize(items, containerW, containerH) : items;
     const tiles = containerW > 0
