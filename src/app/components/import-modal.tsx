@@ -347,7 +347,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
         if (categoryColumn) {
             const csvCategories = [...new Map(
                 result.transactions
-                    .filter(t => t.categoryName)
+                    .filter(t => t.categoryName && t.amount <= 0 && !t.isStartingBalance && !t.categoryName.toLowerCase().includes('income') && !t.categoryGroupName?.toLowerCase().includes('income'))
                     .map(t => [`${t.categoryGroupName}|||${t.categoryName}`, { name: t.categoryName, group: t.categoryGroupName }])
             ).values()];
 
@@ -375,7 +375,12 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
         }
 
         if (!categoryColumn) {
-            const uniqueVendors = [...new Set(result.transactions.map(t => t.vendor).filter(Boolean))];
+            const uniqueVendors = [...new Set(
+                result.transactions
+                    .filter(t => t.amount <= 0 && !t.isStartingBalance && !t.categoryName?.toLowerCase().includes('income') && !t.categoryGroupName?.toLowerCase().includes('income'))
+                    .map(t => t.vendor)
+                    .filter(Boolean)
+            )];
 
             // Accumulate temp groups/categories created during this pass so that
             // auto-suggestions still work when the user has no existing categories yet
@@ -1082,7 +1087,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
                         vendor: tx.vendor,
                         description: tx.description || undefined,
                         account_id: accountId,
-                        category_id: categoryId || undefined,
+                        category_id: (type === 'income' || type === 'starting') ? undefined : (categoryId || undefined),
                         user_id: _currentUserId!,
                     };
                 });
