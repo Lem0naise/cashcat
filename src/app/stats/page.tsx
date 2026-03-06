@@ -27,7 +27,7 @@ import { ProGate } from '../components/pro-gate';
 import SankeyInline from './sankey/sankey-inline';
 import ShareModal from '../components/share-modal';
 import { Capacitor } from '@capacitor/core';
-import { subDays, startOfMonth, subMonths, endOfMonth, startOfYear, subYears, endOfYear } from 'date-fns';
+import { subDays, startOfMonth, subMonths, endOfMonth, startOfYear, subYears, endOfYear, differenceInCalendarDays } from 'date-fns';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -108,9 +108,10 @@ export default function Stats() {
             const prev = subYears(dateRange.start, 1);
             return { start: startOfYear(prev), end: endOfYear(prev) };
         } else {
-            const duration = dateRange.end.getTime() - dateRange.start.getTime();
-            const compEnd = new Date(dateRange.start.getTime() - 1);
-            const compStart = new Date(dateRange.start.getTime() - duration);
+            // Align to whole calendar days to avoid ms drift / partial-day mismatch.
+            const daysInRange = Math.max(1, differenceInCalendarDays(dateRange.end, dateRange.start) + 1);
+            const compEnd = subDays(dateRange.start, 1);
+            const compStart = subDays(compEnd, daysInRange - 1);
             return { start: compStart, end: compEnd };
         }
     }, [dateRange, timeRange]);
@@ -400,7 +401,7 @@ export default function Stats() {
                                     <div className="stats-card lg:w-[480px] xl:w-[520px]">
                                         <h2 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green">
-                                                <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 019.95 9H12V2z" />
+                                                <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 009.95 9H12V2z" />
                                             </svg>
                                             Spending Breakdown
                                         </h2>

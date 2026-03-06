@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useCallback } from 'react';
-import { format, subMonths, startOfMonth, endOfMonth, subYears, startOfYear, endOfYear, differenceInDays, addDays, subDays, startOfWeek, eachDayOfInterval } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, subYears, startOfYear, endOfYear, differenceInDays, addDays, subDays, startOfWeek, eachDayOfInterval, differenceInCalendarDays } from 'date-fns';
 import { Transaction, Category } from './types';
 import { formatCurrency } from './utils';
 
@@ -81,9 +81,10 @@ export default function FilterInsights({
       comparisonStart = startOfYear(prev);
       comparisonEnd = endOfYear(prev);
     } else {
-      const dur = dateRange.end.getTime() - dateRange.start.getTime();
-      comparisonStart = new Date(dateRange.start.getTime() - dur);
-      comparisonEnd = new Date(dateRange.start.getTime());
+      // Same-length previous period, day-aligned, excluding current start day.
+      const daysInRange = Math.max(1, differenceInCalendarDays(dateRange.end, dateRange.start) + 1);
+      comparisonEnd = subDays(dateRange.start, 1);
+      comparisonStart = subDays(comparisonEnd, daysInRange - 1);
     }
 
     const compTxns = transactions.filter(t => {
@@ -109,8 +110,8 @@ export default function FilterInsights({
     let hasCompData = comparisonSpending > 0;
     if (comparisonSpending > 0) {
       trendPct = ((currentSpending - comparisonSpending) / comparisonSpending) * 100;
-      if (trendPct > 5) trendDir = 'up';
-      else if (trendPct < -5) trendDir = 'down';
+      if (trendPct > 1) trendDir = 'up';
+      else if (trendPct < -1) trendDir = 'down';
     } else if (currentSpending > 0) {
       hasCompData = false;
     }
@@ -146,7 +147,7 @@ export default function FilterInsights({
     }
 
     // Averages & patterns
-    const daysDuration = Math.max(1, (dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDuration = Math.max(1, differenceInCalendarDays(dateRange.end, dateRange.start) + 1);
     const dailyAverage = currentSpending / daysDuration;
     const weeklyProjection = dailyAverage * 7;
     const monthlyProjection = dailyAverage * 30;
@@ -224,7 +225,7 @@ export default function FilterInsights({
       if (comparisonTxnCount === 0) return false;
       const compDates = compTxns.map(t => new Date(t.date).toDateString());
       const uniqueDates = new Set(compDates);
-      const totalCompDays = Math.ceil((comparisonEnd.getTime() - comparisonStart.getTime()) / (1000 * 60 * 60 * 24));
+      const totalCompDays = Math.max(1, differenceInCalendarDays(comparisonEnd, comparisonStart) + 1);
       return uniqueDates.size / totalCompDays >= 0.8 || (totalCompDays >= 14 && comparisonTxnCount >= 3);
     })();
 
@@ -425,7 +426,7 @@ export default function FilterInsights({
     (filterType !== 'vendor' && insights.mostFreqVendor && insights.mostFreqVendorCount > 1) ? {
       icon: (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9" />
+          <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M3 9l2.45-4.9A2 2 0 007.24 3h9.52a2 2 0 011.8 1.1L21 9" />
         </svg>
       ),
       label: 'Most visited',
