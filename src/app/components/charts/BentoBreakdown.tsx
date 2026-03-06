@@ -123,8 +123,8 @@ function squarifyInto(
 
     const sum = row.reduce((a, b) => a + b, 0);
     const stripSize = isHorizontal
-        ? (sum / rect.w) * rect.h
-        : (sum / rect.h) * rect.w;
+        ? (sum / rect.w) // FIX: removed erroneous * rect.h
+        : (sum / rect.h); // FIX: removed erroneous * rect.w
 
     const remaining: Rect = isHorizontal
         ? { x: rect.x, y: rect.y + stripSize, w: rect.w, h: rect.h - stripSize }
@@ -142,8 +142,8 @@ function layoutRowNorm(
     const tiles: TileRect[] = [];
     const sum = row.reduce((a, b) => a + b, 0);
     const stripSize = isHorizontal
-        ? (sum / rect.w) * rect.h
-        : (sum / rect.h) * rect.w;
+        ? (sum / rect.w) // FIX: removed erroneous * rect.h
+        : (sum / rect.h); // FIX: removed erroneous * rect.w
 
     let offset = isHorizontal ? rect.x : rect.y;
 
@@ -193,9 +193,9 @@ function BentoCard({
     const pxH = tile.h * containerH - GAP;
 
     const isWide = pxW > 100;
-    const isNarrow = pxW < 70;
+    const isNarrow = pxW < 80;
 
-    const pad = isNarrow ? 6 : isWide ? 12 : 8;
+    const pad = isNarrow ? 4 : isWide ? 10 : 8;
 
     // Drill advances mode: groups → categories → vendors
     // "Others" tiles are not drillable
@@ -218,13 +218,15 @@ function BentoCard({
 
     // Scale font by the smaller dimension, then reduce for long names
     const shortSide = Math.min(pxW, pxH);
-    const baseSize = Math.round(Math.min(18, Math.max(9, shortSide * 0.14)));
+    const baseSize = Math.round(Math.min(15, Math.max(11, shortSide * 0.18)));
     const nameLen = item.name.length;
-    const lengthDiscount = nameLen <= 8 ? 0 : nameLen <= 14 ? 1 : nameLen <= 20 ? 2 : 3;
-    const nameFontSize = Math.max(9, baseSize - lengthDiscount);
+    const lengthDiscount = nameLen <= 8 ? 0 : nameLen <= 14 ? 1 : nameLen <= 20 ? 1.5 : 2;
+    const nameFontSize = Math.max(10, baseSize - lengthDiscount);
+
+    const percentage = Math.round((item.displayShare ?? item.share) * 100);
 
     // Sub-label (group/category of the tile)
-    const showLabel = item.label && isWide && pxH > 80;
+    const showLabel = item.label && pxH > 65;
 
     return (
         <div
@@ -258,37 +260,37 @@ function BentoCard({
             />
 
             {/* Content */}
-            <div className="relative w-full h-full flex flex-col justify-center">
-                {/* Name — always shown, truncated if needed */}
-                <p
-                    className="font-semibold text-white leading-tight w-full"
-                    style={{
-                        fontSize: nameFontSize,
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitLineClamp: pxH > 60 ? 2 : 1,
-                        WebkitBoxOrient: 'vertical' as any,
-                        wordBreak: 'break-word',
-                        opacity: item.isOthers ? 0.6 : 1,
-                    }}
-                >
-                    {item.name}
-                </p>
+            <div className="relative w-full h-full flex flex-col justify-start overflow-hidden">
+                <div className="flex justify-between items-start gap-1">
+                    <p
+                        className="font-semibold text-white leading-[1.1] flex-1"
+                        style={{
+                            fontSize: nameFontSize,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: pxH > 45 ? 2 : 1,
+                            WebkitBoxOrient: 'vertical' as any,
+                            wordBreak: 'break-word',
+                            opacity: item.isOthers ? 0.6 : 1,
+                        }}
+                    >
+                        {item.name}
+                    </p>
+                    <span 
+                        className="text-white/40 font-medium tabular-nums"
+                        style={{ fontSize: Math.max(9, nameFontSize - 2) }}
+                    >
+                        {percentage}%
+                    </span>
+                </div>
 
                 {/* Sub-label: context (category or group name) */}
                 {showLabel && (
                     <p
-                        className="text-white/40 truncate mt-0.5"
-                        style={{ fontSize: Math.max(8, nameFontSize - 2) }}
+                        className="text-white/25 truncate mt-0.5"
+                        style={{ fontSize: Math.max(8.5, nameFontSize - 3) }}
                     >
                         {item.label}
-                    </p>
-                )}
-
-                {/* Drill hint for wide tiles */}
-                {canDrill && isWide && pxH > 70 && (
-                    <p className="text-white/25 mt-1" style={{ fontSize: 8 }}>
-                        tap to drill
                     </p>
                 )}
             </div>
@@ -297,26 +299,53 @@ function BentoCard({
 }
 
 // ─── Treemap container ────────────────────────────────────────────────────────
-const ASPECT = 2.2;         // width / height ratio for the treemap box
-const MIN_TILE_PX = 80;     // minimum tile dimension in px — ensures label is always visible
+const ASPECT = 0.75;         // Taller vertical orientation
+const MIN_TILE_PX = 80;     // Ensure tiles are tall enough for headings
+
+function getDynamicAspect(containerW: number): number {
+    // smaller aspect => taller chart (H = W / aspect)
+    if (containerW < 640) return 0.6;   // mobile
+    if (containerW < 1024) return 1.0;  // tablet
+    return 1.5;                         // desktop
+}
 
 /**
  * Boost items whose natural share would produce a tile smaller than MIN_TILE_PX
  * so that every tile is at least MIN_TILE_PX × MIN_TILE_PX pixels.
- */
-function enforceMinTileSize(items: BentoItem[], containerW: number, containerH: number): BentoItem[] {
+ */function enforceMinTileSize(items: BentoItem[], containerW: number, containerH: number): BentoItem[] {
     if (items.length === 0) return items;
+    
     const totalArea = containerW * containerH;
     const minShare = (MIN_TILE_PX * MIN_TILE_PX) / totalArea;
 
-    const boosted = items.map(item => ({
-        ...item,
-        displayShare: item.displayShare ?? item.share,
-        share: Math.max(item.share, minShare),
-    }));
+    let totalBoostedShare = 0;
+    let naturalShareSum = 0;
 
-    const newTotal = boosted.reduce((s, x) => s + x.share, 0);
-    return boosted.map(item => ({ ...item, share: item.share / newTotal }));
+    // Separate items into those that need a boost, and those that are fine
+    const boosted = items.map(item => {
+        if (item.share < minShare) {
+            totalBoostedShare += minShare;
+            return { ...item, displayShare: item.displayShare ?? item.share, share: minShare, isBoosted: true };
+        } else {
+            naturalShareSum += item.share;
+            return { ...item, displayShare: item.displayShare ?? item.share, isBoosted: false };
+        }
+    });
+
+    // If there are so many tiny items they overflow the box, fall back to standard normalization
+    if (totalBoostedShare >= 1) {
+        const newTotal = boosted.reduce((s, x) => s + x.share, 0);
+        return boosted.map(item => ({ ...item, share: item.share / newTotal }));
+    }
+
+    // Otherwise, squish ONLY the larger items to make room for the minimums
+    const remainingSpace = 1 - totalBoostedShare;
+    const squishFactor = remainingSpace / naturalShareSum;
+
+    return boosted.map(item => ({
+        ...item,
+        share: (item as any).isBoosted ? item.share : item.share * squishFactor
+    }));
 }
 
 function BentoGrid({
@@ -353,14 +382,15 @@ function BentoGrid({
     }
 
     // ── Height calculation: avoid division-by-zero when containerW is 0
+    const dynamicAspect = containerW > 0 ? getDynamicAspect(containerW) : 1;
     const tilesPerRow = containerW > 0 ? Math.max(1, Math.floor(containerW / MIN_TILE_PX)) : 1;
-    const minContainerH = Math.ceil(items.length / tilesPerRow) * MIN_TILE_PX;
-    const naturalH = containerW > 0 ? Math.round(containerW / ASPECT) : 0;
+    const minContainerH = Math.ceil(items.length / (containerW > 400 ? 2 : 1)) * MIN_TILE_PX;
+    const naturalH = containerW > 0 ? Math.round(containerW / dynamicAspect) : 0;
     const containerH = containerW > 0 ? Math.max(naturalH, minContainerH) : minContainerH;
 
     const adjustedItems = containerW > 0 ? enforceMinTileSize(items, containerW, containerH) : items;
     const tiles = containerW > 0
-        ? squarify(adjustedItems, { x: 0, y: 0, w: 1, h: 1 })
+        ? squarify(adjustedItems, { x: 0, y: 0, w: 1, h: 1 }) // fills full normalized rect
         : [];
 
     return (
@@ -387,7 +417,7 @@ function BentoGrid({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const TOP_N = 10; // show top N items, rest go into "Others"
+const TOP_N = 8; // show top N items, rest go into "Others"
 
 export default function BentoBreakdown({
     transactions,
@@ -628,7 +658,7 @@ export default function BentoBreakdown({
                                     className="text-xs text-white/40 hover:text-white/70 transition-colors"
                                     onClick={crumb.onClick}
                                 >
-                                    {crumb.label}
+                                    {crumb.label} 
                                 </button>
                             ) : (
                                 <span className="text-xs text-white/70 font-medium">{crumb.label}</span>

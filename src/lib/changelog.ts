@@ -25,6 +25,16 @@ export const changelog: Major[] = [
                 version: "14",
                 patches: [
                     {
+                        version: "0.14.2",
+                        date: "March 6, 2026",
+                        features: [
+                            
+                        ],
+                        bugfixes: [
+                            "Bento breakdown view improved"
+                        ]
+                    },
+                    {
                         version: "0.14.1",
                         date: "March 4, 2026",
                         features: [
