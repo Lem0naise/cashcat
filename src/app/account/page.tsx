@@ -177,7 +177,7 @@ export default function Account() {
 
                         {/* CashCat Pro Subscription */}
                         <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2 mb-2">
                                 <h2 className="text-lg font-semibold">CashCat Pro</h2>
                                 {subscriptionStatus?.isActive && <ProBadge />}
                             </div>
@@ -188,85 +188,88 @@ export default function Account() {
                                     Loading subscription…
                                 </div>
                             ) : subscriptionStatus?.isActive ? (
-                                <div className="space-y-3">
-                                    <p className="text-sm text-white/70">
-                                        You&apos;re on CashCat Pro! Thanks for your support!
-                                    </p>
+                                <div className="space-y-2">
+                                    <p className="text-sm text-white/70">You&apos;re on CashCat Pro! Thanks for your support!</p>
                                     {subscriptionStatus.renewsAt && (
                                         <p className="text-xs text-white/40">
                                             Renews on {new Date(subscriptionStatus.renewsAt).toLocaleDateString()}
                                         </p>
                                     )}
                                     <p className="text-xs text-white/40">
-                                        To manage your subscription, visit your{' '}
+                                        Manage in the{' '}
                                         <a
                                             href="https://app.lemonsqueezy.com/my-orders"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-green hover:underline"
                                         >
-                                            Lemon Squeezy customer portal
+                                            Lemon Squeezy portal
                                         </a>.
                                     </p>
                                 </div>
                             ) : isNative ? (
-                                /* Native: no payment/upgrade links for Google Play compliance */
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <p className="text-sm text-white/70">
-                                        To subscribe to CashCat Pro, please visit{' '}
-                                        <span className="text-green font-semibold">cashcat.app</span>{' '}
-                                        on your browser.
+                                        Subscribe via <span className="text-green font-semibold">cashcat.app</span> in your browser.
                                     </p>
-                                    <p className="text-xs text-white/40">
-                                        Already subscribed on the web? Your Pro access will appear here automatically.
-                                    </p>
+                                    <p className="text-xs text-white/40">Web subscriptions sync here automatically.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-white/70">
-                                        Unlock advanced analytics and more with CashCat Pro.
-                                    </p>
-                                    <ul className="text-sm text-white/60 space-y-1.5">
-                                        {['Money Flow Diagram', 'Advanced spending insights', 'More features coming soon'].map(f => (
-                                            <li key={f} className="flex items-center gap-2">
-                                                <span className="text-green text-xs">✓</span>{f}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <UpgradeButton />
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div className="min-w-0">
+                                        <p className="text-sm text-white/70 mb-1">
+                                            Unlock advanced analytics and more with CashCat Pro.
+                                        </p>
+                                        <ul className="text-sm text-white/60 space-y-1">
+                                            {['Money Flow Diagram', 'Advanced spending insights', 'More features coming soon'].map(f => (
+                                                <li key={f} className="flex items-center gap-2">
+                                                    <span className="text-green text-xs">✓</span>{f}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="w-full md:w-auto md:shrink-0">
+                                        <UpgradeButton />
+                                    </div>
                                 </div>
                             )}
                         </div>
 
-
                         {/* Discord Account */}
-                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Join Our Discord</h2>
+                        <div className="mt-4 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-semibold mb-1">Join Our Discord</h2>
+                                    <p className="text-sm text-white/70">
+                                        Join CashCat&apos;s community and chat with developers.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="https://discord.gg/C9mYnEdAQA"
+                                    target="_blank"
+                                    className="w-full md:w-auto text-center px-3 py-1.5 text-sm bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50 md:shrink-0"
+                                >
+                                    Join Discord
+                                </Link>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">Join CashCat's Discord for easy access to our community and developers.</p>
-                            <Link
-                                href="https://discord.gg/C9mYnEdAQA"
-                                target="_blank"
-                                className="w-full block text-center px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
-                            >
-                                Join Our Discord
-                            </Link>
                         </div>
 
-
-                        <div className="mt-6 p-4 bg-white/[.02] rounded-lg border-b-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Docs & Knowledgebase</h2>
+                        {/* Docs & Knowledgebase */}
+                        <div className="mt-4 p-4 bg-white/[.02] rounded-lg border-b-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-semibold mb-1">Docs & Knowledgebase</h2>
+                                    <p className="text-sm text-white/70">
+                                        Quickstarts, budgeting guidance, and common questions.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/docs"
+                                    className="w-full md:w-auto text-center px-3 py-1.5 text-sm bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50 md:shrink-0"
+                                >
+                                    Open Docs
+                                </Link>
                             </div>
-                            <p className="text-sm text-white/70 mb-4">The docs contain quickstart guides, explanations of how to budget, and common questions.</p>
-                            <Link
-                                href='/docs'
-                                className="w-full block text-center px-4 py-2 bg-green text-black rounded-lg transition-all hover:bg-green-dark disabled:opacity-50"
-
-                            >
-                                Documentation
-                            </Link>
                         </div>
 
 

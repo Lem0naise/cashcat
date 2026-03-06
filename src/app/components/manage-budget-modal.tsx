@@ -1218,6 +1218,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                 <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${showMascotMessage ? 'translate-x-5' : 'translate-x-0.5'}`} />
                                             </button>
                                         </div>
+                                        
                                         <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
                                             <p className="block font-medium text-white mb-2">Currency</p>
                                             <Dropdown
