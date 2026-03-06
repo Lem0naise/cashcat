@@ -108,7 +108,7 @@ export default function MascotMessage() {
                 <Image src="/logo.png" alt="CashCat Mascot" width={46} height={46} className="rounded-full w-8 h-8 md:w-10 md:h-10" />
             </div>
             <div className="flex-1 ">
-                <h3 className="text-white font-bold text-base md:text-sm flex items-center gap-2 text-left md:text-center">
+                <h3 className="text-white font-bold text-sm flex items-center gap-2 text-left md:text-center">
                     {message}
                     <span className="text-xl md:text-base">🐾</span>
                 </h3>
