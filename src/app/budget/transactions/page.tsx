@@ -32,6 +32,7 @@ import { useSyncAll } from '../../hooks/useSyncAll';
 import QuickAddRow from '../../components/quick-add-row';
 import { useContextMenu } from '../../components/transaction-context-menu';
 import SwipeableRow from '../../components/swipeable-row';
+import MascotMessage from '../../components/mascot-message';
 
 // Combined type for displaying both transactions and transfers
 type CombinedItem =
@@ -967,7 +968,10 @@ export default function Transactions() {
                             </div>
                         </div>
 
-
+                        {/* Mascot / Gamification Tip */}
+                        <div className='block md:hidden'>
+                            <MascotMessage/>
+                        </div>
                         {/* Balance Section */}
                         <div className="border-b-3 border-white/70 flex justify-between items-center bg-white/[.03] md:p-4 p-3 rounded-lg md:mb-4 mb-3 mt-0">
                             <div>

@@ -858,6 +858,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
     const [error, setError] = useState<string | null>(null);
     const [hideBudgetValues, setHideBudgetValues] = useState(false);
     const [thousandsSeparator, setThousandsSeparator] = useState(false);
+    const [showMascotMessage, setShowMascotMessage] = useState(true);
     const [currency, setCurrency] = useState('GBP');
     const currencySymbol = CURRENCIES.find(c => c.value === currency)?.symbol ?? '£';
 
@@ -881,6 +882,8 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             setHideBudgetValues(localStorage.getItem('hideBudgetValues') === 'true');
             setThousandsSeparator(localStorage.getItem('thousandsSeparator') === 'true');
+            const savedShowMascotMessage = localStorage.getItem('showMascotMessage');
+            setShowMascotMessage(savedShowMascotMessage === null ? true : savedShowMascotMessage === 'true');
             // Load currency: prefer localStorage (instant), then sync from Supabase
             setCurrency(localStorage.getItem('currency') || 'GBP');
             if (userId) {
@@ -915,6 +918,15 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('thousandsSeparator', newValue.toString());
             window.dispatchEvent(new CustomEvent('thousandsSeparatorChanged', { detail: { thousandsSeparator: newValue } }));
+        }
+    };
+
+    const toggleShowMascotMessage = () => {
+        const newValue = !showMascotMessage;
+        setShowMascotMessage(newValue);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('showMascotMessage', newValue.toString());
+            window.dispatchEvent(new CustomEvent('showMascotMessageChanged', { detail: { showMascotMessage: newValue } }));
         }
     };
 
@@ -1194,6 +1206,18 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                                 <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${thousandsSeparator ? 'translate-x-5' : 'translate-x-0.5'}`} />
                                             </button>
                                         </div>
+                                        <div className="flex items-center justify-between p-4 bg-white/[.03] rounded-lg">
+                                            <div>
+                                                <h4 className="font-medium text-white">Show Mascot Message</h4>
+                                                <p className="text-sm text-white/60 mt-1">Show CashCat’s motivational message in the navbar</p>
+                                            </div>
+                                            <button
+                                                onClick={toggleShowMascotMessage}
+                                                className={`relative min-w-10 h-6 rounded-full transition-colors duration-200 ${showMascotMessage ? 'bg-green' : 'bg-white/20'}`}
+                                            >
+                                                <div className={`absolute w-5 h-5 bg-white rounded-full transition-transform duration-200 top-0.5 ${showMascotMessage ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                            </button>
+                                        </div>
                                         <div className="flex justify-between p-4 bg-white/[.03] rounded-lg flex-col">
                                             <p className="block font-medium text-white mb-2">Currency</p>
                                             <Dropdown
@@ -1204,15 +1228,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-white/[.03] rounded-lg p-6">
-                                    <h3 className="text-lg font-medium text-green mb-4">Import</h3>
-                                    <div className="flex text-left justify-between p-4 bg-white/[.03] rounded-lg flex-col">
-                                        <p className="block font-medium text-white mb-2">Import Transactions</p>
-                                        <button disabled className="w-full px-4 py-2 bg-white/[.05] rounded-lg text-white/70 disabled:opacity-50">
-                                            Import from CSV (Coming Soon)
-                                        </button>
-                                    </div>
-                                </div>
+                               
                             </div>
                         ) : (
                             <div className="space-y-6">

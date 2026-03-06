@@ -28,6 +28,8 @@ import { useUpdateAssignment } from '../hooks/useUpdateAssignment';
 import { useSyncAll } from '../hooks/useSyncAll';
 import { getCurrencySymbol } from '../components/charts/utils';
 
+import MascotMessage from '../components/mascot-message';
+
 type CategoryFromDB = Database['public']['Tables']['categories']['Row'];
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 
@@ -1141,6 +1143,11 @@ export default function Budget() {
                             </div>
                         </div>
 
+                        {/* Mascot / Gamification Tip */}
+                        {/* Mascot / Gamification Tip */}
+                        <div className='block md:hidden'>
+                            <MascotMessage/>
+                        </div>
                         {/* Overspent Alert */}
                         {getOverspentCategories().length > 0 && (
                             <div

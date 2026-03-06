@@ -3,6 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import Logo from "./logo";
+import MascotMessage from '../components/mascot-message';
 
 
 export default function Navbar() {
@@ -18,8 +19,14 @@ export default function Navbar() {
                 <div onClick={goToAbout} className="scale-35 md:scale-45 origin-left transition-transform hover:scale-[0.52] cursor-pointer">
                     <Logo />
                 </div>
-
             </div>
+
+            <div className="absolute left-1/2 -translate-x-1/2">
+                <MascotMessage/>
+            </div>
+
+            {/* Empty div or other items to maintain justify-between balance if needed */}
+            <div />
         </nav>
     );
 }
