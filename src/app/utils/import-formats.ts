@@ -65,6 +65,24 @@ export type ImportFormatPreset = {
  */
 export const IMPORT_PRESETS: ImportFormatPreset[] = [
     {
+        id: 'cashcat',
+        name: 'CashCat Export',
+        description: 'Standard export from CashCat.',
+        multiAccount: true,
+        splitAmounts: false,
+        detectHeaders: ['Date', 'Vendor', 'Category', 'Group', 'Account', 'Amount', 'Type', 'Description'],
+        mappings: [
+            { csvHeader: 'Date', cashcatField: 'date' },
+            { csvHeader: 'Vendor', cashcatField: 'vendor' },
+            { csvHeader: 'Category', cashcatField: 'category' },
+            { csvHeader: 'Group', cashcatField: 'category_group' },
+            { csvHeader: 'Account', cashcatField: 'account' },
+            { csvHeader: 'Amount', cashcatField: 'amount' },
+            { csvHeader: 'Type', cashcatField: 'type' },
+            { csvHeader: 'Description', cashcatField: 'description' },
+        ],
+    },
+    {
         id: 'ynab',
         name: 'YNAB (You Need A Budget)',
         description: 'Export from YNAB budgeting app. Supports multiple accounts, categories, and groups.',
@@ -166,23 +184,23 @@ export function autoMapHeaders(headers: string[]): ColumnMapping[] {
         let field: CashCatField = 'ignore';
 
         // Date patterns
-        if (/^(date|transaction.?date|posting.?date|value.?date|trans.?date)$/i.test(lower)) {
+        if (/^(date|transaction.?date|posting.?date|post.?date|date.?entered|value.?date|trans.?date)$/i.test(lower)) {
             field = 'date';
         }
         // Vendor/Payee patterns
-        else if (/^(payee|vendor|merchant|description|narrative|details|transaction.?description|name|reference|particulars)$/i.test(lower)) {
+        else if (/^(payee|vendor|merchant|description|description.?1|narrative|details|transaction.?description|name|reference|particulars)$/i.test(lower)) {
             field = 'vendor';
         }
         // Single amount patterns
-        else if (/^(amount|value|sum|total|transaction.?amount)$/i.test(lower)) {
+        else if (/^(amount|amt|value|sum|total|transaction.?amount)$/i.test(lower)) {
             field = 'amount';
         }
         // Outflow patterns
-        else if (/^(outflow|debit|withdrawal|debit.?amount|money.?out|paid.?out|expenditure)$/i.test(lower)) {
+        else if (/^(outflow|debit|debits|withdrawal|debit.?amount|money.?out|paid.?out|expenditure)$/i.test(lower)) {
             field = 'outflow';
         }
         // Inflow patterns
-        else if (/^(inflow|credit|deposit|credit.?amount|money.?in|paid.?in)$/i.test(lower)) {
+        else if (/^(inflow|credit|credits|deposit|credit.?amount|money.?in|paid.?in)$/i.test(lower)) {
             field = 'inflow';
         }
         // Description/Memo patterns
