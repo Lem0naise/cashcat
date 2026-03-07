@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId } from './useAuthUserId';
+import posthog from 'posthog-js';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -49,6 +50,10 @@ export const useDeleteTransaction = () => {
 
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
+        },
+
+        onSuccess: () => {
+            posthog.capture('transaction_deleted');
         },
     });
 };

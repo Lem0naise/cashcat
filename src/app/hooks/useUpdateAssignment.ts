@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId, getCachedUserId } from './useAuthUserId';
+import posthog from 'posthog-js';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
 
@@ -86,6 +87,12 @@ export const useUpdateAssignment = () => {
 
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
+        },
+
+        onSuccess: (data, variables) => {
+            posthog.capture('budget_assignment_updated', {
+                month: variables.month,
+            });
         },
     });
 };

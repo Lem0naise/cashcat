@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/app/utils/supabase';
 import type { Database } from '@/types/supabase';
 import { useAuthUserId, getCachedUserId } from './useAuthUserId';
+import posthog from 'posthog-js';
 
 type Account = Database['public']['Tables']['accounts']['Row'];
 
@@ -56,6 +57,7 @@ export const useCreateAccount = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
             queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
+            posthog.capture('account_created');
         },
     });
 };
@@ -99,6 +101,9 @@ export const useUpdateAccount = () => {
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
         },
+        onSuccess: () => {
+            posthog.capture('account_updated');
+        },
     });
 };
 
@@ -136,6 +141,9 @@ export const useDeleteAccount = () => {
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
             queryClient.invalidateQueries({ queryKey: ['transactions', userId] });
+        },
+        onSuccess: () => {
+            posthog.capture('account_deleted');
         },
     });
 };
@@ -185,6 +193,9 @@ export const useSetDefaultAccount = () => {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['accounts', userId] });
+        },
+        onSuccess: () => {
+            posthog.capture('account_default_set');
         },
     });
 };

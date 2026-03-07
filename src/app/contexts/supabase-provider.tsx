@@ -65,6 +65,7 @@ export default function SupabaseProvider({
           localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
           // Ensure the settings row exists so import/export counts always work
           ensureSettingsRow(u.id, supabase);
+          posthog.identify(u.id);
         } else {
           localStorage.removeItem(USER_CACHE_KEY);
         }
@@ -84,6 +85,7 @@ export default function SupabaseProvider({
         localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
         // Ensure the settings row exists (handles new sign-ups and returning users)
         ensureSettingsRow(u.id, supabase);
+        posthog.identify(u.id);
       } else {
         localStorage.removeItem(USER_CACHE_KEY);
         // Clear all cached query data so a new user starts fresh

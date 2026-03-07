@@ -15,6 +15,7 @@ import { useVendors } from '../hooks/useVendors';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAssignments } from '../hooks/useAssignments';
 import { suggestCategory, resolveCategory } from '../utils/vendor-categories';
+import posthog from 'posthog-js';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -423,15 +424,23 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
             // Check if editing or creating transfer
             if (transfer && onUpdateTransfer) {
                 onUpdateTransfer(transferData);
+
+                posthog.capture('transfer_updated', {
+                    transfer_data: transferData
+                });
+                
             } else if (onSubmitTransfer) {
                 onSubmitTransfer(transferData);
+                posthog.capture('transfer_added', {
+                    transfer_data: transferData
+                });
             }
         } else {
             // Transaction validation and submission
             if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
             if (!accountId) return; // Prevent submission if no account selected
 
-            onSubmit({
+             const transactionData = {
                 amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
                 type: type || 'payment', // Ensure type is never undefined
                 date,
@@ -439,7 +448,18 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                 account_id: accountId,
                 description: description || undefined,
                 category_id: type === 'payment' ? categoryId : null // Only include category for payments
-            });
+            };
+
+            onSubmit(transactionData);
+
+            if (transaction) {
+                posthog.capture('transaction_updated', transactionData);
+            } else {
+                posthog.capture('transaction_created', {
+                    ...transactionData,
+                    auto_suggested: isCategoryAutoSuggested
+                });
+            }
         }
 
         // Reset form

@@ -10,6 +10,7 @@ import { useTransactions, TransactionWithDetails } from '@/app/hooks/useTransact
 import { createClient } from '@/app/utils/supabase';
 import { getCachedUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
+import posthog from 'posthog-js';
 
 import { parseCSV, detectDelimiter, readFileAsText } from '@/app/utils/csv-parser';
 import { incrementUsage, useUsage, FREE_IMPORT_LIMIT } from '@/app/hooks/useUsage';
@@ -519,6 +520,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
 
             setCsvHeaders(parsed.headers);
             setCsvRows(parsed.rows);
+
+            posthog.capture('csv_import_started', { file_name: file.name, row_count: parsed.rows.length });
 
             // Try to auto-detect format
             const preset = detectFormat(parsed.headers);
@@ -1111,6 +1114,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
             queryClient.invalidateQueries({ queryKey: ['vendors', _currentUserId] });
 
             toast.success(`Successfully imported ${toImport.length} transactions`);
+
+            posthog.capture('csv_import_completed', { imported_count: toImport.length });
 
             // Increment usage counter for free-tier gating
             await incrementUsage('import_count');

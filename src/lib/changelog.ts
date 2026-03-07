@@ -25,6 +25,17 @@ export const changelog: Major[] = [
                 version: "14",
                 patches: [
                     {
+                        version: "0.14.3",
+                        date: "March 7, 2026",
+                        features: [
+                            "Added CashCat mascot!",
+                            "Added budget export functionality"
+                        ],
+                        bugfixes: [
+                            "Bento breakdown view improved"
+                        ]
+                    },
+                    {
                         version: "0.14.2",
                         date: "March 6, 2026",
                         features: [

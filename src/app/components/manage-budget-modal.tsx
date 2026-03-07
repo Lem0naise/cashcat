@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import posthog from 'posthog-js';
 import MoneyInput from './money-input';
 import Dropdown, { DropdownOption } from './dropdown';
 import type { Category, Group, GoalType } from '@/types/supabase';
@@ -411,6 +412,10 @@ function OnboardingWizard({ onClose, onImportCSV, onAddAccounts }: { onClose: (r
                 queryClient.invalidateQueries({ queryKey: ['categories', userId] }),
                 queryClient.invalidateQueries({ queryKey: ['groups', userId] }),
             ]);
+            posthog.capture('budget_wizard_completed', {
+                total_groups: wizardGroups.length,
+                total_categories: wizardGroups.reduce((acc, g) => acc + g.categories.length, 0),
+            });
             setStep(4); // Add bank accounts (new step 4)
         } catch (err) {
             console.error(err);
@@ -909,6 +914,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('hideBudgetValues', newValue.toString());
             window.dispatchEvent(new CustomEvent('hideBudgetValuesChanged', { detail: { hideBudgetValues: newValue } }));
+            posthog.capture('settings_changed', { setting_name: 'hide_budget_values', value: newValue });
         }
     };
 
@@ -918,6 +924,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('thousandsSeparator', newValue.toString());
             window.dispatchEvent(new CustomEvent('thousandsSeparatorChanged', { detail: { thousandsSeparator: newValue } }));
+            posthog.capture('settings_changed', { setting_name: 'thousands_separator', value: newValue });
         }
     };
 
@@ -927,6 +934,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('showMascotMessage', newValue.toString());
             window.dispatchEvent(new CustomEvent('showMascotMessageChanged', { detail: { showMascotMessage: newValue } }));
+            posthog.capture('settings_changed', { setting_name: 'show_mascot_message', value: newValue });
         }
     };
 
@@ -935,6 +943,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
         if (typeof window !== 'undefined') {
             localStorage.setItem('currency', newCurrency);
             window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: newCurrency } }));
+            posthog.capture('settings_changed', { setting_name: 'currency', value: newCurrency });
         }
         if (userId) {
             supabase.from('settings').upsert({ id: userId, currency: newCurrency }, { onConflict: 'id' });
@@ -1039,6 +1048,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Creating group…', success: 'Group created!', error: 'Failed to create group' }
         );
+        posthog.capture('budget_group_created');
         await fetchGroups();
         setNewGroupName('');
     };
@@ -1051,6 +1061,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Updating…', success: 'Group updated!', error: 'Failed to update group' }
         );
+        posthog.capture('budget_group_updated');
         await fetchGroups();
         setEditingGroup(null);
     };
@@ -1063,6 +1074,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Deleting…', success: 'Group deleted!', error: 'Failed to delete group — reassign categories first' }
         );
+        posthog.capture('budget_group_deleted');
         await fetchGroups();
         await fetchCategories();
     };
@@ -1081,6 +1093,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Creating category…', success: 'Category created!', error: 'Failed to create category' }
         );
+        posthog.capture('budget_category_created', { goal_type: data.goal_type || 'spending' });
         await fetchCategories();
         setNewGroupCategoryData({ name: '', goal: '', goal_type: 'spending', timeframe: 'monthly' });
         setShowAddCategoryForGroup(null);
@@ -1094,6 +1107,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Updating…', success: 'Category updated!', error: 'Failed to update category' }
         );
+        posthog.capture('budget_category_updated');
         await fetchCategories();
         setEditingCategory(null);
     };
@@ -1106,6 +1120,7 @@ function EditMode({ onClose }: { onClose: () => void }) {
             })(),
             { loading: 'Deleting…', success: 'Category deleted!', error: 'Failed to delete category — reassign transactions first' }
         );
+        posthog.capture('budget_category_deleted');
         await fetchCategories();
     };
 
