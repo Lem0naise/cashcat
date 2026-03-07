@@ -8,6 +8,8 @@ import { useTransfers } from '@/app/hooks/useTransfers';
 import type { TransactionWithDetails } from '@/app/hooks/useTransactions';
 import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { incrementUsage } from '@/app/hooks/useUsage';
 import { useUsage, FREE_EXPORT_LIMIT } from '@/app/hooks/useUsage';
 import { useAuthUserId } from '@/app/hooks/useAuthUserId';
@@ -115,17 +117,18 @@ export default function ExportModal({ isOpen, onClose, transactions = [], budget
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            if (dataType === 'budget') {
-                if (!budgetData) {
-                    throw new Error('No budget data provided');
-                }
+            const isNative = Capacitor.isNativePlatform();
 
-                const filteredCategories = budgetData.categories.filter(cat => {
-                    if (!selectAllCategories) {
-                        return selectedCategoryIds.includes(cat.id);
-                    }
-                    return true;
-                });
+            let fileName = '';
+            let mimeType = '';
+            let content = '';
+
+            if (dataType === 'budget') {
+                if (!budgetData) throw new Error('No budget data provided');
+
+                const filteredCategories = budgetData.categories.filter(cat =>
+                    selectAllCategories || selectedCategoryIds.includes(cat.id)
+                );
 
                 const dataToExport = filteredCategories.map(cat => ({
                     Month: budgetData.month,
@@ -134,23 +137,16 @@ export default function ExportModal({ isOpen, onClose, transactions = [], budget
                     Assigned: cat.assigned,
                     Spent: cat.spent,
                     Rollover: cat.rollover,
-                    Available: cat.available
+                    Available: cat.available,
                 }));
 
                 if (exportFormat === 'json') {
-                    const jsonString = JSON.stringify(dataToExport, null, 2);
-                    const blob = new Blob([jsonString], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `budget_${budgetData.month}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    content = JSON.stringify(dataToExport, null, 2);
+                    mimeType = 'application/json';
+                    fileName = `budget_${budgetData.month}.json`;
                 } else {
                     const headers = ['Month', 'Group', 'Category', 'Assigned', 'Spent', 'Rollover', 'Available'];
-                    const csvContent = [
+                    content = [
                         headers.join(','),
                         ...dataToExport.map(row => [
                             row.Month,
@@ -159,146 +155,135 @@ export default function ExportModal({ isOpen, onClose, transactions = [], budget
                             row.Assigned,
                             row.Spent,
                             row.Rollover,
-                            row.Available
-                        ].join(','))
+                            row.Available,
+                        ].join(',')),
                     ].join('\n');
-
-                    const blob = new Blob([csvContent], { type: 'text/csv' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `budget_${budgetData.month}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    mimeType = 'text/csv';
+                    fileName = `budget_${budgetData.month}.csv`;
                 }
             } else {
                 // Filter transactions
                 const filtered = transactions.filter(t => {
-                const tDate = t.date; // string YYYY-MM-DD
-                if (fromDate && tDate < fromDate) return false;
-                if (toDate && tDate > toDate) return false;
+                    const tDate = t.date;
+                    if (fromDate && tDate < fromDate) return false;
+                    if (toDate && tDate > toDate) return false;
+                    if (!selectAllAccounts) {
+                        if (!t.account_id || !selectedAccountIds.includes(t.account_id)) return false;
+                    }
+                    if (!selectAllCategories) {
+                        if (!t.category_id || !selectedCategoryIds.includes(t.category_id)) return false;
+                    }
+                    return true;
+                });
 
-                if (!selectAllAccounts) {
-                    if (!t.account_id || !selectedAccountIds.includes(t.account_id)) return false;
-                }
+                const categoryMap = categories.reduce((acc, cat) => {
+                    acc[cat.id] = cat;
+                    return acc;
+                }, {} as Record<string, typeof categories[0]>);
 
-                if (!selectAllCategories) {
-                    // If transaction has no category (null), it won't be in selectedCategoryIds
-                    // Unless we have an "Uncategorized" option. For now, strict check.
-                    if (!t.category_id || !selectedCategoryIds.includes(t.category_id)) return false;
-                }
-
-                return true;
-            });
-
-            // Create category map for details lookup
-            const categoryMap = categories.reduce((acc, cat) => {
-                acc[cat.id] = cat;
-                return acc;
-            }, {} as Record<string, typeof categories[0]>);
-
-            const dataToExport = filtered.map(t => {
-                const category = t.category_id ? categoryMap[t.category_id] : null;
-                const groupName = category?.groups?.name || 'Other';
-
-                return {
-                    Date: t.date,
-                    Vendor: t.vendors?.name || t.vendor || '',
-                    Category: t.categories?.name || 'Uncategorized',
-                    Group: groupName,
-                    Account: t.accounts?.name || '',
-                    Amount: t.amount,
-                    Type: t.type,
-                    Description: t.description || ''
-                };
-            });
-
-            // Process transfers
-            const processedTransfers = transfers.filter(t => {
-                const tDate = t.date;
-                if (fromDate && tDate < fromDate) return false;
-                if (toDate && tDate > toDate) return false;
-                return true;
-            }).flatMap(t => {
-                const rows = [];
-
-                // Debit (Leaving From Account)
-                if (selectAllAccounts || (t.from_account_id && selectedAccountIds.includes(t.from_account_id))) {
-                    rows.push({
+                const dataToExport = filtered.map(t => {
+                    const category = t.category_id ? categoryMap[t.category_id] : null;
+                    const groupName = category?.groups?.name || 'Other';
+                    return {
                         Date: t.date,
-                        Vendor: `Transfer to ${t.to_account?.name || 'Unknown Account'}`,
-                        Category: 'Transfer',
-                        Group: 'Transfers',
-                        Account: t.from_account?.name || '',
-                        Amount: -t.amount,
-                        Type: 'transfer',
-                        Description: t.description || ''
-                    });
-                }
-
-                // Credit (Entering To Account)
-                if (selectAllAccounts || (t.to_account_id && selectedAccountIds.includes(t.to_account_id))) {
-                    rows.push({
-                        Date: t.date,
-                        Vendor: `Transfer from ${t.from_account?.name || 'Unknown Account'}`,
-                        Category: 'Transfer',
-                        Group: 'Transfers',
-                        Account: t.to_account?.name || '',
+                        Vendor: t.vendors?.name || t.vendor || '',
+                        Category: t.categories?.name || 'Uncategorized',
+                        Group: groupName,
+                        Account: t.accounts?.name || '',
                         Amount: t.amount,
-                        Type: 'transfer',
-                        Description: t.description || ''
-                    });
+                        Type: t.type,
+                        Description: t.description || '',
+                    };
+                });
+
+                const processedTransfers = transfers.filter(t => {
+                    const tDate = t.date;
+                    if (fromDate && tDate < fromDate) return false;
+                    if (toDate && tDate > toDate) return false;
+                    return true;
+                }).flatMap(t => {
+                    const rows = [];
+                    if (selectAllAccounts || (t.from_account_id && selectedAccountIds.includes(t.from_account_id))) {
+                        rows.push({
+                            Date: t.date,
+                            Vendor: `Transfer to ${t.to_account?.name || 'Unknown Account'}`,
+                            Category: 'Transfer',
+                            Group: 'Transfers',
+                            Account: t.from_account?.name || '',
+                            Amount: -t.amount,
+                            Type: 'transfer',
+                            Description: t.description || '',
+                        });
+                    }
+                    if (selectAllAccounts || (t.to_account_id && selectedAccountIds.includes(t.to_account_id))) {
+                        rows.push({
+                            Date: t.date,
+                            Vendor: `Transfer from ${t.from_account?.name || 'Unknown Account'}`,
+                            Category: 'Transfer',
+                            Group: 'Transfers',
+                            Account: t.to_account?.name || '',
+                            Amount: t.amount,
+                            Type: 'transfer',
+                            Description: t.description || '',
+                        });
+                    }
+                    return rows;
+                });
+
+                const allData = [...dataToExport, ...processedTransfers].sort((a, b) =>
+                    new Date(b.Date).getTime() - new Date(a.Date).getTime()
+                );
+
+                const baseName = `transactions_${fromDate || 'all'}_to_${toDate || 'all'}`;
+                if (exportFormat === 'json') {
+                    content = JSON.stringify(allData, null, 2);
+                    mimeType = 'application/json';
+                    fileName = `${baseName}.json`;
+                } else {
+                    const headers = ['Date', 'Vendor', 'Category', 'Group', 'Account', 'Amount', 'Type', 'Description'];
+                    content = [
+                        headers.join(','),
+                        ...allData.map(row => [
+                            row.Date,
+                            `"${row.Vendor.replace(/"/g, '""')}"`,
+                            `"${row.Category.replace(/"/g, '""')}"`,
+                            `"${row.Group.replace(/"/g, '""')}"`,
+                            `"${row.Account.replace(/"/g, '""')}"`,
+                            row.Amount,
+                            row.Type,
+                            `"${row.Description.replace(/"/g, '""')}"`,
+                        ].join(',')),
+                    ].join('\n');
+                    mimeType = 'text/csv';
+                    fileName = `${baseName}.csv`;
                 }
+            }
 
-                return rows;
-            });
-
-            // Combine and sort
-            const allData = [...dataToExport, ...processedTransfers].sort((a, b) => {
-                return new Date(b.Date).getTime() - new Date(a.Date).getTime();
-            });
-
-            if (exportFormat === 'json') {
-                const jsonString = JSON.stringify(allData, null, 2);
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `transactions_${fromDate || 'all'}_to_${toDate || 'all'}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            if (isNative) {
+                // On Capacitor: write to cache then open the native share/save sheet
+                const base64 = btoa(unescape(encodeURIComponent(content)));
+                const written = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64,
+                    directory: Directory.Cache,
+                });
+                await Share.share({
+                    title: fileName,
+                    files: [written.uri],
+                    dialogTitle: 'Save or share your export',
+                });
             } else {
-                // CSV
-                const headers = ['Date', 'Vendor', 'Category', 'Group', 'Account', 'Amount', 'Type', 'Description'];
-                const csvContent = [
-                    headers.join(','),
-                    ...allData.map(row => [
-                        row.Date,
-                        `"${row.Vendor.replace(/"/g, '""')}"`,
-                        `"${row.Category.replace(/"/g, '""')}"`,
-                        `"${row.Group.replace(/"/g, '""')}"`,
-                        `"${row.Account.replace(/"/g, '""')}"`,
-                        row.Amount,
-                        row.Type,
-                        `"${row.Description.replace(/"/g, '""')}"`
-                    ].join(','))
-                ].join('\n');
-
-                const blob = new Blob([csvContent], { type: 'text/csv' });
+                // Web: trigger browser download
+                const blob = new Blob([content], { type: mimeType });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `transactions_${fromDate || 'all'}_to_${toDate || 'all'}.csv`;
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
-            } // Close else block
 
             // Increment usage counter for free-tier gating
             await incrementUsage('export_count');
@@ -325,52 +310,7 @@ export default function ExportModal({ isOpen, onClose, transactions = [], budget
         categoriesByGroup[groupName].push(cat);
     });
 
-    if (Capacitor.isNativePlatform()) {
-        const handleVisit = () => {
-            window.open('https://cashcat.app', '_blank');
-        };
-
-        return (
-            <div
-                className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-                onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-            >
-                <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.15s_ease-out]">
-                    <div className="p-8 flex flex-col items-center text-center space-y-6">
-
-
-                        {/* Text */}
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white tracking-tight">Export on Web</h2>
-                            <p className="text-white/50 text-base leading-relaxed">
-                                Data exports are currently available on the web. Visit
-                                <span className="text-green font-semibold"> cashcat.app </span>
-                                to download your data.
-                            </p>
-                        </div>
-
-                        {/* Buttons */}
-                        <div className="flex flex-col w-full gap-3 pt-2">
-                            <button
-                                onClick={handleVisit}
-                                className="w-full py-4 bg-green hover:bg-[#00E676] text-black rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-green/10"
-                            >
-                                Okay, open now
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    else {
-        return (
+    return (
             <div
                 className="font-[family-name:var(--font-suse)] fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
                 onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -563,5 +503,4 @@ export default function ExportModal({ isOpen, onClose, transactions = [], budget
                 </div>
             </div>
         );
-    }
 }
