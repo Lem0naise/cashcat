@@ -5,6 +5,8 @@ import { toPng } from 'html-to-image';
 import { format } from 'date-fns';
 import { formatCurrency } from './charts/utils';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 // ─── Types (local, not importing from charts/types to keep this self-contained) ─
 
@@ -417,21 +419,28 @@ export default function ShareModal({ isOpen, onClose, transactions, categories, 
             const dataUrl = await toPng(cardRef.current, {
                 pixelRatio: 2,
                 skipAutoScale: false,
-                backgroundColor: undefined, // card has its own bg
-                // Ensure fonts are embedded
+                backgroundColor: undefined,
                 fontEmbedCSS: '',
             });
 
             if (isNative) {
-                // On Capacitor: use Web Share API (available in WKWebView / Android WebView)
-                if (navigator.share) {
-                    const blob = await (await fetch(dataUrl)).blob();
-                    const file = new File([blob], 'cashcat-share.png', { type: 'image/png' });
-                    await navigator.share({ files: [file], title: 'My CashCat Spending Summary' });
-                } else {
-                    // Fallback: just download
-                    downloadImage(dataUrl);
-                }
+                // On Capacitor native: write to a temp file then use the native share sheet
+                const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
+                const fileName = `cashcat-share-${format(new Date(), 'yyyy-MM-dd')}.png`;
+
+                // Write to cache directory
+                const written = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Cache,
+                });
+
+                // written.uri is a file:// URI usable by the native share sheet
+                await Share.share({
+                    title: 'My CashCat Spending Summary',
+                    files: [written.uri],
+                    dialogTitle: 'Share your spending summary',
+                });
             } else {
                 // Web: try Web Share API first (mobile browsers), fall back to download
                 if (navigator.share && navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] })) {
@@ -445,7 +454,7 @@ export default function ShareModal({ isOpen, onClose, transactions, categories, 
         } catch (err) {
             // User cancelled share sheet — not an error
             const msg = err instanceof Error ? err.message : '';
-            if (!msg.includes('AbortError') && !msg.includes('cancel')) {
+            if (!msg.includes('AbortError') && !msg.includes('cancel') && !msg.includes('Cancel')) {
                 console.error('Share failed:', err);
             }
         } finally {

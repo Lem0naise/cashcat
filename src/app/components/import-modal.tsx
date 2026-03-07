@@ -10,6 +10,7 @@ import { useTransactions, TransactionWithDetails } from '@/app/hooks/useTransact
 import { createClient } from '@/app/utils/supabase';
 import { getCachedUserId } from '@/app/hooks/useAuthUserId';
 import { useQueryClient } from '@tanstack/react-query';
+import posthog from 'posthog-js';
 
 import { parseCSV, detectDelimiter, readFileAsText } from '@/app/utils/csv-parser';
 import { incrementUsage, useUsage, FREE_IMPORT_LIMIT } from '@/app/hooks/useUsage';
@@ -234,6 +235,18 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
     const [isImporting, setIsImporting] = useState(false);
     const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
 
+    // Date filter for review step
+    type DateFilterMode = 'none' | 'after-last' | 'after-date';
+    const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>('none');
+    const [dateFilterCustom, setDateFilterCustom] = useState<string>('');
+
+    // Latest date among all existing cashcat transactions (for "after last" mode)
+    const lastCashcatDate = useMemo(() => {
+        if (existingTransactions.length === 0) return null;
+        const dates = existingTransactions.map(t => t.date).filter(Boolean).sort();
+        return dates[dates.length - 1] ?? null;
+    }, [existingTransactions]);
+
     // ── Reset on open ──
     useEffect(() => {
         if (isOpen) {
@@ -272,6 +285,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
             setSelectedRows(new Set());
             setIsImporting(false);
             setImportProgress({ done: 0, total: 0 });
+            setDateFilterMode('none');
+            setDateFilterCustom('');
         }
     }, [isOpen, initialAccountId]);
 
@@ -519,6 +534,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
 
             setCsvHeaders(parsed.headers);
             setCsvRows(parsed.rows);
+
+            posthog.capture('csv_import_started', { file_name: file.name, row_count: parsed.rows.length });
 
             // Try to auto-detect format
             const preset = detectFormat(parsed.headers);
@@ -831,6 +848,40 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
         setSelectedRows(selected);
     }, [duplicateResults, internalDuplicates]);
 
+    // Apply date filter: deselect rows whose date is <= cutoff
+    const applyDateFilter = useCallback((mode: 'none' | 'after-last' | 'after-date', customDate?: string) => {
+        let cutoff: string | null = null;
+        if (mode === 'after-last') {
+            cutoff = lastCashcatDate;
+        } else if (mode === 'after-date' && customDate) {
+            cutoff = customDate;
+        }
+
+        if (!cutoff) {
+            // No filter — select all non-duplicates (default behaviour)
+            const selected = new Set<number>();
+            duplicateResults.forEach((r, i) => {
+                if (!r.isDuplicate && !internalDuplicates.has(i)) selected.add(i);
+            });
+            // If no duplicate detection has run yet, select all
+            if (duplicateResults.length === 0) {
+                mappedTransactions.forEach((_, i) => selected.add(i));
+            }
+            setSelectedRows(selected);
+            return;
+        }
+
+        setSelectedRows(prev => {
+            const next = new Set<number>();
+            mappedTransactions.forEach((tx, i) => {
+                if (tx.date > cutoff!) {
+                    next.add(i);
+                }
+            });
+            return next;
+        });
+    }, [lastCashcatDate, mappedTransactions, duplicateResults, internalDuplicates]);
+
     // ── Import execution ──
     const executeImport = useCallback(async () => {
         const supabase = createClient();
@@ -1111,6 +1162,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
             queryClient.invalidateQueries({ queryKey: ['vendors', _currentUserId] });
 
             toast.success(`Successfully imported ${toImport.length} transactions`);
+
+            posthog.capture('csv_import_completed', { imported_count: toImport.length });
 
             // Increment usage counter for free-tier gating
             await incrementUsage('import_count');
@@ -2054,36 +2107,84 @@ export default function ImportModal({ isOpen, onClose, onImportComplete, initial
         <div className="flex-1 overflow-hidden flex flex-col">
             {/* Stats bar */}
             {reviewStats && (
-                <div className="px-6 py-3 border-b border-white/10 bg-[#0d0d0d] flex items-center gap-4 flex-wrap text-xs">
-                    <span className="text-white/50">
-                        <span className="text-white font-medium">{reviewStats.selected}</span> / {reviewStats.total} selected
-                    </span>
-                    {reviewStats.duplicates > 0 && (
-                        <span className="text-yellow-400/80">
-                            {reviewStats.duplicates} potential duplicates
+                <div className="px-6 py-3 border-b border-white/10 bg-[#0d0d0d] flex flex-col gap-2 text-xs">
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <span className="text-white/50">
+                            <span className="text-white font-medium">{reviewStats.selected}</span> / {reviewStats.total} selected
                         </span>
-                    )}
-                    {reviewStats.internalDups > 0 && (
-                        <span className="text-orange-400/80">
-                            {reviewStats.internalDups} internal duplicates
-                        </span>
-                    )}
-                    {parseErrors.length > 0 && (
-                        <span className="text-reddy/80">
-                            {parseErrors.length} rows with errors
-                        </span>
-                    )}
-                    <div className="flex-1" />
-                    <div className="flex gap-2">
-                        <button onClick={selectAll} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
-                            All
+                        {reviewStats.duplicates > 0 && (
+                            <span className="text-yellow-400/80">
+                                {reviewStats.duplicates} potential duplicates
+                            </span>
+                        )}
+                        {reviewStats.internalDups > 0 && (
+                            <span className="text-orange-400/80">
+                                {reviewStats.internalDups} internal duplicates
+                            </span>
+                        )}
+                        {parseErrors.length > 0 && (
+                            <span className="text-reddy/80">
+                                {parseErrors.length} rows with errors
+                            </span>
+                        )}
+                        <div className="flex-1" />
+                        <div className="flex gap-2">
+                            <button onClick={selectAll} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
+                                All
+                            </button>
+                            <button onClick={selectNone} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
+                                None
+                            </button>
+                            <button onClick={selectNonDuplicates} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
+                                Non-duplicates
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Date filter row */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-white/30 shrink-0">Import from:</span>
+                        <button
+                            onClick={() => {
+                                setDateFilterMode('none');
+                                applyDateFilter('none');
+                            }}
+                            className={`px-2 py-1 rounded transition-colors ${dateFilterMode === 'none' ? 'bg-green/20 text-green' : 'bg-white/5 hover:bg-white/10 text-white/60'}`}
+                        >
+                            All dates
                         </button>
-                        <button onClick={selectNone} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
-                            None
+                        <button
+                            onClick={() => {
+                                setDateFilterMode('after-last');
+                                applyDateFilter('after-last');
+                            }}
+                            disabled={!lastCashcatDate}
+                            title={lastCashcatDate ? `After ${lastCashcatDate}` : 'No existing transactions found'}
+                            className={`px-2 py-1 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${dateFilterMode === 'after-last' ? 'bg-green/20 text-green' : 'bg-white/5 hover:bg-white/10 text-white/60'}`}
+                        >
+                            After last cashcat transaction{lastCashcatDate ? ` (${lastCashcatDate})` : ''}
                         </button>
-                        <button onClick={selectNonDuplicates} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/60 transition-colors">
-                            Non-duplicates
+                        <button
+                            onClick={() => {
+                                const next = dateFilterMode === 'after-date' ? 'none' : 'after-date';
+                                setDateFilterMode(next as 'none' | 'after-date');
+                                if (next === 'none') applyDateFilter('none');
+                            }}
+                            className={`px-2 py-1 rounded transition-colors ${dateFilterMode === 'after-date' ? 'bg-green/20 text-green' : 'bg-white/5 hover:bg-white/10 text-white/60'}`}
+                        >
+                            After date…
                         </button>
+                        {dateFilterMode === 'after-date' && (
+                            <input
+                                type="date"
+                                value={dateFilterCustom}
+                                onChange={(e) => {
+                                    setDateFilterCustom(e.target.value);
+                                    if (e.target.value) applyDateFilter('after-date', e.target.value);
+                                }}
+                                className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-white focus:border-green focus:outline-none transition-colors text-xs"
+                            />
+                        )}
                     </div>
                 </div>
             )}

@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { Capacitor } from '@capacitor/core';
 import { UpgradeButton } from './upgrade-button';
+import posthog from 'posthog-js';
+import { useEffect } from 'react';
 
 interface ProGateOverlayProps {
     featureName: string;
@@ -29,13 +31,22 @@ const PRO_FEATURES = [
 export function ProGateOverlay({ featureName, featureDescription, dismissible = true, onClose }: ProGateOverlayProps) {
     const isNative = Capacitor.isNativePlatform();
 
+    useEffect(() => {
+        posthog.capture('pro_gate_shown', { featureName, dismissible, isNative });
+    }, [featureName, dismissible, isNative]);
+
+    const handleClose = () => {
+        posthog.capture('pro_gate_dismissed', { featureName });
+        onClose?.();
+    };
+
     return (
         <div className="relative w-full max-w-md mx-auto">
 
             {/* Dismissible X button */}
             {dismissible && (
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute -top-4 -left-4 w-8 h-8 rounded-full border border-white/20 bg-black/50 text-white/40 hover:text-white/70 hover:bg-black/70 transition-colors flex items-center justify-center z-20"
                     aria-label="Close"
                 >
