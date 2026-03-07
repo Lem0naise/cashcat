@@ -83,7 +83,7 @@ export default function MascotMessage() {
     const streak = useMemo(() => {
         const uniqueDays = new Set<string>();
         
-        allTransactions.forEach(t => uniqueDays.add(t.date.split('T')[0]));
+        allTransactions.forEach(t => uniqueDays.add(t.created_at.split('T')[0]));
         allAssignments.forEach(a => {
             if (a.created_at) uniqueDays.add(a.created_at.split('T')[0]);
         });
