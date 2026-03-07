@@ -59,8 +59,8 @@ type TransactionModalProps = {
 
 export default function TransactionModal({ transaction, transfer, isOpen, onClose, onSubmit, onDelete, onSubmitTransfer, onUpdateTransfer, onDeleteTransfer }: TransactionModalProps) {
     // TanStack Query hooks for cached data
-    const { data: cachedAccounts = [] } = useAccounts();
-    const { data: cachedCategories = [] } = useCategories();
+    const { data: cachedAccounts = [], isLoading: isAccountsLoading } = useAccounts();
+    const { data: cachedCategories = [], isLoading: isCategoriesLoading } = useCategories();
     const { data: cachedGroups = [] } = useGroups();
     const { data: cachedVendors = [] } = useVendors();
     const { data: cachedTransactions = [] } = useTransactions();
@@ -94,8 +94,8 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
     const vendorInputRef = useRef<HTMLInputElement>(null);
 
     // Derive loading states from hooks
-    const loadingCategories = cachedCategories.length === 0;
-    const loadingAccounts = cachedAccounts.length === 0;
+    const loadingCategories = isCategoriesLoading;
+    const loadingAccounts = isAccountsLoading;
 
     // Map cached data to component format
     const accounts = useMemo(() =>
@@ -428,7 +428,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                 posthog.capture('transfer_updated', {
                     transfer_data: transferData
                 });
-                
+
             } else if (onSubmitTransfer) {
                 onSubmitTransfer(transferData);
                 posthog.capture('transfer_added', {
@@ -440,7 +440,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
             if (type === 'payment' && !categoryId) return; // Prevent submission if no category selected for payments
             if (!accountId) return; // Prevent submission if no account selected
 
-             const transactionData = {
+            const transactionData = {
                 amount: type === 'payment' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
                 type: type || 'payment', // Ensure type is never undefined
                 date,
@@ -634,40 +634,40 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                                         placeholder="Shop"
                                         className="w-full p-2.5 rounded-lg bg-white/[.05] border border-white/[.15] focus:border-green focus:outline-none transition-colors"
                                     />
-                                     {showSuggestions && vendorSuggestions.length > 0 && (
-                                         <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
-                                             {vendorSuggestions.filter((suggestion) => suggestion.name != "Starting Balance")
-                                                 .map((suggestion) => (
-                                                     <button
-                                                         key={suggestion.id}
-                                                         type="button"
-                                                         onClick={() => selectVendor(suggestion.name)}
-                                                         className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
-                                                     >
-                                                         {suggestion.name}
-                                                     </button>
-                                                 ))}
-                                         </div>
-                                     )}
-                                     {/* Similar-vendor warning — shown when input closely resembles an existing vendor */}
-                                     {similarVendorWarning && !showSuggestions && vendor.trim().toLowerCase() !== similarVendorWarning.name.toLowerCase() && (
-                                         <div className="mt-1.5 flex items-center gap-2 px-2 py-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/25 text-xs text-yellow-300/90">
-                                             <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" className="flex-shrink-0 text-yellow-400">
-                                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                             </svg>
-                                             <span>
-                                                 Similar to existing vendor{' '}
-                                                 <button
-                                                     type="button"
-                                                     onClick={() => selectVendor(similarVendorWarning.name)}
-                                                     className="font-semibold underline underline-offset-2 hover:text-yellow-200 transition-colors"
-                                                 >
-                                                     "{similarVendorWarning.name}"
-                                                 </button>
-                                                 {' '}— use it?
-                                             </span>
-                                         </div>
-                                     )}
+                                    {showSuggestions && vendorSuggestions.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white/[0.05]rounded-lg overflow-hidden shadow-lg">
+                                            {vendorSuggestions.filter((suggestion) => suggestion.name != "Starting Balance")
+                                                .map((suggestion) => (
+                                                    <button
+                                                        key={suggestion.id}
+                                                        type="button"
+                                                        onClick={() => selectVendor(suggestion.name)}
+                                                        className="w-full px-4 py-2 text-left md:bg-black/0.6 bg-black/[0.9] hover:bg-green/[.5] hover:text-black transition-colors"
+                                                    >
+                                                        {suggestion.name}
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    )}
+                                    {/* Similar-vendor warning — shown when input closely resembles an existing vendor */}
+                                    {similarVendorWarning && !showSuggestions && vendor.trim().toLowerCase() !== similarVendorWarning.name.toLowerCase() && (
+                                        <div className="mt-1.5 flex items-center gap-2 px-2 py-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/25 text-xs text-yellow-300/90">
+                                            <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" className="flex-shrink-0 text-yellow-400">
+                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>
+                                                Similar to existing vendor{' '}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => selectVendor(similarVendorWarning.name)}
+                                                    className="font-semibold underline underline-offset-2 hover:text-yellow-200 transition-colors"
+                                                >
+                                                    "{similarVendorWarning.name}"
+                                                </button>
+                                                {' '}— use it?
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {type === 'payment' && (
@@ -677,7 +677,7 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                                             {isCategoryAutoSuggested && (
                                                 <span className="flex items-center gap-1 text-xs text-white/30 select-none">
                                                     <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
-                                                        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                                        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                                                     </svg>
                                                     Auto-suggested
                                                 </span>
@@ -698,8 +698,8 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                                                     group: group?.name || 'Other'
                                                 };
                                             })}
-                                            placeholder={loadingCategories ? 'Loading categories...' : 'Select a category'}
-                                            disabled={loadingCategories}
+                                            placeholder={loadingCategories ? 'Loading categories...' : (categories.length === 0 ? 'You have no categories, go to onboarding' : 'Select a category')}
+                                            disabled={loadingCategories || categories.length === 0}
                                             loading={loadingCategories}
                                             className={categoryRemaining && categoryRemaining < 0 ? 'text-reddy' : ''}
                                         />
@@ -717,8 +717,8 @@ export default function TransactionModal({ transaction, transfer, isOpen, onClos
                                             label: account.name,
                                             subtitle: account.type,
                                         }))}
-                                        placeholder={loadingAccounts ? 'Loading accounts...' : 'Select an account'}
-                                        disabled={loadingAccounts}
+                                        placeholder={loadingAccounts ? 'Loading accounts...' : (accounts.length === 0 ? 'You have no accounts, go to onboarding' : 'Select an account')}
+                                        disabled={loadingAccounts || accounts.length === 0}
                                         loading={loadingAccounts}
                                         icon="/bank.svg"
                                     />
