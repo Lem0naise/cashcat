@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import ManageBudgetModal from "../components/manage-budget-modal";
+import ExportModal from "../components/export-modal";
 import MobileNav from "../components/mobileNav";
 import Navbar from "../components/navbar";
 import ProtectedRoute from '../components/protected-route';
@@ -78,6 +79,7 @@ export default function Budget() {
     const [monthString, setMonthString] = useState(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)
     const [activeGroup, setActiveGroup] = useState<string>('All');
     const [showManageModal, setShowManageModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [accountModalFromOnboarding, setAccountModalFromOnboarding] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
@@ -1021,7 +1023,15 @@ export default function Budget() {
                             </button>
                         </div>
                     </div>
-                    <div className="w-12 flex justify-end">
+                    <div className="flex gap-2 justify-end min-w-[3rem]">
+                        <button
+                            onClick={() => setShowExportModal(true)}
+                            className="flex gap-2 p-1.5 rounded-lg transition-all hover:bg-white/[.05] opacity-70 hover:opacity-100"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
                         <button
                             id="tour-manage-budget-mobile"
                             onClick={() => setShowManageModal(true)}
@@ -1125,6 +1135,14 @@ export default function Budget() {
                                         </g>
                                     </svg>
                                     <span className="hidden xl:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowExportModal(true)}
+                                    className="bg-primary hover:bg-white/[.05] px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 opacity-70 hover:opacity-100 transition-all whitespace-nowrap"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
                                 </button>
                                 <button
                                     onClick={() => setShowManageModal(true)}
@@ -1510,6 +1528,17 @@ export default function Budget() {
                         )}
                     </div>
                 </main>
+
+                <ExportModal
+                    isOpen={showExportModal}
+                    onClose={() => setShowExportModal(false)}
+                    transactions={allTransactionsData as any}
+                    budgetData={{
+                        month: monthString,
+                        categories: categories
+                    }}
+                    defaultTab="budget"
+                />
 
                 <ManageBudgetModal
                     isOpen={showManageModal || onboarding.showBudgetWizard}

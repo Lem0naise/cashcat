@@ -17,10 +17,23 @@ import { useSubscription } from '@/hooks/useSubscription';
 type ExportModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    transactions: TransactionWithDetails[];
+    transactions?: TransactionWithDetails[];
+    budgetData?: {
+        month: string;
+        categories: {
+            id: string;
+            name: string;
+            assigned: number;
+            spent: number;
+            available: number;
+            group: string;
+            rollover: number;
+        }[];
+    };
+    defaultTab?: 'transactions' | 'budget';
 };
 
-export default function ExportModal({ isOpen, onClose, transactions }: ExportModalProps) {
+export default function ExportModal({ isOpen, onClose, transactions = [], budgetData, defaultTab = 'transactions' }: ExportModalProps) {
     const { data: categories = [] } = useCategories();
     const { data: accounts = [] } = useAccounts();
     const { data: transfers = [] } = useTransfers();
@@ -37,6 +50,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
     const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
     const [isExporting, setIsExporting] = useState(false);
+    const [dataType, setDataType] = useState<'transactions' | 'budget'>(defaultTab);
 
     // Initialize dates to current month or similar? Or empty for "All time"?
     // User said "from date, to date". Let's default to empty (all time) or maybe current month.
@@ -45,6 +59,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     useEffect(() => {
         if (isOpen) {
             // Reset or initialize state
+            setDataType(defaultTab);
             setSelectAllCategories(true);
             setSelectedCategoryIds([]);
             setSelectAllAccounts(true);
@@ -100,8 +115,67 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            // Filter transactions
-            const filtered = transactions.filter(t => {
+            if (dataType === 'budget') {
+                if (!budgetData) {
+                    throw new Error('No budget data provided');
+                }
+
+                const filteredCategories = budgetData.categories.filter(cat => {
+                    if (!selectAllCategories) {
+                        return selectedCategoryIds.includes(cat.id);
+                    }
+                    return true;
+                });
+
+                const dataToExport = filteredCategories.map(cat => ({
+                    Month: budgetData.month,
+                    Group: cat.group,
+                    Category: cat.name,
+                    Assigned: cat.assigned,
+                    Spent: cat.spent,
+                    Rollover: cat.rollover,
+                    Available: cat.available
+                }));
+
+                if (exportFormat === 'json') {
+                    const jsonString = JSON.stringify(dataToExport, null, 2);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `budget_${budgetData.month}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } else {
+                    const headers = ['Month', 'Group', 'Category', 'Assigned', 'Spent', 'Rollover', 'Available'];
+                    const csvContent = [
+                        headers.join(','),
+                        ...dataToExport.map(row => [
+                            row.Month,
+                            `"${row.Group.replace(/"/g, '""')}"`,
+                            `"${row.Category.replace(/"/g, '""')}"`,
+                            row.Assigned,
+                            row.Spent,
+                            row.Rollover,
+                            row.Available
+                        ].join(','))
+                    ].join('\n');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `budget_${budgetData.month}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            } else {
+                // Filter transactions
+                const filtered = transactions.filter(t => {
                 const tDate = t.date; // string YYYY-MM-DD
                 if (fromDate && tDate < fromDate) return false;
                 if (toDate && tDate > toDate) return false;
@@ -224,6 +298,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
+            } // Close else block
 
             // Increment usage counter for free-tier gating
             await incrementUsage('export_count');
@@ -268,7 +343,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                         <div className="space-y-2">
                             <h2 className="text-2xl font-bold text-white tracking-tight">Export on Web</h2>
                             <p className="text-white/50 text-base leading-relaxed">
-                                Transaction exports are currently available on the web. Visit
+                                Data exports are currently available on the web. Visit
                                 <span className="text-green font-semibold"> cashcat.app </span>
                                 to download your data.
                             </p>
@@ -303,7 +378,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                 <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-[fadeIn_0.2s_ease-out]">
                     {/* Header */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#151515]">
-                        <h2 className="text-xl font-bold text-white">Export Transactions</h2>
+                        <h2 className="text-xl font-bold text-white">Export Data</h2>
                         <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/60 hover:text-white">
                             <Image src="/plus.svg" alt="Close" width={20} height={20} className="rotate-45 invert" />
                         </button>
@@ -312,31 +387,51 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                     {/* Body */}
                     <div className="p-6 overflow-y-auto space-y-8 flex-1">
 
+                        {/* Data Type Selection */}
+                        {budgetData && (
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-white/60">Export Type</label>
+                                <div className="flex gap-4">
+                                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${dataType === 'transactions' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
+                                        <input type="radio" name="dataType" value="transactions" checked={dataType === 'transactions'} onChange={() => setDataType('transactions')} className="hidden" />
+                                        <span className="font-semibold">Transactions</span>
+                                    </label>
+                                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${dataType === 'budget' ? 'bg-green/10 border-green text-green' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>
+                                        <input type="radio" name="dataType" value="budget" checked={dataType === 'budget'} onChange={() => setDataType('budget')} className="hidden" />
+                                        <span className="font-semibold">Budget</span>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Date Range */}
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-white/60">From Date</label>
-                                <input
-                                    type="date"
-                                    value={fromDate}
-                                    onChange={(e) => setFromDate(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
-                                />
+                        {dataType === 'transactions' && (
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/60">From Date</label>
+                                    <input
+                                        type="date"
+                                        value={fromDate}
+                                        onChange={(e) => setFromDate(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/60">To Date</label>
+                                    <input
+                                        type="date"
+                                        value={toDate}
+                                        onChange={(e) => setToDate(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-white/60">To Date</label>
-                                <input
-                                    type="date"
-                                    value={toDate}
-                                    onChange={(e) => setToDate(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-green focus:outline-none transition-colors"
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         {/* Accounts */}
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center">
+                        {dataType === 'transactions' && (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
                                 <label className="text-sm font-medium text-white/60">Accounts</label>
                                 <button
                                     onClick={() => { setSelectAllAccounts(!selectAllAccounts); setSelectedAccountIds([]); }}
@@ -365,6 +460,7 @@ export default function ExportModal({ isOpen, onClose, transactions }: ExportMod
                                 </div>
                             )}
                         </div>
+                        )}
 
                         {/* Categories */}
                         <div className="space-y-3">
